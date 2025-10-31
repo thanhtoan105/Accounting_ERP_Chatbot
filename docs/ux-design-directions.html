@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design Direction Mockups</title>
+    <style>
+      :root{
+        --bg:#0b1220;--surface:#0f172a;--text:#e6eefc;--muted:#93a4c4;
+        --primary:#2b6cb0;--secondary:#38b2ac;--accent:#805ad5;
+        --success:#22c55e;--warning:#f59e0b;--error:#ef4444;
+        --border:rgba(255,255,255,.12);--radius:10px
+      }
+      *{box-sizing:border-box}
+      body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--text);background:var(--bg)}
+      header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);padding:16px 20px;z-index:2}
+      .wrap{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+      nav{border-right:1px solid var(--border);padding:16px;background:var(--surface)}
+      nav h3{margin:0 0 8px 0;font-size:14px;color:var(--muted)}
+      nav .thumb{display:block;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text)}
+      nav .thumb.active{outline:2px solid var(--primary)}
+      main{padding:20px}
+      .panel{border:1px solid var(--border);border-radius:12px;margin-bottom:20px;overflow:hidden;background:var(--surface)}
+      .panel header{position:relative;top:auto;border-bottom:1px solid var(--border)}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px}
+      .box{border:1px solid var(--border);border-radius:10px;padding:12px}
+      .btn{padding:10px 14px;border-radius:8px;border:0;font-weight:700;cursor:pointer}
+      .btn.primary{background:var(--primary);color:#0b1220}
+      .btn.secondary{background:var(--secondary);color:#0b1220}
+      .nav{display:flex;gap:8px;padding:12px;border-bottom:1px solid var(--border);background:#0c1528}
+      .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+      .kpi .box .label{font-size:12px;color:var(--muted)}
+      .kpi .box .value{font-weight:900;font-size:22px}
+      .table{border-collapse:collapse;width:100%;font-size:14px}
+      .table th,.table td{border:1px solid var(--border);padding:8px}
+      .alert{padding:10px 12px;border-radius:8px}
+      .success{background:color-mix(in oklab,var(--success) 18%,transparent);border:1px solid color-mix(in oklab,var(--success) 40%,#000)}
+      .warning{background:color-mix(in oklab,var(--warning) 18%,transparent);border:1px solid color-mix(in oklab,var(--warning) 40%,#000)}
+      .error{background:color-mix(in oklab,var(--error) 18%,transparent);border:1px solid color-mix(in oklab,var(--error) 40%,#000)}
+      .compare{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+      .tag{display:inline-block;background:rgba(255,255,255,.08);padding:4px 8px;border-radius:999px;font-size:12px;margin-right:6px}
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 style="margin:0">🎨 Design Direction Mockups (Trust Blue Theme)</h1>
+      <div class="nav">
+        <a class="tag" href="#d1">#1 Dense Dashboard</a>
+        <a class="tag" href="#d2">#2 Spacious Explorer</a>
+        <a class="tag" href="#d3">#3 Card Gallery</a>
+        <a class="tag" href="#d4">#4 Table‑First Pro</a>
+        <a class="tag" href="#d5">#5 Inline Workflow</a>
+        <a class="tag" href="#d6">#6 Modal Wizard</a>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <nav>
+        <h3>Directions</h3>
+        <a class="thumb" href="#d1">#1 Dense Dashboard · Power users</a>
+        <a class="thumb" href="#d2">#2 Spacious Explorer · First‑time</a>
+        <a class="thumb" href="#d3">#3 Card Gallery · Data browse</a>
+        <a class="thumb" href="#d4">#4 Table‑First Pro · Keyboard</a>
+        <a class="thumb" href="#d5">#5 Inline Workflow · Low modal</a>
+        <a class="thumb" href="#d6">#6 Modal Wizard · Guided</a>
+      </nav>
+
+      <main>
+        <!-- D1 Dense Dashboard -->
+        <section id="d1" class="panel">
+          <header><h2 style="margin:0">#1 Dense Dashboard · Professional & Efficient</h2></header>
+          <div class="grid">
+            <div class="box kpi">
+              <div class="box"><div class="label">Month‑End Close</div><div class="value">92%</div></div>
+              <div class="box"><div class="label">Open Exceptions</div><div class="value" style="color:var(--error)">3</div></div>
+              <div class="box"><div class="label">AP Paid</div><div class="value">81%</div></div>
+              <div class="box"><div class="label">AR Overdue</div><div class="value" style="color:var(--warning)">18%</div></div>
+            </div>
+            <div class="box">
+              <table class="table">
+                <thead><tr><th>Voucher</th><th>Date</th><th>Status</th><th>Amount</th></tr></thead>
+                <tbody>
+                  <tr><td>VC2025‑123</td><td>2025‑10‑28</td><td><span class="tag">Posted</span></td><td>25,000,000</td></tr>
+                  <tr><td>VC2025‑124</td><td>2025‑10‑29</td><td><span class="tag">Draft</span></td><td>8,400,000</td></tr>
+                  <tr><td>VC2025‑125</td><td>2025‑10‑29</td><td><span class="tag" style="background:color-mix(in oklab,var(--error) 25%,transparent)">Exception</span></td><td>1,200,000</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div style="padding:16px">
+            <span class="tag">Layout: Top KPIs + dense tables</span>
+            <span class="tag">Density: Dense</span>
+            <span class="tag">Nav: Sidebar</span>
+            <span class="tag">Primary prominence: High</span>
+          </div>
+        </section>
+
+        <!-- D2 Spacious Explorer -->
+        <section id="d2" class="panel">
+          <header><h2 style="margin:0">#2 Spacious Explorer · Friendly & Approachable</h2></header>
+          <div class="grid">
+            <div class="box" style="min-height:180px">
+              <p>Large hero with period selector and key actions.</p>
+              <button class="btn primary">Create Voucher</button>
+              <button class="btn secondary">Import Excel</button>
+            </div>
+            <div class="box kpi">
+              <div class="box"><div class="label">Close ETA</div><div class="value">2d</div></div>
+              <div class="box"><div class="label">Drafts</div><div class="value">4</div></div>
+              <div class="box"><div class="label">Reports Ready</div><div class="value" style="color:var(--success)">B01,B02</div></div>
+              <div class="box"><div class="label">Alerts</div><div class="value" style="color:var(--warning)">2</div></div>
+            </div>
+          </div>
+          <div style="padding:16px"><span class="tag">Layout: Airy, progressive disclosure</span><span class="tag">Density: Spacious</span></div>
+        </section>
+
+        <!-- D3 Card Gallery -->
+        <section id="d3" class="panel">
+          <header><h2 style="margin:0">#3 Card Gallery · Data‑Driven Browsing</h2></header>
+          <div class="grid">
+            <div class="box">
+              <p>Card grid for modules (GL, AP, AR, Cash/Bank, Reports).</p>
+              <div class="compare">
+                <div class="box"><b>AP Aging</b><br/><span class="tag">Overdue 18%</span></div>
+                <div class="box"><b>AR Aging</b><br/><span class="tag">Overdue 12%</span></div>
+              </div>
+            </div>
+            <div class="box">
+              <p>Inline notes: “What I like / What I’d change”.</p>
+              <div class="success alert">Compliant palette mapping applied</div>
+            </div>
+          </div>
+          <div style="padding:16px"><span class="tag">Layout: Cards + side notes</span><span class="tag">Density: Balanced</span></div>
+        </section>
+
+        <!-- D4 Table-First Pro -->
+        <section id="d4" class="panel">
+          <header><h2 style="margin:0">#4 Table‑First Pro · Keyboard‑Centric</h2></header>
+          <div class="grid">
+            <div class="box">
+              <table class="table">
+                <thead><tr><th>Account</th><th>Name</th><th>Type</th><th>Postable</th></tr></thead>
+                <tbody>
+                  <tr><td>111</td><td>Tiền mặt</td><td>Asset</td><td>Yes</td></tr>
+                  <tr><td>112</td><td>Tiền gửi ngân hàng</td><td>Asset</td><td>Yes</td></tr>
+                  <tr><td>131</td><td>Phải thu khách hàng</td><td>Asset</td><td>No</td></tr>
+                </tbody>
+              </table>
+              <p style="color:var(--muted)">Tip: Arrow keys to navigate · Enter to edit · Esc to cancel</p>
+            </div>
+            <div class="box">
+              <button class="btn primary">New Voucher</button>
+              <button class="btn secondary">Post</button>
+              <div class="warning alert" style="margin-top:10px">Period close will validate drafts</div>
+            </div>
+          </div>
+          <div style="padding:16px"><span class="tag">Layout: Full‑width tables</span><span class="tag">Density: Dense</span></div>
+        </section>
+
+        <!-- D5 Inline Workflow -->
+        <section id="d5" class="panel">
+          <header><h2 style="margin:0">#5 Inline Workflow · Minimal Modals</h2></header>
+          <div class="grid">
+            <div class="box">
+              <p>Voucher form with inline validation chips and TT200 hints.</p>
+              <div class="error alert">Account 621 requires cost_center_id</div>
+            </div>
+            <div class="box">
+              <p>Inline expansion for advanced sections (attachments, dimensions).</p>
+            </div>
+          </div>
+          <div style="padding:16px"><span class="tag">Interaction: Inline expansion</span><span class="tag">Disclosure: Progressive</span></div>
+        </section>
+
+        <!-- D6 Modal Wizard -->
+        <section id="d6" class="panel">
+          <header><h2 style="margin:0">#6 Modal Wizard · Guided Flow</h2></header>
+          <div class="grid">
+            <div class="box">
+              <p>Stepper: Details → Lines → Validate → Post</p>
+              <div class="kpi">
+                <div class="box"><div class="label">Step</div><div class="value">2/4</div></div>
+                <div class="box"><div class="label">Errors</div><div class="value" style="color:var(--error)">1</div></div>
+                <div class="box"><div class="label">Hints</div><div class="value" style="color:var(--accent)">3</div></div>
+                <div class="box"><div class="label">Status</div><div class="value" style="color:var(--success)">Ready</div></div>
+              </div>
+            </div>
+            <div class="box">
+              <button class="btn primary">Next</button>
+              <button class="btn secondary">Back</button>
+              <div class="warning alert" style="margin-top:10px">Confirm before posting (irreversible)</div>
+            </div>
+          </div>
+          <div style="padding:16px"><span class="tag">Interaction: Wizard/Stepper</span><span class="tag">Density: Balanced</span></div>
+        </section>
+      </main>
+    </div>
+  </body>
+  </html>
+
+

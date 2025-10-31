@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: accounting-backend
+
+springdoc:
+  swagger-ui:
+    path: /api/docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+
+info:
+  app:
+    name: accounting-backend
+    version: 0.0.1-SNAPSHOT

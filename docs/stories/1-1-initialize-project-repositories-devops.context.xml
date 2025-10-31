@@ -1,0 +1,132 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1</storyId>
+    <title>Initialize Project Repositories &amp; DevOps</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-1-initialize-project-repositories-devops.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>to have a clear project structure, development tooling, and CI/CD baseline</iWant>
+    <soThat>all team members can build, test, and deploy reliably from day one.</soThat>
+    <tasks>
+      - Define mono-repo structure and scaffolding (AC: #1)
+      - Create backend Spring Boot project (Java 21) (AC: #1)
+      - Create frontend React + TS (Vite) with MUI and TanStack Query (AC: #1)
+      - Add docker-compose and infra folders (AC: #1)
+      - Local dev stack services: Postgres, Maildev, Redis (AC: #2)
+      - Health checks and named networks/volumes (AC: #2)
+      - Configure Prettier/ESLint (FE) and Spotless/Checkstyle (BE) (AC: #3)
+      - Add pre-commit hooks and READMEs (AC: #3)
+      - CI/CD for backend and frontend (AC: #4)
+      - Implement /health and OpenAPI /api/docs (AC: #5, #6)
+      - Backend and frontend smoke tests (AC: #3, #5)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Repository structure for backend, frontend, and infra documented.
+    2. Docker Compose starts dev dependencies (Supabase/Postgres, Maildev, Redis if used).
+    3. Pre-commit hooks; README covers setup/env/troubleshooting.
+    4. GitHub Actions for build/test/lint/publish per module.
+    5. /health returns 200 OK with info.
+    6. OpenAPI/Swagger UI at /api/docs.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Project Initialization — Backend (Spring Boot)</section>
+        <snippet>Spring Boot 3.5.7 with Java 21 is initialized via Spring Initializr or Spring CLI, including Web, Data JPA, Security, Validation, Cache, Redis, PostgreSQL, Flyway, Lombok, and SpringDoc OpenAPI. This establishes the baseline architecture and versions for the backend and aligns with ADRs.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Project Initialization — Frontend (React + TypeScript)</section>
+        <snippet>Frontend is bootstrapped using Vite React TS with pnpm, then adds MUI, MUI X Data Grid, TanStack Query, Axios, Supabase JS, and date-fns. This defines the initial UX and data access stack consistent with the design system.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Project Structure</section>
+        <snippet>The repository layout separates backend and frontend with standard Spring and React folder structures, plus docker-compose and docs. This structure should be created in the initialization story.</snippet>
+      </doc>
+      <doc>
+        <path>docs/product-brief-accounting-2025-10-30.md</path>
+        <title>Product Brief: accounting</title>
+        <section>Executive Summary</section>
+        <snippet>The product targets TT200-compliant operations with a modern stack—Spring Boot, React TS, Supabase—and emphasizes compliance-first workflows. Initialization must set this foundation for subsequent epics.</snippet>
+      </doc>
+      <doc>
+        <path>docs/implementation-readiness-report-2025-10-31.md</path>
+        <title>Implementation Readiness Assessment Report</title>
+        <section>Recommendations — Immediate Actions Required</section>
+        <snippet>Calls out explicit Infra & Setup work including CI/CD, Flyway baseline, Redis, Resend, Pinecone, Supabase Storage, and composite health checks. These items inform tasks and health endpoints in the initialization story.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <!-- No source code detected yet; initialization story will create baseline projects -->
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <manifest>frontend/package.json (planned)</manifest>
+        <packages>
+          <pkg>@mui/material</pkg>
+          <pkg>@mui/x-data-grid</pkg>
+          <pkg>@tanstack/react-query</pkg>
+          <pkg>axios</pkg>
+          <pkg>@supabase/supabase-js</pkg>
+          <pkg>date-fns</pkg>
+        </packages>
+      </ecosystem>
+      <ecosystem name="java-maven">
+        <manifest>backend/pom.xml (planned)</manifest>
+        <packages>
+          <pkg>spring-boot-starter-web</pkg>
+          <pkg>spring-boot-starter-data-jpa</pkg>
+          <pkg>spring-boot-starter-security</pkg>
+          <pkg>spring-boot-starter-validation</pkg>
+          <pkg>spring-boot-starter-cache</pkg>
+          <pkg>spring-data-redis</pkg>
+          <pkg>postgresql</pkg>
+          <pkg>flyway-core</pkg>
+          <pkg>lombok</pkg>
+          <pkg>springdoc-openapi-starter-webmvc-ui</pkg>
+        </packages>
+      </ecosystem>
+      <ecosystem name="docker">
+        <manifest>docker-compose.yml (planned)</manifest>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>Backend: Spring Boot 3.5.7, Java 21; REST, JWT-ready security; Flyway migrations. Frontend: React + TS with MUI; TanStack Query; Axios. Infra: PostgreSQL (Supabase), optional Redis; Docker-based local stack. Follow unified project structure and ADRs.</constraints>
+  <interfaces>
+    <interface>
+      <name>GET /health</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /health → 200 OK { build, status }</signature>
+      <path>backend/src/main/java/.../controller/HealthController.java (planned)</path>
+    </interface>
+    <interface>
+      <name>Swagger UI</name>
+      <kind>REST docs</kind>
+      <signature>GET /api/docs</signature>
+      <path>backend configuration (SpringDoc)</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Backend: JUnit5 + Spring Boot Test; Testcontainers (Postgres) prepared. Frontend: Vitest + Testing Library. Health checks and smoke tests required.</standards>
+    <locations>backend/src/test/**, frontend/src/**/*.test.tsx</locations>
+    <ideas>
+      AC#5: Backend test for /health returns 200 with build info. AC#3: Frontend renders app and resolves env vars. AC#6: Verify OpenAPI endpoints listed under /api/docs.</ideas>
+  </tests>
+</story-context>
+
+

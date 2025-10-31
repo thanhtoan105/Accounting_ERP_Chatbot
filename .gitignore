@@ -1,0 +1,69 @@
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.orig
+.idea/
+.vscode/
+*.iml
+
+# --- Java / Maven / Spring Boot ---
+# Build output
+backend/target/
+target/
+
+# Logs
+*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# Local config
+application-local.yml
+
+# Maven wrapper downloads (keep wrapper JAR/script committed)
+.mvn/timing.properties
+
+# --- Node / Frontend (Vite/React) ---
+frontend/node_modules/
+node_modules/
+frontend/dist/
+dist/
+frontend/.vite/
+.vite/
+frontend/coverage/
+coverage/
+frontend/.eslintcache
+.eslintcache
+
+# Vitest cache
+frontend/node_modules/.vitest/
+node_modules/.vitest/
+
+# pnpm store
+.pnpm-store/
+
+# --- Environment files ---
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# --- Docker / Compose ---
+# Named volumes are outside repo, but ignore local overrides
+docker-compose.override.yml
+
+# --- Misc ---
+*.tmp
+.tmp/
+.sass-cache/
+.cache/
+
+# --- Test reports ---
+surefire-reports/
+jacoco.exec
