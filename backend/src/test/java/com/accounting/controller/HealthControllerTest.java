@@ -12,7 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class HealthControllerTest {
+class HealthControllerTest extends com.accounting.test.IntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

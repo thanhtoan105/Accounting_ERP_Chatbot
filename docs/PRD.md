@@ -251,7 +251,7 @@ The “why now”: curriculum and enterprise needs are converging:
 ### Branding
 
 - Clean, professional financial UI; neutral palette with accent for primary actions.
-- Use MUI theming tokens; support easy brand override post-MVP.
+- Use Tailwind CSS with CSS variables for theming; Shadcn UI components for consistency; support easy brand override post-MVP.
 
 ### Target Device and Platforms
 

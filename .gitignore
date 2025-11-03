@@ -67,3 +67,8 @@ docker-compose.override.yml
 # --- Test reports ---
 surefire-reports/
 jacoco.exec
+
+
+.clinerules/
+.gemini/
+.opencode/

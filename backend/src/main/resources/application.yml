@@ -4,6 +4,24 @@ server:
 spring:
   application:
     name: accounting-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/accounting_dev
+    username: accounting
+    password: accounting
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      # - optional:file:.env[.properties]
 
 springdoc:
   swagger-ui:
@@ -19,3 +37,18 @@ info:
   app:
     name: accounting-backend
     version: 0.0.1-SNAPSHOT
+
+# Resend Email Configuration
+resend:
+  api-key: ${RESEND_API_KEY:}
+  from-email: ${RESEND_FROM_EMAIL:onboarding@resend.dev}
+
+# Application Configuration
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:your-secret-key-change-this-in-production-minimum-256-bits}
+  access-token-validity-minutes: ${JWT_ACCESS_TOKEN_VALIDITY_MINUTES:30}
+  refresh-token-validity-days: ${JWT_REFRESH_TOKEN_VALIDITY_DAYS:7}

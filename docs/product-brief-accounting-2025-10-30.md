@@ -202,7 +202,7 @@ Accounting Students & Junior Accountants
 ### Technology Preferences
 
 - Frontend: React (JS) with Vite for fast, modular development
-- UI Libraries: TailwindCSS and Material UI (MUI) for flexible, modern interface design
+- UI Libraries: Shadcn UI and Tailwind CSS for accessible, customizable, modern interface design
 - Backend: Spring Boot (Java) for scalable, robust API and service layer
 - Database: PostgreSQL hosted on Supabase for reliable, scalable data management and storage
 - AI: Azure OpenAI Service for LLM-based features and vector search/embedding

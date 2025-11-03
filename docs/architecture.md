@@ -65,20 +65,47 @@ cd frontend
 pnpm install
 ```
 
+Then add Tailwind CSS:
+```bash
+pnpm add -D tailwindcss postcss autoprefixer
+pnpx tailwindcss init -p
+```
+
+Then add Shadcn UI:
+```bash
+pnpm add -D @shadcn/ui
+pnpx shadcn@latest init
+```
+
+Configuration for `shadcn init`:
+- Style: Default
+- Base color: Slate
+- CSS variables: Yes
+
 Then add required dependencies:
 ```bash
-pnpm add @mui/material @mui/x-data-grid @emotion/react @emotion/styled
 pnpm add @tanstack/react-query axios
+pnpm add @tanstack/react-table
 pnpm add @supabase/supabase-js
 pnpm add date-fns
+pnpm add class-variance-authority clsx tailwind-merge
+pnpm add lucide-react
 pnpm add -D @types/node
+```
+
+Add commonly needed Shadcn components:
+```bash
+pnpx shadcn@latest add button input form table dialog card select dropdown-menu toast
 ```
 
 This establishes the base architecture with these decisions:
 - **Framework:** React with TypeScript (PROVIDED BY STARTER)
 - **Build Tool:** Vite (PROVIDED BY STARTER)
 - **Package Manager:** pnpm (USER PREFERENCE)
-- **UI Library:** MUI + MUI X Data Grid (DECISION)
+- **UI Library:** Shadcn UI + Tailwind CSS (DECISION)
+- **Styling:** Tailwind CSS with CSS variables (DECISION)
+- **Data Tables:** TanStack Table (DECISION)
+- **Icons:** Lucide React (DECISION)
 - **Data Fetching:** TanStack Query (DECISION)
 - **HTTP Client:** Axios (DECISION)
 
@@ -97,8 +124,11 @@ This establishes the base architecture with these decisions:
 | ORM | Spring Data JPA + Hibernate | 6.x (via Spring Boot 3.5.7) | All | Industry standard for Spring Boot |
 | API Pattern | REST | - | All client-facing | Simple, well-understood, OpenAPI support |
 | Authentication | JWT with Spring Security 6 | Spring Security 6.x | Epic 1 | Stateless, scalable, industry standard |
-| UI Library | MUI + MUI X Data Grid | MUI 6.x, MUI X 8.x | All | WCAG AA compliance, dense tables, UX spec requirement |
+| UI Library | Shadcn UI + Tailwind CSS | Latest stable | All | Accessible, customizable, modern design system |
+| Data Tables | TanStack Table | 8.x | All | Headless, flexible, powerful table functionality |
 | Data Fetching | TanStack Query | 5.x | All | Caching, optimistic updates, background refetching |
+| Icons | Lucide React | Latest stable | All | Modern, consistent icon set |
+| Styling | Tailwind CSS | 3.x | All | Utility-first CSS, responsive design |
 | HTTP Client | Axios | Latest stable | All | Promise-based, interceptors for auth |
 | Caching | Redis | Redis 7.x | Epic 7, 8 | Fast report caching, NFR26 requirement |
 | Vector Database | Pinecone | Latest stable | Epic 9 | PRD requirement, scalable vector search |
@@ -183,9 +213,9 @@ accounting/
 
 | Epic | Backend Location | Frontend Location | Database Tables | Key Technologies |
 |------|------------------|-------------------|-----------------|------------------|
-| Epic 1: Foundation & Auth | `controller/auth/`, `security/` | `pages/Login.tsx`, `services/auth.ts` | `users`, `roles`, `companies` | Spring Security 6, JWT, MUI |
-| Epic 2: Master Data | `controller/customer/`, `controller/supplier/` | `pages/Customers.tsx`, `pages/Suppliers.tsx` | `customers`, `suppliers`, `chart_of_accounts` | Spring Data JPA, MUI Data Grid |
-| Epic 3: Voucher Engine | `controller/voucher/`, `service/gl/` | `pages/VoucherForm.tsx` | `vouchers`, `voucher_lines`, `journal_entries` | Spring Data JPA, MUI Data Grid |
+| Epic 1: Foundation & Auth | `controller/auth/`, `security/` | `pages/Login.tsx`, `services/auth.ts` | `users`, `roles`, `companies` | Spring Security 6, JWT, Shadcn UI |
+| Epic 2: Master Data | `controller/customer/`, `controller/supplier/` | `pages/Customers.tsx`, `pages/Suppliers.tsx` | `customers`, `suppliers`, `chart_of_accounts` | Spring Data JPA, TanStack Table |
+| Epic 3: Voucher Engine | `controller/voucher/`, `service/gl/` | `pages/VoucherForm.tsx` | `vouchers`, `voucher_lines`, `journal_entries` | Spring Data JPA, TanStack Table |
 | Epic 4: AP Module | `controller/purchase/` | `pages/PurchaseBills.tsx` | `purchase_bills`, `ap_payments` | Spring Data JPA, Maker-Checker |
 | Epic 5: AR Module | `controller/sales/` | `pages/SalesInvoices.tsx` | `sales_invoices`, `ar_receipts` | Spring Data JPA, Approval workflow |
 | Epic 6: Cash & Bank | `controller/cash/` | `pages/CashBook.tsx` | `cash_receipts`, `cash_payments`, `bank_reconciliations` | Spring Data JPA, Supabase Storage |
@@ -215,9 +245,11 @@ accounting/
 - TypeScript 5.x
 - Vite (latest stable)
 - pnpm (latest stable)
-- MUI 6.x
-- MUI X Data Grid 8.x
+- Shadcn UI (latest stable)
+- Tailwind CSS 3.x
+- TanStack Table 8.x
 - TanStack Query 5.x
+- Lucide React (latest stable)
 - Axios (latest stable)
 - date-fns (latest)
 
@@ -547,7 +579,8 @@ Response: { "data": { "accessToken": "..." }, "meta": {...} }
 - React Query caching and background refetching
 - Code splitting via Vite
 - Lazy loading for routes
-- MUI Data Grid virtualization for large tables
+- TanStack Table virtualization for large tables
+- Tailwind CSS JIT compilation for optimal bundle size
 
 ---
 
@@ -643,15 +676,24 @@ docker-compose up -d
 - pgvector in PostgreSQL (considered, but PRD specifies Pinecone)
 - Self-hosted vector DB (more operational overhead)
 
-### ADR-005: MUI + MUI X Data Grid
+### ADR-005: Shadcn UI + Tailwind CSS
 
-**Decision:** Use Material-UI with MUI X Data Grid.
+**Decision:** Use Shadcn UI component library with Tailwind CSS for styling.
 
-**Rationale:** UX spec requirement, WCAG AA compliance, dense table support, professional appearance.
+**Rationale:** 
+- Modern, accessible component library built on Radix UI primitives (WCAG AA compliant)
+- Full customization control - components are copied into project, not a dependency
+- Tailwind CSS provides utility-first styling with excellent developer experience
+- Better performance than heavy UI frameworks
+- Type-safe with TypeScript
+- Active community and extensive documentation
+- TanStack Table integration for complex data grids with full control
 
 **Alternatives Considered:**
-- Custom components (too much development time)
-- Other UI libraries (UX spec specifies MUI)
+- MUI (Material-UI): Heavier bundle size, less customization flexibility, opinionated design
+- Ant Design: Less modern, harder to customize
+- Chakra UI: Good but Shadcn offers better customization
+- Headless UI + Custom CSS: More development time, Shadcn provides pre-built accessible components
 
 ### ADR-006: JWT Authentication with Spring Security
 

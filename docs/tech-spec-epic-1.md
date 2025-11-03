@@ -108,8 +108,9 @@ Backend:
 
 Frontend:
 - React 19+, TypeScript 5.x, Vite.
-- MUI 7.3.4 (Material UI), MUI X Data Grid (latest compatible with MUI 7.3.4).
-- Axios, TanStack Query 5.x.
+- Shadcn UI (latest stable) + Tailwind CSS 3.x for UI components.
+- TanStack Table 8.x for data grids, TanStack Query 5.x for data fetching.
+- Axios, Lucide React for icons.
 
 Infra and planned integrations:
 - Docker/Docker Compose for local dev.

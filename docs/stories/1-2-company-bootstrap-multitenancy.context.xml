@@ -1,0 +1,73 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>2</storyId>
+    <title>Company Bootstrap &amp; Multitenancy</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-31T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-2-company-bootstrap-multitenancy.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>admin</asA>
+    <iWant>initialize and configure one or more companies with isolated data and branding</iWant>
+    <soThat>the system cleanly supports multiple tenants from the start</soThat>
+    <tasks>- Backend: Company entity, repository, service, controller (AC: #1, #2, #3)
+  - Flyway migrations for companies table (unique code, unique tax_code, VN charset where applicable)
+  - Service methods: createCompany, updateCompany, getCompanyByCode, listCompanies (scoped by auth)
+  - Validation: 10-digit tax code; duplicate code/tax_code rejection with detailed error
+- Backend: Multitenancy enforcement (AC: #3)
+  - Security filter to inject company_id scope on all requests
+  - Repository layer guards and integration tests to ensure scoping
+- Backend: Demo company bootstrap (AC: #4)
+  - CLI/script to seed demo company and minimal reference data
+  - Idempotency: safe re-run without duplicates
+- Frontend: Company creation form and validations (AC: #1, #2)
+  - Fields: code, name, tax_code, address, logo upload; VN charset validation
+  - Error display for duplicate code/tax_code and invalid fields
+- Frontend: Company switcher in authenticated shell (AC: #5, #6)
+  - Persist selected company in session; ensure API calls include company scope
+  - Display branding (logo/name) in header and report exports
+- Testing
+  - Backend: Unit + integration tests for validation, scoping, and seed idempotency
+  - Frontend: Form validation tests and company switch UX test</tasks>
+  </story>
+
+  <acceptanceCriteria>1. First login (or CLI/script) prompts to create the first company; reject duplicate company codes.
+2. Company form validates: unique 10-digit tax code, company name (VN charset), address, logo.
+3. All core data (users, chart of accounts, vouchers, master data) associated with a company_id and enforced at the DB and API layer.
+4. Demo company auto-created with realistic data for preview/demo
+5. Switching company context (if user belongs to multiple) works without session corruption.
+6. Company branding (logo, name) appears in dashboard shell and voucher/report exports.
+
+Validation specifics:
+  a. Code format: ^[A-Z0-9-]{3,16}$; server returns 409 on duplicate code or tax_code with { field, reason } details.
+  b. Tax code: exactly 10 digits; VN charset allowed for company name and address.
+  c. Branding: logo PNG/JPEG ≤ 256KB; stored path referenced in UI header and export footer.
+  d. Scope enforcement: all CRUD endpoints require and persist company_id; cross-company access returns 403 with message code RBAC_COMPANY_SCOPE_VIOLATION.
+  e. Context switch: changing active company updates auth/session context and invalidates cached queries; no leakage across company boundaries (verified by tests).</acceptanceCriteria>
+
+  <artifacts>
+    <docs>docs/PRD.md | Section: Foundation & Authentication | Snippet: FR03 Company Profile Management requires validation and VN standards; FR47 enforces RBAC; security central.
+docs/architecture.md | Section: Data Architecture → Multi-Tenancy Strategy | Snippet: Row-level filtering via company_id, API enforcement via security filter, repository-level filter.
+docs/tech-spec-epic-1.md | Section: Overview/System Architecture Alignment | Snippet: Establishes initial entities (users, roles, companies), JWT auth, Flyway seed for demo company.
+docs/epics.md | Section: Story 1.2 | Snippet: Acceptance criteria list for company bootstrap & multitenancy.
+docs/stories/1-1-initialize-project-repositories-devops.md | Section: Dev Notes/Testing standards summary | Snippet: Spring Boot baseline, React Vite, Testcontainers for Postgres.
+    </docs>
+    <code></code>
+    <dependencies>backend/pom.xml | spring-boot-starter-web, validation, springdoc-openapi, lombok | Java 21, Spring Boot 3.5.7
+frontend/package.json | react 19, @mui/material 7.3.4, emotion | vite, vitest, eslint, typescript
+    </dependencies>
+  </artifacts>
+
+  <constraints>Enforce row-level scoping with company_id at API and repository layers; duplicate code/tax_code must return structured errors; branding paths referenced in UI and exports; JWT-based security with tenant scoping filter.</constraints>
+  <interfaces>REST base /api/v1/companies; endpoints: POST create, PUT update, GET list/detail; demo bootstrap endpoint per Dev Notes.</interfaces>
+  <tests>
+    <standards>Backend: JUnit 5 + Spring Boot Test + Testcontainers (Postgres). Frontend: Vitest + Testing Library. Structured error responses and RBAC checks per PRD.</standards>
+    <locations>backend/src/test/**; frontend/src/**/*.{test,spec}.tsx</locations>
+    <ideas>AC1: first-company prompt/CLI + duplicate company code rejection. AC2: FE form validation + backend 10-digit tax code check. AC3: repository-level filters enforce company_id across CRUD. AC4: demo seed idempotency test. AC5: session context switch invalidates caches; no leakage across companies. AC6: branding appears in header and export footer.</ideas>
+  </tests>
+</story-context>
+
+

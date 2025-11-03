@@ -1,0 +1,855 @@
+{
+	"info": {
+		"_postman_id": "auth-collection-1.3",
+		"name": "Accounting API - Authentication (Story 1.3)",
+		"description": "Postman collection for testing User Authentication & Security endpoints. Note: Registration endpoint has been removed. Users must be created by administrators.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "testEmail",
+			"value": "test@example.com",
+			"type": "string"
+		},
+		{
+			"key": "testPassword",
+			"value": "TestPassword123!",
+			"type": "string"
+		},
+		{
+			"key": "resetToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/health",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "health"]
+				},
+				"description": "Check if backend is running"
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "Auth - Register",
+			"item": [
+				{
+					"name": "Register - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has data object\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"});",
+									"",
+									"pm.test(\"Response contains user info\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('id');",
+									"    pm.expect(jsonData.data).to.have.property('email');",
+									"    pm.expect(jsonData.data).to.have.property('fullName');",
+									"    pm.expect(jsonData.data).to.have.property('role');",
+									"    pm.expect(jsonData.data.role).to.eql('USER');",
+									"});",
+									"",
+									"pm.test(\"Password not in response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.not.have.property('password');",
+									"    pm.expect(jsonData.data).to.not.have.property('passwordHash');",
+									"});",
+									"",
+									"// Store user ID for later use",
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('userId', jsonData.data.id);",
+									"    pm.collectionVariables.set('testEmail', jsonData.data.email);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"fullName\": \"Test User\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "register"]
+						},
+						"description": "Register a new user successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Register - Weak Password",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response has error object\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"    pm.expect(jsonData.error.code).to.eql('VALIDATION_ERROR');",
+									"});",
+									"",
+									"pm.test(\"Error message mentions password\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var errorDetails = jsonData.error.details || {};",
+									"    var hasPasswordError = false;",
+									"    for (var key in errorDetails) {",
+									"        if (key === 'password' || errorDetails[key].toLowerCase().includes('password')) {",
+									"            hasPasswordError = true;",
+									"        }",
+									"    }",
+									"    pm.expect(hasPasswordError).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"weak@example.com\",\n  \"password\": \"weak\",\n  \"fullName\": \"Weak User\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "register"]
+						},
+						"description": "Test validation with weak password"
+					},
+					"response": []
+				},
+				{
+					"name": "Register - Duplicate Email",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 409\", function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"",
+									"pm.test(\"Response has error object\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"    pm.expect(jsonData.error.code).to.eql('DUPLICATE');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"fullName\": \"Duplicate User\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "register"]
+						},
+						"description": "Test duplicate email validation (run after Register - Success)"
+					},
+					"response": []
+				},
+				{
+					"name": "Register - Invalid Email Format",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response has error object\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"    pm.expect(jsonData.error.code).to.eql('VALIDATION_ERROR');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"{{testPassword}}\",\n  \"fullName\": \"Invalid User\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "register"]
+						},
+						"description": "Test email format validation"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auth - Login",
+			"item": [
+				{
+					"name": "Login - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has data object\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('accessToken');",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"});",
+									"",
+									"pm.test(\"Access token is not empty\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"pm.test(\"Refresh token cookie is set\", function () {",
+									"    var cookies = pm.cookies.all();",
+									"    var hasRefreshToken = false;",
+									"    for (var i = 0; i < cookies.length; i++) {",
+									"        if (cookies[i].name === 'refreshToken') {",
+									"            hasRefreshToken = true;",
+									"            pm.collectionVariables.set('refreshToken', cookies[i].value);",
+									"            break;",
+									"        }",
+									"    }",
+									"    pm.expect(hasRefreshToken).to.be.true;",
+									"});",
+									"",
+									"// Store access token",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"rememberMe\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Login with valid credentials. Requires user to be registered first."
+					},
+					"response": []
+				},
+				{
+					"name": "Login - With Remember Me",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Refresh token cookie has extended expiry\", function () {",
+									"    var cookies = pm.cookies.all();",
+									"    for (var i = 0; i < cookies.length; i++) {",
+									"        if (cookies[i].name === 'refreshToken') {",
+									"            // Cookie with rememberMe should have longer max-age",
+									"            pm.expect(cookies[i].maxAge).to.be.greaterThan(7 * 24 * 60 * 60);",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"rememberMe\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Login with remember me checked"
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Invalid Credentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response has error object\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"    pm.expect(jsonData.error.code).to.eql('UNAUTHORIZED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"WrongPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Test login with wrong password"
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Account Lockout (5 Failed Attempts)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// This test simulates account lockout",
+									"// After 5 failed attempts, account should be locked",
+									"pm.test(\"Status code is 423 or 401\", function () {",
+									"    pm.expect([401, 423]).to.include(pm.response.code);",
+									"});",
+									"",
+									"pm.test(\"Response has error object\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// This is a manual test - run this request 5 times",
+									"// After 5 failed attempts, try login with correct password",
+									"// It should return 423 Locked",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"lockout@example.com\",\n  \"password\": \"WrongPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Test account lockout. Run this 5 times, then try login with correct password. Should return 423 Locked."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auth - Refresh Token",
+			"item": [
+				{
+					"name": "Refresh - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has new access token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('accessToken');",
+									"    pm.expect(jsonData.data.accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"// Store new access token",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    var oldToken = pm.collectionVariables.get('accessToken');",
+									"    var newToken = jsonData.data.accessToken;",
+									"    pm.expect(newToken).to.not.eql(oldToken);",
+									"    pm.collectionVariables.set('accessToken', newToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "refresh"]
+						},
+						"description": "Refresh access token using refresh token cookie. Requires login first."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh - No Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response has error object\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"    pm.expect(jsonData.error.code).to.eql('UNAUTHORIZED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Clear refresh token cookie",
+									"pm.cookies.clear();"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "refresh"]
+						},
+						"description": "Test refresh without refresh token cookie"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auth - Logout",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 204\", function () {",
+							"    pm.response.to.have.status(204);",
+							"});",
+							"",
+							"pm.test(\"Refresh token cookie is cleared\", function () {",
+							"    var cookies = pm.cookies.all();",
+							"    var hasRefreshToken = false;",
+							"    for (var i = 0; i < cookies.length; i++) {",
+							"        if (cookies[i].name === 'refreshToken' && cookies[i].maxAge === 0) {",
+							"            hasRefreshToken = true;",
+							"            break;",
+							"        }",
+							"    }",
+							"    // Cookie should be cleared (maxAge = 0)",
+							"    pm.expect(hasRefreshToken || cookies.length === 0).to.be.true;",
+							"});",
+							"",
+							"// Clear tokens",
+							"pm.collectionVariables.set('accessToken', '');",
+							"pm.collectionVariables.set('refreshToken', '');"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/logout",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "auth", "logout"]
+				},
+				"description": "Logout and clear refresh token cookie. Requires login first."
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Forgot Password",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has success message\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('data');",
+							"    pm.expect(jsonData.data).to.have.property('message');",
+							"});",
+							"",
+							"pm.test(\"Response does not reveal email existence\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    // Message should be generic, not revealing if email exists",
+							"    pm.expect(jsonData.data.message).to.include('reset link');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"{{testEmail}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "auth", "forgot-password"]
+				},
+				"description": "Request password reset. Always returns 200 to prevent email enumeration."
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Reset Password",
+			"item": [
+				{
+					"name": "Reset - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('message');",
+									"    pm.expect(jsonData.data.message).to.include('reset successfully');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"password\": \"NewPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/reset-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "reset-password"]
+						},
+						"description": "Reset password with valid token. Token should be obtained from database or email."
+					},
+					"response": []
+				},
+				{
+					"name": "Reset - Invalid/Expired Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response has error object\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"    pm.expect(jsonData.error.message).to.include('token');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"expired-token\",\n  \"password\": \"NewPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/reset-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "reset-password"]
+						},
+						"description": "Test reset password with invalid/expired token"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Protected Endpoint Example",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Ensure we have an access token",
+							"var accessToken = pm.collectionVariables.get('accessToken');",
+							"if (!accessToken || accessToken === '') {",
+							"    console.log('Warning: No access token. Login first or set accessToken variable.');",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 or 401\", function () {",
+							"    pm.expect([200, 401, 403, 404]).to.include(pm.response.code);",
+							"});",
+							"",
+							"pm.test(\"With valid token, should not be 401\", function () {",
+							"    var accessToken = pm.collectionVariables.get('accessToken');",
+							"    if (accessToken && accessToken !== '') {",
+							"        pm.expect(pm.response.code).to.not.eql(401);",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{accessToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/companies",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "companies"]
+				},
+				"description": "Example of accessing a protected endpoint. Requires valid access token from login."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

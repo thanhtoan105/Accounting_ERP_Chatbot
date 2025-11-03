@@ -1,0 +1,292 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>4</storyId>
+    <title>Role-Based Access Control (RBAC)</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-01T02:14:55Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-4-role-based-access-control-rbac.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As an admin</asA>
+    <iWant>I want to define roles, enforce permissions, and invite users via email</iWant>
+    <soThat>So that API/UX only exposes functions allowed by user's assigned role, and I can securely onboard new users to the correct company with the appropriate role.</soThat>
+    <tasks>
+      <task>Backend: Role validation and enum infrastructure (AC: #1, #7)</task>
+      <task>Backend: Role-based access control middleware (AC: #3, #9, #10)</task>
+      <task>Backend: Permission validation on protected endpoints (AC: #3)</task>
+      <task>Backend: Role assignment and validation rules (AC: #6, #7, #8)</task>
+      <task>Backend: Audit logging for role/permission changes (AC: #5)</task>
+      <task>Frontend: Role-based UI visibility (AC: #4)</task>
+      <task>Frontend: User role display and management (AC: #1, #6)</task>
+      <task>Backend: User invitation infrastructure (AC: #11, #12, #14)</task>
+      <task>Backend: Invitation API endpoints (AC: #11, #13)</task>
+      <task>Frontend: Invitation UI (AC: #11, #12, #13)</task>
+      <task>Testing</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">User entity includes a `role` field with validation: must be one of `admin`, `accountant`, `chief_accountant`, or `cfo` (case-sensitive lowercase). Existing users without a role must be assigned a default role (default: `accountant`).</criterion>
+    <criterion id="2">Permission matrix defined and documented (API + UI): which endpoints/resources each role can access. Documentation must include OpenAPI/Swagger annotations and a written permission matrix document.</criterion>
+    <criterion id="3">Middleware checks JWT and role on each API request; 403 Forbidden returned with context-aware error message (e.g., "Access denied. Required role: ADMIN" or "Only ADMIN or CHIEF_ACCOUNTANT can perform this action"). Requests with missing or invalid role in JWT return 401 Unauthorized.</criterion>
+    <criterion id="4">UI hides menu items/screens based on role, but API rejects unauthorized backend access regardless of UI. If a user manually navigates to an unauthorized page (e.g., via URL), the frontend displays a 403 error page.</criterion>
+    <criterion id="5">All role/permission changes are logged in audit trail with: old_role, new_role, changed_by_user_id, target_user_id, timestamp, and IP address. Logging occurs before the change is applied (failure to log blocks the change).</criterion>
+    <criterion id="6">Changing one's own role is not permitted (only admin/chief can edit others). System returns 403 Forbidden with message: "You cannot change your own role" when user attempts self-role-change. Validation enforced at both API and UI levels.</criterion>
+    <criterion id="7">Role field validation: Invalid role values are rejected with 400 Bad Request error. Role validation occurs during user creation, user update, and role assignment operations.</criterion>
+    <criterion id="8">Role assignment during user creation: New users must be assigned a valid role (default: `accountant` if not specified). Admin or chief_accountant can specify role during user creation.</criterion>
+    <criterion id="9">JWT token includes role claim: All JWT access tokens must include the user's role in the token claims. Token refresh preserves role claim. If role is missing from token, authentication fails with 401 Unauthorized.</criterion>
+    <criterion id="10">Spring Security context includes role: After JWT validation, user's role is available in Spring Security context for use in @PreAuthorize annotations. Role is extracted from JWT and set as authority (e.g., `ROLE_ADMIN`, `ROLE_ACCOUNTANT`).</criterion>
+    <criterion id="11">User invitation system: Admin or chief_accountant can invite users via email instead of creating accounts directly. Invitation includes unique token, company association, and expiration (7 days). Invited users can register via invitation link, which validates token, pre-fills email, and automatically associates user with company and assigned role.</criterion>
+    <criterion id="12">Invitation email delivery: System sends invitation emails to invited users containing invitation link, inviter information, company name, and expiration details. Uses existing EmailService (Resend) for email delivery.</criterion>
+    <criterion id="13">Invitation acceptance flow: Public invitation acceptance page validates token, checks expiration, allows user registration (password, name), creates user account with correct company and role, and marks invitation as accepted.</criterion>
+    <criterion id="14">Invitation audit trail: All invitation actions (create, accept, expire) are logged in audit trail with: inviter, invitee email, company, status, timestamp, and IP address.</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR02: Role-Based Access Control (RBAC)</section>
+        <snippet>Defines four roles: Admin (Technical), Accountant, Chief Accountant, and CFO with clear permission boundaries. System must enforce role-based permissions at API level.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Security Architecture</section>
+        <snippet>JWT authentication with Spring Security 6. Uses Spring Security filter chain for JWT validation. Method-level security patterns for role-based authorization.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-3-user-registration-secure-authentication.md</path>
+        <title>User Registration &amp; Secure Authentication</title>
+        <section>Dev Notes</section>
+        <snippet>Establishes JWT authentication pattern. User entity already includes role field (String). JwtTokenProvider generates tokens with role claim. JwtAuthenticationFilter extracts user from JWT. SecurityConfig configures Spring Security filter chain.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-3-testing-guide.md</path>
+        <title>Testing Guide</title>
+        <section>Testing Standards</section>
+        <snippet>Backend: JUnit 5 + Spring Boot Test with Testcontainers for database tests. Integration tests for authentication endpoints. Frontend: Vitest + Testing Library for component tests.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-4-role-based-access-control-rbac.md</path>
+        <title>Story 1.4: Role-Based Access Control (RBAC)</title>
+        <section>Dev Notes</section>
+        <snippet>User entity already has role field (String) from Story 1.3. JWT token provider includes role in token generation. Follow Spring Security 6 method-level security patterns. Role enum values: ADMIN, ACCOUNTANT, CHIEF_ACCOUNTANT, CFO (database stores lowercase).</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epics</title>
+        <section>Epic 1: Foundation &amp; Authentication</section>
+        <snippet>Story 1.4 implements role-based access control system with four defined roles, permission matrix, middleware checks, UI visibility controls, and user invitation system.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/User.java</path>
+        <kind>entity</kind>
+        <symbol>User</symbol>
+        <lines>14-149</lines>
+        <reason>User entity already has role field (String, line 29) that needs validation. Implements CompanyScopedEntity for multi-tenancy. Role field exists but lacks validation constraint.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/security/JwtTokenProvider.java</path>
+        <kind>service</kind>
+        <symbol>JwtTokenProvider</symbol>
+        <lines>31-43</lines>
+        <reason>JWT token provider already includes role in token generation (generateAccessToken method accepts role parameter). Need to verify role is extracted from User and passed correctly. getRoleFromToken method exists (line 83-86).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/security/JwtAuthenticationFilter.java</path>
+        <kind>filter</kind>
+        <symbol>JwtAuthenticationFilter</symbol>
+        <lines>37-41</lines>
+        <reason>JWT authentication filter extracts role from token (line 37) and sets as authority with ROLE_ prefix (line 41). Authority format needs to match Spring Security @PreAuthorize hasRole checks.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/config/SecurityConfig.java</path>
+        <kind>config</kind>
+        <symbol>SecurityConfig</symbol>
+        <lines>22-37</lines>
+        <reason>Spring Security configuration needs to enable method security (@EnableMethodSecurity) for role-based endpoint protection using @PreAuthorize annotations. Currently only configures basic JWT filter chain.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service</kind>
+        <symbol>AuditService</symbol>
+        <lines>6-14</lines>
+        <reason>Audit service interface needs to be extended with methods for logging role changes (ROLE_CHANGED action) and invitation operations (INVITATION_CREATED, INVITATION_ACCEPTED, INVITATION_EXPIRED).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/auth/AuthController.java</path>
+        <kind>controller</kind>
+        <symbol>AuthController</symbol>
+        <lines>1-100</lines>
+        <reason>REST controller pattern to follow for UserController and InvitationController. Shows authentication endpoint structure and error handling patterns. Uses JwtTokenProvider for token generation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/EmailService.java</path>
+        <kind>service</kind>
+        <symbol>EmailService</symbol>
+        <lines>1-20</lines>
+        <reason>Email service interface needs to be extended with sendInvitationEmail method following the pattern from sendPasswordResetEmail. Uses Resend email service for delivery.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem type="maven">
+        <package name="org.springframework.boot:spring-boot-starter-security" version="3.5.7"/>
+        <package name="io.jsonwebtoken:jjwt-api" version="0.12.6"/>
+        <package name="io.jsonwebtoken:jjwt-impl" version="0.12.6"/>
+        <package name="org.springframework.boot:spring-boot-starter-validation" version="3.5.7"/>
+        <package name="org.springframework.boot:spring-boot-starter-data-jpa" version="3.5.7"/>
+        <package name="com.resend:resend-java" version="3.1.0"/>
+      </ecosystem>
+      <ecosystem type="npm">
+        <package name="@mui/joy" version="5.0.0-beta.52"/>
+        <package name="@mui/material" version="^7.3.4"/>
+        <package name="react" version="^19.1.1"/>
+        <package name="react-router-dom" version="^7.9.5"/>
+        <package name="axios" version="^1.7.9"/>
+        <package name="zod" version="^4.1.12"/>
+      </ecosystem>
+      <ecosystem type="testing">
+        <package name="org.springframework.boot:spring-boot-starter-test" version="3.5.7"/>
+        <package name="org.testcontainers:junit-jupiter" version="1.20.3"/>
+        <package name="org.testcontainers:postgresql" version="1.20.3"/>
+        <package name="vitest" version="^2.1.4"/>
+        <package name="@testing-library/react" version="^16.1.1"/>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>User entity already has role field (String) from Story 1.3. Convert String role to Role enum for type safety while keeping String in database for flexibility. Add validation to ensure String values match enum values.</constraint>
+    <constraint>JWT token provider already includes role in token generation (generateAccessToken method accepts role parameter). Verify role is extracted from User entity and passed correctly to token generation.</constraint>
+    <constraint>JWT authentication filter extracts role from token but needs to properly set authority format as ROLE_ADMIN, ROLE_ACCOUNTANT, etc. to match Spring Security @PreAuthorize hasRole checks.</constraint>
+    <constraint>Follow Spring Security 6 method-level security patterns for role-based authorization. Use @PreAuthorize annotations for role-based endpoint protection (e.g., @PreAuthorize("hasRole('ADMIN')")).</constraint>
+    <constraint>Role enum values: ADMIN, ACCOUNTANT, CHIEF_ACCOUNTANT, CFO (database stores lowercase: admin, accountant, chief_accountant, cfo). Spring Security authorities format: ROLE_ADMIN, ROLE_ACCOUNTANT, etc.</constraint>
+    <constraint>Permission matrix must be documented in OpenAPI/Swagger annotations and separate documentation file. UI hiding is not a security boundary - backend must enforce all permissions.</constraint>
+    <constraint>Audit trail: All role changes must be logged with old/new role, who changed it, when, IP, and user agent. Logging must be transactional (fail if logging fails).</constraint>
+    <constraint>Role validation: Self-role-change prevention must be enforced at both API and UI levels. Error messages: 403 responses must include context-aware messages following format: { "error": { "code": "FORBIDDEN", "message": "Access denied. Required role: ADMIN" }, "meta": {...} }</constraint>
+    <constraint>Default role: New users without explicit role assignment default to 'accountant'. Role validation: Invalid role values must be rejected with 400 Bad Request (not 403). JWT token missing role: Return 401 Unauthorized (not 403) when role claim is missing from token.</constraint>
+    <constraint>User invitation pattern: Follow existing email service pattern (EmailService.sendPasswordResetEmail) for invitation emails. Invitation tokens should be secure (UUID v4, at least 32 chars). Invitation table implements CompanyScopedEntity for multi-tenancy. Public invitation endpoints (/api/v1/invitations/{token}) do not require authentication but must validate token properly.</constraint>
+    <constraint>Migration V5 needed to add CHECK constraint for valid roles and set default roles for existing users. Migration V6 needed to create invitations table with indexes and foreign keys.</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>POST /api/v1/auth/login</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/auth/login
+Request: { email: string, password: string, rememberMe?: boolean }
+Response: { data: { accessToken: string, user: UserResponse } }</signature>
+      <path>backend/src/main/java/com/accounting/controller/auth/AuthController.java</path>
+    </interface>
+    <interface>
+      <name>JwtTokenProvider.generateAccessToken</name>
+      <kind>method</kind>
+      <signature>String generateAccessToken(Long userId, String email, String role)</signature>
+      <path>backend/src/main/java/com/accounting/security/JwtTokenProvider.java</path>
+    </interface>
+    <interface>
+      <name>JwtTokenProvider.getRoleFromToken</name>
+      <kind>method</kind>
+      <signature>String getRoleFromToken(String token)</signature>
+      <path>backend/src/main/java/com/accounting/security/JwtTokenProvider.java</path>
+    </interface>
+    <interface>
+      <name>User.getRole / User.setRole</name>
+      <kind>method</kind>
+      <signature>String getRole() / void setRole(String role)</signature>
+      <path>backend/src/main/java/com/accounting/entity/User.java</path>
+    </interface>
+    <interface>
+      <name>AuditService</name>
+      <kind>interface</kind>
+      <signature>interface AuditService {
+  void logLoginSuccess(User user, HttpServletRequest request);
+  void logLoginFailure(User user, String email, String reason, HttpServletRequest request);
+  void logPasswordResetRequest(User user, HttpServletRequest request);
+  void logPasswordResetCompleted(User user, HttpServletRequest request);
+}</signature>
+      <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+    </interface>
+    <interface>
+      <name>EmailService</name>
+      <kind>interface</kind>
+      <signature>interface EmailService {
+  void sendPasswordResetEmail(String toEmail, String resetToken, String resetUrl);
+}</signature>
+      <path>backend/src/main/java/com/accounting/service/EmailService.java</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/users (to be created)</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/users
+Request: { email: string, password: string, fullName: string, role?: string }
+Response: { data: UserResponse }</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java (NEW)</path>
+    </interface>
+    <interface>
+      <name>PUT /api/v1/users/{id}/role (to be created)</name>
+      <kind>REST endpoint</kind>
+      <signature>PUT /api/v1/users/{id}/role
+Request: { role: string }
+Response: { data: UserResponse }
+Authorization: ADMIN or CHIEF_ACCOUNTANT only</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java (NEW)</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/invitations (to be created)</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/invitations
+Request: { email: string, role?: string }
+Response: { data: { invitationToken: string, expiresAt: LocalDateTime } }
+Authorization: ADMIN or CHIEF_ACCOUNTANT only</signature>
+      <path>backend/src/main/java/com/accounting/controller/InvitationController.java (NEW)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/invitations/{token} (to be created)</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/invitations/{token}
+Response: { data: { email: string, companyName: string, role: string, expiresAt: LocalDateTime } }
+Authorization: Public</signature>
+      <path>backend/src/main/java/com/accounting/controller/InvitationController.java (NEW)</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/invitations/{token}/accept (to be created)</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/invitations/{token}/accept
+Request: { password: string, confirmPassword: string, fullName: string }
+Response: { data: { user: UserResponse, accessToken: string } }
+Authorization: Public</signature>
+      <path>backend/src/main/java/com/accounting/controller/InvitationController.java (NEW)</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Backend: JUnit 5 + Spring Boot Test with Testcontainers for database tests. Mockito for service unit tests (role validation, permission checks). Integration tests for role-based endpoint access (test 403 responses). Frontend: Vitest + Testing Library for RoleGuard component and role utilities. Integration: Test role-based access control end-to-end (login as different roles, verify access). Security: Test self-role-change prevention, unauthorized role changes are blocked.</standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/impl/ - Service unit tests</location>
+      <location>backend/src/test/java/com/accounting/controller/ - Integration tests for REST endpoints</location>
+      <location>backend/src/test/java/com/accounting/security/ - Security filter and token provider tests</location>
+      <location>frontend/src/**/*.test.tsx - Frontend component tests</location>
+      <location>frontend/src/**/*.test.ts - Frontend utility and hook tests</location>
+    </locations>
+    <ideas>
+      <idea acId="1">Test role enum validation: create user with valid role (admin, accountant, chief_accountant, cfo) - should succeed. Create user with invalid role - should fail with 400 Bad Request.</idea>
+      <idea acId="1">Test default role assignment: create user without role field - should default to 'accountant'. Verify existing users with NULL role are updated to 'accountant' via migration.</idea>
+      <idea acId="3">Test 403 responses: call protected endpoint without required role - should return 403 with message "Access denied. Required role: ADMIN". Test missing role in JWT - should return 401 Unauthorized.</idea>
+      <idea acId="4">Test UI visibility: login as accountant - admin menu items should be hidden. Navigate to /admin via URL as accountant - should show 403 error page.</idea>
+      <idea acId="5">Test audit logging: change user role - verify audit log created with old_role, new_role, changed_by_user_id, target_user_id, timestamp, IP address. Test logging failure blocks role change.</idea>
+      <idea acId="6">Test self-role-change prevention: attempt to change own role - should fail with 403 "You cannot change your own role". Test as non-admin attempting to change role - should fail with 403.</idea>
+      <idea acId="9">Test JWT role claim: verify access token includes role claim. Verify token refresh preserves role claim. Test missing role claim - authentication should fail with 401.</idea>
+      <idea acId="10">Test Spring Security context: after JWT validation, verify role is available in SecurityContext as ROLE_ADMIN, ROLE_ACCOUNTANT, etc. Test @PreAuthorize annotations work correctly.</idea>
+      <idea acId="11">Test invitation creation: admin creates invitation - should succeed and generate token. Test duplicate invitation (same email+company) - should fail with 409 Conflict. Test invitation acceptance - should create user with correct company and role.</idea>
+      <idea acId="13">Test invitation acceptance flow: validate token, check expiration, allow registration, create user account, mark invitation as accepted. Test expired token - should fail with 404. Test invalid token - should fail with 404.</idea>
+      <idea acId="14">Test invitation audit logging: verify all invitation actions (create, accept, expire) are logged with inviter, invitee email, company, status, timestamp, IP address.</idea>
+    </ideas>
+  </tests>
+</story-context>
+

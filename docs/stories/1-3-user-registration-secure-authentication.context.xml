@@ -1,0 +1,481 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>3</storyId>
+    <title>User Registration & Secure Authentication</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-10-31T21:46:02Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-3-user-registration-secure-authentication.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user/admin</asA>
+    <iWant>secure registration, login, and account security features</iWant>
+    <soThat>I can trust platform access is safe and compliant</soThat>
+    <tasks>
+- [ ] Backend: User entity and authentication infrastructure (AC: #2, #3, #4, #5)
+  - [ ] Create User entity with password_hash field (BIGSERIAL id, email, password_hash, full_name, role, company_id nullable, locked_until, failed_login_count, reset_token, reset_token_expiry, created_at, updated_at)
+  - [ ] Implement `CompanyScopedEntity` interface on User entity for repository-level scoping (follow pattern from Customer entity)
+  - [ ] Create UserRepository extending JpaRepository with findByEmail, existsByEmail methods, using ScopedSpecifications for company filtering
+  - [ ] Create AuthService interface and AuthServiceImpl with login, refresh, logout, register methods
+  - [ ] Implement password hashing using Argon2 (preferred) or Bcrypt (BCryptPasswordEncoder as fallback)
+  - [ ] Implement JWT token generation/validation (use jjwt library; access token 15-30min expiry, refresh token 7-30 days default)
+  - [ ] Configure Spring Security filter chain for JWT validation (JwtAuthenticationFilter)
+  - [ ] Add HttpOnly/Secure cookie configuration for refresh tokens (CookieConfig or SecurityConfig)
+- [ ] Backend: Registration endpoint and password validation (AC: #1)
+  - [ ] Create AuthController with POST /api/v1/auth/register endpoint
+  - [ ] Implement password complexity validation (min 8 chars, uppercase, lowercase, number, special char) - use Bean Validation @Pattern or custom validator
+  - [ ] Create RegisterRequest DTO with email, password, fullName fields (company_id optional/null for MVP)
+  - [ ] Validate email format (@Email annotation) and uniqueness (check UserRepository.existsByEmail)
+  - [ ] Return user data (excluding password_hash) in `{ data: {...} }` response envelope format (follow CompanyController pattern)
+  - [ ] Handle duplicate email with 409 Conflict error using RestExceptionHandler
+- [ ] Backend: Login endpoint with rate limiting (AC: #3, #7)
+  - [ ] Create POST /api/v1/auth/login endpoint in AuthController
+  - [ ] Create LoginRequest DTO with email, password fields
+  - [ ] Implement failed login attempt tracking (increment failed_login_count, set locked_until timestamp after 5 failed attempts for 5 minutes)
+  - [ ] Log IP address and user agent on failed login attempts (use HttpServletRequest to extract)
+  - [ ] Return access token and refresh token on successful login (refresh token in HttpOnly cookie, access token in response body)
+  - [ ] Clear failed_login_count and locked_until on successful login
+  - [ ] Check account lockout status before authentication (return 423 Locked if locked_until > now)
+- [ ] Backend: Password reset flow (AC: #6)
+  - [ ] Create POST /api/v1/auth/forgot-password endpoint
+  - [ ] Generate secure reset token (expires in 30 minutes)
+  - [ ] Store reset token in User entity or separate reset_tokens table
+  - [ ] Integrate with Maildev/Supabase email service to send reset link
+  - [ ] Create POST /api/v1/auth/reset-password endpoint
+  - [ ] Validate reset token expiration and one-time use
+  - [ ] Update password with new hash and invalidate reset token
+- [ ] Backend: Remember me functionality (AC: #5)
+  - [ ] Extend refresh token expiry to 30 days when "remember me" checkbox is true in LoginRequest
+  - [ ] Store refresh token in HttpOnly cookie with Secure flag (SameSite=Strict for CSRF protection)
+  - [ ] Implement refresh token rotation on use (generate new refresh token when old one used, invalidate old token)
+  - [ ] Create POST /api/v1/auth/refresh endpoint to exchange refresh token for new access token
+- [ ] Backend: Audit trail for authentication events (AC: #8)
+  - [ ] Create audit_logs table via Flyway migration (or use existing audit infrastructure if available)
+  - [ ] Log successful logins (user_id, timestamp, IP, user_agent, action='LOGIN_SUCCESS')
+  - [ ] Log failed login attempts (user_id or email if user not found, timestamp, IP, user_agent, reason='INVALID_CREDENTIALS' or 'ACCOUNT_LOCKED')
+  - [ ] Log password reset requests (user_id, timestamp, IP, action='PASSWORD_RESET_REQUESTED')
+  - [ ] Log password resets completed (user_id, timestamp, IP, action='PASSWORD_RESET_COMPLETED')
+  - [ ] Consider AOP-based audit logging pattern similar to CompanyScopeAspect for cross-cutting audit concerns
+- [ ] Frontend: Registration form and validation (AC: #1)
+  - [ ] Create Register.tsx page with email, password, fullName fields
+  - [ ] Implement password policy display (requirements checklist)
+  - [ ] Add Zod schema validation for password complexity
+  - [ ] Real-time validation feedback on password field
+  - [ ] Display error messages for duplicate email, weak password
+  - [ ] Submit to POST /api/v1/auth/register and handle success/error
+- [ ] Frontend: Login form with remember me (AC: #3, #5)
+  - [ ] Update Login.tsx with email, password fields and "Remember me" checkbox
+  - [ ] Implement form validation (email format, password required)
+  - [ ] Submit to POST /api/v1/auth/login
+  - [ ] Store access token in memory/state (not localStorage for security)
+  - [ ] Store refresh token in HttpOnly cookie (handled by backend)
+  - [ ] Handle account locked error (display lockout message with remaining time)
+  - [ ] Redirect to dashboard on successful login
+- [ ] Frontend: Forgot password flow (AC: #6)
+  - [ ] Add "Forgot password?" link on Login page
+  - [ ] Create ForgotPassword.tsx page with email input
+  - [ ] Submit to POST /api/v1/auth/forgot-password
+  - [ ] Display success message: "Reset link sent to your email"
+  - [ ] Create ResetPassword.tsx page with token from URL, new password fields
+  - [ ] Submit to POST /api/v1/auth/reset-password with token and new password
+  - [ ] Redirect to login page on success with success message
+- [ ] Frontend: Session management and token refresh (AC: #3, #4, #5)
+  - [ ] Create auth service (services/auth.ts) with login, logout, refresh methods
+  - [ ] Implement Axios interceptor to attach access token to requests
+  - [ ] Implement token refresh logic (call /api/v1/auth/refresh when access token expires)
+  - [ ] Handle 401 responses and attempt refresh, redirect to login if refresh fails
+  - [ ] Implement logout that clears tokens and cookies
+- [ ] Testing
+  - [ ] Backend: Unit tests for password hashing, JWT generation, validation logic
+  - [ ] Backend: Integration tests for registration, login, password reset endpoints
+  - [ ] Backend: Test rate limiting and account lockout behavior
+  - [ ] Frontend: Unit tests for form validation and password policy display
+  - [ ] Frontend: Integration tests for login flow and error handling
+  - [ ] E2E test: Complete registration → login → logout flow
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Signup form (email, password, full name); shows password policy and enforces complexity.
+2. Backend: password stored using Argon2 or Bcrypt; never logged/stored in plaintext.
+3. JWT issued on login; access token short-lived, refresh token long-lived.
+4. Session uses HttpOnly, Secure cookie setup (works with HTTPS locally/in prod).
+5. "Remember me" persists session up to 30 days using refresh tokens/cookies.
+6. "Forgot password" sends secure email from Maildev/Supabase, supports token expiration/reset link.
+7. Repeated failed login attempts lock out account for 5 minutes and log IP/user agent.
+8. Audit trail logs all logins, failed attempts, resets.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>1. Foundation & Authentication</section>
+        <snippet>FR01: Secure Login with JWT authentication, including "Remember Me," password reset, and secure sessions using HttpOnly/Secure cookies. FR02: Role-Based Access Control (RBAC) with four roles. FR03: Company Profile Management. NFR5-NFR9: Security requirements including RBAC enforcement, secure authentication, HTTPS/TLS, append-only audit trail.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Security Architecture, Authentication, API Contracts</section>
+        <snippet>JWT authentication with Spring Security 6: access tokens (15-30 min expiry), refresh tokens (7-30 days, stored in HttpOnly cookies). Password hashing: Argon2 or Bcrypt. Spring Security filter chain validates tokens. RBAC with role-based permissions enforced at API level.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Project Foundation & Secure Authentication</title>
+        <section>Acceptance Criteria (Authoritative), Detailed Design</section>
+        <snippet>AC1: User can log in with valid credentials; receives access/refresh tokens. AC2: Refresh flow issues new access token. AC3: RBAC enforced at protected endpoints. Data Models: users(id, email, password_hash, role, company_id, created_at, updated_at). Backend packages: controller/auth/, security/, entity/, repository/, service/impl/.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/stories/1-2-company-bootstrap-multitenancy.md</path>
+        <title>Story 1.2: Company Bootstrap & Multitenancy</title>
+        <section>Learnings from Previous Story</section>
+        <snippet>CompanyService available for company validation. CompanyScopeEnforcer and AOP-based enforcement pattern established. CompanyContext and CompanyContextFilter for tenant resolution. AOP-based enforcement for cross-cutting security concerns. Consistent error response format: { data: ... } envelope. Exception handling via RestExceptionHandler.java. Company scoping enforced at repository level via CompanyScopedEntity interface.</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/Customer.java</path>
+        <kind>entity</kind>
+        <symbol>Customer</symbol>
+        <lines>1-85</lines>
+        <reason>Example entity implementing CompanyScopedEntity interface. User entity should follow same pattern for company-level scoping.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/CustomerRepository.java</path>
+        <kind>repository</kind>
+        <symbol>CustomerRepository</symbol>
+        <lines>1-14</lines>
+        <reason>Repository pattern extending JpaRepository and JpaSpecificationExecutor for company scoping. UserRepository should follow same pattern: extend both interfaces and use ScopedSpecifications.companyScope() for filtering.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java</path>
+        <kind>interface</kind>
+        <symbol>CompanyScopedEntity</symbol>
+        <lines>1-6</lines>
+        <reason>Interface that User entity must implement for repository-level company scoping. Provides getCompanyId() method.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/CompanyController.java</path>
+        <kind>controller</kind>
+        <symbol>CompanyController</symbol>
+        <lines>32-46</lines>
+        <reason>Example REST controller showing { data: {...} } response envelope pattern. AuthController should follow same pattern for register endpoint.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/RestExceptionHandler.java</path>
+        <kind>exception-handler</kind>
+        <symbol>RestExceptionHandler</symbol>
+        <lines>1-86</lines>
+        <reason>Global exception handler pattern. Extend with authentication-specific exceptions (401 Unauthorized, 423 Locked for account lockout, 409 Conflict for duplicate email).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/security/CompanyScopeEnforcer.java</path>
+        <kind>security</kind>
+        <symbol>CompanyScopeEnforcer</symbol>
+        <lines>1-11</lines>
+        <reason>AOP-based enforcement pattern. Consider similar pattern for authentication event logging and rate limiting.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/security/CompanyScopeAspect.java</path>
+        <kind>security</kind>
+        <symbol>CompanyScopeAspect</symbol>
+        <lines>1-30</lines>
+        <reason>AOP-based cross-cutting concern pattern. Use similar approach for authentication audit logging (LOGIN_SUCCESS, LOGIN_FAILURE, PASSWORD_RESET_REQUESTED, etc.).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/resources/db/migration/V1__companies.sql</path>
+        <kind>migration</kind>
+        <symbol>V1__companies</symbol>
+        <lines>1-19</lines>
+        <reason>Example Flyway migration pattern. User entity migration (V3__users.sql) should follow similar structure with password_hash, locked_until, failed_login_count, reset_token fields.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/pom.xml</path>
+        <kind>dependency-manifest</kind>
+        <symbol>pom.xml</symbol>
+        <lines>1-123</lines>
+        <reason>Maven dependencies. Note: Spring Security not yet in dependencies - needs to be added. JWT library (jjwt) needs to be added for token generation/validation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/ScopedSpecifications.java</path>
+        <kind>utility</kind>
+        <symbol>ScopedSpecifications</symbol>
+        <lines>14-27</lines>
+        <reason>Repository-level company scoping utility. UserRepository should use ScopedSpecifications.companyScope() for company filtering, similar to CustomerRepository pattern.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/CompanyRepository.java</path>
+        <kind>repository</kind>
+        <symbol>CompanyRepository</symbol>
+        <lines>1-14</lines>
+        <reason>Repository pattern to follow for UserRepository. Includes findByEmail, existsByEmail methods. Uses Optional for nullable results.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/CompanyServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>CompanyServiceImpl</symbol>
+        <lines>1-102</lines>
+        <reason>Service implementation pattern with validation logic. AuthServiceImpl should follow similar structure with @Service and @Transactional annotations. Pattern for handling duplicate email validation using existsByEmail.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/security/CompanyContext.java</path>
+        <kind>security</kind>
+        <symbol>CompanyContext</symbol>
+        <lines>1-21</lines>
+        <reason>ThreadLocal context pattern for storing company context. Consider similar pattern for AuthContext if needed for storing authenticated user context during request processing.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/security/CompanyContextFilter.java</path>
+        <kind>security</kind>
+        <symbol>CompanyContextFilter</symbol>
+        <lines>1-44</lines>
+        <reason>Servlet filter pattern for extracting context from request. JwtAuthenticationFilter should follow similar pattern (OncePerRequestFilter) for extracting JWT from Authorization header and validating token.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <java>
+        <dependency>
+          <name>org.springframework.boot:spring-boot-starter-web</name>
+          <version>3.5.7</version>
+        </dependency>
+        <dependency>
+          <name>org.springframework.boot:spring-boot-starter-data-jpa</name>
+          <version>3.5.7</version>
+        </dependency>
+        <dependency>
+          <name>org.springframework.boot:spring-boot-starter-validation</name>
+          <version>3.5.7</version>
+        </dependency>
+        <dependency>
+          <name>org.springframework.boot:spring-boot-starter-security</name>
+          <version>3.5.7</version>
+          <note>Needs to be added</note>
+        </dependency>
+        <dependency>
+          <name>org.flywaydb:flyway-core</name>
+          <version>10.20.1</version>
+        </dependency>
+        <dependency>
+          <name>io.jsonwebtoken:jjwt-api</name>
+          <version>latest</version>
+          <note>Needs to be added for JWT support</note>
+        </dependency>
+        <dependency>
+          <name>io.jsonwebtoken:jjwt-impl</name>
+          <version>latest</version>
+          <note>Needs to be added for JWT support</note>
+        </dependency>
+        <dependency>
+          <name>io.jsonwebtoken:jjwt-jackson</name>
+          <version>latest</version>
+          <note>Needs to be added for JWT support</note>
+        </dependency>
+        <dependency>
+          <name>org.bouncycastle:bcprov-jdk15on</name>
+          <version>latest</version>
+          <note>Optional: for Argon2 password hashing if library supports it</note>
+        </dependency>
+        <dependency>
+          <name>org.springframework.security:spring-security-crypto</name>
+          <version>6.x</version>
+          <note>For BCryptPasswordEncoder fallback</note>
+        </dependency>
+      </java>
+      <javascript>
+        <dependency>
+          <name>react</name>
+          <version>^19.1.1</version>
+        </dependency>
+        <dependency>
+          <name>@mui/material</name>
+          <version>^7.3.4</version>
+        </dependency>
+        <dependency>
+          <name>zod</name>
+          <version>^4.1.12</version>
+          <note>For form validation including password complexity</note>
+        </dependency>
+        <dependency>
+          <name>axios</name>
+          <version>latest</version>
+          <note>Needs to be added for HTTP client with interceptors</note>
+        </dependency>
+      </javascript>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <category>Architecture Pattern</category>
+      <description>Follow Spring Security 6 JWT filter chain pattern for stateless authentication. Use JwtAuthenticationFilter for token validation in security filter chain.</description>
+    </constraint>
+    <constraint>
+      <category>Password Hashing</category>
+      <description>Prefer Argon2id if library stable, fallback to Bcrypt (BCryptPasswordEncoder). Never log or store passwords in plaintext.</description>
+    </constraint>
+    <constraint>
+      <category>JWT Tokens</category>
+      <description>Use jjwt library or Spring Security JWT support. Access token 15-30min expiry, refresh token 7-30 days default (extendable to 30 days for "remember me").</description>
+    </constraint>
+    <constraint>
+      <category>HttpOnly Cookies</category>
+      <description>Configure in Spring Security for refresh tokens; frontend cannot access via JavaScript. Secure flag for HTTPS, SameSite=Strict for CSRF protection.</description>
+    </constraint>
+    <constraint>
+      <category>Rate Limiting</category>
+      <description>Use Spring Security authentication failure handler to track attempts and implement lockout. Lock account for 5 minutes after 5 failed attempts. Log IP address and user agent.</description>
+    </constraint>
+    <constraint>
+      <category>Email Service</category>
+      <description>Integrate with Maildev for local dev, Supabase email service (Resend) for production password reset emails.</description>
+    </constraint>
+    <constraint>
+      <category>Audit Trail</category>
+      <description>Use existing audit infrastructure or create audit_logs table with append-only constraints. Consider AOP-based audit logging pattern similar to CompanyScopeAspect for cross-cutting audit concerns.</description>
+    </constraint>
+    <constraint>
+      <category>Multitenancy</category>
+      <description>User entity implements CompanyScopedEntity interface for repository-level scoping. MVP approach: Registration creates user without company_id (nullable), admin assigns company later. Registration endpoint returns user; company assignment handled separately by admin (Story 1.5).</description>
+    </constraint>
+    <constraint>
+      <category>API Response Format</category>
+      <description>Return user data in { data: {...} } response envelope format (follow CompanyController pattern). Handle errors via RestExceptionHandler with structured error responses.</description>
+    </constraint>
+    <constraint>
+      <category>Password Complexity</category>
+      <description>Minimum 8 characters, at least one uppercase, lowercase, number, and special character. Enforce with Bean Validation @Pattern or custom validator on backend. Display policy and validate with Zod on frontend.</description>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /api/v1/auth/register</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/auth/register
+Request: { email: string, password: string, fullName: string }
+Response: { data: { id: number, email: string, fullName: string, role: string } }
+Error: 409 Conflict for duplicate email, 400 Bad Request for validation errors</signature>
+      <path>backend/src/main/java/com/accounting/controller/auth/AuthController.java</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/auth/login</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/auth/login
+Request: { email: string, password: string, rememberMe?: boolean }
+Response: { data: { accessToken: string } }
+Cookie: refreshToken (HttpOnly, Secure, SameSite=Strict)
+Error: 401 Unauthorized for invalid credentials, 423 Locked for account lockout</signature>
+      <path>backend/src/main/java/com/accounting/controller/auth/AuthController.java</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/auth/refresh</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/auth/refresh
+Request: Cookie: refreshToken
+Response: { data: { accessToken: string } }
+Cookie: refreshToken (new, rotated)
+Error: 401 Unauthorized for invalid/expired refresh token</signature>
+      <path>backend/src/main/java/com/accounting/controller/auth/AuthController.java</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/auth/forgot-password</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/auth/forgot-password
+Request: { email: string }
+Response: { data: { message: string } }
+Error: 404 Not Found if email not found (security: don't reveal existence)</signature>
+      <path>backend/src/main/java/com/accounting/controller/auth/AuthController.java</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/auth/reset-password</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/auth/reset-password
+Request: { token: string, password: string }
+Response: { data: { message: string } }
+Error: 400 Bad Request for invalid/expired token, validation errors</signature>
+      <path>backend/src/main/java/com/accounting/controller/auth/AuthController.java</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/auth/logout</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/auth/logout
+Request: Cookie: refreshToken
+Response: 204 No Content
+Error: 401 Unauthorized for invalid refresh token
+Note: Server-side token invalidation if implemented</signature>
+      <path>backend/src/main/java/com/accounting/controller/auth/AuthController.java</path>
+    </interface>
+    <interface>
+      <name>CompanyScopedEntity</name>
+      <kind>Java interface</kind>
+      <signature>public interface CompanyScopedEntity {
+  Long getCompanyId();
+}</signature>
+      <path>backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java</path>
+    </interface>
+    <interface>
+      <name>AuthService</name>
+      <kind>Java service interface</kind>
+      <signature>public interface AuthService {
+  AuthResponse login(LoginRequest request, HttpServletRequest httpRequest);
+  AuthResponse refresh(String refreshToken);
+  void logout(String refreshToken);
+  User register(RegisterRequest request);
+  void requestPasswordReset(String email);
+  void resetPassword(String token, String newPassword);
+}</signature>
+      <path>backend/src/main/java/com/accounting/service/AuthService.java</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend: JUnit 5 + Spring Boot Test with Testcontainers for database tests. Mockito for service unit tests (password hashing, JWT generation). Integration tests for registration, login, password reset endpoints. Test rate limiting and account lockout behavior. Frontend: Vitest + Testing Library for form validation and user interactions. Integration tests for login flow and error handling. E2E test: Complete registration → login → logout flow. Security: Test rate limiting, account lockout, token expiration scenarios. Coverage targets: 60% business logic layer for auth, 80%+ on token and RBAC branches.
+    </standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/**/*Test.java</location>
+      <location>backend/src/test/java/com/accounting/controller/auth/**/*Test.java</location>
+      <location>backend/src/test/java/com/accounting/security/**/*Test.java</location>
+      <location>frontend/src/**/*.test.tsx</location>
+      <location>frontend/src/**/*.test.ts</location>
+    </locations>
+    <ideas>
+      <test>
+        <acceptanceCriteriaId>AC#1</acceptanceCriteriaId>
+        <description>Test registration form displays password policy requirements. Test password complexity validation rejects weak passwords. Test successful registration returns user data without password_hash.</description>
+      </test>
+      <test>
+        <acceptanceCriteriaId>AC#2</acceptanceCriteriaId>
+        <description>Test password is hashed with Argon2 or Bcrypt before storage. Test password_hash is never logged or returned in API responses. Test password verification works correctly.</description>
+      </test>
+      <test>
+        <acceptanceCriteriaId>AC#3</acceptanceCriteriaId>
+        <description>Test JWT access token issued on successful login with correct expiry (15-30min). Test refresh token issued with correct expiry (7-30 days). Test token validation works in JwtAuthenticationFilter.</description>
+      </test>
+      <test>
+        <acceptanceCriteriaId>AC#4</acceptanceCriteriaId>
+        <description>Test refresh token stored in HttpOnly cookie. Test Secure flag set (works with HTTPS). Test SameSite=Strict for CSRF protection.</description>
+      </test>
+      <test>
+        <acceptanceCriteriaId>AC#5</acceptanceCriteriaId>
+        <description>Test "remember me" extends refresh token expiry to 30 days. Test refresh token rotation on use (old token invalidated, new token generated). Test remember me session persists across browser restarts.</description>
+      </test>
+      <test>
+        <acceptanceCriteriaId>AC#6</acceptanceCriteriaId>
+        <description>Test forgot-password generates secure reset token (expires in 30 minutes). Test email sent via Maildev/Supabase. Test reset-password validates token expiration and one-time use. Test password updated and token invalidated after reset.</description>
+      </test>
+      <test>
+        <acceptanceCriteriaId>AC#7</acceptanceCriteriaId>
+        <description>Test failed login increments failed_login_count. Test account locked after 5 failed attempts for 5 minutes. Test IP address and user agent logged on failed attempts. Test 423 Locked returned when account is locked. Test lockout cleared on successful login.</description>
+      </test>
+      <test>
+        <acceptanceCriteriaId>AC#8</acceptanceCriteriaId>
+        <description>Test audit_logs table created with append-only constraints. Test successful logins logged (user_id, timestamp, IP, user_agent, action='LOGIN_SUCCESS'). Test failed login attempts logged (reason='INVALID_CREDENTIALS' or 'ACCOUNT_LOCKED'). Test password reset requests and completions logged.</description>
+      </test>
+    </ideas>
+  </tests>
+</story-context>
+

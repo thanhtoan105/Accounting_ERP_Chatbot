@@ -1,0 +1,359 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>5</storyId>
+    <title>User &amp; Profile Management</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-01T12:38:40Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-5-user-profile-management.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As an admin</asA>
+    <iWant>I want to list, filter, create, edit, or deactivate users and assign roles</iWant>
+    <soThat>so that I can manage security and onboard/change staff</soThat>
+    <tasks>
+      <task category="Backend" ac="1">User listing and filtering: Create UserController endpoint GET /api/v1/users with query parameters (role, status, search, page, size), implement UserService.findAllWithFilters with company scoping, add UserRepository query methods (findByRoleAndCompanyId, findByEmailContainingIgnoreCase, findByFullNameContainingIgnoreCase), return paginated response with UserDTO list (exclude password_hash), add RBAC (only admin/chief_accountant can list users)</task>
+      <task category="Backend" ac="2,7">User creation and validation: Create POST /api/v1/users endpoint (admin/chief only), create CreateUserRequest DTO with validation (email unique/format, fullName, role optional/default accountant, companyId auto from context), implement UserService.createUser with email uniqueness check per company, generate temporary password or send invitation email (reuse InvitationService from Story 1.4), validate all fields using Bean Validation, return 400 Bad Request with field errors if validation fails, return 409 Conflict if email already exists, audit log user creation (AUDIT_USER_CREATED)</task>
+      <task category="Backend" ac="2,7">User update and validation: Create PUT /api/v1/users/{id} endpoint (admin/chief only, or user editing own profile), create UpdateUserRequest DTO with optional fields (fullName, role if admin/chief, status), implement UserService.updateUser with validation (email cannot be changed, role changes follow Story 1.4 rules, status changes only admin/chief, user can edit own fullName but not role or status), audit log user updates (AUDIT_USER_UPDATED) with old/new values</task>
+      <task category="Backend" ac="3">User deactivation and login prevention: Add status field to User entity if not present (ACTIVE, INACTIVE, LOCKED), update AuthService.login() to check user status and reject if INACTIVE with message "Account is deactivated", create PUT /api/v1/users/{id}/deactivate endpoint (admin/chief only), create PUT /api/v1/users/{id}/activate endpoint (admin/chief only), deactivated users appear in separate section or with visual indicator in listing, audit log activation/deactivation (AUDIT_USER_DEACTIVATED, AUDIT_USER_ACTIVATED)</task>
+      <task category="Backend" ac="4">Password reset by admin: Create POST /api/v1/users/{id}/reset-password endpoint (admin/chief only), generate secure password reset token (reuse EmailService.sendPasswordResetEmail from Story 1.3), token expires after 30 minutes, send password reset email to user (reuse EmailService pattern), audit log password reset initiated by admin (AUDIT_PASSWORD_RESET_ADMIN) with admin user_id and target user_id</task>
+      <task category="Backend" ac="5">User profile management: Create GET /api/v1/users/me endpoint (authenticated users only), return current user profile (email, fullName, role, companyId, createdAt), create PUT /api/v1/users/me endpoint for profile updates, allow updating fullName only (reject role/status changes), create POST /api/v1/users/me/change-password endpoint, validate current password, new password strength, confirm password match, update password_hash using BCrypt, audit log profile changes (AUDIT_PROFILE_UPDATED) and password changes (AUDIT_PASSWORD_CHANGED)</task>
+      <task category="Backend" ac="6">Role badge data in responses: Ensure UserDTO includes role field (already in User entity from Story 1.4), return role in all user listing and detail endpoints, role display formatting follows Story 1.4 patterns (lowercase in DB, uppercase in responses)</task>
+      <task category="Frontend" ac="1,6">User listing page: Create UserManagement page (extend existing from Story 1.4 or create new if needed), display user table with columns (Email, Full Name, Role Badge, Status, Actions), add filters (Role dropdown: all, admin, accountant, chief_accountant, cfo; Status dropdown: all, active, inactive), add search input (typeahead on email and name), add pagination controls (20 per page), visual separation for inactive users (grayed out or separate section), role badge component (reuse from Story 1.4)</task>
+      <task category="Frontend" ac="2">User creation form: Create CreateUserDialog/Modal component, form fields (Email required/validated, Full Name required, Role optional/default accountant), email uniqueness check (show error if duplicate), form validation (email format, required fields), submit creates user via POST /api/v1/users, show success message with user details</task>
+      <task category="Frontend" ac="2">User edit form: Create EditUserDialog component, load user data from GET /api/v1/users/{id}, form fields (Full Name editable, Role editable if admin/chief/disabled if own account, Status toggle admin/chief only), validation (cannot change own role - show warning if attempt), submit updates user via PUT /api/v1/users/{id}</task>
+      <task category="Frontend" ac="3">User deactivation UI: Add "Deactivate" button in user row (admin/chief only, disabled for own account), confirmation modal ("Are you sure you want to deactivate {email}? They will not be able to log in."), call PUT /api/v1/users/{id}/deactivate, update UI (show inactive badge, gray out row), add "Activate" button for inactive users</task>
+      <task category="Frontend" ac="4">Password reset by admin: Add "Reset Password" button in user row (admin/chief only), confirmation modal ("Send password reset email to {email}?"), call POST /api/v1/users/{id}/reset-password, show success message ("Password reset email sent")</task>
+      <task category="Frontend" ac="5">User profile page: Create UserProfile page at route /profile, display current user info (Email read-only, Full Name editable, Role read-only badge, Company read-only), edit profile form (update fullName via PUT /api/v1/users/me), change password form (current password field, new password field with strength indicator, confirm password field, validation: current password must match, new password strength, passwords must match, submit via POST /api/v1/users/me/change-password), show success/error messages for profile and password updates</task>
+      <task category="Testing">Backend: Unit tests for UserService (create, update, deactivate, activation), integration tests for user listing with filters (role, status, search), integration tests for user creation (success, duplicate email, validation failures), integration tests for user update (success, validation, role change restrictions, self-edit restrictions), integration tests for deactivation (login blocked, visual separation), integration tests for password reset by admin (email sent, token expiry), integration tests for profile management (GET /me, PUT /me, change password), integration tests for audit logging (all user operations logged)</task>
+      <task category="Testing">Frontend: Unit tests for UserManagement page (filters, search, table display), unit tests for CreateUserDialog (form validation, submission), unit tests for EditUserDialog (form validation, role restrictions), unit tests for UserProfile page (profile edit, password change), integration tests (test full user management flow: create, edit, deactivate, activate, reset password; test profile self-edit flow: update name, change password), E2E tests (test user management permissions: admin can manage, accountant cannot)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">User listing supports filtering by role, status, and search by email/name</criterion>
+    <criterion id="2">Create/edit user form validates all fields; cannot duplicate email</criterion>
+    <criterion id="3">Deactivated users cannot log in (and are visually separated)</criterion>
+    <criterion id="4">"Reset password" flow allows admin to send an email to users; link expires after 30 minutes</criterion>
+    <criterion id="5">Profile screen allows user to edit their own name, view effective role, change password</criterion>
+    <criterion id="6">Role badge displayed on each user in lists and details</criterion>
+    <criterion id="7">User creation, edit, activation, deactivation, and role changes are all audit-logged with who/when</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR02: Role-Based Access Control (RBAC)</section>
+        <snippet>The system must define four roles with clear permissions: Admin (Technical) manages users, system configurations, and company settings; Accountant creates documents, views reports, manages master data; Chief Accountant closes accounting periods, approves documents, full accounting access, views audit logs; CFO has view-only access to financial reports and data.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR07: Basic Audit Trail</section>
+        <snippet>The system must record an append-only log for critical actions: document creation (who/when), posting (who/when). Logs cannot be deleted or modified.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Decision Summary - Authentication</section>
+        <snippet>JWT with Spring Security 6 - Stateless, scalable, industry standard authentication pattern for Epic 1.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-4-role-based-access-control-rbac.md</path>
+        <title>Story 1.4: Role-Based Access Control (RBAC)</title>
+        <section>Learnings from Previous Story</section>
+        <snippet>UserController already exists at backend/src/main/java/com/accounting/controller/admin/UserController.java with role management endpoints - extend with user CRUD operations. UserService already has role update methods - extend with user creation, update, deactivation methods. Audit logging pattern established - use AuditService for all user operations.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-3-user-registration-secure-authentication.md</path>
+        <title>Story 1.3: User Registration & Secure Authentication</title>
+        <section>Dev Notes</section>
+        <snippet>Email service pattern for password reset - reuse EmailService.sendPasswordResetEmail for admin-initiated password reset. Token generation and expiration logic already implemented.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-5-user-profile-management.md</path>
+        <title>Story 1.5: User & Profile Management</title>
+        <section>Dev Notes - Relevant architecture patterns and constraints</section>
+        <snippet>User entity already exists from Story 1.2 and Story 1.3, with role field from Story 1.4. Status field may need to be added if not present. RBAC enforcement: Follow Story 1.4 patterns - only admin and chief_accountant can manage users. Email uniqueness must be unique per company (multi-tenancy). Password reset: Reuse EmailService.sendPasswordResetEmail from Story 1.3.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/User.java</path>
+        <kind>entity</kind>
+        <symbol>User</symbol>
+        <lines>16-185</lines>
+        <reason>Core User entity - verify status field exists, add if missing. Currently has: id, email, passwordHash, fullName, role, companyId, lockedUntil, failedLoginCount, resetToken, resetTokenExpiry, createdAt, updatedAt. Missing status field (ACTIVE, INACTIVE, LOCKED) which is required for AC#3.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/UserRepository.java</path>
+        <kind>repository</kind>
+        <symbol>UserRepository</symbol>
+        <lines>N/A</lines>
+        <reason>Extend with filtering methods: findByRoleAndCompanyId, findByStatusAndCompanyId, findByEmailContainingIgnoreCaseAndCompanyId, findByFullNameContainingIgnoreCaseAndCompanyId for user listing with filters (AC#1).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/UserService.java</path>
+        <kind>service</kind>
+        <symbol>UserService</symbol>
+        <lines>11-54</lines>
+        <reason>Extend interface with: findAllWithFilters(role, status, search, pageable), createUser (already exists but may need extension), updateUser (NEW), deactivateUser (NEW), activateUser (NEW), resetPasswordByAdmin (NEW), getCurrentUserProfile (NEW), updateProfile (NEW), changePassword (NEW).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/UserServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>UserServiceImpl</symbol>
+        <lines>26-N/A</lines>
+        <reason>Implement extended UserService methods: findAllWithFilters with company scoping, createUser with email uniqueness check per company, updateUser with validation (email cannot be changed, role/status restrictions), deactivateUser, activateUser, resetPasswordByAdmin, getCurrentUserProfile, updateProfile, changePassword.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+        <kind>controller</kind>
+        <symbol>UserController</symbol>
+        <lines>33-152</lines>
+        <reason>Extend existing controller with: GET /api/v1/users (already exists but needs filters), POST /api/v1/users (already exists), PUT /api/v1/users/{id} (NEW), PUT /api/v1/users/{id}/deactivate (NEW), PUT /api/v1/users/{id}/activate (NEW), POST /api/v1/users/{id}/reset-password (NEW), GET /api/v1/users/me (NEW), PUT /api/v1/users/me (NEW), POST /api/v1/users/me/change-password (NEW).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service</kind>
+        <symbol>AuditService</symbol>
+        <lines>1-95</lines>
+        <reason>Extend with audit logging methods for user operations: logUserCreated, logUserUpdated, logUserDeactivated, logUserActivated, logPasswordResetByAdmin, logProfileUpdated, logPasswordChanged. Currently has: logLoginSuccess, logLoginFailure, logPasswordResetRequest, logPasswordResetCompleted, logRoleChange, logInvitationCreated, logInvitationAccepted, logInvitationExpired, logInvitationCancelled.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/EmailService.java</path>
+        <kind>service</kind>
+        <symbol>EmailService</symbol>
+        <lines>1-28</lines>
+        <reason>Reuse sendPasswordResetEmail method for admin-initiated password reset (AC#4). Method signature: void sendPasswordResetEmail(String toEmail, String resetToken). Token generation and expiration logic already implemented in AuthService.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/AuthServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>AuthServiceImpl</symbol>
+        <lines>N/A</lines>
+        <reason>Extend login() method to check user status and reject if INACTIVE with message "Account is deactivated" (AC#3). Currently handles password validation and JWT token generation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/dto/CreateUserRequest.java</path>
+        <kind>dto</kind>
+        <symbol>CreateUserRequest</symbol>
+        <lines>N/A</lines>
+        <reason>May already exist from Story 1.4, extend if needed with validation: email (unique, format), fullName, role (optional, default accountant), companyId (auto from context).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/dto/UpdateUserRequest.java</path>
+        <kind>dto</kind>
+        <symbol>UpdateUserRequest</symbol>
+        <lines>N/A</lines>
+        <reason>NEW - DTO for user updates with optional fields: fullName, role (if admin/chief), status.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/dto/UserDTO.java</path>
+        <kind>dto</kind>
+        <symbol>UserDTO</symbol>
+        <lines>N/A</lines>
+        <reason>Verify includes role and status fields. Used for user listing and detail endpoints (AC#6).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/dto/ChangePasswordRequest.java</path>
+        <kind>dto</kind>
+        <symbol>ChangePasswordRequest</symbol>
+        <lines>N/A</lines>
+        <reason>NEW - DTO for password change: currentPassword, newPassword, confirmPassword.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/dto/UpdateProfileRequest.java</path>
+        <kind>dto</kind>
+        <symbol>UpdateProfileRequest</symbol>
+        <lines>N/A</lines>
+        <reason>NEW - DTO for profile updates: fullName.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/pages/UserManagement.tsx</path>
+        <kind>component</kind>
+        <symbol>UserManagement</symbol>
+        <lines>N/A</lines>
+        <reason>Extend from Story 1.4 or create new - add filters (role, status), search input, deactivation UI, visual separation for inactive users (AC#1, AC#3, AC#6).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/pages/UserProfile.tsx</path>
+        <kind>component</kind>
+        <symbol>UserProfile</symbol>
+        <lines>N/A</lines>
+        <reason>NEW - User profile page with edit and password change (AC#5). Route: /profile.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/CreateUserDialog.tsx</path>
+        <kind>component</kind>
+        <symbol>CreateUserDialog</symbol>
+        <lines>N/A</lines>
+        <reason>May exist from Story 1.4, extend or create new - form fields (Email, Full Name, Role), email uniqueness check, form validation, submit creates user via POST /api/v1/users (AC#2).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/EditUserDialog.tsx</path>
+        <kind>component</kind>
+        <symbol>EditUserDialog</symbol>
+        <lines>N/A</lines>
+        <reason>NEW - Dialog for editing users with form fields (Full Name editable, Role editable if admin/chief/disabled if own account, Status toggle admin/chief only), validation (cannot change own role), submit updates user via PUT /api/v1/users/{id} (AC#2).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/services/user.ts</path>
+        <kind>service</kind>
+        <symbol>userService</symbol>
+        <lines>N/A</lines>
+        <reason>Extend from Story 1.4 with: getAllUsers (add filters), createUser, updateUser, deactivateUser, activateUser, resetPasswordByAdmin, getCurrentUserProfile, updateProfile, changePassword.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency ecosystem="maven" name="Spring Boot" version="3.5.7">Core backend framework providing Spring MVC, Spring Security, Spring Data JPA, Bean Validation</dependency>
+      <dependency ecosystem="maven" name="spring-boot-starter-security" version="3.5.7">Spring Security for authentication and authorization, role-based access control</dependency>
+      <dependency ecosystem="maven" name="spring-boot-starter-validation" version="3.5.7">Bean Validation for DTO validation (@Email, @NotBlank, @ValidRole)</dependency>
+      <dependency ecosystem="maven" name="spring-boot-starter-data-jpa" version="3.5.7">JPA/Hibernate for User entity persistence and repository methods</dependency>
+      <dependency ecosystem="maven" name="io.jsonwebtoken:jjwt" version="0.12.6">JWT token generation and validation for authentication</dependency>
+      <dependency ecosystem="maven" name="com.resend:resend-java" version="3.1.0">Email service for password reset and invitation emails</dependency>
+      <dependency ecosystem="maven" name="org.flywaydb:flyway-core" version="10.20.1">Database migrations for adding status field to users table</dependency>
+      <dependency ecosystem="npm" name="react" version="^19.1.1">Frontend framework for UserManagement and UserProfile pages</dependency>
+      <dependency ecosystem="npm" name="@mui/material" version="^7.3.4">UI components for forms, dialogs, tables</dependency>
+      <dependency ecosystem="npm" name="@mui/joy" version="5.0.0-beta.52">UI components for role badges and status indicators</dependency>
+      <dependency ecosystem="npm" name="axios" version="^1.7.9">HTTP client for API calls to user endpoints</dependency>
+      <dependency ecosystem="npm" name="react-router-dom" version="^7.9.5">Routing for /profile route</dependency>
+      <dependency ecosystem="npm" name="zod" version="^4.1.12">Form validation schema for frontend validation</dependency>
+      <dependency ecosystem="npm" name="vitest" version="^2.1.4">Testing framework for frontend unit tests</dependency>
+      <dependency ecosystem="npm" name="@testing-library/react" version="^16.0.1">React component testing utilities</dependency>
+      <dependency ecosystem="maven" name="org.springframework.boot:spring-boot-starter-test" version="3.5.7">Backend testing framework with JUnit 5</dependency>
+      <dependency ecosystem="maven" name="org.testcontainers:junit-jupiter" version="1.20.3">Testcontainers for integration tests with PostgreSQL</dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>User entity already exists from Story 1.2 and Story 1.3, with role field from Story 1.4. Status field may need to be added if not present (ACTIVE, INACTIVE, LOCKED). Migration V7 needed if field doesn't exist.</constraint>
+    <constraint>RBAC enforcement: Follow Story 1.4 patterns - only admin and chief_accountant can manage users (create, edit, deactivate, reset password). Regular users can only edit their own profile.</constraint>
+    <constraint>Email uniqueness: Must be unique per company (multi-tenancy). Validate at database level (unique constraint on email + company_id) and application level.</constraint>
+    <constraint>Password reset: Reuse EmailService.sendPasswordResetEmail from Story 1.3. Token generation and expiration logic already implemented. Token expires after 30 minutes.</constraint>
+    <constraint>Audit logging: Use AuditService from Story 1.4. Log all user operations: CREATE, UPDATE, DEACTIVATE, ACTIVATE, PASSWORD_RESET_ADMIN, PROFILE_UPDATED, PASSWORD_CHANGED.</constraint>
+    <constraint>Company scoping: All user operations must be company-scoped. Users can only see/manage users in their company via CompanyScopedEntity interface.</constraint>
+    <constraint>Invitation integration: User creation can optionally use InvitationService from Story 1.4 instead of direct creation (sends invitation email). For MVP, support both direct creation (with temporary password) and invitation flow.</constraint>
+    <constraint>Role change restrictions: Users cannot change own role, only admin/chief can change roles. Follow Story 1.4 rules for role change validation.</constraint>
+    <constraint>Status field: If User entity doesn't have status field, add it: status VARCHAR(20) DEFAULT 'ACTIVE' with values: ACTIVE, INACTIVE, LOCKED. Migration needed: V7__add_user_status_field.sql.</constraint>
+    <constraint>Profile self-edit: Users can edit own fullName but not role or status. Profile endpoints (/me) should reject role/status changes.</constraint>
+    <constraint>Password validation: Reuse password strength validation from Story 1.3. BCrypt used for password hashing.</constraint>
+    <constraint>Frontend patterns: UserManagement page structure exists from Story 1.4 - extend with filters, search, deactivation UI. Role badge component pattern from Story 1.4 - reuse for role display.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GET /api/v1/users</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/users?role={role}&amp;status={status}&amp;search={search}&amp;page={page}&amp;size={size}</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+      <description>List users with filtering by role, status, and search by email/name. Returns paginated UserDTO list. Requires ADMIN or CHIEF_ACCOUNTANT role.</description>
+    </interface>
+    <interface>
+      <name>POST /api/v1/users</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/users - Body: CreateUserRequest { email, fullName, role? }</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+      <description>Create new user with role assignment. Validates email uniqueness per company. Returns created UserDTO. Requires ADMIN or CHIEF_ACCOUNTANT role.</description>
+    </interface>
+    <interface>
+      <name>PUT /api/v1/users/{id}</name>
+      <kind>REST endpoint</kind>
+      <signature>PUT /api/v1/users/{id} - Body: UpdateUserRequest { fullName?, role?, status? }</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+      <description>Update user (fullName, role if admin/chief, status if admin/chief). Email cannot be changed. User can edit own fullName but not role or status. Requires ADMIN/CHIEF_ACCOUNTANT role or user editing own profile.</description>
+    </interface>
+    <interface>
+      <name>PUT /api/v1/users/{id}/deactivate</name>
+      <kind>REST endpoint</kind>
+      <signature>PUT /api/v1/users/{id}/deactivate</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+      <description>Deactivate user - sets status to INACTIVE. Deactivated users cannot log in. Requires ADMIN or CHIEF_ACCOUNTANT role.</description>
+    </interface>
+    <interface>
+      <name>PUT /api/v1/users/{id}/activate</name>
+      <kind>REST endpoint</kind>
+      <signature>PUT /api/v1/users/{id}/activate</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+      <description>Activate user - sets status to ACTIVE. Requires ADMIN or CHIEF_ACCOUNTANT role.</description>
+    </interface>
+    <interface>
+      <name>POST /api/v1/users/{id}/reset-password</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/users/{id}/reset-password</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+      <description>Initiate password reset by admin - generates reset token, sends email to user. Token expires after 30 minutes. Requires ADMIN or CHIEF_ACCOUNTANT role.</description>
+    </interface>
+    <interface>
+      <name>GET /api/v1/users/me</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/users/me</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+      <description>Get current user profile (email, fullName, role, companyId, createdAt). Requires authenticated user.</description>
+    </interface>
+    <interface>
+      <name>PUT /api/v1/users/me</name>
+      <kind>REST endpoint</kind>
+      <signature>PUT /api/v1/users/me - Body: UpdateProfileRequest { fullName }</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+      <description>Update current user profile - only fullName can be updated. Rejects role/status changes. Requires authenticated user.</description>
+    </interface>
+    <interface>
+      <name>POST /api/v1/users/me/change-password</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/users/me/change-password - Body: ChangePasswordRequest { currentPassword, newPassword, confirmPassword }</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+      <description>Change current user password - validates current password, new password strength, confirm password match. Updates password_hash using BCrypt. Requires authenticated user.</description>
+    </interface>
+    <interface>
+      <name>UserService.findAllWithFilters</name>
+      <kind>service method</kind>
+      <signature>List&lt;User&gt; findAllWithFilters(String role, String status, String search, Pageable pageable)</signature>
+      <path>backend/src/main/java/com/accounting/service/UserService.java</path>
+      <description>Find users with filtering by role, status, and search. Company-scoped via CompanyScopedEntity. Returns paginated list.</description>
+    </interface>
+    <interface>
+      <name>EmailService.sendPasswordResetEmail</name>
+      <kind>service method</kind>
+      <signature>void sendPasswordResetEmail(String toEmail, String resetToken)</signature>
+      <path>backend/src/main/java/com/accounting/service/EmailService.java</path>
+      <description>Send password reset email to user with reset token. Reuse for admin-initiated password reset (AC#4).</description>
+    </interface>
+    <interface>
+      <name>AuditService.logUserCreated</name>
+      <kind>service method</kind>
+      <signature>void logUserCreated(User user, Long createdByUserId, HttpServletRequest request)</signature>
+      <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+      <description>Log user creation operation. Records user details, creator, timestamp, IP address. Required for AC#7.</description>
+    </interface>
+    <interface>
+      <name>AuthService.login</name>
+      <kind>service method</kind>
+      <signature>AuthResponse login(String email, String password, HttpServletRequest request)</signature>
+      <path>backend/src/main/java/com/accounting/service/impl/AuthServiceImpl.java</path>
+      <description>Authenticate user - must check user status and reject if INACTIVE with message "Account is deactivated". Required for AC#3.</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Backend: JUnit 5 + Spring Boot Test with Testcontainers for integration tests. Mockito for service unit tests (user validation, permission checks). Test coverage: user operations (create, update, deactivate, activate, reset password, profile management), RBAC enforcement, audit logging verification. Frontend: Vitest + Testing Library for UserManagement and UserProfile components. Test coverage: form validation, submission, role restrictions, permission checks. Integration: Test user management flow end-to-end (create, edit, deactivate, activate, reset password, profile self-edit). Security: Test RBAC enforcement (non-admin cannot manage users, users cannot change own role). Audit: Verify all user operations are logged with correct fields.</standards>
+    <locations>Backend tests: backend/src/test/java/com/accounting/service/impl/UserServiceImplTest.java (unit tests), backend/src/test/java/com/accounting/controller/admin/UserControllerIntegrationTest.java (integration tests). Frontend tests: frontend/src/**/*.test.tsx (component unit tests), frontend/src/**/*.spec.ts (integration tests). Test utilities: backend/src/test/java/com/accounting/test/IntegrationTest.java (base integration test class with Testcontainers setup).</locations>
+    <ideas>
+      <test acId="1">Test user listing with various filter combinations (role only, status only, search only, combined filters). Verify pagination works correctly. Test company scoping - users can only see users in their company.</test>
+      <test acId="2">Test user creation with valid data, duplicate email (should return 409), invalid email format (should return 400), missing required fields (should return 400). Test user update with valid data, attempt to change email (should be rejected), role change restrictions (non-admin cannot change roles, users cannot change own role).</test>
+      <test acId="3">Test deactivated user cannot log in (should return 401 with message "Account is deactivated"). Test deactivated users appear in separate section or with visual indicator in listing. Test activation flow - deactivated user can be activated and then can log in.</test>
+      <test acId="4">Test password reset by admin - verify reset token is generated, email is sent, token expires after 30 minutes. Test expired token cannot be used. Test password reset flow completion using the token.</test>
+      <test acId="5">Test profile endpoints (/me) - verify current user can view own profile, update fullName, cannot update role/status. Test password change - verify current password validation, new password strength validation, confirm password match validation, successful password update.</test>
+      <test acId="6">Test role badge display in user listing and detail views. Verify role formatting (lowercase in DB, uppercase in responses).</test>
+      <test acId="7">Test audit logging for all user operations - verify logUserCreated, logUserUpdated, logUserDeactivated, logUserActivated, logPasswordResetByAdmin, logProfileUpdated, logPasswordChanged are called with correct parameters. Verify audit log entries contain who/when information.</test>
+      <test category="RBAC">Test RBAC enforcement - non-admin/chief cannot access user management endpoints (should return 403). Users cannot change own role (should return 403 or 400). Admin/chief can manage all users except cannot change own role.</test>
+      <test category="Company Scoping">Test company scoping - users can only see/manage users in their company. Cross-company access attempts should be rejected or return empty results.</test>
+    </ideas>
+  </tests>
+</story-context>
+
+

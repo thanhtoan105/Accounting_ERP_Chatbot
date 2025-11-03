@@ -1,0 +1,1004 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>6</storyId>
+    <title>Company Settings</title>
+    <status>drafted</status>
+    <generatedAt>2025-02-01</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-6-company-settings.md</sourceStoryPath>
+  </metadata>
+
+  <overview>
+    <purpose>
+      Enable ADMIN users to view and edit company settings including contact information, logo, fiscal year, and legal details.
+      This is an EDIT feature (not creation - creation handled by existing CompanySettings.tsx).
+      Settings changes must be previewed, validated, and fully audit-logged.
+    </purpose>
+    
+    <scope>
+      <backend>
+        - Extend Company entity with 4 new fields (contactEmail, contactPhone, legalRepresentative, fiscalYearStart)
+        - Create database migration V8__add_company_contact_fields.sql
+        - Add CompanyRepository.findByTaxCode method for uniqueness validation
+        - Create NEW CompanyService (interface + implementation) for settings management
+        - Create NEW FileStorageService for Supabase Storage integration with logo scaling
+        - Extend AuditService with logCompanySettingsUpdated method
+        - Create DTOs: UpdateCompanySettingsRequest, CompanyDTO, LogoUploadResponse
+        - Create NEW CompanyController with 4 endpoints (settings CRUD, logo upload, audit log)
+        - Write comprehensive unit and integration tests
+      </backend>
+      
+      <frontend>
+        - Create or extend CompanySettings page for EDIT mode (current page is CREATE mode)
+        - Create LogoUpload component with drag-drop, preview, and validation
+        - Create SettingsPreview dialog showing old vs new values comparison
+        - Add Zod validation schemas for all fields (tax code, email, phone, fiscal year)
+        - Use Shadcn UI components (Form, Input, Dialog, Alert, Toast) NOT MUI
+        - Add company service with API integration (GET current, PUT update, POST logo)
+        - Display audit log history below settings form
+        - Write component tests with Vitest + Testing Library
+      </frontend>
+      
+      <integration>
+        - Supabase Storage bucket "company-logos" with public read access
+        - Image processing for logo scaling (200x60 header, 150x50 footer)
+        - Company scoping enforcement (users can only edit their own company)
+        - RBAC enforcement (ADMIN role only, 403 for others)
+        - Tax code uniqueness validation (409 Conflict if duplicate)
+      </integration>
+    </scope>
+    
+    <keyDecisions>
+      - IMPORTANT: Existing CompanySettings.tsx is for CREATION. This story needs EDIT functionality.
+        Options: (1) Create separate page CompanySettingsEdit.tsx, or (2) Add edit mode to existing page
+      - Logo storage: Supabase Storage (NOT database), generate 3 versions (full, header, footer)
+      - Preview: Show old vs new comparison dialog BEFORE saving (AC#2)
+      - Validation: Both client (Zod) and server (Bean Validation) with Vietnamese phone format
+      - Audit: Log ALL field changes with old/new values using existing AuditService pattern
+      - Tax code uniqueness: Global constraint across ALL companies (query: findByTaxCode)
+      - Migration: Add new fields via V8__add_company_contact_fields.sql (check version number)
+      - UI: Transition from MUI to Shadcn UI (architecture decision)
+    </keyDecisions>
+    
+    <criticalPaths>
+      1. Database migration MUST run before backend code (add Company entity fields first)
+      2. FileStorageService needs Supabase credentials/configuration (check environment)
+      3. Tax code uniqueness validation MUST check existing companies excluding current
+      4. Logo upload MUST delete old files to prevent storage bloat
+      5. Audit logging MUST capture old values BEFORE updates (fetch before save)
+      6. Frontend MUST show preview dialog before submission (user confirmation required)
+      7. RBAC MUST be enforced in backend (never trust frontend)
+    </criticalPaths>
+  </overview>
+
+  <story>
+    <asA>an admin</asA>
+    <iWant>to configure company details, logo, address, tax code, and fiscal year</iWant>
+    <soThat>branding appears correctly and platform has legal entity details for all outputs</soThat>
+    <tasks>
+      - Backend: Company entity and settings (verify/extend fields, repository, service, validation)
+      - Backend: Logo upload and storage (FileStorageService, Supabase integration, scaling)
+      - Backend: Company settings update endpoint (PUT /api/v1/admin/companies/{id}/settings)
+      - Backend: Logo upload endpoint (POST /api/v1/admin/companies/{id}/logo)
+      - Backend: Audit logging for company settings changes
+      - Backend: Company data for reports (GET /api/v1/companies/current)
+      - Frontend: Company Settings page with form validation
+      - Frontend: Logo upload component with preview
+      - Frontend: Settings validation and preview (old vs new comparison)
+      - Frontend: Settings update flow with toast notifications
+      - Frontend: Audit log display (change history)
+      - Testing: Backend unit tests (CompanyService, FileStorageService)
+      - Testing: Backend integration tests (settings update, logo upload, audit logging)
+      - Testing: Frontend unit tests (CompanySettings page, LogoUpload component)
+      - Testing: E2E tests (permissions, full flow)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Company Settings screen: logo upload (image size/type validated), name, address, tax code (unique check), fiscal year start, contact info
+    2. Changes previewed before saving; logo scaled for dashboard header and reports
+    3. Validation: no blank fields, VN address requirements, unique company/tax code enforced
+    4. All changes to company settings written to audit log with old/new value, who, and when
+    5. Display company logo and legal info in the print/export footer of each financial report
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR03: Company Profile Management</section>
+        <snippet>An Admin or Chief Accountant must be able to configure company information (name, tax code, address, logo, fiscal year start date) with validation according to Vietnamese standards.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Entities</section>
+        <snippet>Companies entity with fields: id, code, name, tax_code, created_at, updated_at. Foundation for multi-tenancy and company scoping.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>System Architecture Alignment</section>
+        <snippet>Epic 1 components reside under controller/auth/, security/, config/ on backend and pages/Login.tsx, services/auth.ts on frontend. Initial entities: users, roles, companies.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Decision Document</title>
+        <section>Technology Stack</section>
+        <snippet>Spring Boot 3.5.7 backend with PostgreSQL (Supabase), React TypeScript frontend with Shadcn UI components and Tailwind CSS. File storage via Supabase Storage.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-2-company-bootstrap-multitenancy.md</path>
+        <title>Story 1.2: Company Bootstrap Multitenancy</title>
+        <section>Dev Notes</section>
+        <snippet>Company entity created with basic fields: id, code, name, tax_code, address, logo_url. All entities are company-scoped via CompanyScopedEntity pattern.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-4-role-based-access-control-rbac.md</path>
+        <title>Story 1.4: Role-Based Access Control (RBAC)</title>
+        <section>Dev Notes</section>
+        <snippet>RBAC implementation using Spring Security @PreAuthorize annotations. Four roles: ADMIN, ACCOUNTANT, CHIEF_ACCOUNTANT, CFO. Admin has full system access including user management and company settings.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-5-user-profile-management.md</path>
+        <title>Story 1.5: User Profile Management</title>
+        <section>Learnings</section>
+        <snippet>UserService pattern with validation, security checks, and audit logging. Use DTOs for request/response. AuditService logs all changes with before/after values. RBAC enforced via @PreAuthorize annotations.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Definitions</title>
+        <section>Story 1.6: Company Settings</section>
+        <snippet>Company settings configuration including logo upload, tax code validation, fiscal year setup. Admin-only feature with audit logging and preview functionality.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/Company.java</path>
+        <kind>entity</kind>
+        <symbol>Company</symbol>
+        <lines>1-100</lines>
+        <reason>Existing Company entity with fields: id, code, name, taxCode, address, logoUrl, createdAt, updatedAt. May need to add: contactEmail, contactPhone, legalRepresentative, fiscalYearStart (Integer 1-12)</reason>
+        <currentFields>
+          - @Id Long id (BIGSERIAL)
+          - @Column(unique=true) String code (VARCHAR 16)
+          - @Column(nullable=false) String name (VARCHAR 255)
+          - @Column(unique=true) String taxCode (CHAR 10)
+          - @Column(nullable=false) String address (VARCHAR 512)
+          - String logoUrl (VARCHAR 512)
+          - @CreationTimestamp OffsetDateTime createdAt
+          - @UpdateTimestamp OffsetDateTime updatedAt
+        </currentFields>
+        <fieldsToAdd>
+          - String contactEmail (VARCHAR 255)
+          - String contactPhone (VARCHAR 20)
+          - String legalRepresentative (VARCHAR 255)
+          - Integer fiscalYearStart (1-12, default 1 for January)
+        </fieldsToAdd>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/CompanyRepository.java</path>
+        <kind>repository</kind>
+        <symbol>CompanyRepository</symbol>
+        <lines>1-16</lines>
+        <reason>Existing repository with findByCode, existsByCode, existsByTaxCode methods. Need to add: findByTaxCode(String) for uniqueness validation.</reason>
+        <existingMethods>
+          - Optional&lt;Company&gt; findByCode(String code)
+          - boolean existsByCode(String code)
+          - boolean existsByTaxCode(String taxCode)
+        </existingMethods>
+        <methodsToAdd>
+          - Optional&lt;Company&gt; findByTaxCode(String taxCode) - for uniqueness check excluding current company
+        </methodsToAdd>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service-interface</kind>
+        <symbol>AuditService</symbol>
+        <lines>1-182</lines>
+        <reason>Existing audit service with patterns for logging various operations. Reference logUserUpdated (lines 114-119) for old/new values pattern. Need to add: logCompanySettingsUpdated method.</reason>
+        <referenceMethod>
+          void logUserUpdated(User user, Long updatedByUserId, Map&lt;String,String&gt; oldValues, Map&lt;String,String&gt; newValues, HttpServletRequest request)
+        </referenceMethod>
+        <methodToAdd>
+          void logCompanySettingsUpdated(Long companyId, Map&lt;String,String&gt; oldValues, Map&lt;String,String&gt; newValues, Long userId, HttpServletRequest request)
+        </methodToAdd>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java</path>
+        <kind>service-impl</kind>
+        <symbol>AuditServiceImpl</symbol>
+        <lines>1-80</lines>
+        <reason>Reference implementation showing AuditLog entity creation pattern. See lines 23-32 (logLoginSuccess) for basic structure, lines 76-80 (logRoleChange) for old/new value logging.</reason>
+        <pattern>
+          1. Create AuditLog instance
+          2. Set userId, email, action, ipAddress, userAgent, createdAt
+          3. For changes: store old/new values in separate fields or JSON
+          4. auditLogRepository.save(log)
+        </pattern>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/UserServiceImpl.java</path>
+        <kind>service-impl</kind>
+        <symbol>UserServiceImpl</symbol>
+        <lines>61-100</lines>
+        <reason>Reference implementation for service pattern. Shows CompanyContext usage (lines 64-68), company scoping (line 69), validation pattern, and DTO conversion. Use as template for CompanyServiceImpl.</reason>
+        <keyPatterns>
+          - Company scoping: Long companyId = CompanyContext.getCompanyId()
+          - Validation: throw ResponseStatusException for errors
+          - DTOs: separate request/response from entities
+          - Audit logging: call auditService after operations
+        </keyPatterns>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/admin/UserController.java</path>
+        <kind>controller</kind>
+        <symbol>UserController</symbol>
+        <lines>1-60</lines>
+        <reason>Reference admin controller showing @PreAuthorize pattern, @RequestMapping structure, validation with @Valid, pagination with Pageable. Use as template for CompanyController.</reason>
+        <keyPatterns>
+          - @RestController + @RequestMapping("/api/v1/users")
+          - @PreAuthorize("hasRole('ADMIN')") on admin-only endpoints
+          - @Valid for request DTOs
+          - ResponseEntity for responses with proper HTTP status
+          - Pagination: Pageable parameter, Page&lt;T&gt; return type
+        </keyPatterns>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/security/CompanyContext.java</path>
+        <kind>security</kind>
+        <symbol>CompanyContext</symbol>
+        <reason>Provides static getCompanyId() method to retrieve company ID from ThreadLocal (set by CompanyContextFilter from X-Company-Id header). Used for company scoping in all operations.</reason>
+        <usage>Long companyId = CompanyContext.getCompanyId()</usage>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/resources/db/migration/V1__companies.sql</path>
+        <kind>migration</kind>
+        <symbol>V1__companies</symbol>
+        <lines>1-19</lines>
+        <reason>Initial companies table schema. Shows existing fields and constraints: unique indexes on code and tax_code, CHECK constraint for 10-digit tax_code pattern. New migration V8 or V9 will add contact fields.</reason>
+        <existingSchema>
+          CREATE TABLE companies (
+            id BIGSERIAL PRIMARY KEY,
+            code VARCHAR(16) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            tax_code VARCHAR(10) NOT NULL,
+            address VARCHAR(512) NOT NULL,
+            logo_url VARCHAR(512),
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+          );
+          CREATE UNIQUE INDEX ux_companies_code ON companies(code);
+          CREATE UNIQUE INDEX ux_companies_tax_code ON companies(tax_code);
+          ALTER TABLE companies ADD CONSTRAINT ck_tax_code_digits CHECK (tax_code ~ '^[0-9]{10}$');
+        </existingSchema>
+      </artifact>
+      <artifact>
+        <path>frontend/src/pages/Admin/CompanySettings.tsx</path>
+        <kind>page-component</kind>
+        <symbol>CompanySettings</symbol>
+        <lines>1-192</lines>
+        <reason>EXISTING company creation page (first-time setup). This story needs EDIT functionality, not creation. Options: (1) Create new CompanySettingsEdit.tsx, or (2) Extend this to support both modes. Current page has Zod validation, file upload, MUI components.</reason>
+        <note>THIS IS CREATE MODE - Story 1.6 is for EDITING existing company. Consider creating separate edit page or adding edit mode to this component.</note>
+        <currentFeatures>
+          - Zod schema validation (lines 10-16)
+          - File upload for logo (lines 168-172)
+          - Form validation with error display
+          - Success/error handling
+          - Navigation after creation
+        </currentFeatures>
+        <missingForStory>
+          - GET existing company data
+          - Preview old vs new values
+          - Audit log display
+          - Logo scaling (header/footer versions)
+          - Fiscal year field
+          - Contact email/phone/legal representative fields
+          - Shadcn UI components (currently uses MUI)
+        </missingForStory>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/ui/dialog.tsx</path>
+        <kind>shadcn-component</kind>
+        <symbol>Dialog</symbol>
+        <reason>Shadcn Dialog component for preview confirmation. Use for showing old vs new values before saving.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/ui/form.tsx</path>
+        <kind>shadcn-component</kind>
+        <symbol>Form</symbol>
+        <reason>Shadcn Form components with react-hook-form integration. Use for CompanySettings form with Zod validation.</reason>
+        <note>May need to be added if not already present. Check components/ui/ directory.</note>
+      </artifact>
+    </code>
+    <dependencies>
+      <backend>
+        <framework>Spring Boot 3.5.7</framework>
+        <dependencies>
+          <dependency name="spring-boot-starter-web" />
+          <dependency name="spring-boot-starter-data-jpa" />
+          <dependency name="spring-boot-starter-security" />
+          <dependency name="spring-boot-starter-validation" />
+          <dependency name="spring-boot-starter-aop" />
+          <dependency name="postgresql" />
+          <dependency name="flyway-core" version="10.20.1" />
+          <dependency name="lombok" />
+          <dependency name="jjwt-api" version="0.12.6" />
+        </dependencies>
+        <testing>
+          <dependency name="spring-boot-starter-test" />
+          <dependency name="testcontainers" version="1.20.3" />
+          <dependency name="testcontainers-postgresql" version="1.20.3" />
+        </testing>
+        <note>Supabase Storage integration requires adding Supabase Java SDK or using REST API client</note>
+      </backend>
+      <frontend>
+        <framework>React 19.1.1 with TypeScript</framework>
+        <dependencies>
+          <dependency name="react-router-dom" version="7.9.5" />
+          <dependency name="axios" version="1.7.9" />
+          <dependency name="zod" version="4.1.12" />
+          <dependency name="@radix-ui/react-dialog" version="1.1.15" />
+          <dependency name="@radix-ui/react-select" version="2.2.6" />
+          <dependency name="@radix-ui/react-label" version="2.1.7" />
+          <dependency name="lucide-react" version="0.552.0" />
+          <dependency name="tailwindcss" version="4.1.16" />
+          <dependency name="class-variance-authority" version="0.7.1" />
+        </dependencies>
+        <testing>
+          <dependency name="vitest" version="2.1.4" />
+          <dependency name="@testing-library/react" version="16.0.1" />
+          <dependency name="@testing-library/jest-dom" version="6.6.3" />
+          <dependency name="jsdom" version="25.0.1" />
+        </testing>
+        <note>Shadcn UI components already available in components/ui/</note>
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <companyScoping>
+      - All operations must be scoped to current user's company via CompanyContext.getCompanyId()
+      - Users can ONLY view/edit their own company settings (enforced in service layer)
+      - Company ID from JWT token must match company ID in request
+      - No cross-company data leakage allowed
+    </companyScoping>
+    
+    <validation>
+      <backend>
+        - Tax code: MUST be globally unique across ALL companies (query: findByTaxCode excluding current company ID)
+        - Tax code format: Exactly 10 digits, enforced by database constraint (ck_tax_code_digits)
+        - Required fields: name, address, taxCode (existing); add: contactEmail, contactPhone, legalRepresentative
+        - Email validation: @Email annotation + RFC 5322 pattern
+        - Phone validation: Vietnamese format (+84 or 0, followed by 9-11 digits)
+        - Fiscal year: Integer 1-12 only, default 1 (January)
+        - Address: VARCHAR(512), UTF-8 Vietnamese characters supported
+        - Logo file: MIME types (image/jpeg, image/png, image/svg+xml), max size 2MB
+        - Use Bean Validation: @NotBlank, @Email, @Pattern, @Min, @Max
+        - Custom validator for Vietnamese phone: @Pattern(regexp = "^(\\+84|0)\\d{9,11}$")
+      </backend>
+      <frontend>
+        - Zod schema validation for all fields before submission
+        - Tax code: z.string().regex(/^\d{10}$/, "Must be exactly 10 digits")
+        - Email: z.string().email()
+        - Phone: z.string().regex(/^(\+84|0)\d{9,11}$/, "Invalid Vietnamese phone format")
+        - Fiscal year: z.number().min(1).max(12)
+        - Logo file: Check MIME type and size before upload (2MB max)
+        - Real-time validation feedback using Shadcn Form error display
+      </frontend>
+    </validation>
+    
+    <fileStorage>
+      - Use Supabase Storage for logo uploads (NOT local filesystem)
+      - Bucket: "company-logos" (public read, authenticated write)
+      - File naming: {companyId}/logo-{timestamp}.{ext}
+      - Store only URL in database (Company.logoUrl field)
+      - Generate 3 versions: full (original), header (200x60px), footer (150x50px)
+      - Clean up old logo files when uploading new logo (delete previous versions)
+      - Supported formats: JPEG, PNG, SVG
+      - Max file size: 2MB (enforced on both client and server)
+    </fileStorage>
+    
+    <rbac>
+      - Only ADMIN role can access company settings endpoints
+      - Controller annotation: @PreAuthorize("hasRole('ADMIN')")
+      - Frontend: Hide company settings menu for non-admin users (RoleGuard component)
+      - Backend MUST enforce permissions regardless of frontend state
+      - Return 403 Forbidden for non-admin access attempts
+    </rbac>
+    
+    <auditLogging>
+      - Log ALL field changes with old and new values
+      - Use AuditService.logCompanySettingsUpdated(companyId, oldValues, newValues, userId, request)
+      - Store in audit_logs table with entity_type='COMPANY', action='SETTINGS_UPDATED'
+      - Include: userId (from JWT), timestamp (Instant.now()), IP address, user agent
+      - Old/new values stored as Map&lt;String, String&gt; with field names as keys
+      - Fields to log: name, taxCode, address, contactEmail, contactPhone, legalRepresentative, fiscalYearStart, logoUrl
+      - Audit logs are append-only (never delete or modify)
+    </auditLogging>
+    
+    <preview>
+      - Frontend must show old vs new values comparison BEFORE submission
+      - Use Shadcn Dialog component for preview modal
+      - Display changed fields only (highlight differences)
+      - Require explicit confirmation button in dialog
+      - Show current logo vs new logo preview (side-by-side)
+      - Cancel option returns to edit mode without saving
+    </preview>
+    
+    <databaseMigrations>
+      - Use Flyway versioned migrations: V{number}__{description}.sql
+      - Next available version: V8 or V9 (check existing migrations)
+      - Migration file: V8__add_company_contact_fields.sql
+      - ALTER TABLE companies ADD COLUMN contact_email VARCHAR(255);
+      - ALTER TABLE companies ADD COLUMN contact_phone VARCHAR(20);
+      - ALTER TABLE companies ADD COLUMN legal_representative VARCHAR(255);
+      - ALTER TABLE companies ADD COLUMN fiscal_year_start INTEGER DEFAULT 1;
+      - Add CHECK constraint: fiscal_year_start >= 1 AND fiscal_year_start &lt;= 12
+      - Never modify existing migrations (V1__companies.sql is immutable)
+    </databaseMigrations>
+    
+    <dtos>
+      - Separate API contracts from entity models
+      - UpdateCompanySettingsRequest: name, address, taxCode, fiscalYearStart, contactEmail, contactPhone, legalRepresentative
+      - CompanyDTO: all company fields + computed fields (logoUrls: { full, header, footer })
+      - LogoUploadResponse: fullUrl, headerUrl, footerUrl, uploadedAt
+      - Use @Valid annotation on controller parameters
+      - Convert entities to DTOs in service layer (never expose entities in controllers)
+    </dtos>
+    
+    <errorHandling>
+      - 400 Bad Request: Validation errors with field-level details
+      - 409 Conflict: Duplicate tax code (include existing company name in message)
+      - 404 Not Found: Company not found
+      - 403 Forbidden: Non-admin user attempting access
+      - 500 Internal Server Error: File upload failures, database errors
+      - Error response format: { error: { message, details: { field, code } } }
+    </errorHandling>
+    
+    <uiFramework>
+      - Use Shadcn UI components (NOT MUI for new features)
+      - Form validation: Zod schemas with react-hook-form
+      - Components: Form, Input, Textarea, Select, Button, Dialog, Alert
+      - Styling: Tailwind CSS utility classes
+      - Icons: Lucide React (Building, Mail, Phone, Upload, Save, X, AlertCircle)
+      - Toast notifications: Shadcn Toast for success/error messages
+      - Loading states: Disable form with loading spinner during submission
+    </uiFramework>
+    
+    <implementationSequence>
+      1. Backend: Extend Company entity with new fields
+      2. Backend: Create migration V8__add_company_contact_fields.sql
+      3. Backend: Add CompanyRepository.findByTaxCode method
+      4. Backend: Create CompanyService interface and implementation
+      5. Backend: Create FileStorageService for Supabase integration
+      6. Backend: Extend AuditService with logCompanySettingsUpdated
+      7. Backend: Create DTOs (UpdateCompanySettingsRequest, CompanyDTO)
+      8. Backend: Create CompanyController with endpoints
+      9. Backend: Write unit tests for CompanyService, FileStorageService
+      10. Backend: Write integration tests for controller endpoints
+      11. Frontend: Create LogoUpload component with preview
+      12. Frontend: Create SettingsPreview dialog component
+      13. Frontend: Extend or create CompanySettings edit page (consider mode separation)
+      14. Frontend: Add company service with API methods
+      15. Frontend: Add Zod validation schemas
+      16. Frontend: Write component tests
+      17. E2E: Test full flow with RBAC enforcement
+    </implementationSequence>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>PUT /api/v1/admin/companies/{id}/settings</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        Request: UpdateCompanySettingsRequest { name, address, taxCode, fiscalYearStart, contactEmail, contactPhone, legalRepresentative }
+        Response: CompanyDTO with updated settings and logo URLs
+        Auth: ADMIN role required (@PreAuthorize("hasRole('ADMIN')"))
+        Headers: X-Company-Id (must match user's companyId)
+        Errors: 400 (validation), 409 (duplicate tax code), 404 (company not found), 403 (forbidden)
+      </signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/CompanyController.java (NEW)</path>
+      <requestExample>
+        {
+          "name": "ABC Corporation",
+          "address": "123 Nguyễn Huệ, Quận 1, TP.HCM",
+          "taxCode": "0123456789",
+          "fiscalYearStart": 1,
+          "contactEmail": "contact@abc.com",
+          "contactPhone": "+84901234567",
+          "legalRepresentative": "Nguyễn Văn A"
+        }
+      </requestExample>
+      <responseExample>
+        {
+          "id": 1,
+          "code": "ABC",
+          "name": "ABC Corporation",
+          "taxCode": "0123456789",
+          "address": "123 Nguyễn Huệ, Quận 1, TP.HCM",
+          "fiscalYearStart": 1,
+          "contactEmail": "contact@abc.com",
+          "contactPhone": "+84901234567",
+          "legalRepresentative": "Nguyễn Văn A",
+          "logoUrls": {
+            "full": "https://supabase.co/.../full.png",
+            "header": "https://supabase.co/.../header.png",
+            "footer": "https://supabase.co/.../footer.png"
+          },
+          "createdAt": "2025-01-15T10:00:00Z",
+          "updatedAt": "2025-02-01T14:30:00Z"
+        }
+      </responseExample>
+      <workflow>
+        1. Controller validates @Valid request DTO
+        2. Service retrieves current company by ID
+        3. Check company scoping (user's companyId == path companyId)
+        4. Validate tax code uniqueness (if changed)
+        5. Build old/new values map for audit log
+        6. Update entity fields
+        7. Save to database
+        8. Log audit entry
+        9. Convert entity to DTO
+        10. Return DTO response
+      </workflow>
+    </interface>
+    <interface>
+      <name>POST /api/v1/admin/companies/{id}/logo</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        Request: multipart/form-data with "logo" file field
+        Response: LogoUploadResponse { fullUrl, headerUrl, footerUrl, uploadedAt }
+        Auth: ADMIN role required
+        Headers: X-Company-Id, Content-Type: multipart/form-data
+        File constraints: JPEG/PNG/SVG, max 2MB
+        Errors: 400 (invalid file), 404 (company not found), 500 (upload failed)
+      </signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/CompanyController.java (NEW)</path>
+      <responseExample>
+        {
+          "fullUrl": "https://supabase.co/storage/v1/object/public/company-logos/1/logo-1738415234567.png",
+          "headerUrl": "https://supabase.co/storage/v1/object/public/company-logos/1/logo-1738415234567-header.png",
+          "footerUrl": "https://supabase.co/storage/v1/object/public/company-logos/1/logo-1738415234567-footer.png",
+          "uploadedAt": "2025-02-01T14:33:54Z"
+        }
+      </responseExample>
+      <workflow>
+        1. Controller receives MultipartFile
+        2. Validate file type (MIME check)
+        3. Validate file size (max 2MB)
+        4. Call FileStorageService.uploadLogo(file, companyId)
+        5. Service uploads to Supabase Storage bucket
+        6. Generate scaled versions (header 200x60, footer 150x50)
+        7. Delete old logo files if exist
+        8. Update Company.logoUrl in database
+        9. Log audit entry for logo change
+        10. Return URLs in response
+      </workflow>
+    </interface>
+    <interface>
+      <name>GET /api/v1/companies/current</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        Request: none (uses X-Company-Id header)
+        Response: CompanyDTO with all company fields including logo URLs
+        Auth: Authenticated users (any role)
+        Purpose: Get current company data for reports, headers, footers, app context
+        Headers: X-Company-Id (from authenticated user)
+        Errors: 404 (company not found), 401 (unauthorized)
+      </signature>
+      <path>backend/src/main/java/com/accounting/controller/CompanyController.java (NEW or existing)</path>
+      <responseExample>
+        {
+          "id": 1,
+          "code": "ABC",
+          "name": "ABC Corporation",
+          "taxCode": "0123456789",
+          "address": "123 Nguyễn Huệ, Quận 1, TP.HCM",
+          "fiscalYearStart": 1,
+          "contactEmail": "contact@abc.com",
+          "contactPhone": "+84901234567",
+          "legalRepresentative": "Nguyễn Văn A",
+          "logoUrls": {
+            "full": "...",
+            "header": "...",
+            "footer": "..."
+          }
+        }
+      </responseExample>
+      <usage>
+        - Report generation (include logo and legal info in PDF headers/footers)
+        - App header (display company name and logo)
+        - User profile page (show user's company details)
+      </usage>
+    </interface>
+    <interface>
+      <name>GET /api/v1/admin/companies/{id}/audit-log</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        Request: query params (page, size, limit - optional)
+        Response: List&lt;AuditLogEntry&gt; with pagination
+        Auth: ADMIN role required
+        Fields per entry: timestamp, userId, userName, action, oldValues, newValues, ipAddress
+        Errors: 403 (forbidden), 404 (company not found)
+      </signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/CompanyController.java (NEW)</path>
+      <responseExample>
+        {
+          "content": [
+            {
+              "id": 123,
+              "timestamp": "2025-02-01T14:30:00Z",
+              "userId": 5,
+              "userName": "admin@abc.com",
+              "action": "SETTINGS_UPDATED",
+              "entityType": "COMPANY",
+              "entityId": "1",
+              "oldValues": { "name": "ABC Corp", "contactEmail": "old@abc.com" },
+              "newValues": { "name": "ABC Corporation", "contactEmail": "contact@abc.com" },
+              "ipAddress": "192.168.1.100"
+            }
+          ],
+          "totalElements": 1,
+          "page": 0,
+          "size": 10
+        }
+      </responseExample>
+    </interface>
+    <interface>
+      <name>CompanyService</name>
+      <kind>Service interface</kind>
+      <signature>
+        Methods:
+        - getCompanyById(Long id): CompanyDTO - Get company by ID with DTO conversion
+        - getCurrentCompany(): CompanyDTO - Get current user's company from CompanyContext
+        - updateCompanySettings(Long id, UpdateCompanySettingsRequest request, HttpServletRequest httpRequest): CompanyDTO
+        - validateTaxCodeUniqueness(String taxCode, Long currentCompanyId): void - throws if duplicate
+        
+        Implementation notes:
+        - Use CompanyContext.getCompanyId() for company scoping
+        - Call AuditService after updates
+        - Convert entities to DTOs (never expose entities)
+        - Throw ResponseStatusException for errors
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/CompanyService.java (NEW)</path>
+    </interface>
+    <interface>
+      <name>FileStorageService</name>
+      <kind>Service interface</kind>
+      <signature>
+        Methods:
+        - uploadLogo(MultipartFile file, Long companyId): LogoUploadResponse
+          Uploads original, generates scaled versions, returns all URLs
+        
+        - deleteLogo(String logoUrl): void
+          Deletes file and all scaled versions from Supabase Storage
+        
+        - getLogoUrl(Long companyId, LogoSize size): String
+          Retrieves specific logo URL (FULL, HEADER, FOOTER)
+        
+        LogoUploadResponse: { fullUrl, headerUrl, footerUrl, uploadedAt }
+        LogoSize enum: FULL, HEADER (200x60), FOOTER (150x50)
+        
+        Implementation: Use Supabase Storage REST API or Java SDK
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/FileStorageService.java (NEW)</path>
+      <supabaseIntegration>
+        - Bucket: "company-logos" (create if not exists)
+        - Access: public read, authenticated write
+        - File path: {companyId}/logo-{timestamp}.{ext}
+        - Scaled paths: {companyId}/logo-{timestamp}-header.{ext}, -footer.{ext}
+        - Use image processing library (e.g., Thumbnailator) for scaling
+      </supabaseIntegration>
+    </interface>
+    <interface>
+      <name>AuditService.logCompanySettingsUpdated</name>
+      <kind>Service method</kind>
+      <signature>
+        void logCompanySettingsUpdated(
+          Long companyId, 
+          Map&lt;String,String&gt; oldValues, 
+          Map&lt;String,String&gt; newValues, 
+          Long userId, 
+          HttpServletRequest request
+        )
+        
+        Creates audit log entry with:
+        - entityType: "COMPANY"
+        - action: "SETTINGS_UPDATED"
+        - entityId: companyId.toString()
+        - old/new values maps
+        - userId, timestamp, ipAddress, userAgent
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/AuditService.java (extend interface)</path>
+      <implementation>backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java</implementation>
+    </interface>
+    <interface>
+      <name>CompanyRepository.findByTaxCode</name>
+      <kind>Repository method</kind>
+      <signature>
+        Optional&lt;Company&gt; findByTaxCode(String taxCode)
+        
+        Purpose: Tax code uniqueness validation
+        Usage: Check if tax code exists for a DIFFERENT company
+        Query: SELECT * FROM companies WHERE tax_code = ?
+      </signature>
+      <path>backend/src/main/java/com/accounting/repository/CompanyRepository.java (add method)</path>
+      <validationLogic>
+        Optional&lt;Company&gt; existing = repository.findByTaxCode(taxCode);
+        if (existing.isPresent() &amp;&amp; !existing.get().getId().equals(currentCompanyId)) {
+          throw new ResponseStatusException(HttpStatus.CONFLICT, 
+            "Tax code already exists for company: " + existing.get().getName());
+        }
+      </validationLogic>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend: JUnit 5 + Spring Boot Test with Testcontainers for integration tests. Mockito for service unit tests. Mock Supabase Storage client for logo upload tests. Follow existing test patterns in UserServiceImplTest and UserControllerIntegrationTest.
+      
+      Frontend: Vitest + Testing Library for component tests. Test Shadcn form validation with Zod schemas. Mock axios for API calls. Follow existing frontend testing patterns.
+      
+      Integration: Test full settings update flow (update settings, upload logo, verify changes). Test RBAC enforcement (non-admin cannot access). Test all validation rules (required fields, formats, uniqueness).
+    </standards>
+    <locations>
+      - backend/src/test/java/com/accounting/service/impl/CompanyServiceImplTest.java
+      - backend/src/test/java/com/accounting/service/impl/FileStorageServiceImplTest.java
+      - backend/src/test/java/com/accounting/controller/admin/CompanyControllerIntegrationTest.java
+      - frontend/src/pages/__tests__/CompanySettings.test.tsx
+      - frontend/src/components/__tests__/LogoUpload.test.tsx
+    </locations>
+    <ideas>
+      <test ac="1">
+        - Test company settings form renders all required fields (name, tax code, address, fiscal year, contact info)
+        - Test logo upload validates file type (jpg, png, svg only)
+        - Test logo upload validates file size (max 2MB)
+        - Test logo upload shows preview before saving
+      </test>
+      <test ac="2">
+        - Test settings preview shows old vs new values comparison dialog
+        - Test logo scaling generates header (200x60) and footer (150x50) versions
+        - Test preview requires confirmation before submitting changes
+      </test>
+      <test ac="3">
+        - Test validation rejects blank required fields (name, tax code, address)
+        - Test validation enforces 10-digit tax code format
+        - Test validation enforces Vietnamese phone format
+        - Test validation enforces unique tax code (409 Conflict if duplicate)
+        - Test validation supports Vietnamese characters in address field
+      </test>
+      <test ac="4">
+        - Test audit log records all field changes with old/new values
+        - Test audit log includes user who made changes (from JWT)
+        - Test audit log includes timestamp and IP address
+        - Test audit log display shows recent changes on settings page
+      </test>
+      <test ac="5">
+        - Test GET /api/v1/companies/current returns company data with logo URLs
+        - Test company data includes all fields needed for report headers/footers
+        - Test company data is formatted for Vietnamese display
+      </test>
+      <security>
+        - Test only ADMIN role can access PUT /api/v1/admin/companies/{id}/settings (403 for other roles)
+        - Test only ADMIN role can access POST /api/v1/admin/companies/{id}/logo
+        - Test users can only view/edit their own company settings (company scoping)
+        - Test non-admin users cannot see admin company settings menu
+      </security>
+    </ideas>
+  </tests>
+
+  <implementationGuidance>
+    <backendWorkflow>
+      Step 1: Database Schema
+      - Check current migration version (look for highest V{number}__ file)
+      - Create V8__add_company_contact_fields.sql (or next available version)
+      - Add columns: contact_email, contact_phone, legal_representative, fiscal_year_start
+      - Add CHECK constraint for fiscal_year_start (1-12)
+      - Test migration with ./mvnw flyway:migrate
+      
+      Step 2: Entity Updates
+      - Edit Company.java
+      - Add 4 new fields with proper JPA annotations
+      - Add getters/setters (or use Lombok @Data)
+      - Update equals/hashCode if needed
+      
+      Step 3: Repository
+      - Edit CompanyRepository.java
+      - Add method: Optional&lt;Company&gt; findByTaxCode(String taxCode)
+      
+      Step 4: DTOs
+      - Create dto/UpdateCompanySettingsRequest.java with Bean Validation
+      - Create dto/CompanyDTO.java (include logoUrls sub-object)
+      - Create dto/LogoUploadResponse.java
+      
+      Step 5: Services
+      - Create service/CompanyService.java interface
+      - Create service/impl/CompanyServiceImpl.java
+        - Implement company scoping check
+        - Implement tax code uniqueness validation
+        - Build old/new values maps for audit
+        - Call auditService.logCompanySettingsUpdated
+      - Create service/FileStorageService.java interface
+      - Create service/impl/FileStorageServiceImpl.java
+        - Integrate Supabase Storage REST API or SDK
+        - Implement image scaling (use Thumbnailator library)
+        - Handle file cleanup
+      - Edit service/AuditService.java - add logCompanySettingsUpdated signature
+      - Edit service/impl/AuditServiceImpl.java - implement method
+      
+      Step 6: Controller
+      - Create controller/admin/CompanyController.java
+      - Add @RestController, @RequestMapping("/api/v1/admin/companies")
+      - Implement 4 endpoints with proper annotations
+      - Use @PreAuthorize("hasRole('ADMIN')") on all admin endpoints
+      - Add @Valid for request DTOs
+      
+      Step 7: Testing
+      - Create test/service/impl/CompanyServiceImplTest.java (unit tests with Mockito)
+      - Create test/service/impl/FileStorageServiceImplTest.java (mock Supabase)
+      - Create test/controller/admin/CompanyControllerIntegrationTest.java (Testcontainers)
+      - Test RBAC: verify 403 for non-admin users
+      - Test validation: verify 400 for invalid data, 409 for duplicate tax code
+    </backendWorkflow>
+    
+    <frontendWorkflow>
+      Step 1: API Service
+      - Create or edit services/company.ts
+      - Add functions: getCurrentCompany(), updateCompanySettings(), uploadLogo(), getAuditLog()
+      - Use axios instance with proper headers (X-Company-Id)
+      
+      Step 2: Validation Schemas
+      - Create or edit types/company.ts for TypeScript types
+      - Create validation/companySchemas.ts with Zod schemas
+      - Include Vietnamese phone validation regex
+      
+      Step 3: Components
+      - Create components/LogoUpload.tsx
+        - File input with drag-drop (or use Shadcn file upload if available)
+        - Preview uploaded image
+        - Validate MIME type and size client-side
+      - Create components/SettingsPreview.tsx
+        - Shadcn Dialog component
+        - Show old vs new values in table format
+        - Highlight changed fields
+        - Confirm/Cancel buttons
+      
+      Step 4: Main Page
+      - Option A: Create pages/Admin/CompanySettingsEdit.tsx (NEW file)
+      - Option B: Edit existing pages/Admin/CompanySettings.tsx (add edit mode)
+      - Recommendation: Create new file to avoid breaking existing creation flow
+      - Use Shadcn Form components (not MUI)
+      - Load current company data on mount
+      - Show preview dialog before submission
+      - Display audit log below form
+      
+      Step 5: Routing
+      - Edit App.tsx to add route: /admin/company-settings (or /admin/company-settings/edit)
+      - Add navigation link in admin menu (use RoleGuard for ADMIN only)
+      
+      Step 6: Testing
+      - Create pages/__tests__/CompanySettingsEdit.test.tsx
+      - Create components/__tests__/LogoUpload.test.tsx
+      - Create components/__tests__/SettingsPreview.test.tsx
+      - Test form validation with invalid data
+      - Test preview dialog display
+      - Mock API calls with vi.mock
+    </frontendWorkflow>
+    
+    <commonPitfalls>
+      <pitfall>
+        <issue>Tax code uniqueness check includes current company</issue>
+        <solution>Exclude current company ID in findByTaxCode check: existing.getId().equals(currentCompanyId)</solution>
+      </pitfall>
+      
+      <pitfall>
+        <issue>Logo upload doesn't delete old files - storage bloat</issue>
+        <solution>In FileStorageService, delete previous logo files before uploading new ones</solution>
+      </pitfall>
+      
+      <pitfall>
+        <issue>Audit log captures new values only, not old values</issue>
+        <solution>Fetch current company data BEFORE updating, build old values map, then update</solution>
+      </pitfall>
+      
+      <pitfall>
+        <issue>Company scoping not enforced - users can edit other companies</issue>
+        <solution>In CompanyService, verify CompanyContext.getCompanyId() equals path companyId</solution>
+      </pitfall>
+      
+      <pitfall>
+        <issue>Frontend shows settings page for non-admin users</issue>
+        <solution>Use RoleGuard component to hide menu link AND check role in page component</solution>
+      </pitfall>
+      
+      <pitfall>
+        <issue>Vietnamese characters in address/name break validation</issue>
+        <solution>Database uses UTF-8 encoding, ensure proper charset in application.properties</solution>
+      </pitfall>
+      
+      <pitfall>
+        <issue>Logo scaling fails for SVG files</issue>
+        <solution>SVGs don't need scaling - handle separately, only scale JPEG/PNG</solution>
+      </pitfall>
+      
+      <pitfall>
+        <issue>Migration version conflicts (V8 already exists)</issue>
+        <solution>Check db/migration folder for highest version, use next available number</solution>
+      </pitfall>
+      
+      <pitfall>
+        <issue>Existing CompanySettings.tsx is overwritten</issue>
+        <solution>Current page is for CREATION. Create NEW page for EDIT or add mode parameter</solution>
+      </pitfall>
+      
+      <pitfall>
+        <issue>Preview dialog doesn't show - form submits directly</issue>
+        <solution>Prevent default form submission, show dialog, submit only after confirmation</solution>
+      </pitfall>
+    </commonPitfalls>
+    
+    <dependencies>
+      <mavenDependency>
+        <groupId>net.coobird</groupId>
+        <artifactId>thumbnailator</artifactId>
+        <version>0.4.20</version>
+        <purpose>Image scaling for logo (header/footer versions)</purpose>
+      </mavenDependency>
+      
+      <npmDependency>
+        <package>react-hook-form</package>
+        <purpose>Form state management with Shadcn Form integration</purpose>
+        <note>May already be installed - check package.json</note>
+      </npmDependency>
+      
+      <supabaseSetup>
+        - Create bucket: "company-logos" in Supabase Storage
+        - Set access policy: public read, authenticated write
+        - Get Supabase URL and anon key (for client) and service role key (for backend)
+        - Add to application.properties: supabase.url, supabase.key
+      </supabaseSetup>
+    </dependencies>
+    
+    <verificationChecklist>
+      Backend:
+      [ ] Migration runs successfully (V8__add_company_contact_fields.sql)
+      [ ] Company entity has 4 new fields with proper annotations
+      [ ] CompanyRepository.findByTaxCode method exists
+      [ ] CompanyService interface and impl created
+      [ ] FileStorageService interface and impl created with Supabase integration
+      [ ] AuditService extended with logCompanySettingsUpdated
+      [ ] DTOs created (UpdateCompanySettingsRequest, CompanyDTO, LogoUploadResponse)
+      [ ] CompanyController created with 4 endpoints
+      [ ] @PreAuthorize("hasRole('ADMIN')") on all admin endpoints
+      [ ] Unit tests for CompanyService (validation, uniqueness, update logic)
+      [ ] Unit tests for FileStorageService (upload, scaling, deletion)
+      [ ] Integration tests for endpoints (success, validation, RBAC, uniqueness)
+      
+      Frontend:
+      [ ] Company service created/extended with API methods
+      [ ] TypeScript types defined for company data
+      [ ] Zod validation schemas created
+      [ ] LogoUpload component created with preview
+      [ ] SettingsPreview dialog component created
+      [ ] CompanySettings edit page created (or mode added)
+      [ ] Page uses Shadcn UI components (not MUI)
+      [ ] Route added to App.tsx with RoleGuard
+      [ ] Navigation link added to admin menu
+      [ ] Component tests written
+      
+      Integration:
+      [ ] Supabase Storage bucket "company-logos" created
+      [ ] Logo upload generates 3 versions (full, header, footer)
+      [ ] Preview dialog shows old vs new values before save
+      [ ] Audit log displays change history
+      [ ] Tax code uniqueness validation works (409 Conflict for duplicate)
+      [ ] Company scoping enforced (users can only edit their company)
+      [ ] RBAC enforced (403 for non-admin users)
+      [ ] Vietnamese characters supported in address/name fields
+      [ ] Old logo files deleted when uploading new logo
+    </verificationChecklist>
+  </implementationGuidance>
+</story-context>

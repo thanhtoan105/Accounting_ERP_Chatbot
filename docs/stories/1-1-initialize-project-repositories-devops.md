@@ -1,6 +1,6 @@
 # Story 1.1: Initialize Project Repositories & DevOps
 
-Status: review
+Status: done
 
 ## Story
 
