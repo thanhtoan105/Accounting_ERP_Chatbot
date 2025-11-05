@@ -1,21 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import {
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  IconButton,
-  Tooltip,
-  Typography,
-  Paper,
-  Chip,
-} from '@mui/material'
-import DeleteIcon from '@mui/icons-material/Delete'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+// <CHANGE> Replace MUI with shadcn/ui and lucide-react
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Trash2, Copy } from 'lucide-react'
 import AccountPicker from '../account/AccountPicker'
 import type { VoucherLineDTO, VoucherValidationResult } from '../../types/voucher'
 import type { ChartOfAccount } from '../../types/chartOfAccount'
@@ -52,7 +42,7 @@ export default function VoucherLineItemGrid({
     (index: number, field: keyof VoucherLineDTO, value: any) => {
       const newLines = [...lines]
       const line = { ...newLines[index] }
-      ;(line as any)[field] = value
+        ; (line as any)[field] = value
       newLines[index] = line
       onChange(newLines)
     },
@@ -196,24 +186,18 @@ export default function VoucherLineItemGrid({
   }
 
   return (
-    <Box>
-      <TableContainer component={Paper} variant="outlined">
-        <Table size="small" stickyHeader>
-          <TableHead>
+    <div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell sx={{ minWidth: 120 }}>Account</TableCell>
-              <TableCell align="right" sx={{ minWidth: 120 }}>
-                Debit
-              </TableCell>
-              <TableCell align="right" sx={{ minWidth: 120 }}>
-                Credit
-              </TableCell>
-              <TableCell sx={{ minWidth: 200 }}>Description</TableCell>
-              <TableCell align="center" sx={{ width: 80 }}>
-                Actions
-              </TableCell>
+              <TableHead className="min-w-[120px]">Account</TableHead>
+              <TableHead className="min-w-[120px] text-right">Debit</TableHead>
+              <TableHead className="min-w-[120px] text-right">Credit</TableHead>
+              <TableHead className="min-w-[200px]">Description</TableHead>
+              <TableHead className="w-[80px] text-center">Actions</TableHead>
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {lines.map((line, index) => {
               const lineNumber = line.lineNumber || index + 1
@@ -224,18 +208,10 @@ export default function VoucherLineItemGrid({
               const balanceError = getFieldError(lineNumber, 'balance')
 
               return (
-                <TableRow
-                  key={index}
-                  sx={{
-                    backgroundColor: incomplete ? 'action.hover' : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    },
-                  }}
-                >
+                <TableRow key={index} className={incomplete ? 'bg-muted/30' : ''}>
                   {/* Account */}
                   <TableCell>
-                    <Box
+                    <div
                       ref={(el) => {
                         if (el) inputRefs.current[`${index}-account`] = el
                       }}
@@ -249,122 +225,95 @@ export default function VoucherLineItemGrid({
                         disabled={disabled}
                         label=""
                       />
-                    </Box>
+                    </div>
                   </TableCell>
 
                   {/* Debit */}
                   <TableCell align="right">
-                    <TextField
-                      inputRef={(el) => {
-                        if (el) inputRefs.current[`${index}-debit`] = el
-                      }}
-                      type="number"
-                      size="small"
-                      value={line.debit || ''}
-                      onChange={(e) =>
-                        handleAmountChange(index, 'debit', parseFloat(e.target.value) || 0)
-                      }
-                      onKeyDown={(e) => handleKeyDown(e, index, 'debit')}
-                      error={!!debitError}
-                      helperText={debitError}
-                      disabled={disabled}
-                      inputProps={{
-                        min: 0,
-                        step: 0.01,
-                        style: { textAlign: 'right' },
-                      }}
-                      sx={{ width: '100%' }}
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        ref={(el) => { if (el) inputRefs.current[`${index}-debit`] = el }}
+                        type="number"
+                        value={line.debit || ''}
+                        onChange={(e) => handleAmountChange(index, 'debit', parseFloat((e.target as HTMLInputElement).value) || 0)}
+                        onKeyDown={(e) => handleKeyDown(e, index, 'debit')}
+                        disabled={disabled}
+                        className="text-right"
+                        min={0}
+                        step={0.01}
+                      />
+                      {debitError && <div className="text-xs text-destructive">{debitError}</div>}
+                    </div>
                   </TableCell>
 
                   {/* Credit */}
                   <TableCell align="right">
-                    <TextField
-                      inputRef={(el) => {
-                        if (el) inputRefs.current[`${index}-credit`] = el
-                      }}
-                      type="number"
-                      size="small"
-                      value={line.credit || ''}
-                      onChange={(e) =>
-                        handleAmountChange(index, 'credit', parseFloat(e.target.value) || 0)
-                      }
-                      onKeyDown={(e) => handleKeyDown(e, index, 'credit')}
-                      error={!!creditError}
-                      helperText={creditError}
-                      disabled={disabled}
-                      inputProps={{
-                        min: 0,
-                        step: 0.01,
-                        style: { textAlign: 'right' },
-                      }}
-                      sx={{ width: '100%' }}
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        ref={(el) => { if (el) inputRefs.current[`${index}-credit`] = el }}
+                        type="number"
+                        value={line.credit || ''}
+                        onChange={(e) => handleAmountChange(index, 'credit', parseFloat((e.target as HTMLInputElement).value) || 0)}
+                        onKeyDown={(e) => handleKeyDown(e, index, 'credit')}
+                        disabled={disabled}
+                        className="text-right"
+                        min={0}
+                        step={0.01}
+                      />
+                      {creditError && <div className="text-xs text-destructive">{creditError}</div>}
+                    </div>
                   </TableCell>
 
                   {/* Description */}
                   <TableCell>
-                    <TextField
-                      inputRef={(el) => {
-                        if (el) inputRefs.current[`${index}-description`] = el
-                      }}
-                      size="small"
+                    <Input
+                      ref={(el) => { if (el) inputRefs.current[`${index}-description`] = el }}
                       value={line.description || ''}
-                      onChange={(e) => handleLineChange(index, 'description', e.target.value)}
+                      onChange={(e) => handleLineChange(index, 'description', (e.target as HTMLInputElement).value)}
                       onKeyDown={(e) => handleKeyDown(e, index, 'description')}
                       disabled={disabled}
-                      inputProps={{
-                        maxLength: 500,
-                      }}
-                      sx={{ width: '100%' }}
+                      maxLength={500 as any}
                     />
                   </TableCell>
 
                   {/* Actions */}
                   <TableCell align="center">
-                    <Tooltip title="Duplicate row (Ctrl+D)">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDuplicateLine(index)}
-                        disabled={disabled}
-                      >
-                        <ContentCopyIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete row">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteLine(index)}
-                        disabled={disabled || lines.length <= 1}
-                        color="error"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" onClick={() => handleDuplicateLine(index)} disabled={disabled} aria-label="Duplicate row">
+                            <Copy className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Duplicate row (Ctrl+D)</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" onClick={() => handleDeleteLine(index)} disabled={disabled || lines.length <= 1} aria-label="Delete row">
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete row</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               )
             })}
           </TableBody>
         </Table>
-      </TableContainer>
+      </div>
 
       {/* Totals and balance indicator */}
-      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Typography variant="body2">
-            <strong>Total Debit:</strong> {totalDebit.toLocaleString('vi-VN')} VND
-          </Typography>
-          <Typography variant="body2">
-            <strong>Total Credit:</strong> {totalCredit.toLocaleString('vi-VN')} VND
-          </Typography>
-          <Chip
-            label={isBalanced ? 'Balanced ✓' : 'Not Balanced ✗'}
-            color={isBalanced ? 'success' : 'error'}
-            size="small"
-          />
-        </Box>
-      </Box>
-    </Box>
+      <div className="mt-2 flex justify-end gap-3 text-sm">
+        <div className="flex items-center gap-3">
+          <div><strong>Total Debit:</strong> {totalDebit.toLocaleString('vi-VN')} VND</div>
+          <div><strong>Total Credit:</strong> {totalCredit.toLocaleString('vi-VN')} VND</div>
+          <Badge variant={isBalanced ? 'secondary' : 'destructive'}>{isBalanced ? 'Balanced ✓' : 'Not Balanced ✗'}</Badge>
+        </div>
+      </div>
+    </div>
   )
 }

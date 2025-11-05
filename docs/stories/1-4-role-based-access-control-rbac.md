@@ -307,6 +307,28 @@ AC-to-Task mapping:
 
 ### Project Structure Notes
 
+#### Updated (Frontend feature-first + shadcn/ui)
+
+```
+frontend/src/
+├── features/
+│   ├── auth/ (pages: Login, ForgotPassword, ResetPassword; components: LoginForm; services: auth.ts)
+│   ├── dashboard/ (pages/Dashboard.tsx)
+│   ├── company/ (pages/CompanySettings.tsx)
+│   ├── users/ (pages/UserManagement.tsx)
+│   └── accounting/ (pages/ChartOfAccounts.tsx; pages/Vouchers/{VoucherList,VoucherForm})
+├── components/
+│   ├── app/ (app-sidebar.tsx, nav-main.tsx, index.ts)
+│   ├── voucher/ (DeleteVoucherDialog.tsx, VoucherLineItemGrid.tsx, index.ts)
+│   ├── ui/ (shadcn primitives)
+│   └── index.ts (RoleGuard, CompanyGuard)
+├── layouts/ProtectedLayout.tsx (sidebar-06)
+├── routes/AppRoutes.tsx
+└── hooks|services|utils
+```
+
+Barrel aliases: `@/features/auth`, `@/features/accounting`, `@/features/company`, `@/features/users`, `@/features/dashboard`, `@/components`, `@/components/app`, `@/components/voucher`.
+
 - Alignment with unified project structure (paths, modules, naming)
 
   - Backend packages: `controller/admin/`, `security/`, `enum/` following established patterns
@@ -492,8 +514,9 @@ Claude Sonnet 4.5 (via Cursor Auto)
 - `frontend/src/hooks/useRole.ts`
 - `frontend/src/components/RoleGuard.tsx`
 - `frontend/src/components/InviteUserDialog.tsx`
+  // Frontend paths updated to feature-first
 - `frontend/src/pages/Forbidden403.tsx`
-- `frontend/src/pages/UserManagement.tsx`
+- `frontend/src/features/users/pages/UserManagement.tsx`
 - `frontend/src/pages/AcceptInvitation.tsx`
 - `frontend/src/layouts/ProtectedLayout.tsx`
 - `frontend/src/services/user.ts`
@@ -502,15 +525,15 @@ Claude Sonnet 4.5 (via Cursor Auto)
 **Frontend - Modified Files:**
 
 - `frontend/src/App.tsx` (updated routes, integrated ProtectedLayout, added role guards)
-- `frontend/src/pages/UserManagement.tsx` (added invitation status indicators column, fetches and displays invitation status for each user)
+- `frontend/src/features/users/pages/UserManagement.tsx` (added invitation status indicators column, fetches and displays invitation status for each user)
 - `frontend/src/services/invitation.ts` (added listInvitations method and InvitationListItem type)
 - `frontend/src/pages/Forbidden403.tsx` (updated to use Lucide React icons instead of MUI icons)
 - `frontend/src/components/RoleGuard.tsx` (fixed type import: changed to `import type { ReactNode }`)
 - `frontend/src/layouts/ProtectedLayout.tsx` (fixed type import: changed to `import type { ReactNode }`)
 - `frontend/src/hooks/useAuth.ts` (fixed type import: separated `User` to type-only import)
-- `frontend/src/pages/ForgotPassword.tsx` (prefixed unused parameter: `onBack` → `_onBack`)
-- `frontend/src/pages/Login.tsx` (prefixed unused parameters: `onRegister` → `_onRegister`, `onForgotPassword` → `_onForgotPassword`)
-- `frontend/src/pages/ResetPassword.tsx` (prefixed unused parameter: `onBack` → `_onBack`)
+- `frontend/src/features/auth/pages/ForgotPassword.tsx` (prefixed unused parameter: `onBack` → `_onBack`)
+- `frontend/src/features/auth/pages/Login.tsx` (prefixed unused parameters: `onRegister` → `_onRegister`, `onForgotPassword` → `_onForgotPassword`)
+- `frontend/src/features/auth/pages/ResetPassword.tsx` (prefixed unused parameter: `onBack` → `_onBack`)
 - `frontend/src/pages/UserManagement.tsx` (prefixed unused variable: `currentUserRole` → `_currentUserRole`)
 - `frontend/src/components/__tests__/RoleGuard.test.tsx` (removed unused `useAuth` import and mock, prefixed unused function parameters)
 - `frontend/src/pages/__tests__/AcceptInvitation.test.tsx` (removed unused `MemoryRouter` import)
@@ -624,7 +647,7 @@ Claude Sonnet 4.5 (via Cursor Auto)
 **Frontend:**
 
 - `frontend/src/utils/axios.ts` - Improved companyId storage/retrieval, fixed axios interceptor
-- `frontend/src/pages/Login.tsx` - Added companyId verification and retry logic
+- `frontend/src/features/auth/pages/Login.tsx` - Added companyId verification and retry logic
 - `frontend/src/services/user.ts` - Added X-Company-Id header to getAuthHeaders()
 - `frontend/src/services/invitation.ts` - Added X-Company-Id header to getAuthHeaders()
 - `frontend/src/services/company.ts` - Added X-Company-Id header to createCompany()
@@ -968,7 +991,7 @@ Claude Sonnet 4.5 (via Cursor Auto)
 **Frontend:**
 
 - `frontend/src/pages/AcceptInvitation.tsx` - Removed automatic login, redirect to login page with success message query parameter
-- `frontend/src/pages/Login.tsx` - Added success message display for newly created accounts from invitation acceptance
+- `frontend/src/features/auth/pages/Login.tsx` - Added success message display for newly created accounts from invitation acceptance
 
 ### Testing
 

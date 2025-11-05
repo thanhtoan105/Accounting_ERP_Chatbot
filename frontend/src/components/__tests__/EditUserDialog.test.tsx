@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
-import EditUserDialog from '../EditUserDialog'
-import * as userService from '../../services/user'
+import EditUserDialog from '@/features/users/pages/EditUserDialog'
+import * as userService from '@/services/user'
 
-vi.mock('../../services/user')
-vi.mock('../../hooks/useAuth', () => ({
+vi.mock('@/services/user')
+vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     user: { id: 1, email: 'admin@example.com', role: 'admin' },
   }),
 }))
-vi.mock('../../hooks/useRole', () => ({
+vi.mock('@/hooks/useRole', () => ({
   useRole: () => ({
     canChangeRoles: () => true,
   }),

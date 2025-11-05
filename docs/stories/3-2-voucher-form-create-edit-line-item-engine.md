@@ -205,7 +205,7 @@ so that journal entries are captured accurately, efficiently, and can be saved s
   - `backend/src/main/java/com/accounting/entity/Voucher.java` - reference for entity structure, relationships, CHECK constraints
   - `backend/src/main/java/com/accounting/controller/voucher/VoucherController.java` - follow REST controller pattern for POST/PUT endpoints
   - `backend/src/main/java/com/accounting/dto/VoucherDTO.java` - reference for DTO structure
-  - `frontend/src/pages/VoucherList.tsx` - reference for MUI component patterns, error handling, localStorage usage
+  - `frontend/src/features/accounting/pages/Vouchers/VoucherList.tsx` - reference for component patterns, error handling, localStorage usage
 
 - **Frontend Patterns**:
 
@@ -239,6 +239,17 @@ so that journal entries are captured accurately, efficiently, and can be saved s
 [Source: docs/stories/3-1-voucher-list-and-search.md#Dev-Agent-Record]
 
 ### Project Structure Notes
+
+Frontend voucher form has been moved under the feature-first tree and shadcn-based layout:
+
+- Voucher Form page: `@/features/accounting/pages/Vouchers/VoucherForm.tsx`
+- Voucher List page (for navigation/back): `@/features/accounting/pages/Vouchers/VoucherList.tsx`
+- Reusable components: `@/components/voucher/{VoucherLineItemGrid,DeleteVoucherDialog}.tsx`
+- Services: `@/services/voucher.ts`
+- Routes: `@/routes/AppRoutes.tsx`
+- Layout: `@/layouts/ProtectedLayout` (sidebar-06)
+
+When referencing UI code in this story, use the paths above instead of the old `src/pages/*` locations.
 
 - Alignment with unified project structure (paths, modules, naming)
 
@@ -371,8 +382,8 @@ so that journal entries are captured accurately, efficiently, and can be saved s
 
 **Frontend Files:**
 
-- `frontend/src/pages/VoucherForm.tsx` (NEW - added read-only currency field)
-- `frontend/src/pages/VoucherList.tsx` (MODIFIED - added full-screen dialog for create)
+- `frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx` (NEW - added read-only currency field)
+- `frontend/src/features/accounting/pages/Vouchers/VoucherList.tsx` (MODIFIED - added full-screen dialog for create)
 - `frontend/src/components/voucher/VoucherLineItemGrid.tsx` (NEW)
 - `frontend/src/components/account/AccountPicker.tsx` (EXISTING - used in voucher form)
 - `frontend/src/services/voucher.ts` (MODIFIED - added create, update, validate functions, updated to use fetchWithAuth)
@@ -380,7 +391,7 @@ so that journal entries are captured accurately, efficiently, and can be saved s
 - `frontend/src/utils/axios.ts` (MODIFIED - added fetchWithAuth wrapper, updated interceptor to handle 403)
 - `frontend/src/types/voucher.ts` (MODIFIED - added VoucherCreateRequest, VoucherLineDTO, VoucherValidationResult types)
 - `frontend/src/App.tsx` (MODIFIED - added routes for voucher form)
-- `frontend/src/pages/UserManagement.tsx` (MODIFIED - improved error handling for transient auth errors)
+- `frontend/src/features/users/pages/UserManagement.tsx` (MODIFIED - improved error handling for transient auth errors)
 
 ---
 
@@ -432,7 +443,7 @@ All backend endpoints, entities, DTOs, and validation services are correctly imp
 
 2. **Currency Field Not Hidden (AC #4)**
 
-   - **Location**: `frontend/src/pages/VoucherForm.tsx`
+   - **Location**: `frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx`
    - **Issue**: AC #4 requires currency set to VND, read-only/hidden on form. Backend defaults to VND correctly, but UI does not explicitly show or hide currency field
    - **Impact**: Minor UX issue - currency field should be explicitly hidden or shown as read-only VND
    - **Evidence**: No currency field found in VoucherForm.tsx UI code
@@ -447,7 +458,7 @@ All backend endpoints, entities, DTOs, and validation services are correctly imp
    - **Recommendation**: Implement optimistic locking mechanism or document why it's deferred
 
 4. **Edit Lock Clearing Not Implemented (AC #9)**
-   - **Location**: `frontend/src/pages/VoucherForm.tsx`, backend service
+   - **Location**: `frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx`, backend service
    - **Issue**: AC #9 requires "clears edit lock if session lost >5 min". Server-side edit lock mechanism not implemented
    - **Impact**: Draft locks may persist indefinitely if browser crashes
    - **Evidence**: Story tasks show placeholder: "Clear edit lock if session lost >5 minutes (server-side edit lock mechanism) - Placeholder: localStorage handles client-side, server-side lock clearing TODO"
@@ -464,7 +475,7 @@ All backend endpoints, entities, DTOs, and validation services are correctly imp
    - **Recommendation**: Document as known limitation, ensure AC #5 reflects this or mark as partially implemented
 
 2. **Attachments Placeholder (AC #8)**
-   - **Location**: `frontend/src/pages/VoucherForm.tsx:486-490`
+   - **Location**: `frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx:486-490`
    - **Issue**: Attachments UI is placeholder only, backend deferred to Story 3.7
    - **Impact**: Expected and documented - AC #8 explicitly notes backend deferred to Story 3.7
    - **Evidence**: UI shows tooltip "Attachments (Coming in Story 3.7)" with placeholder button
@@ -696,7 +707,7 @@ All testing tasks marked complete. Test files not reviewed in detail, but testin
   - **Status**: Blocked pending Epic 1 completion (PeriodService implementation)
   - Suggested owner: Backend developer
 
-- [x] [Medium] Add currency field to VoucherForm UI (read-only, value="VND") or document as hidden by design (AC #4) [file: frontend/src/pages/VoucherForm.tsx]
+- [x] [Medium] Add currency field to VoucherForm UI (read-only, value="VND") or document as hidden by design (AC #4) [file: frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx]
 
   - Added visible read-only currency field showing "VND" with helper text "Read-only"
   - Completed: 2025-11-02

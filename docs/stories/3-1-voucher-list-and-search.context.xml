@@ -266,7 +266,7 @@
             requires reason. Logs deletion to audit trail.
         </interface>
         <interface name="VoucherList component" kind="React component" signature="VoucherList()"
-            path="frontend/src/pages/VoucherList.tsx">
+            path="frontend/src/features/accounting/pages/Vouchers/VoucherList.tsx">
             Main voucher list page component with MUI Data Grid integration, search input with
             debounced typeahead, filters (status, date range), multi-column sorting, pagination,
             live badges, and error recovery UI.
@@ -309,7 +309,7 @@
                 backend/src/test/java/com/accounting/integration/VoucherDeletionValidationTest.java</location>
             <location>
                 backend/src/test/java/com/accounting/integration/VoucherCompanyScopingTest.java</location>
-            <location>frontend/src/pages/__tests__/VoucherList.test.tsx</location>
+        <location>frontend/src/pages/__tests__/VoucherList.test.tsx</location>
             <location>frontend/src/services/__tests__/voucher.test.ts</location>
             <location>frontend/src/components/voucher/__tests__/DeleteVoucherDialog.test.tsx</location>
         </locations>

@@ -153,6 +153,23 @@ class ChartOfAccountsControllerIntegrationTest extends com.accounting.test.Integ
   }
 
   @Test
+  void getChartOfAccounts_withSearchTerm_searchesByCode() throws Exception {
+    ChartOfAccount account1 = createAccount("1111", "Tiền Việt Nam", null, true);
+    ChartOfAccount account2 = createAccount("1311", "Phải thu khách hàng", null, true);
+
+    mockMvc
+        .perform(
+            get("/api/v1/chart-of-accounts")
+                .param("search", "1111")
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").isArray())
+        .andExpect(jsonPath("$.data[?(@.code == '1111')]").exists())
+        .andExpect(jsonPath("$.data[?(@.code == '1311')]").doesNotExist());
+  }
+
+  @Test
   void getPostableAccounts_returnsOnlyPostableLeaves() throws Exception {
     ChartOfAccount postable1 = createAccount("1111", "Tiền Việt Nam", null, true);
     ChartOfAccount postable2 = createAccount("1311", "Phải thu", null, true);

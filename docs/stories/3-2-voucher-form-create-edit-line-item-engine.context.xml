@@ -254,7 +254,7 @@
         <reason>DTO structure pattern to follow for VoucherCreateRequest and VoucherLineDTO. Includes validation annotations and field mappings.</reason>
       </artifact>
       <artifact>
-        <path>frontend/src/pages/VoucherList.tsx</path>
+        <path>frontend/src/features/accounting/pages/Vouchers/VoucherList.tsx</path>
         <kind>component</kind>
         <symbol>VoucherList</symbol>
         <lines>1-567</lines>

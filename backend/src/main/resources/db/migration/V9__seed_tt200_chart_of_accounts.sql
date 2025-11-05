@@ -449,6 +449,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Ensure at least one company exists for seeding in dev environments
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM companies) THEN
+    INSERT INTO companies (code, name, tax_code, address)
+    VALUES ('DEFAULT', 'Default Company', '0000000000', '');
+  END IF;
+END $$;
+
 -- Seed COA for all existing companies
 DO $$
 DECLARE
@@ -462,15 +471,24 @@ END $$;
 -- Drop the function after use (optional, can keep for future use)
 -- DROP FUNCTION IF EXISTS seed_tt200_coa_for_company(BIGINT);
 
--- Validate seed data
+-- Validate seed data per company
 DO $$
 DECLARE
-  account_count INTEGER;
+  rec RECORD;
 BEGIN
-  SELECT COUNT(*) INTO account_count
-  FROM chart_of_accounts;
-  
-  IF account_count < 154 THEN
-    RAISE EXCEPTION 'Seed migration failed: Expected at least 154 accounts, found %', account_count;
+  -- If there are no companies, skip validation (nothing to seed yet)
+  IF NOT EXISTS (SELECT 1 FROM companies) THEN
+    RAISE NOTICE 'No companies found; skipping TT200 COA validation.';
+    RETURN;
   END IF;
+
+  FOR rec IN
+    SELECT c.id AS company_id, COUNT(a.id) AS account_count
+    FROM companies c
+    LEFT JOIN chart_of_accounts a ON a.company_id = c.id
+    GROUP BY c.id
+    HAVING COUNT(a.id) < 154
+  LOOP
+    RAISE EXCEPTION 'Seed migration failed: Company % has only % accounts (<154)', rec.company_id, rec.account_count;
+  END LOOP;
 END $$;

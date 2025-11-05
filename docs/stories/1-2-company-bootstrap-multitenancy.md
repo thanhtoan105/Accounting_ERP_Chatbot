@@ -182,6 +182,13 @@ Migration responsibilities:
 
 ### Project Structure Notes
 
+Company setup screen path updated to feature-first structure:
+
+- Page: `@/features/company/pages/CompanySettings.tsx`
+- Guards: `@/components/{CompanyGuard,RoleGuard}`
+- Layout with sidebar: `@/layouts/ProtectedLayout`
+- Routes defined in: `@/routes/AppRoutes.tsx`
+
 - Alignment with unified project structure (paths, modules, naming)
   - Backend packages and resource locations per architecture
   - Frontend pages/components/services folders
@@ -280,7 +287,7 @@ From Story 1-1-initialize-project-repositories-devops (Status: done)
 - frontend/src/services/company.ts
 - frontend/src/components/common/CompanySwitcher.tsx
 - frontend/src/components/common/**tests**/CompanySwitcher.test.tsx
-- frontend/src/pages/Admin/CompanySettings.tsx
+- frontend/src/features/company/pages/CompanySettings.tsx
 - frontend/src/pages/**tests**/CompanySettings.test.tsx
 
 - backend/src/main/java/com/accounting/exception/CompanyScopeViolationException.java
@@ -332,7 +339,7 @@ Backend foundations for companies and multitenancy are complete. Post-review fix
 - MEDIUM: AC#6 branding in shell/exports not implemented in FE. ⏸️ Deferred (not critical for multitenancy core)
 - ✅ MEDIUM: ~~Response contract mismatch~~ → **FIXED**: Backend returns `{ data: ... }` envelope, FE accepts both formats (backend/src/main/java/com/accounting/controller/CompanyController.java)
 - ✅ HIGH: ~~AC#3 explicit 403 path not implemented~~ → **FIXED**: AOP-based enforcement via `CompanyScopeAspect` and `CompanyScopeEnforcer` with `CompanyScopeViolationException` (403, `RBAC_COMPANY_SCOPE_VIOLATION`). Verified with curl tests and integration tests.
-- ✅ MEDIUM: ~~FE logo size check absent~~ → **FIXED**: Added logo file size (≤256KB) and MIME type validation (frontend/src/pages/Admin/CompanySettings.tsx:26-37)
+- ✅ MEDIUM: ~~FE logo size check absent~~ → **FIXED**: Added logo file size (≤256KB) and MIME type validation (frontend/src/features/company/pages/CompanySettings.tsx:26-37)
 - LOW: Migration column type for `tax_code` differs from entity definition (`VARCHAR(10)` vs `char(10)`). ⏸️ Low priority, constraint already enforces format
 
 ### Acceptance Criteria Coverage
@@ -340,7 +347,7 @@ Backend foundations for companies and multitenancy are complete. Post-review fix
 | AC# | Description                                                            | Status      | Evidence                                                                                                                                                                                                                                                                                                                                                            |
 | --- | ---------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | AC1 | First-login prompt/CLI to create first company; reject duplicate codes | PARTIAL     | Duplicate handling present in service (backend/src/main/java/com/accounting/service/impl/CompanyServiceImpl.java:92-99,40-51); CLI/first-login flow missing                                                                                                                                                                                                         |
-| AC2 | FE form validation for fields and duplicate error display              | IMPLEMENTED | FE zod schema (frontend/src/pages/Admin/CompanySettings.tsx:6-12) with logo size/type validation (lines 26-37), backend error mapping present (lines 46-54)                                                                                                                                                                                                         |
+| AC2 | FE form validation for fields and duplicate error display              | IMPLEMENTED | FE zod schema (frontend/src/features/company/pages/CompanySettings.tsx:6-12) with logo size/type validation (lines 26-37), backend error mapping present (lines 46-54)                                                                                                                                                                                                         |
 | AC3 | DB/API scoping via `company_id`, 403 on cross-company                  | IMPLEMENTED | Filter sets context (backend/src/main/java/com/accounting/security/CompanyContextFilter.java:24-41); AOP enforcement via `CompanyScopeAspect` and `CompanyScopeEnforcer` with 403 handler (backend/src/main/java/com/accounting/exception/CompanyScopeViolationException.java; RestExceptionHandler.java). Verified with curl tests and Customer integration tests. |
 | AC4 | Demo company auto-created                                              | IMPLEMENTED | Service and endpoint exist (backend/src/main/java/com/accounting/service/impl/DemoBootstrapServiceImpl.java:22-41; backend/src/main/java/com/accounting/controller/CompanyController.java:49-52)                                                                                                                                                                    |
 | AC5 | Company switching without session corruption                           | IMPLEMENTED | FE `CompanySwitcher` persists localStorage and calls POST (frontend/src/components/common/CompanySwitcher.tsx:22-26); backend POST endpoint added (backend/src/main/java/com/accounting/controller/ContextController.java:27-39). Verified with curl test.                                                                                                          |
@@ -357,7 +364,7 @@ Summary: 4/6 fully implemented, 1/6 partial, 1/6 missing (deferred).
 | Validation: 10-digit tax code and duplicates             | [x]       | VERIFIED COMPLETE | Service validation (backend/src/main/java/com/accounting/service/impl/CompanyServiceImpl.java:78-99)                                                                                                                                                                                                                                                                                                                                                                    |
 | Multitenancy enforcement scaffolding                     | [x]       | VERIFIED COMPLETE | Filter + repo spec exist; AOP enforcement via `CompanyScopeAspect` and `CompanyScopeEnforcer` with 403 guard (backend/src/main/java/com/accounting/security/CompanyScopeAspect.java, CompanyScopeEnforcer.java); 403 handler mapping (backend/src/main/java/com/accounting/controller/RestExceptionHandler.java). Verified with curl tests and Customer integration tests.                                                                                              |
 | Demo company bootstrap                                   | [x]       | VERIFIED COMPLETE | Service + controller (backend/src/main/java/com/accounting/service/impl/DemoBootstrapServiceImpl.java:22-41; CompanyController.java:49-52)                                                                                                                                                                                                                                                                                                                              |
-| Frontend: Company creation form and validations          | [x]       | VERIFIED COMPLETE | Form and zod present (frontend/src/pages/Admin/CompanySettings.tsx); logo size (≤256KB) and MIME type validation added (lines 26-37)                                                                                                                                                                                                                                                                                                                                    |
+| Frontend: Company creation form and validations          | [x]       | VERIFIED COMPLETE | Form and zod present (frontend/src/features/company/pages/CompanySettings.tsx); logo size (≤256KB) and MIME type validation added (lines 26-37)                                                                                                                                                                                                                                                                                                                                    |
 | Frontend: Company switcher                               | [x]       | VERIFIED COMPLETE | UI exists (frontend/src/components/common/CompanySwitcher.tsx); backend POST endpoint added (backend/src/main/java/com/accounting/controller/ContextController.java:27-39). Verified with curl test.                                                                                                                                                                                                                                                                    |
 | Testing (BE/FE)                                          | [x]       | VERIFIED COMPLETE | FE test exists (frontend/src/pages/**tests**/CompanySettings.test.tsx); BE filter tests present (backend/src/test/java/com/accounting/security/CompanyContextFilterTest.java); added integration tests for 403 enforcement (backend/src/test/java/com/accounting/controller/CustomerControllerIntegrationTest.java); added unit tests for CompanyScopeEnforcer (backend/src/test/java/com/accounting/security/CompanyScopeEnforcerTest.java). Verified with curl tests. |
 
@@ -390,7 +397,7 @@ Summary: Verified complete: 8; Partial: 0; False completions: 0
 - [x] [High] Add POST `/api/v1/_context/company` to set active company in session and echo current context [file: backend/src/main/java/com/accounting/controller/ContextController.java] ✅ Completed
 - [x] [High] Enforce 403 on cross-company access with error code `RBAC_COMPANY_SCOPE_VIOLATION`; add global handler mapping [file: backend/src/main/java/com/accounting/controller/RestExceptionHandler.java] ✅ Completed via AOP + CompanyScopeViolationException
 - [x] [Med] Align create response to `{ data: ... }` or adjust FE to accept raw entity consistently [file: backend/src/main/java/com/accounting/controller/CompanyController.java] ✅ Completed - both backend returns { data } and FE accepts both formats
-- [x] [Med] Add FE logo file size check (<=256KB) and MIME validation [file: frontend/src/pages/Admin/CompanySettings.tsx] ✅ Completed
+- [x] [Med] Add FE logo file size check (<=256KB) and MIME validation [file: frontend/src/features/company/pages/CompanySettings.tsx] ✅ Completed
 - [ ] [Med] Implement branding display in header (logo/name) and prepare export footer reference [file: frontend/src/components/common/*] ⏸️ Deferred (not critical for multitenancy core)
 
 **Advisory Notes:**

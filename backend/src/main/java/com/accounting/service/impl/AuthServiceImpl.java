@@ -136,8 +136,19 @@ public class AuthServiceImpl implements AuthService {
     String email = request.getEmail().toLowerCase();
     Optional<User> userOpt = userRepository.findByEmail(email);
 
+    if (userOpt.isEmpty()) {
+      // Explicitly signal that the email does not exist (requested behavior)
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email not found");
+    }
+
     if (userOpt.isPresent()) {
       User user = userOpt.get();
+      // Set company context from user's companyId BEFORE saving any changes
+      // Password reset is an unauthenticated flow, so there is no X-Company-Id header.
+      // Without setting this, CompanyScopeEnforcer will reject the save operation.
+      if (user.getCompanyId() != null) {
+        CompanyContext.setCompanyId(user.getCompanyId());
+      }
       String resetToken = UUID.randomUUID().toString();
       Instant expiry = Instant.now().plusSeconds(30 * 60);
 
@@ -150,7 +161,7 @@ public class AuthServiceImpl implements AuthService {
       logPasswordResetRequest(user, httpRequest);
     }
 
-    // Always return success to prevent email enumeration
+    // Now we only reach here if the email exists and email was queued/sent
   }
 
   @Override

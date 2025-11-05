@@ -177,5 +177,21 @@ public interface AuditService {
       String reason,
       Long deletedByUserId,
       HttpServletRequest request);
+
+  /**
+   * Log company settings update with old/new values.
+   *
+   * @param companyId target company id
+   * @param updatedByUserId user who performed the update
+   * @param oldValues map of old values
+   * @param newValues map of new values
+   * @param request HTTP request for IP address and user agent
+   */
+  void logCompanySettingsUpdated(
+      Long companyId,
+      Long updatedByUserId,
+      java.util.Map<String, String> oldValues,
+      java.util.Map<String, String> newValues,
+      HttpServletRequest request);
 }
 

@@ -227,6 +227,14 @@ AC-to-Task mapping:
 
 ### Project Structure Notes
 
+Chart of Accounts UI lives at:
+
+- Page: `@/features/accounting/pages/ChartOfAccounts.tsx`
+- Components: `@/components/account/{AccountTreeView,AccountDetailsModal,AccountPicker}.tsx`
+- Services: `@/services/chartOfAccounts.ts`
+- Routes: `@/routes/AppRoutes.tsx`
+- Layout: `@/layouts/ProtectedLayout` (shadcn sidebar-06)
+
 - Alignment with unified project structure (paths, modules, naming)
 
   - Backend packages: `controller/chart/` for Chart of Accounts controller, `service/impl/` for service implementations
@@ -315,6 +323,14 @@ AC-to-Task mapping:
 - Comprehensive filtering and search capabilities
 - Postable account validation ready for voucher integration
 
+**2025-02-01 - Post-Implementation Fixes:**
+
+- Fixed search functionality: Resolved issue where searching for account codes (e.g., "1111") did not return results
+  - Improved SQL query to use PostgreSQL-native `ILIKE` with `||` concatenation
+  - Added proper search term trimming in service layer
+  - Added test case for code-based search
+- UI polish: Removed card borders and optimized spacing for better visual hierarchy
+
 ### File List
 
 **Backend:**
@@ -338,7 +354,7 @@ AC-to-Task mapping:
 
 **Frontend:**
 
-- `frontend/src/pages/ChartOfAccounts.tsx`
+- `frontend/src/features/accounting/pages/ChartOfAccounts.tsx`
 - `frontend/src/components/account/AccountTreeView.tsx`
 - `frontend/src/components/account/AccountDetailsModal.tsx`
 - `frontend/src/components/account/AccountPicker.tsx`
@@ -353,6 +369,18 @@ AC-to-Task mapping:
 ## Change Log
 
 **2025-01-31** - Senior Developer Review completed. Review notes appended. Status updated from "review" to "done".
+
+**2025-02-01** - Search functionality and UI improvements:
+- **Fixed search functionality (AC#4)**: Resolved issue where searching for account codes like "1111" did not return results
+  - Updated `ChartOfAccountsRepository.searchByCodeOrNameNative()` to use PostgreSQL `ILIKE` with `||` concatenation instead of `CONCAT()` and `TRIM()` in SQL
+  - Simplified query pattern: `c.code ILIKE '%' || :searchTerm || '%'` for better performance
+  - Ensured search term is properly trimmed in service layer before passing to repository
+  - Added integration test case for searching by account code (`getChartOfAccounts_withSearchTerm_searchesByCode`)
+  - Files modified: `backend/src/main/java/com/accounting/repository/ChartOfAccountsRepository.java`, `backend/src/main/java/com/accounting/service/impl/ChartOfAccountsServiceImpl.java`, `backend/src/test/java/com/accounting/controller/chart/ChartOfAccountsControllerIntegrationTest.java`
+- **UI improvements**:
+  - Removed border and shadow from Card component displaying account table (`ChartOfAccounts.tsx`)
+  - Reduced spacing between filter section and table card for better visual hierarchy
+  - Files modified: `frontend/src/features/accounting/pages/ChartOfAccounts.tsx`
 
 ## Senior Developer Review (AI)
 

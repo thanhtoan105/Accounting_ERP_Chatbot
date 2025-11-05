@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import InviteUserDialog from '../InviteUserDialog'
-import * as invitationService from '../../services/invitation'
+import InviteUserDialog from '@/features/users/pages/InviteUserDialog'
+import * as invitationService from '@/services/invitation'
 
-vi.mock('../../services/invitation')
+vi.mock('@/services/invitation')
 
 describe('InviteUserDialog', () => {
   const mockCreateInvitation = vi.mocked(invitationService.createInvitation)

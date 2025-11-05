@@ -36,9 +36,9 @@ The epic focuses on establishing the foundation for all downstream modules by en
 
 ## System Architecture Alignment
 
-Aligns to Architecture decisions: Spring Boot backend with Spring Data JPA repositories, React frontend with MUI Data Grid for dense table displays, PostgreSQL with unaccent extension for Vietnamese search, multi-tenancy via company_id filtering at DB and API layers.
+Aligns to Architecture decisions: Spring Boot backend with Spring Data JPA repositories, React frontend (feature-first) with shadcn/ui layout and MUI used where appropriate for dense table displays, PostgreSQL with unaccent extension for Vietnamese search, multi-tenancy via company_id filtering at DB and API layers.
 
-Epic-to-architecture mapping: Epic 2 components reside under `controller/customer/`, `controller/supplier/`, `controller/chart-of-accounts/` on backend and `pages/Customers.tsx`, `pages/Suppliers.tsx`, `pages/ChartOfAccounts.tsx` on frontend. Database tables: `customers`, `suppliers`, `chart_of_accounts`, `bank_accounts` (extends Epic 1 `companies` entity). Search uses PostgreSQL FTS + unaccent extension as per Architecture ADR for Vietnamese search support (NFR23).
+Epic-to-architecture mapping: Epic 2 components reside under `controller/customer/`, `controller/supplier/`, `controller/chart-of-accounts/` on backend and `features/accounting/pages/ChartOfAccounts.tsx` (+ future customers/suppliers paths) on frontend. Database tables: `customers`, `suppliers`, `chart_of_accounts`, `bank_accounts` (extends Epic 1 `companies` entity). Search uses PostgreSQL FTS + unaccent extension as per Architecture ADR for Vietnamese search support (NFR23).
 
 Company scoping enforced via `CompanyContext` filter established in Epic 1; all repositories automatically filter by current company context. Audit logging uses `AuditLog` entity pattern from Epic 1 foundation.
 
@@ -67,13 +67,10 @@ Company scoping enforced via `CompanyContext` filter established in Epic 1; all 
 - `CompanySettingsController`: GET/PUT `/api/v1/company-settings`
 - `ImportController`: POST `/api/v1/import/customers`, `/api/v1/import/suppliers`, `/api/v1/import/opening-balances`
 
-**Frontend Components:**
+**Frontend Components (feature-first):**
 
-- `pages/ChartOfAccounts.tsx`: Tree view with expand/collapse, search, filters
-- `pages/Customers.tsx`: List with MUI Data Grid, CRUD modals, import/export
-- `pages/Suppliers.tsx`: Similar to Customers
-- `pages/BankAccounts.tsx`: List and form for cash/bank accounts
-- `pages/CompanySettings.tsx`: Fiscal year, VAT rates, document sequences, report config
+- `features/accounting/pages/ChartOfAccounts.tsx`: Tree view with expand/collapse, search, filters
+- `features/company/pages/CompanySettings.tsx`: Fiscal year, VAT rates, document sequences, report config
 - `components/import/ImportWizard.tsx`: Step-by-step import flow with validation preview
 - `components/audit/AuditLogViewer.tsx`: Filterable audit log display per entity
 

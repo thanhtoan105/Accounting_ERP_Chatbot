@@ -4,7 +4,7 @@
 
 ### 1. Created Dashboard Component
 
-**File**: `frontend/src/pages/Dashboard.tsx`
+**File**: `frontend/src/features/dashboard/pages/Dashboard.tsx`
 
 - Created new Dashboard component as the main landing page
 - Displays user information (name, email, role, company ID)
@@ -12,7 +12,7 @@
 
 ### 2. Fixed Post-Login Redirect Logic
 
-**File**: `frontend/src/pages/Login.tsx`
+**File**: `frontend/src/features/auth/pages/Login.tsx`
 
 **Change**: Added company existence check before redirect
 
@@ -65,8 +65,8 @@ if (!response.user.companyId) {
 
 ## Files Modified
 
-1. ✅ `frontend/src/pages/Dashboard.tsx` - **NEW FILE**
-2. ✅ `frontend/src/pages/Login.tsx` - Updated redirect logic
+1. ✅ `frontend/src/features/dashboard/pages/Dashboard.tsx` - **UPDATED to shadcn layout**
+2. ✅ `frontend/src/features/auth/pages/Login.tsx` - Updated redirect logic
 3. ✅ `frontend/src/App.tsx` - Updated routing
 4. ✅ `frontend/src/layouts/ProtectedLayout.tsx` - Added auth enforcement
 

@@ -1,16 +1,15 @@
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  Box,
-  Chip,
-  Grid,
-  Divider,
-} from '@mui/material'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { CheckCircle2 } from 'lucide-react'
 import type { ChartOfAccountHierarchy } from '../../types/chartOfAccount'
 
 interface AccountDetailsModalProps {
@@ -19,111 +18,124 @@ interface AccountDetailsModalProps {
   account: ChartOfAccountHierarchy
 }
 
+const getAccountTypeLabel = (type: string) => {
+  switch (type) {
+    case 'Asset':
+      return 'Tài sản'
+    case 'Liability':
+      return 'Nợ phải trả'
+    case 'Equity':
+      return 'Vốn chủ sở hữu'
+    case 'Revenue':
+      return 'Doanh thu'
+    case 'Expense':
+      return 'Chi phí'
+    default:
+      return type
+  }
+}
+
 /**
  * Modal displaying all account details including code, name, type, normal_side, postable flag, etc.
  */
 export default function AccountDetailsModal({ open, onClose, account }: AccountDetailsModalProps) {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="h6">Account Details</Typography>
-          {account.postable && (
-            <Chip icon={<CheckCircleIcon />} label="Postable" color="success" size="small" />
-          )}
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={12}>
-            <Typography variant="caption" color="text.secondary">
-              Account Code
-            </Typography>
-            <Typography variant="body1" sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
-              {account.code}
-            </Typography>
-          </Grid>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <DialogTitle>Chi tiết tài khoản</DialogTitle>
+            {account.postable && (
+              <Badge variant="success" className="gap-1">
+                <CheckCircle2 className="size-3" />
+                Có thể hạch toán
+              </Badge>
+            )}
+          </div>
+          <DialogDescription>
+            Thông tin chi tiết về tài khoản {account.code}
+          </DialogDescription>
+        </DialogHeader>
 
-          <Grid item xs={12}>
-            <Typography variant="caption" color="text.secondary">
-              Account Name
-            </Typography>
-            <Typography variant="body1">{account.name}</Typography>
-          </Grid>
+        <div className="space-y-4 py-4">
+          {/* Account Code */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Số tài khoản</label>
+            <p className="font-mono font-bold text-base">{account.code}</p>
+          </div>
 
-          <Grid item xs={6}>
-            <Typography variant="caption" color="text.secondary">
-              Type
-            </Typography>
-            <Box sx={{ mt: 0.5 }}>
-              <Chip
-                label={account.type}
-                size="small"
-                color={account.type === 'Asset' ? 'primary' : 'default'}
-              />
-            </Box>
-          </Grid>
+          {/* Account Name */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Tên tài khoản</label>
+            <p className="text-base">{account.name}</p>
+          </div>
 
-          <Grid item xs={6}>
-            <Typography variant="caption" color="text.secondary">
-              Normal Side
-            </Typography>
-            <Box sx={{ mt: 0.5 }}>
-              <Chip
-                label={account.normalSide}
-                size="small"
-                color={account.normalSide === 'Debit' ? 'primary' : 'secondary'}
-              />
-            </Box>
-          </Grid>
+          {/* Type and Normal Side */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Tính chất</label>
+              <div>
+                <Badge
+                  variant={account.type === 'Asset' ? 'default' : 'secondary'}
+                  className="text-xs"
+                >
+                  {getAccountTypeLabel(account.type)}
+                </Badge>
+              </div>
+            </div>
 
-          <Grid item xs={6}>
-            <Typography variant="caption" color="text.secondary">
-              Postable
-            </Typography>
-            <Typography variant="body2" sx={{ mt: 0.5 }}>
-              {account.postable ? 'Yes' : 'No'}
-            </Typography>
-          </Grid>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Số dư bình thường</label>
+              <div>
+                <Badge
+                  variant={account.normalSide === 'Debit' ? 'default' : 'secondary'}
+                  className="text-xs"
+                >
+                  {account.normalSide === 'Debit' ? 'Dư Nợ' : 'Dư Có'}
+                </Badge>
+              </div>
+            </div>
+          </div>
 
-          <Grid item xs={6}>
-            <Typography variant="caption" color="text.secondary">
-              Ordering Position
-            </Typography>
-            <Typography variant="body2" sx={{ mt: 0.5 }}>
-              {account.orderingPosition}
-            </Typography>
-          </Grid>
+          {/* Postable and Ordering Position */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Có thể hạch toán</label>
+              <p className="text-sm">{account.postable ? 'Có' : 'Không'}</p>
+            </div>
 
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Vị trí sắp xếp</label>
+              <p className="text-sm">{account.orderingPosition}</p>
+            </div>
+          </div>
+
+          {/* Parent Account */}
           {account.parentCode && (
-            <Grid item xs={12}>
-              <Typography variant="caption" color="text.secondary">
-                Parent Account
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 0.5, fontFamily: 'monospace' }}>
-                {account.parentCode}
-              </Typography>
-            </Grid>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Tài khoản cha</label>
+              <p className="font-mono text-sm">{account.parentCode}</p>
+            </div>
           )}
 
+          {/* Balance */}
           {account.balance !== undefined && account.balance !== null && (
             <>
-              <Divider sx={{ width: '100%', my: 1 }} />
-              <Grid item xs={12}>
-                <Typography variant="caption" color="text.secondary">
-                  Current Balance
-                </Typography>
-                <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 'bold' }}>
+              <Separator />
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Số dư hiện tại</label>
+                <p className="text-2xl font-bold">
                   {account.balance.toLocaleString('vi-VN')} VND
-                </Typography>
-              </Grid>
+                </p>
+              </div>
             </>
           )}
-        </Grid>
+        </div>
+
+        <DialogFooter>
+          <Button onClick={onClose}>Đóng</Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
     </Dialog>
   )
 }

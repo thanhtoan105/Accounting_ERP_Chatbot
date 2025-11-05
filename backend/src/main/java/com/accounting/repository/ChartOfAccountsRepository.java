@@ -74,4 +74,25 @@ public interface ChartOfAccountsRepository
       "SELECT COUNT(c) > 0 FROM ChartOfAccount c WHERE c.companyId = :companyId AND c.code = :code AND (:excludeId IS NULL OR c.id != :excludeId)")
   boolean existsByCompanyIdAndCode(
       @Param("companyId") Long companyId, @Param("code") String code, @Param("excludeId") Long excludeId);
+
+  /**
+   * Search accounts by code or name using native PostgreSQL unaccent function.
+   * Supports unaccented Vietnamese search (e.g., "nha" matches "nhà").
+   *
+   * @param companyId company ID
+   * @param searchTerm search term (matches code or unaccented name)
+   * @return list of matching accounts
+   */
+  @Query(
+      value =
+          "SELECT * FROM chart_of_accounts c "
+              + "WHERE c.company_id = :companyId "
+              + "AND ("
+              + "  c.code ILIKE '%' || :searchTerm || '%' "
+              + "  OR unaccent_search(c.name) ILIKE '%' || unaccent_search(:searchTerm) || '%' "
+              + ") "
+              + "ORDER BY c.ordering_position, c.code",
+      nativeQuery = true)
+  List<ChartOfAccount> searchByCodeOrNameNative(
+      @Param("companyId") Long companyId, @Param("searchTerm") String searchTerm);
 }

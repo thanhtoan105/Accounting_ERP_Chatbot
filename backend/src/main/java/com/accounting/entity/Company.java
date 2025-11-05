@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -32,6 +33,15 @@ public class Company {
 
     @Column(name = "logo_url", length = 512)
     private String logoUrl;
+
+    @Column(name = "contact_email", length = 255)
+    private String contactEmail;
+
+    @Column(name = "contact_phone", length = 32)
+    private String contactPhone;
+
+    @Column(name = "fiscal_year_start")
+    private LocalDate fiscalYearStart;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
@@ -87,6 +97,30 @@ public class Company {
 
     public void setLogoUrl(String logoUrl) {
         this.logoUrl = logoUrl;
+    }
+
+    public String getContactEmail() {
+        return contactEmail;
+    }
+
+    public void setContactEmail(String contactEmail) {
+        this.contactEmail = contactEmail;
+    }
+
+    public String getContactPhone() {
+        return contactPhone;
+    }
+
+    public void setContactPhone(String contactPhone) {
+        this.contactPhone = contactPhone;
+    }
+
+    public LocalDate getFiscalYearStart() {
+        return fiscalYearStart;
+    }
+
+    public void setFiscalYearStart(LocalDate fiscalYearStart) {
+        this.fiscalYearStart = fiscalYearStart;
     }
 
     public OffsetDateTime getCreatedAt() {

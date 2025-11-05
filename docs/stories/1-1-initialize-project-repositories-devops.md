@@ -55,7 +55,18 @@ so that all team members can build, test, and deploy reliably from day one.
   - Frontend: Vitest + Testing Library; minimal smoke tests
 
 ### Project Structure Notes
+Frontend is organized feature-first with shadcn/ui:
 
+```
+frontend/src/
+  features/{auth,company,users,accounting,dashboard}
+  components/{app,voucher,ui}
+  layouts/ProtectedLayout.tsx
+  routes/AppRoutes.tsx
+  hooks|services|utils
+```
+
+Use barrel imports: `@/features/auth`, `@/features/accounting`, `@/components`, `@/components/app`, `@/components/voucher`.
 - Alignment with unified project structure (paths, modules, naming)
   - Follow `backend/src/main/java/com/accounting/...` package layout and `resources/db/migration` for Flyway
   - Frontend `src/pages`, `src/components`, `src/services`, `src/hooks`, `src/types`, `src/utils`

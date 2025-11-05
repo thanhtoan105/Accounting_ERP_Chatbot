@@ -1,8 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Autocomplete, TextField, Chip, Box, Typography } from '@mui/material'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import { getPostableAccounts } from '../../services/chartOfAccounts'
-import type { ChartOfAccount } from '../../types/chartOfAccount'
+// <CHANGE> Replace MUI Autocomplete with shadcn Popover + Command pattern
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Badge } from '@/components/ui/badge'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { getPostableAccounts } from '@/services/chartOfAccounts'
+import type { ChartOfAccount } from '@/types/chartOfAccount'
 
 interface AccountPickerProps {
   value?: number | null
@@ -29,6 +34,7 @@ export default function AccountPicker({
   const [accounts, setAccounts] = useState<ChartOfAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -62,47 +68,58 @@ export default function AccountPicker({
   }
 
   return (
-    <Autocomplete
-      value={selectedAccount}
-      onChange={(_, newValue) => {
-        onChange(newValue)
-      }}
-      options={accounts}
-      getOptionLabel={getOptionLabel}
-      isOptionEqualToValue={isOptionEqualToValue}
-      loading={loading}
-      disabled={disabled}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label={label}
-          error={error || errorMessage !== null}
-          helperText={errorMessage || helperText}
-          placeholder="Search by code or name..."
-        />
+    <div className={cn('w-full', disabled && 'opacity-50 cursor-not-allowed')}>
+      {label && <label className="mb-1 block text-sm font-medium">{label}</label>}
+      <Popover open={open} onOpenChange={(o) => !disabled && setOpen(o)}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+            {selectedAccount ? (
+              <span className="truncate text-left">
+                <span className="font-mono mr-2">{selectedAccount.code}</span>
+                {selectedAccount.name}
+                {selectedAccount.postable && <Badge className="ml-2" variant="secondary">postable</Badge>}
+              </span>
+            ) : (
+              'Select account'
+            )}
+            <ChevronsUpDown className="ml-2 size-4 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-[420px]">
+          <Command filter={(value, search) => {
+            const [code, name] = value.split('::')
+            const s = search.toLowerCase()
+            return code.includes(s) || name.includes(s) ? 1 : 0
+          }}>
+            <CommandInput placeholder="Search by code or name..." />
+            <CommandList>
+              {loading && <CommandEmpty>Loading…</CommandEmpty>}
+              {!loading && accounts.length === 0 && <CommandEmpty>No postable accounts found</CommandEmpty>}
+              {!loading && accounts.length > 0 && (
+                <CommandGroup>
+                  {accounts.map((acc) => (
+                    <CommandItem
+                      key={acc.id}
+                      value={`${acc.code.toLowerCase()}::${acc.name.toLowerCase()}`}
+                      onSelect={() => { onChange(acc); setOpen(false) }}
+                      className="flex items-center gap-2"
+                    >
+                      <span className="font-mono w-16">{acc.code}</span>
+                      <span className="flex-1 truncate">{acc.name}</span>
+                      <Check className={cn('size-4', selectedAccount?.id === acc.id ? 'opacity-100' : 'opacity-0')} />
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {(error || errorMessage || helperText) && (
+        <div className={cn('mt-1 text-xs', (error || errorMessage) ? 'text-destructive' : 'text-muted-foreground')}>
+          {errorMessage || helperText}
+        </div>
       )}
-      renderOption={(props, option) => (
-        <Box component="li" {...props} key={option.id}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-            <Typography variant="body2" sx={{ fontFamily: 'monospace', minWidth: 60 }}>
-              {option.code}
-            </Typography>
-            <Typography variant="body2" sx={{ flex: 1 }}>
-              {option.name}
-            </Typography>
-            {option.postable && <CheckCircleIcon color="success" sx={{ fontSize: 18 }} />}
-          </Box>
-        </Box>
-      )}
-      filterOptions={(options, { inputValue }) => {
-        const search = inputValue.toLowerCase()
-        return options.filter((option) => {
-          return (
-            option.code.toLowerCase().includes(search) || option.name.toLowerCase().includes(search)
-          )
-        })
-      }}
-      noOptionsText={loading ? 'Loading...' : 'No postable accounts found'}
-    />
+    </div>
   )
 }

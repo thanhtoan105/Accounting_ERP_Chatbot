@@ -104,52 +104,71 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
           HttpStatus.BAD_REQUEST, "Missing company context (X-Company-Id header required)");
     }
 
-    // Build specification with company scope and optional filters
-    Specification<ChartOfAccount> spec =
-        (root, query, criteriaBuilder) -> {
-          List<Predicate> predicates = new ArrayList<>();
+    // If search is provided, use native query with unaccent function for better
+    // Vietnamese support
+    if (search != null && !search.isBlank()) {
+      String trimmedSearch = search.trim();
+      List<ChartOfAccount> accounts = chartOfAccountsRepository.searchByCodeOrNameNative(companyId, trimmedSearch);
 
-          // Always filter by company
-          predicates.add(criteriaBuilder.equal(root.get("companyId"), companyId));
+      // Apply additional filters in-memory (since native query doesn't support JPA
+      // Specification)
+      return accounts.stream()
+          .filter(account -> {
+            if (postable != null && account.getPostable() != postable) {
+              return false;
+            }
+            if (codePrefix != null && !codePrefix.isBlank() && !account.getCode().startsWith(codePrefix)) {
+              return false;
+            }
+            if (parentId != null) {
+              Long accountParentId = account.getParentId();
+              if (accountParentId == null && parentId != null) {
+                return false;
+              }
+              if (accountParentId != null && !accountParentId.equals(parentId)) {
+                return false;
+              }
+            }
+            if (type != null && !type.isBlank() && !account.getType().equals(type)) {
+              return false;
+            }
+            return true;
+          })
+          .map(this::toDTO)
+          .collect(Collectors.toList());
+    }
 
-          // Filter by postable flag
-          if (postable != null) {
-            predicates.add(criteriaBuilder.equal(root.get("postable"), postable));
-          }
+    // Build specification with company scope and optional filters (no search)
+    Specification<ChartOfAccount> spec = (root, query, criteriaBuilder) -> {
+      List<Predicate> predicates = new ArrayList<>();
 
-          // Filter by code prefix
-          if (codePrefix != null && !codePrefix.isBlank()) {
-            predicates.add(
-                criteriaBuilder.like(
-                    root.get("code"), codePrefix + "%"));
-          }
+      // Always filter by company
+      predicates.add(criteriaBuilder.equal(root.get("companyId"), companyId));
 
-          // Filter by parent ID
-          if (parentId != null) {
-            predicates.add(criteriaBuilder.equal(root.get("parentId"), parentId));
-          }
+      // Filter by postable flag
+      if (postable != null) {
+        predicates.add(criteriaBuilder.equal(root.get("postable"), postable));
+      }
 
-          // Filter by type
-          if (type != null && !type.isBlank()) {
-            predicates.add(criteriaBuilder.equal(root.get("type"), type));
-          }
+      // Filter by code prefix
+      if (codePrefix != null && !codePrefix.isBlank()) {
+        predicates.add(
+            criteriaBuilder.like(
+                root.get("code"), codePrefix + "%"));
+      }
 
-          // Search by code or name (unaccented Vietnamese support)
-          if (search != null && !search.isBlank()) {
-            // Use native query with unaccent function for better performance
-            // For JPA Criteria, we'll use LIKE with lower case as fallback
-            String searchPattern = "%" + search.toLowerCase() + "%";
-            Predicate codePredicate =
-                criteriaBuilder.like(
-                    criteriaBuilder.lower(root.get("code")), searchPattern);
-            Predicate namePredicate =
-                criteriaBuilder.like(
-                    criteriaBuilder.lower(root.get("name")), searchPattern);
-            predicates.add(criteriaBuilder.or(codePredicate, namePredicate));
-          }
+      // Filter by parent ID
+      if (parentId != null) {
+        predicates.add(criteriaBuilder.equal(root.get("parentId"), parentId));
+      }
 
-          return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+      // Filter by type
+      if (type != null && !type.isBlank()) {
+        predicates.add(criteriaBuilder.equal(root.get("type"), type));
+      }
+
+      return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+    };
 
     List<ChartOfAccount> accounts = chartOfAccountsRepository.findAll(spec);
     return accounts.stream().map(this::toDTO).collect(Collectors.toList());
@@ -203,11 +222,10 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
   private ChartOfAccountDTO toDTO(ChartOfAccount account) {
     String parentCode = null;
     if (account.getParentId() != null) {
-      parentCode =
-          chartOfAccountsRepository
-              .findById(account.getParentId())
-              .map(ChartOfAccount::getCode)
-              .orElse(null);
+      parentCode = chartOfAccountsRepository
+          .findById(account.getParentId())
+          .map(ChartOfAccount::getCode)
+          .orElse(null);
     }
 
     return new ChartOfAccountDTO(
@@ -223,7 +241,7 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
         account.getOrderingPosition(),
         null, // Balance - to be implemented in AC#11
         null, // createdAt - add if needed
-        null  // updatedAt - add if needed
+        null // updatedAt - add if needed
     );
   }
 

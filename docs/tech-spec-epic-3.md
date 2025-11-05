@@ -38,7 +38,7 @@ This epic delivers the core voucher engine and general ledger foundation for the
 
 ## System Architecture Alignment
 
-This epic aligns with the Spring Boot backend architecture, implementing RESTful controllers in `controller/voucher/`, business logic in `service/gl/`, and JPA repositories for data persistence. The data model leverages PostgreSQL tables `vouchers`, `voucher_lines`, and `journal_entries` as specified in the architecture document. The frontend implements React components in `pages/VoucherList.tsx` and `pages/VoucherForm.tsx` using MUI Data Grid for the list view and MUI form components for data entry. The implementation follows established naming patterns (snake_case for DB, PascalCase for entities, REST endpoints at `/api/v1/vouchers`), multi-tenancy via `company_id` row-level filtering, and Spring Security integration for RBAC enforcement. The system integrates with Epic 2's Chart of Accounts (COA) for account validation and references the period management foundation from Epic 1. File attachments utilize Supabase Storage as per architecture decision, and audit logs write to the `audit_logs` table with immutable append-only semantics.
+This epic aligns with the Spring Boot backend architecture, implementing RESTful controllers in `controller/voucher/`, business logic in `service/gl/`, and JPA repositories for data persistence. The data model leverages PostgreSQL tables `vouchers`, `voucher_lines`, and `journal_entries` as specified in the architecture document. The frontend implements React components in `features/accounting/pages/Vouchers/VoucherList.tsx` and `features/accounting/pages/Vouchers/VoucherForm.tsx` (feature-first, shadcn layout), while still using MUI where appropriate for dense tables. The implementation follows established naming patterns (snake_case for DB, PascalCase for entities, REST endpoints at `/api/v1/vouchers`), multi-tenancy via `company_id` row-level filtering, and Spring Security integration for RBAC enforcement. The system integrates with Epic 2's Chart of Accounts (COA) for account validation and references the period management foundation from Epic 1. File attachments utilize Supabase Storage as per architecture decision, and audit logs write to the `audit_logs` table with immutable append-only semantics.
 
 ## Detailed Design
 
@@ -90,13 +90,13 @@ This epic aligns with the Spring Boot backend architecture, implementing RESTful
 
 **Frontend Modules:**
 
-1. **VoucherList Component** (`pages/VoucherList.tsx`)
+1. **VoucherList Component** (`features/accounting/pages/Vouchers/VoucherList.tsx`)
    - Responsibilities: Display voucher table with filters, search, pagination; handle row actions
    - Inputs: Filter state, sort order, page number
    - Outputs: Rendered table, filter UI, action buttons
    - Owner: Frontend team
 
-2. **VoucherForm Component** (`pages/VoucherForm.tsx`)
+2. **VoucherForm Component** (`features/accounting/pages/Vouchers/VoucherForm.tsx`)
    - Responsibilities: Render voucher form with line item grid, handle inline editing, validation feedback
    - Inputs: Voucher ID (for edit), draft state
    - Outputs: Form state, validation errors, save actions
@@ -714,7 +714,7 @@ On posting:
 | AC ID | Acceptance Criteria | PRD Section | Epic Story | Spec Section(s) | Component(s)/API(s) | Test Idea |
 |-------|-------------------|-------------|-----------|-----------------|---------------------|-----------|
 | AC1 | Voucher list with search/filter | FR13 | 3.1 | Detailed Design: Services/Modules (VoucherList), APIs (GET /api/v1/vouchers) | VoucherList.tsx, VoucherController.getVouchers(), VoucherRepository.findAll() | Test voucher list pagination, search with Vietnamese text, filter by status/date |
-| AC2 | Voucher form with line items | FR13 | 3.2 | Detailed Design: Services (VoucherService), Data Models (VoucherLine), APIs (POST/PUT /api/v1/vouchers) | VoucherForm.tsx, VoucherLineItemGrid.tsx, VoucherController.create/update() | Test line item editing, keyboard navigation, auto-add line, draft save |
+| AC2 | Voucher form with line items | FR13 | 3.2 | Detailed Design: Services (VoucherService), Data Models (VoucherLine), APIs (POST/PUT /api/v1/vouchers) | features/accounting/pages/Vouchers/VoucherForm.tsx, components/voucher/VoucherLineItemGrid.tsx, VoucherController.create/update() | Test line item editing, keyboard navigation, auto-add line, draft save |
 | AC3 | Posting/unposting/reversal | FR13, FR14 | 3.3 | Detailed Design: Services (VoucherPostingService, VoucherReversalService), Workflows (Posting, Reversal) | VoucherPostingService.post(), VoucherReversalService.reverse(), POST /api/v1/vouchers/{id}/post | Test posting creates journal entries, reversal links bi-directionally, unposting validates dependencies |
 | AC4 | Double-entry & leaf-only validation | FR10, FR11, FR12 | 3.4 | Detailed Design: Services (VoucherValidationService), Data Models (CHECK constraints) | VoucherValidationService.validate(), COA postable flag check | Test double-entry balance (Dr=Cr), parent account blocking, dimension requirements |
 | AC5 | Audit trail | FR07 | 3.5 | Non-Functional: Observability (Audit Trail), Detailed Design: Services (AuditLogService) | AuditLogService.log(), GET /api/v1/vouchers/{id}/audit-history | Test audit log creation on all actions, hash digest generation, export functionality |

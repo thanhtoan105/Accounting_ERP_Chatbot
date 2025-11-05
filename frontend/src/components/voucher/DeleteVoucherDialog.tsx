@@ -1,16 +1,10 @@
 import { useState } from 'react'
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Typography,
-  Alert,
-  Box,
-} from '@mui/material'
-import type { VoucherListDTO } from '../../types/voucher'
+// <CHANGE> Migrate from MUI to shadcn/ui dialog, inputs, buttons, alert
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import type { VoucherListDTO } from '@/types/voucher'
 
 interface DeleteVoucherDialogProps {
   open: boolean
@@ -67,54 +61,46 @@ export default function DeleteVoucherDialog({
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Delete Voucher</DialogTitle>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose() }}>
       <DialogContent>
-        <Typography variant="body1" sx={{ mb: 2 }}>
-          Are you sure you want to delete this voucher?
-        </Typography>
-        <Box sx={{ mb: 2, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-          <Typography variant="body2">
-            <strong>Voucher Number:</strong> {voucher.voucherNumber}
-          </Typography>
-          <Typography variant="body2">
-            <strong>Date:</strong> {new Date(voucher.voucherDate).toLocaleDateString()}
-          </Typography>
-          <Typography variant="body2">
-            <strong>Type/Description:</strong> {voucher.type}
-          </Typography>
-          <Typography variant="body2">
-            <strong>Status:</strong> {voucher.status}
-          </Typography>
-        </Box>
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          Only draft vouchers that are not referenced can be deleted. This action cannot be undone.
-        </Alert>
-        <TextField
-          autoFocus
-          fullWidth
-          multiline
-          rows={3}
-          label="Deletion Reason *"
-          placeholder="Please provide a reason for deleting this voucher..."
-          value={reason}
-          onChange={(e) => {
-            setReason(e.target.value)
-            setError(null)
-          }}
-          error={!!error}
-          helperText={error || 'This reason will be logged in the audit trail'}
-          disabled={loading}
-        />
+        <DialogHeader>
+          <DialogTitle>Delete Voucher</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="text-sm">Are you sure you want to delete this voucher?</div>
+          <div className="rounded-md border p-3 text-sm">
+            <div><strong>Voucher Number:</strong> {voucher.voucherNumber}</div>
+            <div><strong>Date:</strong> {new Date(voucher.voucherDate).toLocaleDateString()}</div>
+            <div><strong>Type/Description:</strong> {voucher.type}</div>
+            <div><strong>Status:</strong> {voucher.status}</div>
+          </div>
+          <Alert>
+            <AlertDescription>
+              Only draft vouchers that are not referenced can be deleted. This action cannot be undone.
+            </AlertDescription>
+          </Alert>
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Deletion Reason</label>
+            <Textarea
+              autoFocus
+              rows={3}
+              placeholder="Please provide a reason for deleting this voucher..."
+              value={reason}
+              onChange={(e) => { setReason(e.target.value); setError(null) }}
+              disabled={loading}
+            />
+            <div className={`text-xs ${error ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {error || 'This reason will be logged in the audit trail'}
+            </div>
+          </div>
+        </div>
+        <DialogFooter className="mt-2">
+          <Button variant="outline" onClick={handleClose} disabled={loading}>Cancel</Button>
+          <Button variant="destructive" onClick={handleConfirm} disabled={loading}>
+            {loading ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button onClick={handleConfirm} color="error" variant="contained" disabled={loading}>
-          {loading ? 'Deleting...' : 'Delete'}
-        </Button>
-      </DialogActions>
     </Dialog>
   )
 }

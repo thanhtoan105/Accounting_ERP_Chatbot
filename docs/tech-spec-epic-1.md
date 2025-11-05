@@ -26,9 +26,9 @@ Out of scope:
 
 ## System Architecture Alignment
 
-Aligns to Architecture decisions: Spring Boot backend + React frontend, REST API with JWT, PostgreSQL via Supabase, Redis-ready cache, MUI UI framework. Security aligns with PRD FR01–FR07 and NFR5–NFR9; documentation via SpringDoc satisfies NFR21; containerization and CI/CD satisfy NFR28–NFR29.
+Aligns to Architecture decisions: Spring Boot backend + React frontend, REST API with JWT, PostgreSQL via Supabase, Redis-ready cache, shadcn/ui + Tailwind (MUI may still be used for dense tables). Security aligns with PRD FR01–FR07 and NFR5–NFR9; documentation via SpringDoc satisfies NFR21; containerization and CI/CD satisfy NFR28–NFR29.
 
-Epic-to-architecture mapping: Epic 1 components reside under `controller/auth/`, `security/`, `config/` on backend and `pages/Login.tsx`, `services/auth.ts` on frontend. Initial entities: `users`, `roles`, `companies`. OpenAPI exposed at `/api/docs`; health check at `/health`.
+Epic-to-architecture mapping: Epic 1 components reside under `controller/auth/`, `security/`, `config/` on backend and `features/auth/pages/Login.tsx`, `features/auth/services/auth.ts` on frontend. Initial entities: `users`, `roles`, `companies`. OpenAPI exposed at `/api/docs`; health check at `/health`.
 
 ## Detailed Design
 
@@ -43,9 +43,9 @@ Backend packages:
 - `config/`: CORS, OpenAPI, Flyway.
 
 Frontend:
-- `pages/Login.tsx`, `App.tsx` with protected routes.
-- `services/auth.ts` with axios client + interceptors.
-- MUI theme + layout shell; basic `Dashboard.tsx`.
+- `features/auth/pages/Login.tsx`, `routes/AppRoutes.tsx` for route map.
+- `features/auth/services/auth.ts` with axios client + interceptors.
+- shadcn/ui layout using `layouts/ProtectedLayout.tsx` (sidebar-06); basic `features/dashboard/pages/Dashboard.tsx`.
 
 ### Data Models and Contracts
 

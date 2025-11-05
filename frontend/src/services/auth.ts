@@ -87,12 +87,13 @@ export async function logout(): Promise<void> {
 }
 
 export async function forgotPassword(email: string): Promise<void> {
-  await fetch(`${API_BASE}/auth/forgot-password`, {
+  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify({ email }),
   })
+  await handleJsonResponse<{ data: { message: string } }>(res)
 }
 
 export async function resetPassword(token: string, password: string): Promise<void> {

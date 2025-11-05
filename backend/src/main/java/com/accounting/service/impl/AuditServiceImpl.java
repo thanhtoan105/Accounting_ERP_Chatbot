@@ -375,4 +375,38 @@ public class AuditServiceImpl implements AuditService {
         log.setCreatedAt(Instant.now());
         auditLogRepository.save(log);
     }
+
+    @Override
+    public void logCompanySettingsUpdated(
+            Long companyId,
+            Long updatedByUserId,
+            java.util.Map<String, String> oldValues,
+            java.util.Map<String, String> newValues,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(updatedByUserId);
+        if (updatedByUserId != null) {
+            userRepository.findById(updatedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("COMPANY_SETTINGS_UPDATED");
+        // Compact change summary for VARCHAR(50): c:{id},f1, f2, f3
+        StringBuilder sb = new StringBuilder();
+        sb.append("c:").append(companyId).append(",");
+        int count = 0;
+        for (String field : newValues.keySet()) {
+            if (count > 0) sb.append(" ");
+            sb.append(field);
+            count++;
+            if (sb.length() > 45) break;
+        }
+        String reason = sb.toString();
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(java.time.Instant.now());
+        auditLogRepository.save(log);
+    }
 }

@@ -212,7 +212,7 @@ AC-to-Task mapping:
   - `backend/src/main/java/com/accounting/controller/admin/UserController.java` - REST controller pattern, extend with user management endpoints
   - `backend/src/main/java/com/accounting/service/impl/UserServiceImpl.java` - user service with role management, extend with user CRUD
   - `backend/src/main/java/com/accounting/service/AuditService.java` - audit logging service, extend with user operation methods
-  - `frontend/src/pages/UserManagement.tsx` - user management page from Story 1.4, extend with full CRUD and filtering
+  - `frontend/src/features/users/pages/UserManagement.tsx` - user management page from Story 1.4, extend with full CRUD and filtering
   - `frontend/src/services/user.ts` - user API service, extend with additional endpoints
 
 - **Security Notes**:
@@ -237,6 +237,14 @@ AC-to-Task mapping:
 [Source: docs/stories/1-4-role-based-access-control-rbac.md#Dev-Agent-Record]
 
 ### Project Structure Notes
+
+Frontend has been refactored to feature-first with shadcn/ui. Use these aliases when referencing files from this story:
+
+- Auth screens: `@/features/auth/pages/*`, components in `@/features/auth/components`.
+- User profile settings live under `@/features/users/pages/UserManagement.tsx` (admin) and shared components in `@/components/*`.
+- Shared layout: `@/layouts/ProtectedLayout` with `@/components/app` (sidebar-06).
+
+Route definitions: `@/routes/AppRoutes.tsx`.
 
 - Alignment with unified project structure (paths, modules, naming)
 
@@ -424,7 +432,7 @@ AC-to-Task mapping:
 - `frontend/src/services/auth.ts` (MODIFIED - added status field to User type, improved error handling in `resetPassword()`)
 - `frontend/src/services/user.ts` (MODIFIED - extended with all user management API methods)
 - `frontend/src/utils/roles.ts` (MODIFIED - added role hierarchy utilities: `canManageRole()`, `canAssignRole()`, `getAssignableRoles()`)
-- `frontend/src/pages/UserManagement.tsx` (MODIFIED - rewritten with filters, search, pagination, status management, role-based action button disabling, inactive user restrictions)
+- `frontend/src/features/users/pages/UserManagement.tsx` (MODIFIED - rewritten with filters, search, pagination, status management, role-based action button disabling, inactive user restrictions)
 - `frontend/src/pages/Login.tsx` (MODIFIED - improved error handling to show "Account is deactivated" for deactivated users)
 - `frontend/src/components/CreateUserDialog.tsx` (MODIFIED - added role filtering based on current user role)
 - `frontend/src/components/EditUserDialog.tsx` (MODIFIED - added role hierarchy checks, permission warnings, filtered role dropdown)

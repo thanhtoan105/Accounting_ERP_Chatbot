@@ -33,19 +33,24 @@ function getStoredUser(): User | null {
 }
 
 export function useAuth() {
+  // Initialize with stored user immediately to avoid flash of 403
+  const storedUser = getStoredUser()
+  const token = getAccessToken()
+  const hasStoredData = storedUser && token
+  
   const [state, setState] = useState<AuthState>({
-    user: null,
-    isAuthenticated: false,
-    loading: true,
+    user: storedUser, // Use stored user immediately
+    isAuthenticated: hasStoredData,
+    loading: hasStoredData, // Only loading if we have stored data (need to refresh)
   })
 
   // Initialize auth state from localStorage and refresh if needed
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = getAccessToken()
-      const storedUser = getStoredUser()
+      const currentToken = getAccessToken()
+      const currentStoredUser = getStoredUser()
 
-      if (token) {
+      if (currentToken) {
         // If we have a token, try to refresh to get latest user data
         // This also validates the token and gets fresh user info
         try {
@@ -69,7 +74,7 @@ export function useAuth() {
             loading: false,
           })
         }
-      } else if (storedUser) {
+      } else if (currentStoredUser) {
         // No token but we have stored user - clear it (invalid state)
         storeUser(null)
         setState({
@@ -87,6 +92,7 @@ export function useAuth() {
       }
     }
 
+    // Always initialize to refresh token and validate
     initializeAuth()
   }, [])
 

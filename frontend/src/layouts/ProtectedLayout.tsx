@@ -1,124 +1,57 @@
 import type { ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
-import {
-  Avatar,
-  Box,
-  Button,
-  Divider,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-  Typography,
-} from '@mui/material'
-import DashboardIcon from '@mui/icons-material/Dashboard'
-import BusinessIcon from '@mui/icons-material/Business'
-import PeopleIcon from '@mui/icons-material/People'
-import AssessmentIcon from '@mui/icons-material/Assessment'
-import DescriptionIcon from '@mui/icons-material/Description'
-import AccountTreeIcon from '@mui/icons-material/AccountTree'
-import LogoutIcon from '@mui/icons-material/Logout'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import type { Role } from '../utils/roles'
-import CompanySwitcher from '../components/common/CompanySwitcher'
 import { getAccessToken } from '../utils/axios'
-
-const DRAWER_WIDTH = 240
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { AppSidebar } from '@/components/app'
+import { Separator } from '@/components/ui/separator'
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 
 interface NavItem {
   path: string
   label: string
-  icon: React.ReactNode
   requiredRoles?: Role[]
 }
 
 /**
  * Generate a color from a string (used for avatar background)
  */
-function stringToColor(string: string): string {
-  let hash = 0
-  let i
-
-  for (i = 0; i < string.length; i += 1) {
-    hash = string.charCodeAt(i) + ((hash << 5) - hash)
-  }
-
-  let color = '#'
-
-  for (i = 0; i < 3; i += 1) {
-    const value = (hash >> (i * 8)) & 0xff
-    color += `00${value.toString(16)}`.slice(-2)
-  }
-
-  return color
-}
-
-/**
- * Generate avatar props from a name (color and initials)
- */
-function stringAvatar(name: string) {
-  const parts = name.trim().split(' ')
-  let initials = ''
-
-  if (parts.length >= 2) {
-    // Use first letter of first name and first letter of last name
-    initials = `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
-  } else if (parts.length === 1 && parts[0].length > 0) {
-    // Use first two letters of single name
-    initials = parts[0].substring(0, 2).toUpperCase()
-  } else {
-    // Fallback: use first letter
-    initials = name.length > 0 ? name[0].toUpperCase() : 'U'
-  }
-
-  return {
-    sx: {
-      bgcolor: stringToColor(name),
-    },
-    children: initials,
-  }
-}
+// Removed MUI avatar helpers; Shadcn version renders simple user info in sidebar footer
 
 const navItems: NavItem[] = [
-  {
-    path: '/',
-    label: 'Dashboard',
-    icon: <DashboardIcon />,
-  },
+  { path: '/', label: 'Dashboard' },
   {
     path: '/company',
     label: 'Company Settings',
-    icon: <BusinessIcon />,
     requiredRoles: ['admin', 'chief_accountant'],
   },
   {
     path: '/users',
     label: 'User Management',
-    icon: <PeopleIcon />,
     requiredRoles: ['admin', 'chief_accountant'],
   },
   {
     path: '/chart-of-accounts',
     label: 'Chart of Accounts',
-    icon: <AccountTreeIcon />,
     // All authenticated users can view COA
   },
   {
     path: '/reports',
     label: 'Reports',
-    icon: <AssessmentIcon />,
     requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
   },
   {
     path: '/vouchers',
     label: 'Vouchers',
-    icon: <DescriptionIcon />,
     requiredRoles: ['admin', 'accountant', 'chief_accountant'],
+  },
+  {
+    path: '/voucher-types',
+    label: 'Voucher Types',
+    requiredRoles: ['admin', 'chief_accountant'],
   },
 ]
 
@@ -171,21 +104,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   // Show loading state while checking authentication
   if (loading) {
     const token = getAccessToken()
-    if (token) {
-      // Token exists, allow rendering (auth state might just be updating)
-      // This prevents redirect loop right after login
-    } else {
+    if (!token) {
       return (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '100vh',
-          }}
-        >
-          <Typography>Loading...</Typography>
-        </Box>
+        <div className="min-h-[100dvh] grid place-items-center">Loading...</div>
       )
     }
   }
@@ -205,93 +126,39 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     return hasAnyRole(item.requiredRoles)
   })
 
-  // Get user display name for avatar
-  const userDisplayName = user?.fullName || user?.email || 'User'
+  // Move Company Settings from main nav to user submenu in the sidebar footer
+  const sidebarItems = visibleNavItems
+    .filter((i) => i.path !== '/company')
+    .map((i) => ({ title: i.label, url: i.path }))
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      {/* Sidebar Navigation */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: DRAWER_WIDTH,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: DRAWER_WIDTH,
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
-          },
-        }}
-      >
-        <Toolbar>
-          <Typography variant="h6" noWrap component="div">
-            Accounting
-          </Typography>
-        </Toolbar>
-        <Divider />
-        <List sx={{ flexGrow: 1, overflow: 'auto' }}>
-          {visibleNavItems.map((item) => (
-            <ListItem key={item.path} disablePadding>
-              <ListItemButton
-                selected={location.pathname === item.path}
-                onClick={() => navigate(item.path)}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
-        {/* User info and logout at bottom of sidebar */}
-        <Box
-          sx={{
-            p: 2,
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            flexShrink: 0,
-          }}
-        >
-          <Box display="flex" alignItems="center" gap={1.5} mb={1.5}>
-            <Avatar
-              {...stringAvatar(userDisplayName)}
-              sx={{ width: 32, height: 32, fontSize: '0.875rem' }}
-            />
-            <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
-              <Typography variant="body2" noWrap sx={{ fontWeight: 500, fontSize: '0.8125rem' }}>
-                {user?.fullName || 'User'}
-              </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                noWrap
-                sx={{ fontSize: '0.6875rem' }}
-              >
-                {user?.email || 'N/A'}
-              </Typography>
-            </Box>
-          </Box>
-          <CompanySwitcher />
-          <Button
-            fullWidth
-            variant="outlined"
-            color="error"
-            startIcon={<LogoutIcon sx={{ fontSize: '1rem' }} />}
-            onClick={handleLogout}
-            size="small"
-            sx={{ mt: 1.5, fontSize: '0.75rem' }}
-          >
-            Logout
-          </Button>
-        </Box>
-      </Drawer>
-
-      {/* Main Content */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+    <SidebarProvider>
+      <AppSidebar
+        items={sidebarItems}
+        user={{ name: user?.fullName || 'User', email: user?.email || '' }}
+        onLogout={handleLogout}
+      />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink href="#">Accounting</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{visibleNavItems.find(i => i.path === location.pathname)?.label || 'Dashboard'}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          {/* Logout button kept in sidebar footer to avoid duplicates */}
+        </header>
+        <div className="p-4">
         {children}
-      </Box>
-    </Box>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

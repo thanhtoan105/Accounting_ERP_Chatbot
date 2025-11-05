@@ -29,7 +29,8 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class VoucherValidationServiceImplTest {
 
-  @Mock private ChartOfAccountsRepository chartOfAccountsRepository;
+  @Mock
+  private ChartOfAccountsRepository chartOfAccountsRepository;
 
   private VoucherValidationServiceImpl validationService;
 
@@ -181,7 +182,6 @@ class VoucherValidationServiceImplTest {
     assertTrue(result.getErrors().get(1).containsKey("credit"));
   }
 
-
   @Test
   void validate_account131MissingCustomer_returnsError() {
     ChartOfAccount account = createPostableAccount(1L, "131", "Accounts Receivable");
@@ -318,4 +318,3 @@ class VoucherValidationServiceImplTest {
     return line;
   }
 }
-

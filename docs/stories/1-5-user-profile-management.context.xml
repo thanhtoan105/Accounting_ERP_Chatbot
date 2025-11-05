@@ -174,14 +174,14 @@
         <reason>NEW - DTO for profile updates: fullName.</reason>
       </artifact>
       <artifact>
-        <path>frontend/src/pages/UserManagement.tsx</path>
+        <path>frontend/src/features/users/pages/UserManagement.tsx</path>
         <kind>component</kind>
         <symbol>UserManagement</symbol>
         <lines>N/A</lines>
         <reason>Extend from Story 1.4 or create new - add filters (role, status), search input, deactivation UI, visual separation for inactive users (AC#1, AC#3, AC#6).</reason>
       </artifact>
       <artifact>
-        <path>frontend/src/pages/UserProfile.tsx</path>
+        <path>frontend/src/features/users/pages/UserProfile.tsx</path>
         <kind>component</kind>
         <symbol>UserProfile</symbol>
         <lines>N/A</lines>
@@ -355,5 +355,3 @@
     </ideas>
   </tests>
 </story-context>
-
-

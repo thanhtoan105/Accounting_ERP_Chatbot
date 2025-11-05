@@ -9,12 +9,22 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.accounting.repository.UserRepository;
+import com.accounting.entity.User;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class CompanyContextFilter extends OncePerRequestFilter {
 
   public static final String COMPANY_HEADER = "X-Company-Id";
+
+  private final UserRepository userRepository;
+
+  public CompanyContextFilter(UserRepository userRepository) {
+    this.userRepository = userRepository;
+  }
 
   @Override
   protected void doFilterInternal(
@@ -34,6 +44,21 @@ public class CompanyContextFilter extends OncePerRequestFilter {
                   "{\"error\":{\"code\":\"VALIDATION_ERROR\",\"details\":{\"X-Company-Id\":\"must be a number\"}}}");
           return;
         }
+      } else {
+        // Fallback: derive company from authenticated user if header missing
+        try {
+          Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+          if (auth != null && auth.isAuthenticated() && auth.getPrincipal() != null) {
+            Long currentUserId = Long.parseLong(auth.getPrincipal().toString());
+            userRepository.findById(currentUserId).ifPresent((User u) -> {
+              if (u.getCompanyId() != null) {
+                CompanyContext.setCompanyId(u.getCompanyId());
+              }
+            });
+          }
+        } catch (Exception ignored) {
+          // best-effort fallback; continue without blocking
+        }
       }
       filterChain.doFilter(request, response);
     } finally {
@@ -41,5 +66,3 @@ public class CompanyContextFilter extends OncePerRequestFilter {
     }
   }
 }
-
-

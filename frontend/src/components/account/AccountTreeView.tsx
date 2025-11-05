@@ -227,7 +227,7 @@ export default function AccountTreeView({
                 }
                 secondary={
                   <Typography variant="caption" color="text.secondary">
-                    {account.normalSide} • {account.children?.length || 0} children
+                    {account.normalSide === 'Debit' ? 'Dư Nợ' : 'Dư Có'} • {account.children?.length || 0} tài khoản con
                   </Typography>
                 }
               />
