@@ -27,7 +27,9 @@ export type UserTableActions = {
   isResettingPassword: (userId: number) => boolean
 }
 
-const getStatusColor = (status?: string): 'default' | 'secondary' | 'destructive' | 'success' | 'warning' => {
+const getStatusColor = (
+  status?: string,
+): 'default' | 'secondary' | 'destructive' | 'success' | 'warning' => {
   switch ((status || '').toUpperCase()) {
     case 'ACTIVE':
       return 'success'
@@ -129,9 +131,7 @@ export function createUserTableColumns(
     },
     {
       id: 'actions',
-      header: () => (
-        <div className="flex w-full justify-end pr-2">Actions</div>
-      ),
+      header: () => <div className="flex w-full justify-end pr-2">Actions</div>,
       enableHiding: false,
       cell: ({ row }) => {
         const user = row.original
@@ -147,7 +147,12 @@ export function createUserTableColumns(
           <div className="flex items-center justify-end h-10 w-full pr-2 min-w-[44px]">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!canManageThisUser}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={!canManageThisUser}
+                >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -160,7 +165,7 @@ export function createUserTableColumns(
                 >
                   <Edit className="mr-2 h-4 w-4" /> Edit
                 </DropdownMenuItem>
-                
+
                 <DropdownMenuItem
                   onClick={() => actions.onResetPassword(user.id, user.email)}
                   disabled={isLoading || isCurrentUser || !canManageThisUser || isInactive}
@@ -180,4 +185,3 @@ export function createUserTableColumns(
     },
   ]
 }
-

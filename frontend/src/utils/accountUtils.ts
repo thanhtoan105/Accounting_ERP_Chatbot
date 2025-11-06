@@ -16,9 +16,7 @@ function getAccountLevel(code: string): number {
  * Flattens the hierarchy and returns a flat array of accounts with level 3 or higher.
  * This includes level 3 accounts (e.g., 111) and all their sublevels (e.g., 1111, 1112, etc.).
  */
-export function filterLevel3Accounts(
-  accounts: ChartOfAccountHierarchy[],
-): ChartOfAccount[] {
+export function filterLevel3Accounts(accounts: ChartOfAccountHierarchy[]): ChartOfAccount[] {
   const result: ChartOfAccount[] = []
 
   const traverse = (accs: ChartOfAccountHierarchy[]) => {
@@ -40,4 +38,3 @@ export function filterLevel3Accounts(
   traverse(accounts)
   return result
 }
-

@@ -1,10 +1,10 @@
-import * as React from "react"
-import { GalleryVerticalEnd, MoreVertical, Building2, LogOut } from "lucide-react"
-import { Link, useNavigate } from "react-router-dom"
+import * as React from 'react'
+import { GalleryVerticalEnd, MoreVertical, Building2, LogOut } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 
-import { NavMain } from "@/components/nav-main"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { NavMain } from '@/components/nav-main'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu'
 import {
   Sidebar,
   SidebarContent,
@@ -22,7 +22,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from '@/components/ui/sidebar'
 
 export type NavItem = {
   title: string
@@ -30,18 +30,16 @@ export type NavItem = {
   items?: { title: string; url: string }[]
 }
 
-export function AppSidebar(
-  {
-    items,
-    user,
-    onLogout,
-    ...props
-  }: React.ComponentProps<typeof Sidebar> & {
-    items: NavItem[]
-    user?: { name?: string | null; email?: string | null }
-    onLogout?: () => void
-  }
-) {
+export function AppSidebar({
+  items,
+  user,
+  onLogout,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  items: NavItem[]
+  user?: { name?: string | null; email?: string | null }
+  onLogout?: () => void
+}) {
   const navigate = useNavigate()
   return (
     <Sidebar {...props}>
@@ -95,7 +93,10 @@ export function AppSidebar(
                 <div className="text-xs text-muted-foreground truncate">{user?.email || ''}</div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => navigate('/company')} className="flex items-center gap-2">
+              <DropdownMenuItem
+                onSelect={() => navigate('/company')}
+                className="flex items-center gap-2"
+              >
                 <Building2 className="size-4" />
                 <span>Company Settings</span>
               </DropdownMenuItem>

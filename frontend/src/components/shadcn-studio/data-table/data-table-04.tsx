@@ -4,7 +4,13 @@ import { useId, useMemo, useState } from 'react'
 
 import { SearchIcon } from 'lucide-react'
 
-import type { Column, ColumnDef, ColumnFiltersState, RowData, SortingState } from '@tanstack/react-table'
+import type {
+  Column,
+  ColumnDef,
+  ColumnFiltersState,
+  RowData,
+  SortingState,
+} from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -13,7 +19,7 @@ import {
   getFacetedUniqueValues,
   getFilteredRowModel,
   getSortedRowModel,
-  useReactTable
+  useReactTable,
 } from '@tanstack/react-table'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -21,8 +27,21 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 import { cn } from '@/lib/utils'
 
@@ -48,31 +67,33 @@ const columns: ColumnDef<Item>[] = [
     id: 'select',
     header: ({ table }) => (
       <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-        onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-        aria-label='Select all'
+        checked={
+          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
       />
     ),
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
-        onCheckedChange={value => row.toggleSelected(!!value)}
-        aria-label='Select row'
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
       />
-    )
+    ),
   },
   {
     header: 'Product',
     accessorKey: 'product',
     cell: ({ row }) => (
-      <div className='flex items-center gap-3'>
-        <Avatar className='rounded-sm'>
+      <div className="flex items-center gap-3">
+        <Avatar className="rounded-sm">
           <AvatarImage src={row.original.productImage} alt={row.original.fallback} />
-          <AvatarFallback className='text-xs'>{row.original.fallback}</AvatarFallback>
+          <AvatarFallback className="text-xs">{row.original.fallback}</AvatarFallback>
         </Avatar>
-        <div className='font-medium'>{row.getValue('product')}</div>
+        <div className="font-medium">{row.getValue('product')}</div>
       </div>
-    )
+    ),
   },
   {
     header: 'Price',
@@ -80,8 +101,8 @@ const columns: ColumnDef<Item>[] = [
     cell: ({ row }) => <div>${row.getValue('price')}</div>,
     enableSorting: false,
     meta: {
-      filterVariant: 'range'
-    }
+      filterVariant: 'range',
+    },
   },
   {
     header: 'Availability',
@@ -95,7 +116,7 @@ const columns: ColumnDef<Item>[] = [
         'Out of Stock':
           'bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive',
         Limited:
-          'bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-400 dark:focus-visible:ring-amber-400/40 [a&]:hover:bg-amber-600/5 dark:[a&]:hover:bg-amber-400/5'
+          'bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-400 dark:focus-visible:ring-amber-400/40 [a&]:hover:bg-amber-600/5 dark:[a&]:hover:bg-amber-400/5',
       }[availability]
 
       return (
@@ -106,17 +127,17 @@ const columns: ColumnDef<Item>[] = [
     },
     enableSorting: false,
     meta: {
-      filterVariant: 'select'
-    }
+      filterVariant: 'select',
+    },
   },
   {
     header: 'Rating',
     accessorKey: 'rating',
     cell: ({ row }) => <div>{row.getValue('rating')}</div>,
     meta: {
-      filterVariant: 'range'
-    }
-  }
+      filterVariant: 'range',
+    },
+  },
 ]
 
 const items: Item[] = [
@@ -127,7 +148,7 @@ const items: Item[] = [
     fallback: 'BC',
     price: 159,
     availability: 'In Stock',
-    rating: 3.9
+    rating: 3.9,
   },
   {
     id: '2',
@@ -136,7 +157,7 @@ const items: Item[] = [
     fallback: 'NJ',
     price: 599,
     availability: 'Limited',
-    rating: 4.4
+    rating: 4.4,
   },
   {
     id: '3',
@@ -145,7 +166,7 @@ const items: Item[] = [
     fallback: 'O7P',
     price: 1299,
     availability: 'Out of Stock',
-    rating: 3.5
+    rating: 3.5,
   },
   {
     id: '4',
@@ -154,7 +175,7 @@ const items: Item[] = [
     fallback: 'NS',
     price: 499,
     availability: 'In Stock',
-    rating: 4.9
+    rating: 4.9,
   },
   {
     id: '5',
@@ -163,7 +184,7 @@ const items: Item[] = [
     fallback: 'AMM',
     price: 970,
     availability: 'Limited',
-    rating: 4.1
+    rating: 4.1,
   },
   {
     id: '6',
@@ -172,7 +193,7 @@ const items: Item[] = [
     fallback: 'AW',
     price: 1500,
     availability: 'Limited',
-    rating: 3.1
+    rating: 3.1,
   },
   {
     id: '7',
@@ -181,7 +202,7 @@ const items: Item[] = [
     fallback: 'CGS',
     price: 194,
     availability: 'Out of Stock',
-    rating: 1.5
+    rating: 1.5,
   },
   {
     id: '8',
@@ -190,8 +211,8 @@ const items: Item[] = [
     fallback: 'RBS',
     price: 199,
     availability: 'Out of Stock',
-    rating: 2.4
-  }
+    rating: 2.4,
+  },
 ]
 
 const DataTableWithColumnFilterDemo = () => {
@@ -200,8 +221,8 @@ const DataTableWithColumnFilterDemo = () => {
   const [sorting, setSorting] = useState<SortingState>([
     {
       id: 'price',
-      desc: false
-    }
+      desc: false,
+    },
   ])
 
   const table = useReactTable({
@@ -209,7 +230,7 @@ const DataTableWithColumnFilterDemo = () => {
     columns,
     state: {
       sorting,
-      columnFilters
+      columnFilters,
     },
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -219,34 +240,36 @@ const DataTableWithColumnFilterDemo = () => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     onSortingChange: setSorting,
-    enableSortingRemoval: false
+    enableSortingRemoval: false,
   })
 
   return (
-    <div className='w-full'>
-      <div className='rounded-md border'>
-        <div className='flex flex-wrap gap-3 px-2 py-6'>
-          <div className='w-44'>
+    <div className="w-full">
+      <div className="rounded-md border">
+        <div className="flex flex-wrap gap-3 px-2 py-6">
+          <div className="w-44">
             <Filter column={table.getColumn('product')!} />
           </div>
-          <div className='w-36'>
+          <div className="w-36">
             <Filter column={table.getColumn('price')!} />
           </div>
-          <div className='w-44'>
+          <div className="w-44">
             <Filter column={table.getColumn('availability')!} />
           </div>
-          <div className='w-36'>
+          <div className="w-36">
             <Filter column={table.getColumn('rating')!} />
           </div>
         </div>
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id} className='bg-muted/50'>
-                {headerGroup.headers.map(header => {
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="bg-muted/50">
+                {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className='relative h-10 border-t select-none'>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    <TableHead key={header.id} className="relative h-10 border-t select-none">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   )
                 })}
@@ -255,16 +278,18 @@ const DataTableWithColumnFilterDemo = () => {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map(row => (
+              table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className='h-24 text-center'>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -273,7 +298,9 @@ const DataTableWithColumnFilterDemo = () => {
         </Table>
       </div>
 
-      <p className='text-muted-foreground mt-4 text-center text-sm'>Data table with column filter</p>
+      <p className="text-muted-foreground mt-4 text-center text-sm">
+        Data table with column filter
+      </p>
     </div>
   )
 }
@@ -303,35 +330,35 @@ function Filter({ column }: { column: Column<any, unknown> }) {
 
   if (filterVariant === 'range') {
     return (
-      <div className='*:not-first:mt-2'>
+      <div className="*:not-first:mt-2">
         <Label>{columnHeader}</Label>
-        <div className='flex'>
+        <div className="flex">
           <Input
             id={`${id}-range-1`}
-            className='flex-1 rounded-r-none [-moz-appearance:_textfield] focus:z-10 [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none'
+            className="flex-1 rounded-r-none [-moz-appearance:_textfield] focus:z-10 [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
             value={(columnFilterValue as [number, number])?.[0] ?? ''}
-            onChange={e =>
+            onChange={(e) =>
               column.setFilterValue((old: [number, number]) => [
                 e.target.value ? Number(e.target.value) : undefined,
-                old?.[1]
+                old?.[1],
               ])
             }
-            placeholder='Min'
-            type='number'
+            placeholder="Min"
+            type="number"
             aria-label={`${columnHeader} min`}
           />
           <Input
             id={`${id}-range-2`}
-            className='-ms-px flex-1 rounded-l-none [-moz-appearance:_textfield] focus:z-10 [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none'
+            className="-ms-px flex-1 rounded-l-none [-moz-appearance:_textfield] focus:z-10 [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
             value={(columnFilterValue as [number, number])?.[1] ?? ''}
-            onChange={e =>
+            onChange={(e) =>
               column.setFilterValue((old: [number, number]) => [
                 old?.[0],
-                e.target.value ? Number(e.target.value) : undefined
+                e.target.value ? Number(e.target.value) : undefined,
               ])
             }
-            placeholder='Max'
-            type='number'
+            placeholder="Max"
+            type="number"
             aria-label={`${columnHeader} max`}
           />
         </div>
@@ -341,20 +368,20 @@ function Filter({ column }: { column: Column<any, unknown> }) {
 
   if (filterVariant === 'select') {
     return (
-      <div className='*:not-first:mt-2'>
+      <div className="*:not-first:mt-2">
         <Label htmlFor={`${id}-select`}>{columnHeader}</Label>
         <Select
           value={columnFilterValue?.toString() ?? 'all'}
-          onValueChange={value => {
+          onValueChange={(value) => {
             column.setFilterValue(value === 'all' ? undefined : value)
           }}
         >
-          <SelectTrigger id={`${id}-select`} className='w-full'>
+          <SelectTrigger id={`${id}-select`} className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='all'>All</SelectItem>
-            {sortedUniqueValues.map(value => (
+            <SelectItem value="all">All</SelectItem>
+            {sortedUniqueValues.map((value) => (
               <SelectItem key={String(value)} value={String(value)}>
                 {String(value)}
               </SelectItem>
@@ -366,18 +393,18 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   }
 
   return (
-    <div className='*:not-first:mt-2'>
+    <div className="*:not-first:mt-2">
       <Label htmlFor={`${id}-input`}>{columnHeader}</Label>
-      <div className='relative'>
+      <div className="relative">
         <Input
           id={`${id}-input`}
-          className='peer pl-9'
+          className="peer pl-9"
           value={(columnFilterValue ?? '') as string}
-          onChange={e => column.setFilterValue(e.target.value)}
+          onChange={(e) => column.setFilterValue(e.target.value)}
           placeholder={`Search ${columnHeader.toLowerCase()}`}
-          type='text'
+          type="text"
         />
-        <div className='text-muted-foreground/80 pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center pl-3 peer-disabled:opacity-50'>
+        <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center pl-3 peer-disabled:opacity-50">
           <SearchIcon size={16} />
         </div>
       </div>

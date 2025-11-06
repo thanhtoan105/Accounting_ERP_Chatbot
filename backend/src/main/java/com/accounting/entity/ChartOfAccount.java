@@ -45,7 +45,7 @@ public class ChartOfAccount implements CompanyScopedEntity {
   private String type; // Asset, Liability, Equity, Revenue, Expense
 
   @NotBlank
-  @Column(name = "normal_side", nullable = false, length = 10)
+  @Column(name = "normal_side", nullable = false, length = 50)
   private String normalSide; // Debit or Credit
 
   @NotNull

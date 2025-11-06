@@ -37,7 +37,7 @@ export function useAuth() {
   const storedUser = getStoredUser()
   const token = getAccessToken()
   const hasStoredData = storedUser && token
-  
+
   const [state, setState] = useState<AuthState>({
     user: storedUser, // Use stored user immediately
     isAuthenticated: hasStoredData,

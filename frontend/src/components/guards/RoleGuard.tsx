@@ -35,7 +35,9 @@ export default function RoleGuard({
     if (!hasRole(requiredRole)) {
       return (
         fallback || (
-          <Forbidden403 message={`Access denied. Required role: ${roles.getRoleDisplayName(requiredRole)}`} />
+          <Forbidden403
+            message={`Access denied. Required role: ${roles.getRoleDisplayName(requiredRole)}`}
+          />
         )
       )
     }
@@ -54,5 +56,4 @@ export default function RoleGuard({
 
   return <>{children}</>
 }
-
 

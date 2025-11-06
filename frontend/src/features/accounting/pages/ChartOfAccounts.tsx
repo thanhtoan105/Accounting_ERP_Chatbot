@@ -18,7 +18,6 @@ import AccountTreeView from '@/components/account/AccountTreeView'
 import AccountTable from '@/components/account/AccountTable'
 import AccountDetailsModal from '@/components/account/AccountDetailsModal'
 
-
 export default function ChartOfAccounts() {
   const [accounts, setAccounts] = useState<ChartOfAccountHierarchy[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,18 +70,25 @@ export default function ChartOfAccounts() {
           const flatAccounts = response.data as any[]
           const accountMap = new Map<number, ChartOfAccountHierarchy>()
           const rootAccounts: ChartOfAccountHierarchy[] = []
-          flatAccounts.forEach((acc) => { accountMap.set(acc.id, { ...acc, children: [] }) })
+          flatAccounts.forEach((acc) => {
+            accountMap.set(acc.id, { ...acc, children: [] })
+          })
           flatAccounts.forEach((acc) => {
             const account = accountMap.get(acc.id)!
             if (acc.parentId == null) rootAccounts.push(account)
             else {
               const parent = accountMap.get(acc.parentId)
-              if (parent) { parent.children = parent.children || []; parent.children.push(account) }
+              if (parent) {
+                parent.children = parent.children || []
+                parent.children.push(account)
+              }
             }
           })
           const sortAccounts = (accs: ChartOfAccountHierarchy[]) => {
             accs.sort((a, b) => a.orderingPosition - b.orderingPosition)
-            accs.forEach((acc) => { if (acc.children) sortAccounts(acc.children) })
+            accs.forEach((acc) => {
+              if (acc.children) sortAccounts(acc.children)
+            })
           }
           sortAccounts(rootAccounts)
           setAccounts(rootAccounts)
@@ -96,7 +102,12 @@ export default function ChartOfAccounts() {
         setTotalCount(0)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : (err as any)?.error?.message || (err as any)?.message || 'Failed to load chart of accounts'
+      const message =
+        err instanceof Error
+          ? err.message
+          : (err as any)?.error?.message ||
+            (err as any)?.message ||
+            'Failed to load chart of accounts'
       setError(message)
       setTotalCount(0)
     } finally {
@@ -104,7 +115,9 @@ export default function ChartOfAccounts() {
     }
   }, [debouncedSearch, typeFilter, postableFilter])
 
-  useEffect(() => { loadAccounts() }, [loadAccounts])
+  useEffect(() => {
+    loadAccounts()
+  }, [loadAccounts])
 
   const filteredAccounts = useMemo(() => {
     // Accounts are already filtered by the API, just return them

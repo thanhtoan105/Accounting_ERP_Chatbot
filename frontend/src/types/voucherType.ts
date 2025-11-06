@@ -47,5 +47,3 @@ export interface VoucherTypesResponse {
   data: VoucherType[]
   total: number
 }
-
-

@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
-import { createCompany, getCompanySettings, updateCompanySettings, type Company } from '@/services/company'
+import {
+  createCompany,
+  getCompanySettings,
+  updateCompanySettings,
+  type Company,
+} from '@/services/company'
 import { setCompanyId, getCompanyId } from '@/utils/axios'
 import { refresh } from '@/features/auth/services/auth'
 import { useAuth } from '@/hooks/useAuth'
@@ -99,7 +104,9 @@ export default function CompanySettings() {
         // Prefer admin settings endpoint for current company context
         const settings = await getCompanySettings()
         if (mounted && settings) {
-          setExistingCompany({ logoUrl: (settings as { logoUrl?: string | null }).logoUrl || null } as unknown as Company)
+          setExistingCompany({
+            logoUrl: (settings as { logoUrl?: string | null }).logoUrl || null,
+          } as unknown as Company)
           setValues({
             code: settings.code || '', // <CHANGE> load read-only company code for display
             name: settings.name || '',
@@ -223,7 +230,16 @@ export default function CompanySettings() {
         }
 
         setSuccess('Company created successfully! Redirecting...')
-        setValues({ code: '', name: '', tax_code: '', address: '', contact_email: '', contact_phone: '', fiscal_year_start: '', logoFile: undefined })
+        setValues({
+          code: '',
+          name: '',
+          tax_code: '',
+          address: '',
+          contact_email: '',
+          contact_phone: '',
+          fiscal_year_start: '',
+          logoFile: undefined,
+        })
         setTimeout(() => navigate('/'), 1500)
       }
     } catch (err) {
@@ -270,16 +286,22 @@ export default function CompanySettings() {
             <div className="md:col-span-2 space-y-6">
               <div>
                 <h3 className="text-base font-semibold">Company Info</h3>
-                <p className="text-sm text-muted-foreground">Basic details about your organization.</p>
+                <p className="text-sm text-muted-foreground">
+                  Basic details about your organization.
+                </p>
                 <Separator className="my-3" />
                 <div className="grid gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="code">Code <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="code">
+                      Code <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="code"
                       placeholder="e.g. ACME-01"
                       value={values.code}
-                      onChange={(e) => onChange('code', e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
+                      onChange={(e) =>
+                        onChange('code', e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))
+                      }
                       onBlur={() => onBlur('code')}
                       maxLength={16}
                       pattern="^[A-Z0-9-]{3,16}$"
@@ -294,11 +316,15 @@ export default function CompanySettings() {
                         : '3-16 characters; allowed: A-Z, 0-9, dash (-)'}
                     </p>
                     {touched.code && errors.code && (
-                      <p id="code-error" className="text-sm text-destructive">{errors.code}</p>
+                      <p id="code-error" className="text-sm text-destructive">
+                        {errors.code}
+                      </p>
                     )}
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="name">
+                      Name <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="name"
                       placeholder="Company legal name"
@@ -308,15 +334,23 @@ export default function CompanySettings() {
                       aria-invalid={Boolean(errors.name)}
                       aria-describedby="name-error"
                     />
-                    {touched.name && errors.name && <p id="name-error" className="text-sm text-destructive">{errors.name}</p>}
+                    {touched.name && errors.name && (
+                      <p id="name-error" className="text-sm text-destructive">
+                        {errors.name}
+                      </p>
+                    )}
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="tax_code">Tax Code <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="tax_code">
+                      Tax Code <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="tax_code"
                       placeholder="10 digits"
                       value={values.tax_code}
-                      onChange={(e) => onChange('tax_code', e.target.value.replace(/[^\d]/g, '').slice(0, 10))}
+                      onChange={(e) =>
+                        onChange('tax_code', e.target.value.replace(/[^\d]/g, '').slice(0, 10))
+                      }
                       onBlur={() => onBlur('tax_code')}
                       inputMode="numeric"
                       pattern="^\d{10}$"
@@ -324,13 +358,19 @@ export default function CompanySettings() {
                       aria-describedby="tax-help tax-error"
                       required
                     />
-                    <p id="tax-help" className="text-sm text-muted-foreground">Exactly 10 digits (numbers only)</p>
+                    <p id="tax-help" className="text-sm text-muted-foreground">
+                      Exactly 10 digits (numbers only)
+                    </p>
                     {touched.tax_code && errors.tax_code && (
-                      <p id="tax-error" className="text-sm text-destructive">{errors.tax_code}</p>
+                      <p id="tax-error" className="text-sm text-destructive">
+                        {errors.tax_code}
+                      </p>
                     )}
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="address">Address <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="address">
+                      Address <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="address"
                       placeholder="Street, City, Country"
@@ -341,10 +381,17 @@ export default function CompanySettings() {
                       aria-describedby="address-error"
                       required
                     />
-                    {touched.address && errors.address && <p id="address-error" className="text-sm text-destructive">{errors.address}</p>}
+                    {touched.address && errors.address && (
+                      <p id="address-error" className="text-sm text-destructive">
+                        {errors.address}
+                      </p>
+                    )}
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="contact_email"> Contact Email <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="contact_email">
+                      {' '}
+                      Contact Email <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="contact_email"
                       type="email"
@@ -357,11 +404,15 @@ export default function CompanySettings() {
                       required
                     />
                     {touched.contact_email && errors.contact_email && (
-                      <p id="contact_email-error" className="text-sm text-destructive">{errors.contact_email}</p>
+                      <p id="contact_email-error" className="text-sm text-destructive">
+                        {errors.contact_email}
+                      </p>
                     )}
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="contact_phone">Contact Phone <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="contact_phone">
+                      Contact Phone <span className="text-destructive">*</span>
+                    </Label>
                     <div className="flex">
                       <CountryDropdown
                         placeholder="Country"
@@ -372,7 +423,9 @@ export default function CompanySettings() {
                           const dial = country.countryCallingCodes?.[0] || ''
                           // If current value already starts with +, replace its prefix; else just set dial
                           const current = values.contact_phone || ''
-                          const next = current.startsWith('+') ? dial + current.replace(/^\+\d+\s?/, '') : dial
+                          const next = current.startsWith('+')
+                            ? dial + current.replace(/^\+\d+\s?/, '')
+                            : dial
                           onChange('contact_phone', next)
                         }}
                       />
@@ -392,11 +445,15 @@ export default function CompanySettings() {
                       </div>
                     </div>
                     {touched.contact_phone && errors.contact_phone && (
-                      <p id="contact_phone-error" className="text-sm text-destructive">{errors.contact_phone}</p>
+                      <p id="contact_phone-error" className="text-sm text-destructive">
+                        {errors.contact_phone}
+                      </p>
                     )}
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="fiscal_year_start">Fiscal Year Start <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="fiscal_year_start">
+                      Fiscal Year Start <span className="text-destructive">*</span>
+                    </Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -416,7 +473,11 @@ export default function CompanySettings() {
                       <PopoverContent align="start" className="p-0">
                         <Calendar
                           mode="single"
-                          selected={values.fiscal_year_start ? new Date(`${values.fiscal_year_start}T00:00:00`) : undefined}
+                          selected={
+                            values.fiscal_year_start
+                              ? new Date(`${values.fiscal_year_start}T00:00:00`)
+                              : undefined
+                          }
                           onSelect={(date) => {
                             onBlur('fiscal_year_start')
                             if (!date) {
@@ -434,18 +495,39 @@ export default function CompanySettings() {
                       </PopoverContent>
                     </Popover>
                     {touched.fiscal_year_start && errors.fiscal_year_start && (
-                      <p id="fiscal_year_start-error" className="text-sm text-destructive">{errors.fiscal_year_start}</p>
+                      <p id="fiscal_year_start-error" className="text-sm text-destructive">
+                        {errors.fiscal_year_start}
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
-              {errors.form && <Alert className="text-destructive text-sm" role="alert">{errors.form}</Alert>}
-              {success && <Alert className="text-green-600 text-sm" role="status">{success}</Alert>}
+              {errors.form && (
+                <Alert className="text-destructive text-sm" role="alert">
+                  {errors.form}
+                </Alert>
+              )}
+              {success && (
+                <Alert className="text-green-600 text-sm" role="status">
+                  {success}
+                </Alert>
+              )}
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={submitting}>
-                  {submitting ? (hasCompany ? 'Saving…' : 'Submitting…') : (hasCompany ? 'Save Changes' : 'Create Company')}
+                  {submitting
+                    ? hasCompany
+                      ? 'Saving…'
+                      : 'Submitting…'
+                    : hasCompany
+                      ? 'Save Changes'
+                      : 'Create Company'}
                 </Button>
-                <Button type="button" variant="secondary" disabled={submitting} onClick={() => navigate(-1)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={submitting}
+                  onClick={() => navigate(-1)}
+                >
                   Cancel
                 </Button>
               </div>
@@ -453,24 +535,28 @@ export default function CompanySettings() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-base font-semibold">Branding</h3>
-                <p className="text-sm text-muted-foreground">Upload a square logo for best results.</p>
+                <p className="text-sm text-muted-foreground">
+                  Upload a square logo for best results.
+                </p>
                 <Separator className="my-3" />
                 <div className="flex items-start gap-4">
                   <div className="relative">
                     <Avatar className="h-20 w-20 overflow-hidden bg-muted">
-                    {logoPreviewUrl ? (
-                      <img
-                        key={logoPreviewUrl}
-                        src={logoPreviewUrl}
-                        alt="Logo preview"
-                        className="h-full w-full object-cover"
-                        crossOrigin="anonymous"
-                        referrerPolicy="no-referrer"
-                        onError={() => setLogoPreviewUrl(null)}
-                      />
-                    ) : (
-                      <AvatarFallback>{(values.name || 'C').slice(0, 2).toUpperCase()}</AvatarFallback>
-                    )}
+                      {logoPreviewUrl ? (
+                        <img
+                          key={logoPreviewUrl}
+                          src={logoPreviewUrl}
+                          alt="Logo preview"
+                          className="h-full w-full object-cover"
+                          crossOrigin="anonymous"
+                          referrerPolicy="no-referrer"
+                          onError={() => setLogoPreviewUrl(null)}
+                        />
+                      ) : (
+                        <AvatarFallback>
+                          {(values.name || 'C').slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      )}
                     </Avatar>
                     {logoPreviewUrl && (
                       <Button
@@ -493,8 +579,12 @@ export default function CompanySettings() {
                       onChange={(e) => onChange('logoFile', e.target.files?.[0])}
                       aria-describedby="logo-help logo-error"
                     />
-                    {errors.logoFile && <p className="text-sm text-destructive">{errors.logoFile}</p>}
-                    <p id="logo-help" className="text-xs text-muted-foreground">PNG or JPEG up to 256KB.</p>
+                    {errors.logoFile && (
+                      <p className="text-sm text-destructive">{errors.logoFile}</p>
+                    )}
+                    <p id="logo-help" className="text-xs text-muted-foreground">
+                      PNG or JPEG up to 256KB.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -504,13 +594,40 @@ export default function CompanySettings() {
                 <p className="text-sm text-muted-foreground">Live summary of what will be saved.</p>
                 <Separator className="my-3" />
                 <div className="grid gap-2 text-sm">
-                  <div className="flex items-center justify-between"><span className="text-muted-foreground">Code</span><span className="font-medium">{values.code || '—'}</span></div>
-                  <div className="flex items-center justify-between"><span className="text-muted-foreground">Name</span><span className="font-medium">{values.name || '—'}</span></div>
-                  <div className="flex items-center justify-between"><span className="text-muted-foreground">Tax code</span><span className="font-medium">{values.tax_code || '—'}</span></div>
-                  <div className="flex items-center justify-between"><span className="text-muted-foreground">Address</span><span className="font-medium truncate max-w-[14rem]" title={values.address}>{values.address || '—'}</span></div>
-                  <div className="flex items-center justify-between"><span className="text-muted-foreground">Email</span><span className="font-medium">{values.contact_email || '—'}</span></div>
-                  <div className="flex items-center justify-between"><span className="text-muted-foreground">Phone</span><span className="font-medium">{values.contact_phone || '—'}</span></div>
-                  <div className="flex items-center justify-between"><span className="text-muted-foreground">Fiscal year start</span><span className="font-medium">{values.fiscal_year_start ? format(new Date(`${values.fiscal_year_start}T00:00:00`), 'PPP') : '—'}</span></div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Code</span>
+                    <span className="font-medium">{values.code || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Name</span>
+                    <span className="font-medium">{values.name || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Tax code</span>
+                    <span className="font-medium">{values.tax_code || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Address</span>
+                    <span className="font-medium truncate max-w-[14rem]" title={values.address}>
+                      {values.address || '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Email</span>
+                    <span className="font-medium">{values.contact_email || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Phone</span>
+                    <span className="font-medium">{values.contact_phone || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Fiscal year start</span>
+                    <span className="font-medium">
+                      {values.fiscal_year_start
+                        ? format(new Date(`${values.fiscal_year_start}T00:00:00`), 'PPP')
+                        : '—'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -520,4 +637,3 @@ export default function CompanySettings() {
     </Card>
   )
 }
-

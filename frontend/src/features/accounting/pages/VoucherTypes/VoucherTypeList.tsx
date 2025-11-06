@@ -1,5 +1,17 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
-import { Plus, Search, RefreshCw, MoreVertical, Edit, Trash2, Ban, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  RefreshCw,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -82,8 +94,7 @@ export default function VoucherTypeList() {
       setVoucherTypes(response.data)
       setTotalElements(typeof response.total === 'number' ? response.total : response.data.length)
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to load voucher types'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to load voucher types'
       setError(errorMessage)
       toast.error('Failed to load voucher types', { description: errorMessage })
     } finally {
@@ -113,8 +124,7 @@ export default function VoucherTypeList() {
       setSelectedVoucherType(null)
       await loadVoucherTypes()
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to delete voucher type'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to delete voucher type'
       toast.error('Failed to delete voucher type', { description: errorMessage })
     }
   }
@@ -137,8 +147,7 @@ export default function VoucherTypeList() {
       toast.success('Voucher type activated successfully')
       await loadVoucherTypes()
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to activate voucher type'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to activate voucher type'
       toast.error('Failed to activate voucher type', { description: errorMessage })
     }
   }
@@ -158,9 +167,7 @@ export default function VoucherTypeList() {
       {
         header: 'Type Code',
         accessorKey: 'typeCode',
-        cell: ({ row }) => (
-          <div className="font-medium">{row.getValue<string>('typeCode')}</div>
-        ),
+        cell: ({ row }) => <div className="font-medium">{row.getValue<string>('typeCode')}</div>,
       },
       {
         header: 'Type Name',
@@ -172,13 +179,16 @@ export default function VoucherTypeList() {
         cell: ({ row }) => {
           const status = row.getValue<string>('status')
           return status === 'ACTIVE' ? (
-            <Badge className='rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5'>
-              <span className='size-1.5 rounded-full bg-green-600 dark:bg-green-400' aria-hidden='true' />
+            <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5">
+              <span
+                className="size-1.5 rounded-full bg-green-600 dark:bg-green-400"
+                aria-hidden="true"
+              />
               Active
             </Badge>
           ) : (
-            <Badge className='bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive rounded-full border-none focus-visible:outline-none'>
-              <span className='bg-destructive size-1.5 rounded-full' aria-hidden='true' />
+            <Badge className="bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive rounded-full border-none focus-visible:outline-none">
+              <span className="bg-destructive size-1.5 rounded-full" aria-hidden="true" />
               Inactive
             </Badge>
           )
@@ -225,7 +235,7 @@ export default function VoucherTypeList() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   )
 
   const table = useReactTable({
@@ -242,7 +252,7 @@ export default function VoucherTypeList() {
   const totalFiltered = filteredRows.length
   const pagedRows = useMemo(
     () => filteredRows.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize),
-    [filteredRows, page, pageSize]
+    [filteredRows, page, pageSize],
   )
 
   return (
@@ -283,7 +293,12 @@ export default function VoucherTypeList() {
               <SelectItem value="INACTIVE">Inactive</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={handleRefresh} disabled={loading} className="h-9 w-9 p-0">
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={loading}
+            className="h-9 w-9 p-0"
+          >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -403,7 +418,11 @@ export default function VoucherTypeList() {
                   variant="outline"
                   className="h-8 w-8"
                   size="icon"
-                  onClick={() => setPage((p) => Math.min(Math.max(1, Math.ceil(totalFiltered / pageSize)), p + 1))}
+                  onClick={() =>
+                    setPage((p) =>
+                      Math.min(Math.max(1, Math.ceil(totalFiltered / pageSize)), p + 1),
+                    )
+                  }
                   disabled={page >= Math.max(1, Math.ceil(totalFiltered / pageSize)) || loading}
                 >
                   <span className="sr-only">Next page</span>
@@ -462,5 +481,3 @@ export default function VoucherTypeList() {
 }
 
 //
-
-

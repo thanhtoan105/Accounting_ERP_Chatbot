@@ -4,7 +4,7 @@ import { CompanySettings } from '@/features/company'
 import { Login, ForgotPassword, ResetPassword } from '@/features/auth'
 import { UserManagement } from '@/features/users'
 import UserProfile from '@/pages/UserProfile'
-import { ChartOfAccounts, VoucherList, VoucherForm, VoucherTypeList } from '@/features/accounting'
+import { ChartOfAccounts, VoucherTypeList } from '@/features/accounting'
 import AcceptInvitation from '@/pages/AcceptInvitation'
 import ProtectedLayout from '@/layouts/ProtectedLayout'
 import { RoleGuard, CompanyGuard } from '@/components'
@@ -66,30 +66,6 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/vouchers"
-        element={
-          <ProtectedLayout>
-            <VoucherList />
-          </ProtectedLayout>
-        }
-      />
-      <Route
-        path="/vouchers/new"
-        element={
-          <ProtectedLayout>
-            <VoucherForm />
-          </ProtectedLayout>
-        }
-      />
-      <Route
-        path="/vouchers/:id/edit"
-        element={
-          <ProtectedLayout>
-            <VoucherForm />
-          </ProtectedLayout>
-        }
-      />
-      <Route
         path="/voucher-types"
         element={
           <ProtectedLayout>
@@ -104,5 +80,3 @@ export default function AppRoutes() {
     </Routes>
   )
 }
-
-

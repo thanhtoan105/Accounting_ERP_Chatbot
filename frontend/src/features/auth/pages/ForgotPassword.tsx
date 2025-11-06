@@ -2,7 +2,14 @@ import { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { z } from 'zod'
 import { forgotPassword } from '@/features/auth/services/auth'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -55,8 +62,7 @@ export default function ForgotPassword({ onSuccess }: ForgotPasswordProps = {}) 
       setSubmitting(true)
       await forgotPassword(values.email)
       toast.success('Check your email', {
-        description:
-          "If an account with that email exists, we've sent a password reset link."
+        description: "If an account with that email exists, we've sent a password reset link.",
       })
       if (onSuccess) {
         onSuccess()
@@ -96,16 +102,17 @@ export default function ForgotPassword({ onSuccess }: ForgotPasswordProps = {}) 
               {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
             </div>
 
-            {errors.form && (
-              <p className="text-sm text-destructive">{errors.form}</p>
-            )}
+            {errors.form && <p className="text-sm text-destructive">{errors.form}</p>}
 
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? 'Sending…' : 'Send Reset Link'}
             </Button>
           </CardContent>
           <CardFooter className="justify-center">
-            <RouterLink to="/login" className="text-sm underline underline-offset-4 inline-flex items-center gap-1">
+            <RouterLink
+              to="/login"
+              className="text-sm underline underline-offset-4 inline-flex items-center gap-1"
+            >
               <ArrowLeft className="h-4 w-4" /> Back to login
             </RouterLink>
           </CardFooter>
@@ -114,4 +121,3 @@ export default function ForgotPassword({ onSuccess }: ForgotPasswordProps = {}) 
     </div>
   )
 }
-

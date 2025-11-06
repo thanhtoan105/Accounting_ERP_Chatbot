@@ -59,9 +59,7 @@ export async function getVoucherTypeById(id: number): Promise<VoucherType> {
   return payload.data
 }
 
-export async function createVoucherType(
-  data: VoucherTypeCreateRequest,
-): Promise<VoucherType> {
+export async function createVoucherType(data: VoucherTypeCreateRequest): Promise<VoucherType> {
   const res = await fetch(`${API_BASE}/voucher-types`, {
     method: 'POST',
     headers: await getAuthHeaders(),
@@ -118,5 +116,3 @@ export async function activateVoucherType(id: number): Promise<VoucherType> {
   const payload = await handleJsonResponse<{ data: VoucherType }>(res)
   return payload.data
 }
-
-

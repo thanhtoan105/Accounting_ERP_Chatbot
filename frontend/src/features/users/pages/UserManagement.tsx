@@ -8,7 +8,16 @@ import {
   flexRender,
   type SortingState,
 } from '@tanstack/react-table'
-import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X, Loader2 } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  X,
+  Loader2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,7 +49,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Label } from '@/components/ui/label'
 import { useRole } from '@/hooks/useRole'
 import { useAuth } from '@/hooks/useAuth'
-import RoleGuard from '@/components/RoleGuard'
+import RoleGuard from '@/components/guards/RoleGuard'
 import { getRoleDisplayName, canManageRole, type Role } from '@/utils/roles'
 import InviteUserDialog from './InviteUserDialog'
 import CreateUserDialog from './CreateUserDialog'
@@ -83,8 +92,6 @@ export default function UserManagement() {
   const [resetPasswordUserId, setResetPasswordUserId] = useState<number | null>(null)
   const [resetPasswordEmail, setResetPasswordEmail] = useState<string>('')
 
-  
-
   const [sorting, setSorting] = useState<SortingState>([])
 
   const loadUsers = useCallback(async () => {
@@ -108,11 +115,24 @@ export default function UserManagement() {
       setError(null)
     } catch (err: any) {
       if (!requestSucceeded) {
-        if (err?.code === 'UNAUTHORIZED' || err?.code === 'FORBIDDEN' || err?.status === 401 || err?.status === 403) {
-          const errorMessage = err instanceof Error ? err.message : err?.message || 'Authentication failed. Please try again.'
+        if (
+          err?.code === 'UNAUTHORIZED' ||
+          err?.code === 'FORBIDDEN' ||
+          err?.status === 401 ||
+          err?.status === 403
+        ) {
+          const errorMessage =
+            err instanceof Error
+              ? err.message
+              : err?.message || 'Authentication failed. Please try again.'
           setError(errorMessage)
         } else {
-          const errorMessage = err instanceof Error ? err.message : (err as { error?: { message?: string }; message?: string })?.error?.message || (err as { message?: string })?.message || 'Failed to load users'
+          const errorMessage =
+            err instanceof Error
+              ? err.message
+              : (err as { error?: { message?: string }; message?: string })?.error?.message ||
+              (err as { message?: string })?.message ||
+              'Failed to load users'
           setError(errorMessage)
         }
       }
@@ -121,13 +141,23 @@ export default function UserManagement() {
     }
   }, [page, pageSize, roleFilter, statusFilter, searchTerm])
 
-  useEffect(() => { loadUsers() }, [loadUsers])
+  useEffect(() => {
+    loadUsers()
+  }, [loadUsers])
 
   const handleFilterChange = () => setPage(1)
-  useEffect(() => { handleFilterChange() }, [roleFilter, statusFilter])
-  const handleSearch = (value: string) => { setSearchTerm(value); setPage(1) }
+  useEffect(() => {
+    handleFilterChange()
+  }, [roleFilter, statusFilter])
+  const handleSearch = (value: string) => {
+    setSearchTerm(value)
+    setPage(1)
+  }
   const handleCreateUser = () => setCreateDialogOpen(true)
-  const handleEditUser = (user: User) => { setSelectedUser(user); setEditDialogOpen(true) }
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user)
+    setEditDialogOpen(true)
+  }
 
   const handleDeactivateClick = async (userId: number, email: string) => {
     try {
@@ -137,7 +167,12 @@ export default function UserManagement() {
       toast.success('User deactivated successfully')
       await loadUsers()
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : (err as { error?: { message?: string }; message?: string })?.error?.message || (err as { message?: string })?.message || 'Failed to deactivate user'
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : (err as { error?: { message?: string }; message?: string })?.error?.message ||
+          (err as { message?: string })?.message ||
+          'Failed to deactivate user'
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
@@ -152,7 +187,12 @@ export default function UserManagement() {
       toast.success('User activated successfully')
       await loadUsers()
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : (err as { error?: { message?: string }; message?: string })?.error?.message || (err as { message?: string })?.message || 'Failed to activate user'
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : (err as { error?: { message?: string }; message?: string })?.error?.message ||
+          (err as { message?: string })?.message ||
+          'Failed to activate user'
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
@@ -160,9 +200,11 @@ export default function UserManagement() {
     }
   }
 
-  
-
-  const handleResetPasswordClick = (userId: number, email: string) => { setResetPasswordUserId(userId); setResetPasswordEmail(email); setResetPasswordDialogOpen(true) }
+  const handleResetPasswordClick = (userId: number, email: string) => {
+    setResetPasswordUserId(userId)
+    setResetPasswordEmail(email)
+    setResetPasswordDialogOpen(true)
+  }
   const handleResetPasswordConfirm = async () => {
     if (!resetPasswordUserId) return
     try {
@@ -174,14 +216,23 @@ export default function UserManagement() {
       setResetPasswordUserId(null)
       setResetPasswordEmail('')
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : (err as { error?: { message?: string }; message?: string })?.error?.message || (err as { message?: string })?.message || 'Failed to reset password'
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : (err as { error?: { message?: string }; message?: string })?.error?.message ||
+          (err as { message?: string })?.message ||
+          'Failed to reset password'
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
       setActionLoading((prev) => ({ ...prev, resetPassword: null }))
     }
   }
-  const handleResetPasswordCancel = () => { setResetPasswordDialogOpen(false); setResetPasswordUserId(null); setResetPasswordEmail('') }
+  const handleResetPasswordCancel = () => {
+    setResetPasswordDialogOpen(false)
+    setResetPasswordUserId(null)
+    setResetPasswordEmail('')
+  }
 
   const handleDialogSuccess = (message?: string) => {
     setCreateDialogOpen(false)
@@ -194,20 +245,27 @@ export default function UserManagement() {
     loadUsers()
   }
 
-  const tableActions: UserTableActions = useMemo(() => ({
-    onEdit: handleEditUser,
-    onActivate: handleActivateClick,
-    onDeactivate: handleDeactivateClick,
-    onResetPassword: handleResetPasswordClick,
-    isCurrentUser: (userId: number) => userId === currentUser?.id,
-    canManageThisUser: (user: User) => currentUser?.role && user.role ? canManageRole(currentUser.role, user.role) : false,
-    isInactive: (user: User) => (user.status || '').toUpperCase() === 'INACTIVE',
-    isDeactivating: (userId: number) => actionLoading.deactivate === userId,
-    isActivating: (userId: number) => actionLoading.activate === userId,
-    isResettingPassword: (userId: number) => actionLoading.resetPassword === userId,
-  }), [currentUser?.id, currentUser?.role, actionLoading])
+  const tableActions: UserTableActions = useMemo(
+    () => ({
+      onEdit: handleEditUser,
+      onActivate: handleActivateClick,
+      onDeactivate: handleDeactivateClick,
+      onResetPassword: handleResetPasswordClick,
+      isCurrentUser: (userId: number) => userId === currentUser?.id,
+      canManageThisUser: (user: User) =>
+        currentUser?.role && user.role ? canManageRole(currentUser.role, user.role) : false,
+      isInactive: (user: User) => (user.status || '').toUpperCase() === 'INACTIVE',
+      isDeactivating: (userId: number) => actionLoading.deactivate === userId,
+      isActivating: (userId: number) => actionLoading.activate === userId,
+      isResettingPassword: (userId: number) => actionLoading.resetPassword === userId,
+    }),
+    [currentUser?.id, currentUser?.role, actionLoading],
+  )
 
-  const columns = useMemo(() => createUserTableColumns(currentUser?.role, tableActions), [currentUser?.role, tableActions])
+  const columns = useMemo(
+    () => createUserTableColumns(currentUser?.role, tableActions),
+    [currentUser?.role, tableActions],
+  )
 
   const table = useReactTable({
     data: users,
@@ -258,7 +316,13 @@ export default function UserManagement() {
             className="pl-9"
           />
         </div>
-        <Select value={roleFilter || 'all'} onValueChange={(value) => { setRoleFilter(value === 'all' ? '' : value); setPage(1) }}>
+        <Select
+          value={roleFilter || 'all'}
+          onValueChange={(value) => {
+            setRoleFilter(value === 'all' ? '' : value)
+            setPage(1)
+          }}
+        >
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="All Roles" />
           </SelectTrigger>
@@ -271,7 +335,13 @@ export default function UserManagement() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={statusFilter || 'all'} onValueChange={(value) => { setStatusFilter(value === 'all' ? '' : value); setPage(1) }}>
+        <Select
+          value={statusFilter || 'all'}
+          onValueChange={(value) => {
+            setStatusFilter(value === 'all' ? '' : value)
+            setPage(1)
+          }}
+        >
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
@@ -441,25 +511,51 @@ export default function UserManagement() {
         </div>
       </div>
 
-      <InviteUserDialog open={inviteDialogOpen} onClose={() => setInviteDialogOpen(false)} onSuccess={() => handleDialogSuccess('Invitation email sent successfully')} />
-      <CreateUserDialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} onSuccess={() => handleDialogSuccess('User created successfully')} />
-      <EditUserDialog open={editDialogOpen} user={selectedUser} onClose={() => { setEditDialogOpen(false); setSelectedUser(null) }} onSuccess={() => handleDialogSuccess('User updated successfully')} />
+      <InviteUserDialog
+        open={inviteDialogOpen}
+        onClose={() => setInviteDialogOpen(false)}
+        onSuccess={() => handleDialogSuccess('Invitation email sent successfully')}
+      />
+      <CreateUserDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={() => handleDialogSuccess('User created successfully')}
+      />
+      <EditUserDialog
+        open={editDialogOpen}
+        user={selectedUser}
+        onClose={() => {
+          setEditDialogOpen(false)
+          setSelectedUser(null)
+        }}
+        onSuccess={() => handleDialogSuccess('User updated successfully')}
+      />
 
-      
-
-      <Dialog open={resetPasswordDialogOpen} onOpenChange={(open) => !open && handleResetPasswordCancel()}>
+      <Dialog
+        open={resetPasswordDialogOpen}
+        onOpenChange={(open) => !open && handleResetPasswordCancel()}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription>
-              Send password reset email to <strong>{resetPasswordEmail}</strong>?<br /><br />A password reset link will be sent to their email address. The link will expire after 30 minutes.
+              Send password reset email to <strong>{resetPasswordEmail}</strong>?<br />
+              <br />A password reset link will be sent to their email address. The link will expire
+              after 30 minutes.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={handleResetPasswordCancel} disabled={actionLoading.resetPassword !== null}>
+            <Button
+              variant="outline"
+              onClick={handleResetPasswordCancel}
+              disabled={actionLoading.resetPassword !== null}
+            >
               Cancel
             </Button>
-            <Button onClick={handleResetPasswordConfirm} disabled={actionLoading.resetPassword !== null}>
+            <Button
+              onClick={handleResetPasswordConfirm}
+              disabled={actionLoading.resetPassword !== null}
+            >
               {actionLoading.resetPassword !== null ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

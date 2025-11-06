@@ -92,8 +92,8 @@ export default function InviteUserDialog({ open, onClose, onSuccess }: InviteUse
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-          (err as { message?: string })?.message ||
-          'Failed to send invitation'
+            (err as { message?: string })?.message ||
+            'Failed to send invitation'
       setFormError(errorMessage)
     }
   }
@@ -111,7 +111,8 @@ export default function InviteUserDialog({ open, onClose, onSuccess }: InviteUse
           <DialogHeader className="space-y-2">
             <DialogTitle>Invite User</DialogTitle>
             <DialogDescription>
-              Send an invitation email to a new user. They will receive a link to set up their account.
+              Send an invitation email to a new user. They will receive a link to set up their
+              account.
             </DialogDescription>
           </DialogHeader>
           <FieldGroup className="space-y-2.5 py-2">
@@ -134,9 +135,7 @@ export default function InviteUserDialog({ open, onClose, onSuccess }: InviteUse
                   disabled={isSubmitting}
                   autoFocus
                 />
-                {errors.email?.message && (
-                  <FieldError>{errors.email.message}</FieldError>
-                )}
+                {errors.email?.message && <FieldError>{errors.email.message}</FieldError>}
               </FieldContent>
             </Field>
             <Field className="gap-2">
@@ -144,7 +143,9 @@ export default function InviteUserDialog({ open, onClose, onSuccess }: InviteUse
               <FieldContent>
                 <Select
                   value={selectedRole}
-                  onValueChange={(value) => setValue('role', value as Role, { shouldValidate: true })}
+                  onValueChange={(value) =>
+                    setValue('role', value as Role, { shouldValidate: true })
+                  }
                   disabled={isSubmitting}
                 >
                   <SelectTrigger id="invite-role" aria-invalid={!!errors.role}>
@@ -158,9 +159,7 @@ export default function InviteUserDialog({ open, onClose, onSuccess }: InviteUse
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.role?.message && (
-                  <FieldError>{errors.role.message}</FieldError>
-                )}
+                {errors.role?.message && <FieldError>{errors.role.message}</FieldError>}
               </FieldContent>
             </Field>
           </FieldGroup>
@@ -184,4 +183,3 @@ export default function InviteUserDialog({ open, onClose, onSuccess }: InviteUse
     </Dialog>
   )
 }
-

@@ -3,7 +3,14 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom'
 import { z } from 'zod'
 import { resetPassword } from '@/features/auth/services/auth'
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -42,7 +49,7 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
-  
+
   const [show, setShow] = useState<{ pw: boolean; cpw: boolean }>({ pw: false, cpw: false })
 
   useEffect(() => {
@@ -117,8 +124,6 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
       } else {
         setErrors({ form: message })
       }
-
-      
     } finally {
       setSubmitting(false)
     }
@@ -161,9 +166,7 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
               <p className="text-sm text-muted-foreground">
                 Password must be at least 8 characters with uppercase, lowercase, and number.
               </p>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
-              )}
+              {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>
 
             <div className="space-y-2">
@@ -191,12 +194,8 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
               )}
             </div>
 
-            {errors.form && (
-              <p className="text-sm text-destructive">{errors.form}</p>
-            )}
-            {errors.token && (
-              <p className="text-sm text-destructive">{errors.token}</p>
-            )}
+            {errors.form && <p className="text-sm text-destructive">{errors.form}</p>}
+            {errors.token && <p className="text-sm text-destructive">{errors.token}</p>}
 
             <Button type="submit" className="w-full" disabled={submitting || !token}>
               {submitting ? 'Resetting…' : 'Reset Password'}
@@ -215,4 +214,3 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
     </div>
   )
 }
-

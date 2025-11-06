@@ -8,7 +8,14 @@ import { getAccessToken } from '../utils/axios'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app'
 import { Separator } from '@/components/ui/separator'
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 interface NavItem {
   path: string
@@ -105,9 +112,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   if (loading) {
     const token = getAccessToken()
     if (!token) {
-      return (
-        <div className="min-h-[100dvh] grid place-items-center">Loading...</div>
-      )
+      return <div className="min-h-[100dvh] grid place-items-center">Loading...</div>
     }
   }
 
@@ -149,15 +154,15 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>{visibleNavItems.find(i => i.path === location.pathname)?.label || 'Dashboard'}</BreadcrumbPage>
+                <BreadcrumbPage>
+                  {visibleNavItems.find((i) => i.path === location.pathname)?.label || 'Dashboard'}
+                </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
           {/* Logout button kept in sidebar footer to avoid duplicates */}
         </header>
-        <div className="p-4">
-        {children}
-        </div>
+        <div className="p-4">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   )

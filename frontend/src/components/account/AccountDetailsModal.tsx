@@ -52,9 +52,7 @@ export default function AccountDetailsModal({ open, onClose, account }: AccountD
               </Badge>
             )}
           </div>
-          <DialogDescription>
-            Thông tin chi tiết về tài khoản {account.code}
-          </DialogDescription>
+          <DialogDescription>Thông tin chi tiết về tài khoản {account.code}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -124,9 +122,7 @@ export default function AccountDetailsModal({ open, onClose, account }: AccountD
               <Separator />
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Số dư hiện tại</label>
-                <p className="text-2xl font-bold">
-                  {account.balance.toLocaleString('vi-VN')} VND
-                </p>
+                <p className="text-2xl font-bold">{account.balance.toLocaleString('vi-VN')} VND</p>
               </div>
             </>
           )}

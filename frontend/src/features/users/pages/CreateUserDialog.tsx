@@ -20,7 +20,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Loader2 } from 'lucide-react'
 import { createUser, type CreateUserRequest } from '@/services/user'
 import { getRoleDisplayName, getAssignableRoles, type Role } from '@/utils/roles'
@@ -41,7 +48,10 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
 
   const createUserSchema = z.object({
     email: z.string().email('Please enter a valid email address').min(1, 'Email is required'),
-    fullName: z.string().min(1, 'Full name is required').min(2, 'Full name must be at least 2 characters'),
+    fullName: z
+      .string()
+      .min(1, 'Full name is required')
+      .min(2, 'Full name must be at least 2 characters'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     role: z.enum(['admin', 'accountant', 'chief_accountant', 'cfo'] as const),
   })
@@ -104,8 +114,8 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-          (err as { message?: string })?.message ||
-          'Failed to create user'
+            (err as { message?: string })?.message ||
+            'Failed to create user'
       setFormError(errorMessage)
     }
   }
@@ -123,7 +133,8 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
           <DialogHeader className="space-y-2">
             <DialogTitle>Create User</DialogTitle>
             <DialogDescription>
-              Create a new user account directly. The user will be able to log in immediately with the provided credentials.
+              Create a new user account directly. The user will be able to log in immediately with
+              the provided credentials.
             </DialogDescription>
           </DialogHeader>
           <FieldGroup className="space-y-1 py-1">
@@ -146,9 +157,7 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
                   disabled={isSubmitting}
                   autoFocus
                 />
-                {errors.email?.message && (
-                  <FieldError>{errors.email.message}</FieldError>
-                )}
+                {errors.email?.message && <FieldError>{errors.email.message}</FieldError>}
               </FieldContent>
             </Field>
             <Field className="gap-2">
@@ -163,9 +172,7 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
                   aria-invalid={!!errors.fullName}
                   disabled={isSubmitting}
                 />
-                {errors.fullName?.message && (
-                  <FieldError>{errors.fullName.message}</FieldError>
-                )}
+                {errors.fullName?.message && <FieldError>{errors.fullName.message}</FieldError>}
               </FieldContent>
             </Field>
             <Field className="gap-2">
@@ -180,9 +187,7 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
                   aria-invalid={!!errors.password}
                   disabled={isSubmitting}
                 />
-                {errors.password?.message && (
-                  <FieldError>{errors.password.message}</FieldError>
-                )}
+                {errors.password?.message && <FieldError>{errors.password.message}</FieldError>}
                 <FieldDescription>Must be at least 8 characters</FieldDescription>
               </FieldContent>
             </Field>
@@ -191,13 +196,12 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
               <FieldContent>
                 <Select
                   value={selectedRole}
-                  onValueChange={(value) => setValue('role', value as Role, { shouldValidate: true })}
+                  onValueChange={(value) =>
+                    setValue('role', value as Role, { shouldValidate: true })
+                  }
                   disabled={isSubmitting || assignableRoles.length === 0}
                 >
-                  <SelectTrigger
-                    id="create-role"
-                    aria-invalid={!!errors.role}
-                  >
+                  <SelectTrigger id="create-role" aria-invalid={!!errors.role}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -208,9 +212,7 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.role?.message && (
-                  <FieldError>{errors.role.message}</FieldError>
-                )}
+                {errors.role?.message && <FieldError>{errors.role.message}</FieldError>}
                 {assignableRoles.length === 0 && (
                   <FieldDescription>You do not have permission to assign roles</FieldDescription>
                 )}
@@ -237,4 +239,3 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
     </Dialog>
   )
 }
-

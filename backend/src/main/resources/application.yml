@@ -22,6 +22,9 @@ spring:
     import:
       - optional:file:../.env[.properties]
       # - optional:file:.env[.properties]
+  devtools:
+    restart:
+      enabled: true
 
 springdoc:
   swagger-ui:

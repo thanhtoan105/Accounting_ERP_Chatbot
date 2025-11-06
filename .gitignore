@@ -53,6 +53,7 @@ frontend/.env.*
 backend/.env
 backend/.env.*
 !backend/.env.example
+venv/
 
 # --- Docker / Compose ---
 # Named volumes are outside repo, but ignore local overrides

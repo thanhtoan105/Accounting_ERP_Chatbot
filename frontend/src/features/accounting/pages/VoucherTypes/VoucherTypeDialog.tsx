@@ -16,16 +16,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
 import { X } from 'lucide-react'
 import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
-import {
-  createVoucherType,
-  updateVoucherType,
-  getVoucherTypeById,
-} from '@/services/voucherType'
+import { createVoucherType, updateVoucherType, getVoucherTypeById } from '@/services/voucherType'
 import type { VoucherTypeCreateRequest, VoucherTypeUpdateRequest } from '@/types/voucherType'
 import { getChartOfAccounts } from '@/services/chartOfAccounts'
 import { filterLevel3Accounts } from '@/utils/accountUtils'
@@ -143,8 +146,7 @@ export default function VoucherTypeDialog({
       })
       setFormError(null)
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to load voucher type'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to load voucher type'
       setFormError(errorMessage)
       toast.error('Failed to load voucher type', { description: errorMessage })
     }
@@ -176,8 +178,7 @@ export default function VoucherTypeDialog({
       }
       onSuccess()
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to save voucher type'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to save voucher type'
       setFormError(errorMessage)
       toast.error('Failed to save voucher type', { description: errorMessage })
     }
@@ -222,9 +223,7 @@ export default function VoucherTypeDialog({
                     disabled={isSubmitting}
                     autoFocus
                   />
-                  {errors.typeCode?.message && (
-                    <FieldError>{errors.typeCode.message}</FieldError>
-                  )}
+                  {errors.typeCode?.message && <FieldError>{errors.typeCode.message}</FieldError>}
                 </FieldContent>
               </Field>
 
@@ -240,18 +239,14 @@ export default function VoucherTypeDialog({
                     aria-invalid={!!errors.typeName}
                     disabled={isSubmitting}
                   />
-                  {errors.typeName?.message && (
-                    <FieldError>{errors.typeName.message}</FieldError>
-                  )}
+                  {errors.typeName?.message && <FieldError>{errors.typeName.message}</FieldError>}
                 </FieldContent>
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
               <Field className="gap-2 min-w-0">
-                <FieldLabel htmlFor="debitAccountId">
-                  Debit Account
-                </FieldLabel>
+                <FieldLabel htmlFor="debitAccountId">Debit Account</FieldLabel>
                 <FieldContent>
                   <Popover open={debitOpen} onOpenChange={setDebitOpen}>
                     <div className="relative w-full">
@@ -321,9 +316,7 @@ export default function VoucherTypeDialog({
               </Field>
 
               <Field className="gap-2 min-w-0">
-                <FieldLabel htmlFor="creditAccountId">
-                  Credit Account
-                </FieldLabel>
+                <FieldLabel htmlFor="creditAccountId">Credit Account</FieldLabel>
                 <FieldContent>
                   <Popover open={creditOpen} onOpenChange={setCreditOpen}>
                     <div className="relative w-full">
@@ -426,4 +419,3 @@ export default function VoucherTypeDialog({
     </Dialog>
   )
 }
-

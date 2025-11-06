@@ -41,20 +41,15 @@ export default function DeleteVoucherTypeDialog({
         <DialogHeader>
           <DialogTitle>Delete Voucher Type</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the voucher type "{voucherType?.typeName}"? This
-            action cannot be undone.
+            Are you sure you want to delete the voucher type "{voucherType?.typeName}"? This action
+            cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose} disabled={isDeleting}>
             Cancel
           </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={handleConfirm}
-            disabled={isDeleting}
-          >
+          <Button type="button" variant="destructive" onClick={handleConfirm} disabled={isDeleting}>
             {isDeleting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -69,7 +64,3 @@ export default function DeleteVoucherTypeDialog({
     </Dialog>
   )
 }
-
-
-
-
