@@ -3,11 +3,16 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
+import { useCompany } from '../hooks/useCompany'
+import { useTheme } from '../hooks/useTheme'
 import type { Role } from '../utils/roles'
 import { getAccessToken } from '../utils/axios'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app'
 import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Moon, Sun } from 'lucide-react'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -74,7 +79,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated, loading, logout, user } = useAuth()
-  const { hasAnyRole } = useRole()
+  const { hasAnyRole, getRoleDisplayName } = useRole()
+  const { company, currentPeriod } = useCompany()
+  const { resolvedTheme, toggleTheme } = useTheme()
 
   const handleLogout = async () => {
     try {
@@ -147,7 +154,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-          <Breadcrumb>
+          <Breadcrumb className="flex-1">
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
                 <BreadcrumbLink href="#">Accounting</BreadcrumbLink>
@@ -160,7 +167,38 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          {/* Logout button kept in sidebar footer to avoid duplicates */}
+          <div className="ml-auto flex items-center gap-3">
+            {/* Company name and period */}
+            {(company?.name || currentPeriod) && (
+              <div className="hidden md:flex flex-col items-end text-sm">
+                {company?.name && (
+                  <span className="font-medium text-foreground">{company.name}</span>
+                )}
+                {currentPeriod && (
+                  <span className="text-muted-foreground text-xs">Period: {currentPeriod}</span>
+                )}
+              </div>
+            )}
+            {/* Role badge */}
+            {user?.role && (
+              <Badge variant="secondary" className="hidden sm:inline-flex">
+                {getRoleDisplayName()}
+              </Badge>
+            )}
+            {/* Theme switcher */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {resolvedTheme === 'dark' ? (
+                <Sun className="size-4" />
+              ) : (
+                <Moon className="size-4" />
+              )}
+            </Button>
+          </div>
         </header>
         <div className="p-4">{children}</div>
       </SidebarInset>

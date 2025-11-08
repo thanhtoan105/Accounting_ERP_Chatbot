@@ -16,7 +16,7 @@ describe('CreateUserDialog', () => {
 
   it('renders dialog when open', () => {
     render(<CreateUserDialog open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
-    expect(screen.getByText('Create User')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /create user/i })).toBeInTheDocument()
   })
 
   it('does not render when closed', () => {
@@ -54,7 +54,7 @@ describe('CreateUserDialog', () => {
     render(<CreateUserDialog open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
     const emailInput = screen.getByLabelText(/email address/i)
-    const passwordInput = screen.getByLabelText(/^password$/i)
+    const passwordInput = screen.getByLabelText(/password \*/i)
     const fullNameInput = screen.getByLabelText(/full name/i)
     const submitButton = screen.getByRole('button', { name: /create user/i })
 
@@ -82,7 +82,7 @@ describe('CreateUserDialog', () => {
     render(<CreateUserDialog open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
     const emailInput = screen.getByLabelText(/email address/i)
-    const passwordInput = screen.getByLabelText(/^password$/i)
+    const passwordInput = screen.getByLabelText(/password \*/i)
     const fullNameInput = screen.getByLabelText(/full name/i)
     const submitButton = screen.getByRole('button', { name: /create user/i })
 
@@ -114,7 +114,7 @@ describe('CreateUserDialog', () => {
     render(<CreateUserDialog open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
     const emailInput = screen.getByLabelText(/email address/i)
-    const passwordInput = screen.getByLabelText(/^password$/i)
+    const passwordInput = screen.getByLabelText(/password \*/i)
     const fullNameInput = screen.getByLabelText(/full name/i)
     const submitButton = screen.getByRole('button', { name: /create user/i })
 

@@ -1,0 +1,386 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>7</storyId>
+    <title>MVP Branding & App Layout</title>
+    <status>drafted</status>
+    <generatedAt>2025-02-10T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-7-mvp-branding-app-layout.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user</asA>
+    <iWant>a branded, professional shell and responsive layout</iWant>
+    <soThat>the UI is clear, trustworthy and usable for critical flows</soThat>
+    <tasks>
+      <task id="frontend-branded-login">
+        <title>Frontend: Branded login page (AC: #1)</title>
+        <subtasks>
+          <subtask>Update Login page to display company logo from company settings</subtask>
+          <subtask>Apply company color scheme to login page (primary color from company settings or default)</subtask>
+          <subtask>Implement dark mode toggle on login page</subtask>
+          <subtask>Ensure logo scales appropriately and displays correctly in both light/dark modes</subtask>
+        </subtasks>
+      </task>
+      <task id="frontend-authenticated-layout">
+        <title>Frontend: Authenticated layout shell (AC: #2, #3)</title>
+        <subtasks>
+          <subtask>Enhance ProtectedLayout with persistent sidebar (shadcn sidebar-06 pattern)</subtask>
+          <subtask>Add header with user avatar, username display</subtask>
+          <subtask>Display company name and current period in header</subtask>
+          <subtask>Show effective role badge/indicator in header</subtask>
+          <subtask>Implement theme switcher (light/dark mode) in header</subtask>
+          <subtask>Ensure sidebar navigation persists across route changes</subtask>
+        </subtasks>
+      </task>
+      <task id="frontend-loading-error">
+        <title>Frontend: Loading and error states (AC: #4)</title>
+        <subtasks>
+          <subtask>Add loading skeletons for table/list views</subtask>
+          <subtask>Add loading spinners for form submissions</subtask>
+          <subtask>Implement error boundary component for graceful error handling</subtask>
+          <subtask>Add toast notifications for success/error messages (using Sonner)</subtask>
+          <subtask>Ensure all API calls have proper loading/error states</subtask>
+        </subtasks>
+      </task>
+      <task id="frontend-responsive">
+        <title>Frontend: Responsive design (AC: #5)</title>
+        <subtasks>
+          <subtask>Test and optimize for 1920x1080 resolution</subtask>
+          <subtask>Test and optimize for 1366x768 resolution</subtask>
+          <subtask>Ensure tablet (768px+) usability for critical flows (login, voucher entry, reports)</subtask>
+          <subtask>Add responsive breakpoints for sidebar collapse on smaller screens</subtask>
+          <subtask>Test form layouts on different screen sizes</subtask>
+        </subtasks>
+      </task>
+      <task id="backend-branding-api">
+        <title>Backend: Company branding API support (AC: #1)</title>
+        <subtasks>
+          <subtask>Ensure GET /api/v1/admin/company/settings returns logo URL and branding preferences</subtask>
+          <subtask>Add endpoint or extend settings to include primary color/theme preferences (if not already present)</subtask>
+        </subtasks>
+      </task>
+      <task id="testing">
+        <title>Testing (maps to ACs)</title>
+        <subtasks>
+          <subtask>Frontend tests for login page logo/theme display</subtask>
+          <subtask>Frontend tests for authenticated layout components</subtask>
+          <subtask>E2E tests for responsive breakpoints</subtask>
+          <subtask>Visual regression tests for branding consistency</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <text>Branded login page: logo, color scheme based on company, support for dark mode.</text>
+      <source>docs/epics.md#Story-1.7-MVP-Branding-&-App-Layout</source>
+    </criterion>
+    <criterion id="AC2">
+      <text>Authenticated layout has persistent sidebar, header (user avatar), and theme.</text>
+      <source>docs/epics.md#Story-1.7-MVP-Branding-&-App-Layout</source>
+    </criterion>
+    <criterion id="AC3">
+      <text>Logged-in username, company, and effective role always visible.</text>
+      <source>docs/epics.md#Story-1.7-MVP-Branding-&-App-Layout</source>
+    </criterion>
+    <criterion id="AC4">
+      <text>Professional, unobtrusive design (MUI tokens); all screens handle loading/error states.</text>
+      <source>docs/epics.md#Story-1.7-MVP-Branding-&-App-Layout</source>
+      <note>Note: Architecture uses Tailwind CSS design tokens (CSS variables) via shadcn/ui, not Material-UI. Implement professional design using Tailwind CSS variables for colors, spacing, and typography.</note>
+    </criterion>
+    <criterion id="AC5">
+      <text>Responsive to 1920x1080 and 1366x768; tablet screens at least usable for critical flows.</text>
+      <source>docs/epics.md#Story-1.7-MVP-Branding-&-App-Layout</source>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>UX Design Principles</section>
+        <snippet>Desktop-first accounting workspace optimized for speed and accuracy. Minimal, information-dense layouts with clear hierarchy. Clean, professional financial UI; neutral palette with accent for primary actions. Use Tailwind CSS with CSS variables for theming; Shadcn UI components for consistency.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Decision Summary, Project Structure, Implementation Patterns</section>
+        <snippet>Frontend uses React + TypeScript, shadcn/ui + Tailwind CSS. Project structure: feature-first organization with layouts/ProtectedLayout.tsx, components/app/app-sidebar.tsx, components/app/nav-main.tsx. Theme management: Use Tailwind CSS dark mode with CSS variables, implement theme provider if needed.</snippet>
+      </doc>
+      <doc>
+        <path>docs/ux-design-specification.md</path>
+        <title>UX Design Specification</title>
+        <section>Design System, Navigation, Authentication Screens</section>
+        <snippet>Components: shadcn/ui (Radix primitives) with Tailwind CSS utilities. Layout: sidebar-06 pattern via layouts/ProtectedLayout.tsx with SidebarProvider, AppSidebar, SidebarInset, SidebarTrigger. Authentication: features/auth/pages/Login.tsx with LoginForm. Feedback: Toasts via sonner.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Detailed Design, APIs and Interfaces</section>
+        <snippet>Frontend bootstrapping includes React + TS + Vite, shadcn/ui layout using layouts/ProtectedLayout.tsx (sidebar-06), basic features/dashboard/pages/Dashboard.tsx. Auth endpoints: POST /api/v1/auth/login, refresh, logout.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdowns</title>
+        <section>Epic 1: Project Foundation & Secure Authentication - Story 1.7</section>
+        <snippet>Story 1.7: MVP Branding & App Layout. Acceptance criteria include branded login page with logo and color scheme, authenticated layout with persistent sidebar and header, username/company/role visibility, professional design with loading/error states, responsive design for 1920x1080 and 1366x768.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-6-company-settings.md</path>
+        <title>Story 1.6: Company Settings</title>
+        <section>Learnings from Previous Story</section>
+        <snippet>New Service Created: StorageService and SupabaseStorageService for logo uploads - company logo URL available at company.logoUrl field. API Endpoints: GET /api/v1/admin/company/settings returns company details including logoUrl, name, taxCode, address, contactEmail, contactPhone, fiscalYearStart. PUT /api/v1/admin/company/settings supports multipart upload for logo.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>frontend/src/features/auth/pages/Login.tsx</path>
+        <kind>page component</kind>
+        <symbol>Login</symbol>
+        <lines>1-27</lines>
+        <reason>Current login page implementation - needs enhancement to display company logo and apply branding</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/auth/LoginForm.tsx</path>
+        <kind>component</kind>
+        <symbol>LoginForm</symbol>
+        <reason>Login form component - needs logo display and theme integration</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/layouts/ProtectedLayout.tsx</path>
+        <kind>layout component</kind>
+        <symbol>ProtectedLayout</symbol>
+        <lines>1-169</lines>
+        <reason>Main authenticated layout - needs enhancement with company name, role display, and theme switcher in header</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/app-sidebar.tsx</path>
+        <kind>component</kind>
+        <symbol>AppSidebar</symbol>
+        <lines>1-117</lines>
+        <reason>Sidebar component using shadcn sidebar-06 pattern - already implemented, may need logo integration</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/app/nav-main.tsx</path>
+        <kind>component</kind>
+        <symbol>NavMain</symbol>
+        <reason>Navigation main component used in sidebar</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/services/company.ts</path>
+        <kind>service</kind>
+        <symbol>company service</symbol>
+        <reason>Company API service - should fetch company settings including logoUrl for branding</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/admin/CompanySettingsController.java</path>
+        <kind>controller</kind>
+        <symbol>CompanySettingsController</symbol>
+        <lines>1-59</lines>
+        <reason>Company settings API - GET /api/v1/admin/company/settings returns Company entity with logoUrl field</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/CompanyService.java</path>
+        <kind>service interface</kind>
+        <symbol>CompanyService</symbol>
+        <reason>Company service interface - getCurrentCompanySettings() method available</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/CompanyServiceImpl.java</path>
+        <kind>service implementation</kind>
+        <symbol>CompanyServiceImpl</symbol>
+        <reason>Company service implementation - handles company settings retrieval and updates</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/hooks/useAuth.ts</path>
+        <kind>hook</kind>
+        <symbol>useAuth</symbol>
+        <reason>Authentication hook - provides user information including fullName, email, role</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/hooks/useRole.ts</path>
+        <kind>hook</kind>
+        <symbol>useRole</symbol>
+        <reason>Role management hook - provides hasAnyRole() for role-based UI visibility</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/ui/sidebar.tsx</path>
+        <kind>shadcn component</kind>
+        <symbol>Sidebar, SidebarProvider, SidebarInset, SidebarTrigger</symbol>
+        <reason>Shadcn sidebar primitives - already available for layout implementation</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/ui/avatar.tsx</path>
+        <kind>shadcn component</kind>
+        <symbol>Avatar, AvatarFallback</symbol>
+        <reason>Shadcn avatar component - already used in AppSidebar for user display</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/ui/breadcrumb.tsx</path>
+        <kind>shadcn component</kind>
+        <symbol>Breadcrumb components</symbol>
+        <reason>Shadcn breadcrumb component - already used in ProtectedLayout header</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="react" version="^19.1.1"/>
+        <package name="react-dom" version="^19.1.1"/>
+        <package name="react-router-dom" version="^7.9.5"/>
+        <package name="tailwindcss" version="^4.1.16"/>
+        <package name="@radix-ui/react-avatar" version="^1.1.10"/>
+        <package name="@radix-ui/react-dropdown-menu" version="^2.1.16"/>
+        <package name="lucide-react" version="^0.552.0"/>
+        <package name="sonner" version="^2.0.7"/>
+        <package name="axios" version="^1.7.9"/>
+        <package name="class-variance-authority" version="^0.7.1"/>
+        <package name="clsx" version="^2.1.1"/>
+        <package name="tailwind-merge" version="^3.3.1"/>
+      </ecosystem>
+      <ecosystem name="java">
+        <package name="org.springframework.boot:spring-boot-starter-web" version="3.5.7"/>
+        <package name="org.springframework.boot:spring-boot-starter-security" version="3.5.7"/>
+        <package name="org.springframework.boot:spring-boot-starter-data-jpa" version="3.5.7"/>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <type>Architecture</type>
+      <text>React + TypeScript, shadcn/ui + Tailwind CSS, Spring Boot backend with JWT auth</text>
+      <source>docs/architecture.md#Decision-Architecture</source>
+    </constraint>
+    <constraint>
+      <type>Project Structure</type>
+      <text>Follow unified project structure for frontend feature-first layout: layouts/ProtectedLayout.tsx, components/app/app-sidebar.tsx, components/app/nav-main.tsx</text>
+      <source>docs/architecture.md#Project-Structure</source>
+    </constraint>
+    <constraint>
+      <type>Design System</type>
+      <text>Use shadcn/ui components: Sidebar (sidebar-06 pattern), Avatar, Badge, Button, Dropdown Menu for user menu</text>
+      <source>docs/architecture.md#Decision-Architecture</source>
+    </constraint>
+    <constraint>
+      <type>Theme Management</type>
+      <text>Use Tailwind CSS dark mode with CSS variables, implement theme provider if needed</text>
+      <source>docs/architecture.md#Decision-Architecture</source>
+    </constraint>
+    <constraint>
+      <type>Design Tokens</type>
+      <text>Note on AC#4 "MUI tokens": The epic mentions "MUI tokens" but our architecture uses Tailwind CSS design tokens (CSS variables) via shadcn/ui, not Material-UI. Implement professional design using Tailwind CSS variables for colors, spacing, and typography.</text>
+      <source>docs/stories/1-7-mvp-branding-app-layout.md#Dev-Notes</source>
+    </constraint>
+    <constraint>
+      <type>UX Design</type>
+      <text>Desktop-first, professional financial UI, Vietnamese locale default</text>
+      <source>docs/PRD.md#UX-Design-Principles</source>
+    </constraint>
+    <constraint>
+      <type>RBAC</type>
+      <text>RBAC enforcement: hasAnyRole('ADMIN','CHIEF_ACCOUNTANT') for company settings endpoints</text>
+      <source>docs/stories/1-6-company-settings.md#File-List</source>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GET /api/v1/admin/company/settings</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/admin/company/settings
+Response: { "data": Company }
+Company fields: id, name, taxCode, address, logoUrl, contactEmail, contactPhone, fiscalYearStart</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/CompanySettingsController.java</path>
+      <auth>Requires ADMIN or CHIEF_ACCOUNTANT role</auth>
+    </interface>
+    <interface>
+      <name>PUT /api/v1/admin/company/settings</name>
+      <kind>REST endpoint</kind>
+      <signature>PUT /api/v1/admin/company/settings
+Content-Type: multipart/form-data
+Request: { "payload": UpdateCompanySettingsRequest, "logo": MultipartFile (optional) }
+Response: { "data": Company }</signature>
+      <path>backend/src/main/java/com/accounting/controller/admin/CompanySettingsController.java</path>
+      <auth>Requires ADMIN or CHIEF_ACCOUNTANT role</auth>
+    </interface>
+    <interface>
+      <name>useAuth hook</name>
+      <kind>React hook</kind>
+      <signature>const { isAuthenticated, loading, logout, user } = useAuth()
+user: { id: number; email: string; fullName: string; role: string }</signature>
+      <path>frontend/src/hooks/useAuth.ts</path>
+    </interface>
+    <interface>
+      <name>useRole hook</name>
+      <kind>React hook</kind>
+      <signature>const { hasAnyRole } = useRole()
+hasAnyRole(roles: Role[]): boolean</signature>
+      <path>frontend/src/hooks/useRole.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <framework>Frontend: Vitest + Testing Library + jsdom</framework>
+      <framework>Backend: JUnit 5 + TestContainers for integration tests</framework>
+      <coverage>Backend: 60% test coverage for business logic layer</coverage>
+      <pattern>Frontend: Component testing with Testing Library, E2E tests for critical flows</pattern>
+      <pattern>Backend: Unit tests for services, integration tests for controllers with test database</pattern>
+    </standards>
+    <locations>
+      <location>frontend/src/**/__tests__/**/*.test.tsx</location>
+      <location>frontend/src/**/__tests__/**/*.test.ts</location>
+      <location>backend/src/test/java/**/*Test.java</location>
+      <location>backend/src/test/java/**/*IT.java</location>
+    </locations>
+    <ideas>
+      <idea criterion="AC1">
+        <text>Test login page displays company logo when logoUrl is available from company settings API</text>
+      </idea>
+      <idea criterion="AC1">
+        <text>Test login page applies company primary color scheme or defaults when not set</text>
+      </idea>
+      <idea criterion="AC1">
+        <text>Test dark mode toggle on login page switches theme correctly</text>
+      </idea>
+      <idea criterion="AC2">
+        <text>Test ProtectedLayout renders persistent sidebar with navigation items</text>
+      </idea>
+      <idea criterion="AC2">
+        <text>Test header displays user avatar and username correctly</text>
+      </idea>
+      <idea criterion="AC3">
+        <text>Test company name and current period display in header</text>
+      </idea>
+      <idea criterion="AC3">
+        <text>Test effective role badge/indicator appears in header</text>
+      </idea>
+      <idea criterion="AC4">
+        <text>Test loading skeletons appear for table/list views during data fetch</text>
+      </idea>
+      <idea criterion="AC4">
+        <text>Test error boundary catches and displays errors gracefully</text>
+      </idea>
+      <idea criterion="AC4">
+        <text>Test toast notifications appear for success/error messages using Sonner</text>
+      </idea>
+      <idea criterion="AC5">
+        <text>E2E test: Verify layout renders correctly at 1920x1080 resolution</text>
+      </idea>
+      <idea criterion="AC5">
+        <text>E2E test: Verify layout renders correctly at 1366x768 resolution</text>
+      </idea>
+      <idea criterion="AC5">
+        <text>E2E test: Verify sidebar collapses appropriately on tablet (768px+) screens</text>
+      </idea>
+      <idea criterion="AC5">
+        <text>Visual regression test: Compare login page branding across light/dark modes</text>
+      </idea>
+    </ideas>
+  </tests>
+</story-context>
+

@@ -24,3 +24,21 @@ Troubleshooting
 - Clear caches, reinstall modules if builds fail
 
 
+Development
+-----------
+
+- Seed demo data (company + users + minimal COA):
+  - Via CLI (recommended):
+    - `cd backend && mvn spring-boot:run -Dspring-boot.run.arguments=--seedDemo=true`
+    - Logs will include a line like: `[DEMO] Bootstrap executed. created=true, companyId=..., code=DEMO`
+  - Rollback demo data:
+    - `cd backend && mvn flyway:migrate -Dflyway.target=R__remove_demo_data.sql`
+    - Or run the SQL in `backend/src/main/resources/db/migration/R__remove_demo_data.sql`
+
+- Demo users (default password: `Demo@12345`):
+  - admin@demo.local (role: admin)
+  - accountant@demo.local (role: accountant)
+  - chief@demo.local (role: chief_accountant)
+  - cfo@demo.local (role: cfo)
+
+

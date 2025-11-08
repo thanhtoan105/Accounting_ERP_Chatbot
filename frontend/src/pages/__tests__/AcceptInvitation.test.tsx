@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import AcceptInvitation from '../AcceptInvitation'
 import * as invitationService from '../../services/invitation'
@@ -7,11 +7,12 @@ import * as axiosUtils from '../../utils/axios'
 
 vi.mock('../../services/invitation')
 vi.mock('../../utils/axios')
+const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom')
   return {
     ...actual,
-    useNavigate: () => vi.fn(),
+    useNavigate: () => mockNavigate,
     useParams: () => ({ token: 'test-token-12345' }),
   }
 })
@@ -97,7 +98,8 @@ describe('AcceptInvitation', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument()
+      const alert = screen.getByRole('alert')
+      expect(within(alert).getByText(/passwords do not match/i)).toBeInTheDocument()
     })
 
     expect(mockAcceptInvitation).not.toHaveBeenCalled()
@@ -150,7 +152,7 @@ describe('AcceptInvitation', () => {
         confirmPassword: 'TestPassword123!',
         fullName: 'New User',
       })
-      expect(mockSetAccessToken).toHaveBeenCalledWith('test-access-token')
+      expect(mockNavigate).toHaveBeenCalledWith('/login?accountCreated=true', { replace: true })
     })
   })
 })

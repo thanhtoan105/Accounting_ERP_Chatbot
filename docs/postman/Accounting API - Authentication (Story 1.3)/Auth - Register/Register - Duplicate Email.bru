@@ -1,0 +1,43 @@
+meta {
+  name: Register - Duplicate Email
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/register
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{testEmail}}",
+    "password": "{{testPassword}}",
+    "fullName": "Duplicate User"
+  }
+}
+
+script:post-response {
+  test("Status code is 409", function () {
+      expect(res.getStatus()).to.equal(409);
+  });
+  
+  test("Response has error object", function () {
+      var jsonData = res.getBody();
+      expect(jsonData).to.have.property('error');
+      expect(jsonData.error.code).to.eql('DUPLICATE');
+  });
+}
+
+settings {
+  encodeUrl: true
+}
+
+docs {
+  Test duplicate email validation (run after Register - Success)
+}

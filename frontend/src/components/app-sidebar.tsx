@@ -23,6 +23,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { useCompany } from '@/hooks/useCompany'
 
 export type NavItem = {
   title: string
@@ -41,6 +42,7 @@ export function AppSidebar({
   onLogout?: () => void
 }) {
   const navigate = useNavigate()
+  const { company } = useCompany()
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -48,11 +50,19 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to="/">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <GalleryVerticalEnd className="size-4" />
-                </div>
+                {company?.logoUrl ? (
+                  <img
+                    src={company.logoUrl}
+                    alt={company.name || 'Company logo'}
+                    className="aspect-square size-8 rounded-lg object-contain"
+                  />
+                ) : (
+                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <GalleryVerticalEnd className="size-4" />
+                  </div>
+                )}
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">Accounting</span>
+                  <span className="font-medium">{company?.name || 'Accounting'}</span>
                   <span className="">App</span>
                 </div>
               </Link>

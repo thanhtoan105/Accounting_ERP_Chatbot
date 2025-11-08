@@ -2,17 +2,19 @@ package com.accounting.test;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
+@Import(TestStorageConfig.class)
 public abstract class IntegrationTest {
-  private static final PostgreSQLContainer<?> POSTGRES =
-      new PostgreSQLContainer<>(DockerImageName.parse("postgres:16.4-alpine"))
-          .withDatabaseName("accounting_test")
-          .withUsername("test")
-          .withPassword("test");
+  private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+      DockerImageName.parse("postgres:16.4-alpine"))
+      .withDatabaseName("accounting_test")
+      .withUsername("test")
+      .withPassword("test");
 
   @BeforeAll
   static void startContainer() {
@@ -34,5 +36,3 @@ public abstract class IntegrationTest {
     registry.add("spring.flyway.locations", () -> "classpath:db/migration");
   }
 }
-
-

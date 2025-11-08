@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { BrowserRouter } from 'react-router-dom'
-import Login from '../Login'
+import Login from '../../features/auth/pages/Login'
 import * as authService from '../../services/auth'
 
 vi.mock('../../services/auth')

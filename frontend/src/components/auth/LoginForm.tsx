@@ -12,8 +12,9 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { toast } from 'sonner'
 import { login } from '../../services/auth'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Moon, Sun } from 'lucide-react'
 import { setAccessToken, setCompanyId } from '../../utils/axios'
+import { useTheme } from '@/hooks/useTheme'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -30,6 +31,7 @@ export type LoginFormProps = React.ComponentProps<'div'> & {
 
 export function LoginForm({ className, accountCreated, onSuccess, ...props }: LoginFormProps) {
   const navigate = useNavigate()
+  const { resolvedTheme, toggleTheme } = useTheme()
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '', rememberMe: false },
@@ -48,12 +50,20 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
   const [formError, setFormError] = useState<string | null>(null)
   const [lockoutMessage, setLockoutMessage] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null)
 
   useEffect(() => {
     if (success) {
       toast.success('Login successful! Redirecting...')
     }
   }, [success])
+
+  // Try to load company logo from localStorage if available (from previous session)
+  useEffect(() => {
+    // For MVP, we'll show a default logo. In future, could fetch based on subdomain or email domain
+    // For now, logo will be shown after login in the authenticated area
+    setCompanyLogo(null)
+  }, [])
 
   function onRememberMeChange(checked: boolean) {
     setValue('rememberMe', checked, { shouldDirty: true, shouldValidate: false })
@@ -106,11 +116,39 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-6 md:p-8" noValidate onSubmit={handleSubmit(onSubmit)}>
+          <form className="relative p-6 md:p-8" noValidate onSubmit={handleSubmit(onSubmit)}>
+            <div className="absolute top-4 right-4">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {resolvedTheme === 'dark' ? (
+                  <Sun className="size-5" />
+                ) : (
+                  <Moon className="size-5" />
+                )}
+              </Button>
+            </div>
             <FieldGroup>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Welcome back</h1>
-                <p className="text-muted-foreground text-balance">Login to your account</p>
+              <div className="flex flex-col items-center gap-4 text-center">
+                {companyLogo ? (
+                  <img
+                    src={companyLogo}
+                    alt="Company logo"
+                    className="h-16 w-auto object-contain"
+                  />
+                ) : (
+                  <div className="bg-primary text-primary-foreground flex h-16 w-16 items-center justify-center rounded-lg">
+                    <span className="text-2xl font-bold">A</span>
+                  </div>
+                )}
+                <div>
+                  <h1 className="text-2xl font-bold">Welcome back</h1>
+                  <p className="text-muted-foreground text-balance">Login to your account</p>
+                </div>
               </div>
 
               {accountCreated && (

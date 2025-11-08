@@ -394,10 +394,12 @@ public class AuditServiceImpl implements AuditService {
         sb.append("c:").append(companyId).append(",");
         int count = 0;
         for (String field : newValues.keySet()) {
-            if (count > 0) sb.append(" ");
+            if (count > 0)
+                sb.append(" ");
             sb.append(field);
             count++;
-            if (sb.length() > 45) break;
+            if (sb.length() > 45)
+                break;
         }
         String reason = sb.toString();
         if (reason.length() > 50) {
@@ -407,6 +409,25 @@ public class AuditServiceImpl implements AuditService {
         log.setIpAddress(request != null ? request.getRemoteAddr() : null);
         log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
         log.setCreatedAt(java.time.Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logReportExport(Long companyId, Long userId, String format, HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(userId);
+        if (userId != null) {
+            userRepository.findById(userId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("REPORT_EXPORTED");
+        String reason = String.format("c:%s,f:%s", companyId, format);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
         auditLogRepository.save(log);
     }
 }

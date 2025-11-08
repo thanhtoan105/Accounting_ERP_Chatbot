@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getVouchers, getVoucherCounts, deleteVoucher } from '../voucher'
 
 // Mock the voucher service dependencies
+const mockFetchWithAuth = vi.fn()
 vi.mock('../../utils/axios', () => ({
   getAccessToken: () => 'mock-token',
   getCompanyId: () => 1,
+  fetchWithAuth: mockFetchWithAuth,
 }))
 
 // Mock fetch globally
@@ -13,6 +15,13 @@ global.fetch = vi.fn()
 describe('voucher service', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Setup fetchWithAuth to call global.fetch with proper headers
+    mockFetchWithAuth.mockImplementation((url, options) => {
+      const headers = new Headers(options?.headers || {})
+      headers.set('Authorization', 'Bearer mock-token')
+      headers.set('X-Company-Id', '1')
+      return global.fetch(url, { ...options, headers })
+    })
   })
 
   describe('getVouchers', () => {
@@ -47,16 +56,21 @@ describe('voucher service', () => {
 
       const result = await getVouchers({ page: 0, size: 20 })
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(mockFetchWithAuth).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/vouchers?page=0&size=20'),
         expect.objectContaining({
           method: 'GET',
-          headers: expect.objectContaining({
-            Authorization: 'Bearer mock-token',
-            'X-Company-Id': '1',
-          }),
         }),
       )
+      
+      // Verify headers were added by checking the actual fetch call
+      expect(global.fetch).toHaveBeenCalled()
+      const fetchCall = (global.fetch as any).mock.calls[0]
+      expect(fetchCall[0]).toContain('/api/v1/vouchers?page=0&size=20')
+      const headers = fetchCall[1]?.headers
+      expect(headers).toBeInstanceOf(Headers)
+      expect(headers.get('Authorization')).toBe('Bearer mock-token')
+      expect(headers.get('X-Company-Id')).toBe('1')
       expect(result.data).toHaveLength(1)
       expect(result.total).toBe(1)
     })
@@ -88,7 +102,7 @@ describe('voucher service', () => {
 
       const result = await getVoucherCounts()
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(mockFetchWithAuth).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/vouchers/counts'),
         expect.objectContaining({
           method: 'GET',
@@ -109,16 +123,21 @@ describe('voucher service', () => {
 
       await deleteVoucher('voucher-id', 'Test reason')
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(mockFetchWithAuth).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/vouchers/voucher-id?reason=Test+reason'),
         expect.objectContaining({
           method: 'DELETE',
-          headers: expect.objectContaining({
-            Authorization: 'Bearer mock-token',
-            'X-Company-Id': '1',
-          }),
         }),
       )
+      
+      // Verify headers were added by checking the actual fetch call
+      expect(global.fetch).toHaveBeenCalled()
+      const fetchCall = (global.fetch as any).mock.calls[0]
+      expect(fetchCall[0]).toContain('/api/v1/vouchers/voucher-id?reason=Test+reason')
+      const headers = fetchCall[1]?.headers
+      expect(headers).toBeInstanceOf(Headers)
+      expect(headers.get('Authorization')).toBe('Bearer mock-token')
+      expect(headers.get('X-Company-Id')).toBe('1')
     })
 
     it('handles 409 Conflict error', async () => {

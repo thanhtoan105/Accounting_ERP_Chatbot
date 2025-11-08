@@ -1,0 +1,42 @@
+meta {
+  name: Reset - Invalid/Expired Token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/reset-password
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "token": "expired-token",
+    "password": "NewPassword123!"
+  }
+}
+
+script:post-response {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+  
+  test("Response has error object", function () {
+      var jsonData = res.getBody();
+      expect(jsonData).to.have.property('error');
+      expect(jsonData.error.message).to.include('token');
+  });
+}
+
+settings {
+  encodeUrl: true
+}
+
+docs {
+  Test reset password with invalid/expired token
+}

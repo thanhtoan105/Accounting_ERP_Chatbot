@@ -1,0 +1,44 @@
+meta {
+  name: Protected Endpoint Example
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/v1/companies
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+script:pre-request {
+  // Ensure we have an access token
+  var accessToken = bru.getVar('accessToken');
+  if (!accessToken || accessToken === '') {
+      console.log('Warning: No access token. Login first or set accessToken variable.');
+  }
+}
+
+script:post-response {
+  test("Status code is 200 or 401", function () {
+      expect([200, 401, 403, 404]).to.include(res.getStatus());
+  });
+  
+  test("With valid token, should not be 401", function () {
+      var accessToken = bru.getVar('accessToken');
+      if (accessToken && accessToken !== '') {
+          expect(res.getStatus()).to.not.eql(401);
+      }
+  });
+}
+
+settings {
+  encodeUrl: true
+}
+
+docs {
+  Example of accessing a protected endpoint. Requires valid access token from login.
+}

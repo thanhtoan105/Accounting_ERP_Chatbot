@@ -1,0 +1,50 @@
+meta {
+  name: Login - Account Lockout (5 Failed Attempts)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "lockout@example.com",
+    "password": "WrongPassword123!"
+  }
+}
+
+script:pre-request {
+  // This is a manual test - run this request 5 times
+  // After 5 failed attempts, try login with correct password
+  // It should return 423 Locked
+  
+}
+
+script:post-response {
+  // This test simulates account lockout
+  // After 5 failed attempts, account should be locked
+  test("Status code is 423 or 401", function () {
+      expect([401, 423]).to.include(res.getStatus());
+  });
+  
+  test("Response has error object", function () {
+      var jsonData = res.getBody();
+      expect(jsonData).to.have.property('error');
+  });
+}
+
+settings {
+  encodeUrl: true
+}
+
+docs {
+  Test account lockout. Run this 5 times, then try login with correct password. Should return 423 Locked.
+}

@@ -323,7 +323,7 @@ export default function UserManagement() {
             setPage(1)
           }}
         >
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[150px]" aria-label="Role">
             <SelectValue placeholder="All Roles" />
           </SelectTrigger>
           <SelectContent>
@@ -342,7 +342,7 @@ export default function UserManagement() {
             setPage(1)
           }}
         >
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[150px]" aria-label="Status">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>

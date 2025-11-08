@@ -193,5 +193,15 @@ public interface AuditService {
       java.util.Map<String, String> oldValues,
       java.util.Map<String, String> newValues,
       HttpServletRequest request);
+
+  /**
+   * Log report export event (PDF/XLSX). Records user, company, format, timestamp, and IP/UA.
+   *
+   * @param companyId company id from context
+   * @param userId user who triggered export
+   * @param format export format (e.g., PDF, XLSX)
+   * @param request HTTP request for IP address and user agent
+   */
+  void logReportExport(Long companyId, Long userId, String format, HttpServletRequest request);
 }
 

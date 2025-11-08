@@ -1,0 +1,47 @@
+meta {
+  name: Login - With Remember Me
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{testEmail}}",
+    "password": "{{testPassword}}",
+    "rememberMe": true
+  }
+}
+
+script:post-response {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Refresh token cookie has extended expiry", function () {
+  //     var cookies = pm.cookies.all();
+      for (var i = 0; i < cookies.length; i++) {
+          if (cookies[i].name === 'refreshToken') {
+              // Cookie with rememberMe should have longer max-age
+              expect(cookies[i].maxAge).to.be.greaterThan(7 * 24 * 60 * 60);
+          }
+      }
+  });
+}
+
+settings {
+  encodeUrl: true
+}
+
+docs {
+  Login with remember me checked
+}

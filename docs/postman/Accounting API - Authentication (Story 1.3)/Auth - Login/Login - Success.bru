@@ -1,0 +1,68 @@
+meta {
+  name: Login - Success
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{testEmail}}",
+    "password": "{{testPassword}}",
+    "rememberMe": false
+  }
+}
+
+script:post-response {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response has data object", function () {
+      var jsonData = res.getBody();
+      expect(jsonData).to.have.property('data');
+      expect(jsonData.data).to.have.property('accessToken');
+      expect(jsonData.data).to.have.property('user');
+  });
+  
+  test("Access token is not empty", function () {
+      var jsonData = res.getBody();
+      expect(jsonData.data.accessToken).to.not.be.empty;
+  });
+  
+  test("Refresh token cookie is set", function () {
+  //     var cookies = pm.cookies.all();
+      var hasRefreshToken = false;
+      for (var i = 0; i < cookies.length; i++) {
+          if (cookies[i].name === 'refreshToken') {
+              hasRefreshToken = true;
+              bru.setVar('refreshToken', cookies[i].value);
+              break;
+          }
+      }
+      expect(hasRefreshToken).to.be.true;
+  });
+  
+  // Store access token
+  if (res.getStatus() === 200) {
+      var jsonData = res.getBody();
+      bru.setVar('accessToken', jsonData.data.accessToken);
+  }
+}
+
+settings {
+  encodeUrl: true
+}
+
+docs {
+  Login with valid credentials. Requires user to be registered first.
+}

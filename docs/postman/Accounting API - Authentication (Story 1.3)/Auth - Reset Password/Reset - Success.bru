@@ -1,0 +1,43 @@
+meta {
+  name: Reset - Success
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/reset-password
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "token": "{{resetToken}}",
+    "password": "NewPassword123!"
+  }
+}
+
+script:post-response {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response has success message", function () {
+      var jsonData = res.getBody();
+      expect(jsonData).to.have.property('data');
+      expect(jsonData.data).to.have.property('message');
+      expect(jsonData.data.message).to.include('reset successfully');
+  });
+}
+
+settings {
+  encodeUrl: true
+}
+
+docs {
+  Reset password with valid token. Token should be obtained from database or email.
+}

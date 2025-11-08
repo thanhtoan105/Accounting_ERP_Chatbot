@@ -1,0 +1,119 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>8</storyId>
+    <title>Story 1.8: Admin Demo Data Seed</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-07</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-8-admin-demo-data-seed.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As a developer</asA>
+    <iWant>I want to bootstrap a demo company, users, and chart of accounts for tests</iWant>
+    <soThat>so that everyone can develop, demo, and QA flows instantly</soThat>
+    <tasks>
+- Backend: Create Seed Data Script (AC: #1, #2, #3)
+  - Create Flyway migration V2__seed_demo_data.sql
+  - Insert demo company, users (admin, accountant, chief_accountant, cfo) with Bcrypt passwords
+  - Insert minimal TT200 Chart of Accounts subset
+- Backend: Mark Demo Company Name with "[DEMO]" (AC: #4)
+  - Ensure name includes suffix "[DEMO]"
+  - Verify logs/summary mark DEMO company
+- Backend: Create Rollback Mechanism (AC: #5)
+  - Create SQL to DELETE/TRUNCATE seeded demo data (demo tenant only)
+- Documentation: Update README (AC: #5)
+  - Add Development section; document migrate and rollback commands
+- Testing: Verify Seed Data (AC: #1, #2, #3, #4, #5, #6)
+  - Confirm migration created company, users, COA subset
+  - Verify 4 role users exist; authenticate at least admin
+  - Validate COA subset TT200-compliant with postable leaf accounts
+  - Confirm "[DEMO]" suffix visible in UI/logs
+  - Execute rollback; ensure only demo data removed
+  - Walk happy-path flows for Epic 1 using demo data
+</tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. A CLI command or Flyway migration script (V2__...) populates a demo company with sample users and a minimal chart of accounts.
+2. Demo data includes one user for each core role: admin, accountant, chief_accountant, cfo.
+3. The seeded Chart of Accounts is a valid, minimal subset of TT200, including postable leaf accounts for common transactions.
+4. The demo company is clearly marked with a "[DEMO]" suffix in its name to distinguish it in the UI and logs.
+5. A corresponding rollback script (R__... or manual instructions) is provided to truncate demo data for repeatable testing.
+6. The seed data is sufficient to support "happy path" testing for all completed stories in Epic 1 (Login, Company Settings, User Management).
+</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+- path: docs/PRD.md | title: PRD | section: Epic 1 | snippet: Foundation & auth requirements guiding demo seed scope
+- path: docs/architecture.md | title: Decision Architecture | section: Project Structure | snippet: Backend Spring Boot, Flyway migrations, and data model locations
+- path: docs/stories/1-6-company-settings.md | title: Story 1.6 Company Settings | section: Dev Notes | snippet: Entities and endpoints relevant to verifying seeded company
+- path: docs/stories/1-7-mvp-branding-app-layout.md | title: Story 1.7 MVP Branding | section: Learnings | snippet: UI patterns and endpoints used to verify company details in UI
+- path: docs/tech-spec-epic-1.md | title: Tech Spec Epic 1 | section: Overview | snippet: Backend security/auth context for demo user verification
+- path: docs/ux-design-specification.md | title: UX Design Spec | section: Global | snippet: Consistent UI components for verification flows
+- path: docs/sprint-status.yaml | title: Sprint Status | section: development_status | snippet: Tracks 1-8 story status drafted → ready-for-dev after context
+</docs>
+    <code>
+- path: backend/src/main/resources/db/migration/V3__users.sql | kind: migration | symbol: users DDL | lines: - | reason: Seeds/defines users table for demo accounts
+- path: backend/src/main/resources/db/migration/V2__customers.sql | kind: migration | symbol: customers DDL | lines: - | reason: Reference for demo customer/company relations if needed
+- path: backend/src/main/resources/db/migration/V8__create_chart_of_accounts.sql | kind: migration | symbol: chart_of_accounts DDL | lines: - | reason: COA schema required for TT200 subset
+- path: backend/src/main/resources/db/migration/V9__seed_tt200_chart_of_accounts.sql | kind: migration | symbol: TT200 seed | lines: - | reason: Baseline TT200 data to subset for demo
+- path: backend/src/main/java/com/accounting/service/DemoBootstrapService.java | kind: service | symbol: DemoBootstrapService | lines: 5-13 | reason: Contract for seeding demo company data
+- path: backend/src/main/java/com/accounting/service/impl/DemoBootstrapServiceImpl.java | kind: service-impl | symbol: bootstrapDemoCompany | lines: 22-41 | reason: Creates demo company if missing (idempotent)
+</code>
+    <dependencies>
+backend:
+  - spring-boot-starter-web
+  - spring-boot-starter-validation
+  - spring-boot-starter-data-jpa
+  - postgresql: 42.7.4
+  - flyway-core: 11.10.0
+  - flyway-database-postgresql: 11.10.0
+  - spring-boot-starter-security
+  - jjwt: 0.12.5 (api, impl, jackson)
+  - springdoc-openapi: 2.8.13
+  - resend-java: 3.1.0
+  - jasperreports: 6.21.3
+  - dynamicreports-core: 6.20.1
+  - poi-ooxml: 5.3.0
+  - testcontainers: 1.21.3 (core, junit-jupiter, postgresql)
+  - spring-boot-starter-test
+  - spring-security-test
+frontend:
+  - react: ^19.1.1, react-dom: ^19.1.1
+  - vite: ^7.1.7, @vitejs/plugin-react: ^5.0.4
+  - tailwindcss: ^4.1.16, @tailwindcss/vite: ^4.1.16
+  - @tanstack/react-table: ^8.21.3
+  - axios: ^1.7.9
+  - lucide-react: ^0.552.0
+  - react-router-dom: ^7.9.5
+  - zod: ^4.1.12
+  - testing: vitest ^2.1.4, @testing-library/react ^16.0.1, jsdom ^25.0.1
+</dependencies>
+  </artifacts>
+
+  <constraints>
+- Use Flyway versioned migrations for seed and rollback
+- Keep seeding idempotent; safe to run multiple times
+- Hash demo user passwords using production algorithm (BCrypt)
+- Enforce company scoping; demo data isolated by company_id
+- Use TT200-compliant leaf accounts; no non-postable leaves
+</constraints>
+  <interfaces>
+- name: Admin Company Settings | kind: REST endpoint | signature: PUT /api/v1/admin/company/settings | path: backend/src/main/java/com/accounting/controller/admin/CompanySettingsController.java
+- name: Auth Login | kind: REST endpoint | signature: POST /api/v1/auth/login | path: backend/src/main/java/com/accounting/controller/auth/AuthController.java
+- name: Chart of Accounts Read | kind: REST endpoint | signature: GET /api/v1/chart-of-accounts | path: backend/src/main/java/com/accounting/controller/chart/ChartOfAccountsController.java
+</interfaces>
+  <tests>
+    <standards>Backend: JUnit 5 + Spring Boot Starter Test with Testcontainers (PostgreSQL). Frontend: Vitest + Testing Library + jsdom. Follow architecture testing locations and patterns; use Given/When/Then style for AC mapping.</standards>
+    <locations>backend/src/test/java/**, frontend/src/**/__tests__/**, frontend/src/**/__fixtures__/**</locations>
+    <ideas>- AC1: Run Flyway migrate; assert demo company/users/COA subset present (SQL checks)
+- AC2: Verify roles admin/accountant/chief_accountant/cfo exist; login smoke test (admin)
+- AC3: Validate TT200 subset contains postable leaf accounts; no non-postable leaves used
+- AC4: Fetch company; assert name ends with "[DEMO]"; UI render shows suffix
+- AC5: Run rollback; verify only demo tenant data removed; other tenants intact
+- AC6: Execute happy-path flows for Epic 1 using demo data (login, settings, user mgmt)
+</ideas>
+  </tests>
+</story-context>

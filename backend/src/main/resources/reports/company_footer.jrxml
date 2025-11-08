@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE jasperReport PUBLIC "-//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
+<jasperReport name="company_footer" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="COMPANY_NAME" class="java.lang.String"/>
+    <parameter name="COMPANY_TAX_CODE" class="java.lang.String"/>
+    <parameter name="COMPANY_ADDRESS" class="java.lang.String"/>
+    <parameter name="COMPANY_LOGO_URL" class="java.lang.String"/>
+
+    <summary>
+        <band height="60">
+            <!-- Logo (if URL provided) -->
+            <image>
+                <reportElement x="0" y="0" width="60" height="60"/>
+                <imageExpression><![CDATA[$P{COMPANY_LOGO_URL}]]></imageExpression>
+            </image>
+            <textField>
+                <reportElement x="70" y="0" width="485" height="18"/>
+                <textFieldExpression><![CDATA["Company: " + $P{COMPANY_NAME}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="70" y="20" width="485" height="18"/>
+                <textFieldExpression><![CDATA["Tax: " + $P{COMPANY_TAX_CODE}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="70" y="40" width="485" height="18"/>
+                <textFieldExpression><![CDATA["Address: " + $P{COMPANY_ADDRESS}]]></textFieldExpression>
+            </textField>
+        </band>
+    </summary>
+</jasperReport>
+
+

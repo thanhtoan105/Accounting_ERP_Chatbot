@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
-import RoleGuard from '../RoleGuard'
+import RoleGuard from '../guards/RoleGuard'
 import { useRole } from '../../hooks/useRole'
 
 vi.mock('../../hooks/useRole', () => ({
