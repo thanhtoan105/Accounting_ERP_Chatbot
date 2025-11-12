@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Low‑Fi Wireframes</title>
+    <style>
+      :root{
+        --bg:#fff; --ink:#111; --muted:#6b7280; --border:#d1d5db;
+        --primary:#0040ff; --surface:#f9fafb;
+      }
+      *{box-sizing:border-box} body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+      header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+      h1{margin:0;font-size:18px}
+      .container{max-width:1280px;margin:0 auto;padding:16px}
+      .frame{border:2px dashed var(--border);border-radius:12px; padding:12px; background:var(--surface); margin-bottom:18px}
+      .row{display:flex;gap:10px}
+      .col{display:grid;gap:10px}
+      .nav{width:220px;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px}
+      .nav .item{height:28px;border:1px solid var(--border);border-radius:8px;background:#fff;padding:4px 8px;display:flex;align-items:center}
+      .hero{height:44px;border:1px solid var(--border);border-radius:8px;background:#fff;padding:8px;display:flex;align-items:center;justify-content:space-between}
+      .card{height:110px;border:1px solid var(--border);border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+      .grid{display:grid;gap:10px}
+      .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+      .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+      .kpi{height:58px;border:1px solid var(--border);border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:space-between;color:var(--muted);padding:0 10px}
+      .kpi .trend{color:#16a34a;font-weight:700}
+      .table{height:160px;border:1px solid var(--border);border-radius:10px;background:#fff}
+      .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+      .section-title{font-weight:700;margin:4px 0 8px}
+      .pill{display:inline-block;padding:2px 8px;border:1px solid var(--border);border-radius:999px;background:#fff;font-size:12px}
+      .kbd{border:1px solid var(--border);border-bottom-width:3px;border-radius:4px;padding:1px 4px;background:#fff}
+      .chips{display:flex;gap:6px;flex-wrap:wrap}
+      .chip{padding:4px 8px;border:1px solid var(--border);border-radius:999px;background:#fff;font-size:12px}
+      .toolbar{display:flex;gap:8px;align-items:center}
+      .pagination{display:flex;gap:6px;align-items:center}
+      .menu{width:20px;height:20px;border:1px solid var(--border);border-radius:4px;display:inline-flex;align-items:center;justify-content:center}
+      .floating-ai{position:fixed;right:20px;bottom:20px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:10px 14px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+      .ai-panel{position:fixed;right:20px;bottom:80px;width:320px;max-height:60vh;border:1px solid var(--border);background:#fff;border-radius:12px;overflow:hidden;display:block}
+      .ai-header{padding:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+      .ai-body{padding:10px;display:grid;gap:8px}
+      .overlay{position:fixed;inset:0;background:rgba(0,0,0,.05);display:block}
+      .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:560px;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+      .modal-header{padding:12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+      .modal-body{padding:12px;display:grid;gap:10px}
+      .template-row{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:10px;padding:10px;background:#fff}
+      .template-meta{font-size:12px;color:var(--muted)}
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Low‑Fi Wireframes</h1>
+      <div class="pill">Direction: Table Pro + Dense Dashboard</div>
+    </header>
+    <main class="container">
+      <!-- Dashboard -->
+      <section class="frame" id="dashboard">
+        <div class="section-title">Dashboard (Dense Dashboard)</div>
+        <div class="row">
+          <aside class="nav">
+            <div class="item">🏠 Dashboard</div>
+            <div class="item">📋 Vouchers</div>
+            <div class="item">📄 Invoices</div>
+            <div class="item">💳 Payments</div>
+            <div class="item">📊 Reports</div>
+            <div class="item">⚙️ Settings</div>
+            <div class="item">👤 User menu</div>
+          </aside>
+          <div class="col" style="flex:1">
+            <div class="hero"><span>🔍 Global Search (Ctrl+K)</span><span class="toolbar"><span class="pill">+ New Voucher</span><span class="pill">+ New Invoice</span></span></div>
+            <div class="kpis">
+              <div class="kpi"><span>AR Coming Due</span><span class="trend">↑ 12%</span></div>
+              <div class="kpi"><span>AP Coming Due</span><span class="trend" style="color:#dc2626">↓ 8%</span></div>
+              <div class="kpi"><span>Net Income</span><span class="trend">↑ 5%</span></div>
+              <div class="kpi"><span>Invoices Today</span><span class="trend">+3</span></div>
+            </div>
+            <div class="grid cols-3">
+              <div class="card">Profit &amp; Loss</div>
+              <div class="card">Cash Flow</div>
+              <div class="card">Aging</div>
+            </div>
+            <div>
+              <div class="label">Recent Vouchers</div>
+              <div class="table"></div>
+              <div class="pagination" style="margin-top:8px"><span class="pill">«</span><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">»</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Voucher List -->
+      <section class="frame" id="voucher-list">
+        <div class="section-title">Voucher List (Table Pro)</div>
+        <div class="row">
+          <aside class="nav">
+            <div class="item">Transactions</div>
+            <div class="item">Vouchers</div>
+          </aside>
+          <div class="col" style="flex:1">
+            <div class="hero">
+              <span>Filters: Date • Account • Status • <span class=\"kbd\">/</span> Search</span>
+              <span><span class="pill">Density</span> <span class="pill">Columns</span> <span class="pill">Export</span></span>
+            </div>
+            <div class="chips">
+              <span class="chip">My Recent</span><span class="chip">Unposted</span><span class="chip">This Month</span><span class="chip">+ New</span>
+            </div>
+            <div class="toolbar"><span class="label">☑ 3 selected</span><span class="pill">Post</span><span class="pill">Delete</span><span class="pill">Export</span><span class="pill">Clear</span></div>
+            <div class="table"></div>
+            <div class="label">Header: columns with sort ↑↓ • Row menu (⋮) Edit/Duplicate/Delete/View</div>
+            <div class="pagination"><span class="pill">Rows: 10 ▾</span><span class="pill">«</span><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">»</span></div>
+            <div class="label">Shortcuts: <span class=\"kbd\">↑</span>/<span class=\"kbd\">↓</span> navigate | <span class=\"kbd\">Enter</span> open | <span class=\"kbd\">Space</span> select | <span class=\"kbd\">Ctrl</span>+<span class=\"kbd\">N</span> new | <span class=\"kbd\">/</span> search | <span class=\"kbd\">Esc</span> clear</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Voucher Form -->
+      <section class="frame" id="voucher-form">
+        <div class="section-title">Voucher Form (Keyboard‑first)</div>
+        <div class="row">
+          <aside class="nav">
+            <div class="item">Back to List</div>
+          </aside>
+          <div class="col" style="flex:1">
+            <div class="hero"><span>Breadcrumbs: Dashboard &gt; Vouchers &gt; VC2025‑001</span><span class="pill">Post (Ctrl+S)</span></div>
+            <div class="grid cols-3">
+              <div class="card">Header: Company / Period / Description</div>
+              <div class="card">Attachments</div>
+              <div class="card">Notes</div>
+            </div>
+            <div>
+              <div class="label">Line item grid (Row# • Account • Desc • Dr • Cr • Dimensions • ⋮)</div>
+              <div class="card" style="height:60px">Account autocomplete dropdown (e.g., 1121/1122/1131)</div>
+              <div class="table" style="height:220px"></div>
+              <div class="toolbar"><span class="pill">+ Row</span><span class="pill">− Row</span><span class="label">Tab move • Enter new row • Running totals per row</span></div>
+              <div class="hero"><span>Totals: Dr ₫ 5,000,000  Cr ₫ 5,000,000</span><span class="pill">✓ Balanced</span></div>
+              <div class="card" style="height:84px">Tax/VAT: Subtotal • VAT% • Total</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sales Invoice -->
+      <section class="frame" id="sales-invoice">
+        <div class="section-title">Sales Invoice (Create → Preview → Post)</div>
+        <div class="row">
+          <aside class="nav">
+            <div class="item">Sales</div>
+            <div class="item">Invoices</div>
+          </aside>
+          <div class="col" style="flex:1">
+            <div class="hero"><span>Customer • Due • Status</span><span class="pill">Post</span></div>
+            <div class="card" style="height:80px">Invoice header</div>
+            <div class="table" style="height:180px"></div>
+            <div class="hero"><span>Totals • VAT</span><span class="pill">Preview</span></div>
+            <div class="card" style="height:160px">Preview: PDF-like invoice • Actions: Edit • Send email • Download PDF</div>
+            <div class="hero"><span>Status: Posted → Sent → Paid</span><span class="pill">Payment: ₫ 0 / ₫ 11,000,000 (Unpaid)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Empty & Error States -->
+      <section class="frame" id="states">
+        <div class="section-title">Empty &amp; Error States</div>
+        <div class="card">Empty voucher list: “No vouchers yet. Create your first one!”</div>
+        <div class="card">No results: “No results for ‘…’. Try different keywords.”</div>
+        <div class="card">Form errors: highlight fields with messages</div>
+        <div class="card">Network error banner: “Cannot connect. Check your connection.”</div>
+      </section>
+
+      <!-- Accessibility -->
+      <section class="frame" id="a11y">
+        <div class="section-title">Accessibility Notes</div>
+        <div class="card">Focus indicators visible • Skip to content link • ARIA labels on grids/controls • High contrast mode toggle</div>
+      </section>
+    </main>
+    <!-- Chatbot -->
+    <div class="ai-panel">
+      <div class="ai-header"><strong>AI Assistant</strong><span class="pill">✕</span></div>
+      <div class="ai-body">
+        <div class="label">How can I help with accounting?</div>
+        <div class="chips">
+          <span class="chip">Create voucher from description</span>
+          <span class="chip">Find invoice by customer</span>
+          <span class="chip">Explain balance sheet</span>
+        </div>
+        <div class="card" style="height:80px">Recent conversations…</div>
+      </div>
+    </div>
+    <div class="floating-ai">💬 Ask AI</div>
+
+    <!-- Voucher Template Chooser (modal mock) -->
+    <div class="overlay"></div>
+    <div class="modal" role="dialog" aria-label="Choose voucher template">
+      <div class="modal-header">
+        <strong>Choose Voucher Template</strong>
+        <span class="pill">✕</span>
+      </div>
+      <div class="modal-body">
+        <div class="template-row">
+          <div>
+            <div><strong>Cash Receipt (Customer)</strong></div>
+            <div class="template-meta">Dr 111/112 • Cr 131 • Customer required</div>
+          </div>
+          <div class="pill">Use</div>
+        </div>
+        <div class="template-row">
+          <div>
+            <div><strong>Cash Payment (Supplier)</strong></div>
+            <div class="template-meta">Dr 331 • Cr 111/112 • Vendor required</div>
+          </div>
+          <div class="pill">Use</div>
+        </div>
+        <div class="template-row">
+          <div>
+            <div><strong>Expense Payment</strong></div>
+            <div class="template-meta">Dr 642x • Cr 111/112 • Optional Cost Center</div>
+          </div>
+          <div class="pill">Use</div>
+        </div>
+        <div class="template-row">
+          <div>
+            <div><strong>General Journal</strong></div>
+            <div class="template-meta">No defaults • free-form</div>
+          </div>
+          <div class="pill">Use</div>
+        </div>
+        <div class="label">Tip: Toggle \"Allow override\" to edit default accounts after selecting.</div>
+      </div>
+    </div>
+  </body>
+  </html>
+

@@ -1,289 +1,154 @@
 <story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
-    <metadata>
-        <epicId>2</epicId>
-        <storyId>2.1</storyId>
-        <title>Chart of Accounts (COA) – TT200 Preload &amp; Read-Only Management</title>
-        <status>drafted</status>
-        <generatedAt>2025-11-01T22:11:45Z</generatedAt>
-        <generator>BMAD Story Context Workflow</generator>
-        <sourceStoryPath>
-            docs/stories/2-1-chart-of-accounts-coa-tt200-preload-read-only-management.md</sourceStoryPath>
-    </metadata>
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>1</storyId>
+    <title>Chart of Accounts (COA) – TT200 Preload & Read-Only Management</title>
+    <status>drafted</status>
+    <generatedAt>2025-02-10</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-1-chart-of-accounts-coa-tt200-preload-read-only-management.md</sourceStoryPath>
+  </metadata>
 
-    <story>
-        <asA>chief accountant/admin</asA>
-        <iWant>the TT200 COA to be preloaded, viewable in a tree, and protected from accidental
-            edits</iWant>
-        <soThat>all postings are mapped correctly from day one</soThat>
-        <tasks>
-            <task>Backend: Create Chart of Accounts entity and migration (AC: #1, #2)</task>
-            <task>Backend: TT200 COA seed data migration (AC: #1)</task>
-            <task>Backend: Chart of Accounts service and hierarchy building (AC: #9)</task>
-            <task>Backend: Chart of Accounts controller and API (AC: #9, #10)</task>
-            <task>Backend: Account validation for voucher picker (AC: #8)</task>
-            <task>Backend: Balance calculation (AC: #11)</task>
-            <task>Frontend: Chart of Accounts tree view component (AC: #3, #4, #5)</task>
-            <task>Frontend: Account details modal (AC: #6)</task>
-            <task>Frontend: Edit protection UI (AC: #7)</task>
-            <task>Frontend: Account picker component for vouchers (AC: #8)</task>
-            <task>Frontend: Integration with voucher forms (AC: #8)</task>
-            <task>Testing: Backend unit tests, integration tests, frontend component tests</task>
-        </tasks>
-    </story>
+  <story>
+    <asA>chief accountant/admin</asA>
+    <iWant>the TT200 COA to be preloaded, viewable in a tree, and protected from accidental edits</iWant>
+    <soThat>all postings are mapped correctly from day one</soThat>
+    <tasks>
+      - Backend: Create Chart of Accounts entity and migration (AC: #1, #2)
+      - Backend: TT200 COA seed data migration (AC: #1)
+      - Backend: Chart of Accounts service and hierarchy building (AC: #9)
+      - Backend: Chart of Accounts controller and API (AC: #9, #10)
+      - Backend: Account validation for voucher picker (AC: #8)
+      - Backend: Balance calculation (AC: #11) - Optional MVP
+      - Frontend: Chart of Accounts tree view component (AC: #3, #4, #5)
+      - Frontend: Account details modal (AC: #6)
+      - Frontend: Edit protection UI (AC: #7)
+      - Frontend: Account picker component for vouchers (AC: #8)
+      - Frontend: Integration with voucher forms (AC: #8) - Pending Epic 3
+      - Testing: Backend unit tests, integration tests, frontend component tests
+    </tasks>
+  </story>
 
-    <acceptanceCriteria>
-        <criterion id="1">Full TT200 COA (≥154 accounts) seeded via Flyway migration on company
-            initialization; migration reusable as import template for fresh companies.</criterion>
-        <criterion id="2">Each account entity has: code (VARCHAR(20), numeric format per TT200: 1-4
-            digits, e.g., "131", "1111"), name (Vietnamese with accents), type
-            (Asset/Liability/Equity/Revenue/Expense), normal_side (Debit/Credit, auto-determined
-            from account category), postable (BOOLEAN, true only for leaf accounts with no
-            children), parent_id (nullable FK), ordering_position (INTEGER).</criterion>
-        <criterion id="3">Frontend tree view supports expand/collapse to 3+ levels, keyboard and
-            mouse navigation, visual hierarchy display.</criterion>
-        <criterion id="4">Search input with typeahead: supports account code (exact/prefix) and
-            Vietnamese name with unaccented matching (e.g., "nha" matches "nhà").</criterion>
-        <criterion id="5">Filtering capabilities: by account class (Asset/Income/etc.),
-            postable=true toggle, code prefix filter (e.g., "131" returns all 131xx accounts).</criterion>
-        <criterion id="6">"View Details" modal displays all account fields; "Postable" badge/icon
-            visually distinguishes postable accounts.</criterion>
-        <criterion id="7">COA edit protection: Admin edit attempts show warning modal
-            ("preconfigured, only editable by superadmin"); UI routes for edit/delete blocked in
-            MVP; all blocked attempts logged in audit.</criterion>
-        <criterion id="8">Voucher account picker validation: Only postable-leaf accounts appear in
-            pickers; root/parent accounts blocked (client and server validation).</criterion>
-        <criterion id="9">API endpoint GET /api/v1/chart-of-accounts returns hierarchical structure;
-            supports query params: postable=true, codePrefix=131, parentId={id} for cascading
-            selectors.</criterion>
-        <criterion id="10">Unique constraint enforced: UNIQUE(company_id, code); duplicate code
-            attempts fail with detailed error message showing conflicting account.</criterion>
-        <criterion id="11">Balance column (optional MVP): Shows real-time balance for account in
-            current period. Calculation: Opening Balance (from opening_balances table or prior
-            period closing) + SUM(period debit) - SUM(period credit) = Current Balance. Query from
-            journal_entries aggregated by account_id and period_id. Note: Depends on Epic 3
-            journal_entries table; implement placeholder until Epic 3 completes.</criterion>
-    </acceptanceCriteria>
+  <acceptanceCriteria>
+    1. Full TT200 COA (≥154 accounts) seeded via Flyway migration on company initialization; migration reusable as import template for fresh companies.
+    2. Each account entity has: code (VARCHAR(20), numeric format per TT200: 1-4 digits, e.g., "131", "1111"), name (Vietnamese with accents), type (Asset/Liability/Equity/Revenue/Expense), normal_side (Debit/Credit, auto-determined from account category), postable (BOOLEAN, true only for leaf accounts with no children), parent_id (nullable FK), ordering_position (INTEGER).
+    3. Frontend tree view supports expand/collapse to 3+ levels, keyboard and mouse navigation, visual hierarchy display.
+    4. Search input with typeahead: supports account code (exact/prefix) and Vietnamese name with unaccented matching (e.g., "nha" matches "nhà").
+    5. Filtering capabilities: by account class (Asset/Income/etc.), postable=true toggle, code prefix filter (e.g., "131" returns all 131xx accounts).
+    6. "View Details" modal displays all account fields; "Postable" badge/icon visually distinguishes postable accounts.
+    7. COA edit protection: Admin edit attempts show warning modal ("preconfigured, only editable by superadmin"); UI routes for edit/delete blocked in MVP; all blocked attempts logged in audit.
+    8. Voucher account picker validation: Only postable-leaf accounts appear in pickers; root/parent accounts blocked (client and server validation).
+    9. API endpoint GET /api/v1/chart-of-accounts returns hierarchical structure; supports query params: postable=true, codePrefix=131, parentId={id} for cascading selectors.
+    10. Unique constraint enforced: UNIQUE(company_id, code); duplicate code attempts fail with detailed error message showing conflicting account.
+    11. Balance column (optional MVP): Shows real-time balance for account in current period. Calculation: Opening Balance (from opening_balances table or prior period closing) + SUM(period debit) - SUM(period credit) = Current Balance. Query from journal_entries aggregated by account_id and period_id. Note: Depends on Epic 3 journal_entries table; implement placeholder until Epic 3 completes.
+  </acceptanceCriteria>
 
-    <artifacts>
-        <docs>
-            <doc path="docs/epics.md" title="Epic Breakdowns"
-                section="Epic 2: Master Data Management - Story 2.1">
-                Story definition and acceptance criteria for Chart of Accounts with TT200 preload
-                requirement.
-            </doc>
-            <doc path="docs/PRD.md" title="Product Requirements Document"
-                section="FR09: View Chart of Accounts (COA) per TT200, FR10: Leaf-Only Posting Validation, FR12: COA Search">
-                Requirements for COA display per TT200, leaf-only posting validation, and unaccented
-                Vietnamese search support.
-            </doc>
-            <doc path="docs/architecture.md" title="Decision Architecture"
-                section="Epic-to-Architecture Mapping, Implementation Patterns">
-                Architecture patterns: Spring Boot backend with Spring Data JPA, React frontend with
-                MUI, PostgreSQL with unaccent extension, company scoping via CompanyScopedEntity
-                interface.
-            </doc>
-            <doc path="docs/tech-spec-epic-2.md"
-                title="Epic Technical Specification: Master Data Management"
-                section="Chart of Accounts Design, Data Models">
-                Technical specification for COA entity design, database schema, API contracts, and
-                service responsibilities.
-            </doc>
-            <doc path="docs/stories/1-5-user-profile-management.md"
-                title="Story 1.5: User Profile Management" section="Dev Notes - Learnings">
-                Reference patterns for service implementation, entity structure, DTO patterns, RBAC
-                enforcement, and audit logging from completed story.
-            </doc>
-        </docs>
-        <code>
-            <artifact
-                path="backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java"
-                kind="interface" symbol="CompanyScopedEntity"
-                reason="Multi-tenancy interface that ChartOfAccount entity must implement">
-                Interface defining company scoping contract with getCompanyId() method.
-            </artifact>
-            <artifact path="backend/src/main/java/com/accounting/entity/Customer.java" kind="entity"
-                symbol="Customer"
-                reason="Reference pattern for entity structure implementing CompanyScopedEntity">
-                Example entity showing CompanyScopedEntity implementation, JPA annotations, and
-                company_id field pattern.
-            </artifact>
-            <artifact path="backend/src/main/java/com/accounting/service/UserService.java"
-                kind="service" symbol="UserService"
-                reason="Reference pattern for service interface and implementation structure">
-                Service pattern to follow for ChartOfAccountsService interface.
-            </artifact>
-            <artifact path="backend/src/main/java/com/accounting/service/AuditService.java"
-                kind="service" symbol="AuditService"
-                reason="Use for logging COA blocked edit attempts and future COA operations">
-                Service for audit logging of COA operations and blocked actions.
-            </artifact>
-            <artifact
-                path="backend/src/main/java/com/accounting/controller/admin/UserController.java"
-                kind="controller" symbol="UserController"
-                reason="Reference REST controller pattern for ChartOfAccountsController">
-                REST controller pattern with RBAC annotations, error handling, and DTO responses.
-            </artifact>
-        </code>
-        <dependencies>
-            <ecosystem name="backend">
-                <package name="org.springframework.boot:spring-boot-starter-web" version="3.5.7" />
-                <package name="org.springframework.boot:spring-boot-starter-data-jpa"
-                    version="3.5.7" />
-                <package name="org.springframework.boot:spring-boot-starter-security"
-                    version="3.5.7" />
-                <package name="org.springframework.boot:spring-boot-starter-validation"
-                    version="3.5.7" />
-                <package name="org.flywaydb:flyway-core" version="10.20.1" />
-                <package name="org.flywaydb:flyway-database-postgresql" version="10.20.1" />
-                <package name="org.postgresql:postgresql" version="latest" />
-                <package name="org.projectlombok:lombok" version="latest" />
-            </ecosystem>
-            <ecosystem name="frontend">
-                <package name="react" version="^19.1.1" />
-                <package name="@mui/material" version="^7.3.4" />
-                <package name="@mui/joy" version="5.0.0-beta.52" />
-                <package name="axios" version="^1.7.9" />
-                <package name="react-router-dom" version="^7.9.5" />
-                <package name="zod" version="^4.1.12" />
-            </ecosystem>
-        </dependencies>
-    </artifacts>
+  <artifacts>
+    <docs>
+      <doc path="docs/PRD.md" title="Product Requirements Document" section="FR09: View Chart of Accounts (COA) per TT200, FR10: Leaf-Only Posting Validation, FR12: COA Search, FR50: 100% Compliance with Circular 200/2014/TT-BTC, NFR10: Circular 200 Compliance" snippet="The system must display the COA in a 3-level structure (1xx, 11x, 111) compliant with Circular 200, showing account code, Vietnamese name, account type, normal balance side (Debit/Credit), account group (Asset/Liability/Equity/Revenue/Expense), and a 'postable' flag. The system must only permit posting to leaf accounts (those with no sub-accounts) and block posting to parent accounts." />
+      <doc path="docs/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.1: Chart of Accounts (COA) – TT200 Preload & Read-Only Management" snippet="Epic 2: Master Data Management establishes the foundational data governance layer. Chart of Accounts (COA) Management: Preload and manage TT200-compliant Chart of Accounts (≥154 accounts) with hierarchical tree view, read-only protection, and search/filter capabilities. Support for 3-level hierarchy (1xx, 11x, 111), postable flag enforcement, and leaf-only posting validation." />
+      <doc path="docs/epics.md" title="Epic Breakdowns" section="Epic 2: Master Data Management - Story 2.1" snippet="As a chief accountant/admin, I want the TT200 COA to be preloaded, viewable in a tree, and protected from accidental edits so all postings are mapped correctly from day one. Full TT200 COA (≥154 accounts), seeded on initial migration; re-usable as import for fresh companies." />
+      <doc path="docs/architecture.md" title="Decision Architecture" section="Chart of Accounts, Data Architecture" snippet="Enterprise accounting ERP system using Spring Boot 3.5.7 backend with React TypeScript frontend, PostgreSQL via Supabase. Search: PostgreSQL FTS + unaccent for native Vietnamese unaccented search support. Migration Tool: Flyway for versioned migrations." />
+      <doc path="docs/stories/2-1-chart-of-accounts-coa-tt200-preload-read-only-management.md" title="Story 2.1" section="Dev Notes, Acceptance Criteria, Tasks" snippet="Multi-tenancy: All COA accounts must be company-scoped. Use CompanyScopedEntity interface pattern from Epic 1. TT200 compliance: COA structure must follow Circular 200/2014/TT-BTC standards. Account codes follow hierarchy: 1xx (parent), 11x (child), 111 (grandchild). PostgreSQL unaccent extension must be enabled for Vietnamese search support." />
+    </docs>
+    <code>
+      <artifact path="backend/src/main/java/com/accounting/entity/ChartOfAccount.java" kind="entity" symbol="ChartOfAccount" lines="1-100" reason="JPA entity for chart of accounts with all required fields: code, name, type, normalSide, postable, parent, orderingPosition, companyId. Implements CompanyScopedEntity for multi-tenancy." />
+      <artifact path="backend/src/main/java/com/accounting/repository/ChartOfAccountsRepository.java" kind="repository" symbol="ChartOfAccountsRepository" lines="1-80" reason="JPA repository extending CompanyScopedRepository with custom queries for filtering, search, and hierarchy building. Includes native query for unaccented Vietnamese search." />
+      <artifact path="backend/src/main/java/com/accounting/service/ChartOfAccountsService.java" kind="interface" symbol="ChartOfAccountsService" lines="1-50" reason="Service interface defining methods for COA operations: findAll, buildHierarchy, findPostableLeafAccounts, search." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/ChartOfAccountsServiceImpl.java" kind="service" symbol="ChartOfAccountsServiceImpl" lines="1-200" reason="Service implementation with hierarchy building logic, filtering, search with unaccented Vietnamese support, and company scoping." />
+      <artifact path="backend/src/main/java/com/accounting/controller/chart/ChartOfAccountsController.java" kind="controller" symbol="ChartOfAccountsController" lines="1-100" reason="REST API controller with GET /api/v1/chart-of-accounts endpoint supporting query params: postable, codePrefix, parentId, type, search. Returns hierarchical structure." />
+      <artifact path="backend/src/main/java/com/accounting/util/AccountValidator.java" kind="utility" symbol="AccountValidator" lines="1-100" reason="Validation utility class for account selection: validateLeafOnly, validatePostable, validateCodeFormat, validateCodeHierarchy. Used by voucher picker validation." />
+      <artifact path="backend/src/main/java/com/accounting/dto/ChartOfAccountDTO.java" kind="dto" symbol="ChartOfAccountDTO" lines="1-50" reason="DTO for API responses containing account fields: id, code, name, type, normalSide, postable, parentId, orderingPosition, balance (optional)." />
+      <artifact path="backend/src/main/java/com/accounting/dto/ChartOfAccountHierarchyDTO.java" kind="dto" symbol="ChartOfAccountHierarchyDTO" lines="1-60" reason="DTO for hierarchical tree structure with children array for nested account relationships." />
+      <artifact path="backend/src/main/resources/db/migration/V8__create_chart_of_accounts.sql" kind="migration" symbol="V8__create_chart_of_accounts" lines="1-50" reason="Flyway migration creating chart_of_accounts table with unaccent extension enabled, unique constraint on (company_id, code), and proper indexes." />
+      <artifact path="backend/src/main/resources/db/migration/V9__seed_tt200_chart_of_accounts.sql" kind="migration" symbol="V9__seed_tt200_chart_of_accounts" lines="1-500" reason="Flyway migration seeding ≥154 TT200-compliant accounts covering all 9 main account category groups with proper hierarchy, normal_side auto-determination, and postable flag logic." />
+      <artifact path="frontend/src/features/accounting/pages/ChartOfAccounts.tsx" kind="page" symbol="ChartOfAccounts" lines="1-300" reason="Main COA tree view page component with search, filters (account class, postable toggle, code prefix), and integration with AccountTreeView component." />
+      <artifact path="frontend/src/components/account/AccountTreeView.tsx" kind="component" symbol="AccountTreeView" lines="1-200" reason="Tree view component with expand/collapse functionality, keyboard navigation (Arrow keys, Enter), visual hierarchy display, and search highlighting." />
+      <artifact path="frontend/src/components/account/AccountDetailsModal.tsx" kind="component" symbol="AccountDetailsModal" lines="1-150" reason="Modal component displaying all account fields with postable badge/icon, accessible keyboard navigation (Esc to close), and ARIA labels." />
+      <artifact path="frontend/src/components/account/AccountPicker.tsx" kind="component" symbol="AccountPicker" lines="1-150" reason="Account picker component for voucher forms filtering to postable leaf accounts only, with search/typeahead support and unaccented Vietnamese matching." />
+      <artifact path="frontend/src/services/chartOfAccounts.ts" kind="service" symbol="chartOfAccountsService" lines="1-100" reason="Frontend API service for COA endpoints with methods: getChartOfAccounts, getPostableAccounts, getAccountById. Uses axios for HTTP requests." />
+      <artifact path="frontend/src/types/chartOfAccount.ts" kind="types" symbol="ChartOfAccount, ChartOfAccountHierarchy" lines="1-50" reason="TypeScript type definitions for COA entities matching backend DTOs." />
+      <artifact path="backend/src/main/java/com/accounting/entity/CompanyScopedEntity.java" kind="interface" symbol="CompanyScopedEntity" lines="1-20" reason="Interface for multi-tenancy pattern requiring companyId field. All COA entities must implement this." />
+      <artifact path="backend/src/main/java/com/accounting/service/AuditService.java" kind="service" symbol="AuditService" lines="1-50" reason="Service for audit logging. Use for logging COA blocked edit attempts and any future COA operations." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/DemoBootstrapServiceImpl.java" kind="service" symbol="DemoBootstrapServiceImpl" lines="1-100" reason="Reference implementation for service pattern with CLI runner integration. Contains seed_tt200_coa_for_company() database function pattern for COA seeding logic." />
+    </code>
+    <dependencies>
+      <backend>
+        <framework>Spring Boot 3.5.7</framework>
+        <database>PostgreSQL 15+ (via Supabase)</database>
+        <orm>Spring Data JPA + Hibernate 6.x</orm>
+        <migration>Flyway 11.10.0</migration>
+        <security>Spring Security 6.x</security>
+        <validation>Spring Boot Starter Validation</validation>
+        <api-docs>SpringDoc OpenAPI 2.8.13</api-docs>
+        <testing>JUnit 5, TestContainers 1.21.3, Mockito</testing>
+      </backend>
+      <frontend>
+        <framework>React 19.1.1 with TypeScript 5.9.3</framework>
+        <build-tool>Vite 7.1.7</build-tool>
+        <ui-library>shadcn/ui (Radix UI primitives)</ui-library>
+        <styling>Tailwind CSS 4.1.16</styling>
+        <icons>Lucide React 0.552.0</icons>
+        <http-client>Axios 1.7.9</http-client>
+        <forms>React Hook Form 7.66.0 with Zod 4.1.12</forms>
+        <routing>React Router DOM 7.9.5</react-router-dom>
+        <testing>Vitest 2.1.4, Testing Library 16.0.1, jsdom 25.0.1</testing>
+      </frontend>
+    </dependencies>
+  </artifacts>
 
-    <constraints>
-        <constraint>Multi-tenancy: All COA accounts must be company-scoped. Use CompanyScopedEntity
-            interface pattern from Epic 1. All queries automatically filtered by company_id via
-            CompanyContext.</constraint>
-        <constraint>Database schema: Follow PostgreSQL conventions: snake_case table names
-            (chart_of_accounts), UUID primary keys, foreign keys with proper constraints.</constraint>
-        <constraint>TT200 compliance: COA structure must follow Circular 200/2014/TT-BTC standards.
-            Account codes follow hierarchy: 1xx (parent), 11x (child), 111 (grandchild). Each
-            account has Vietnamese name with proper accents.</constraint>
-        <constraint>Account code format: Account codes must be numeric strings (1-4 digits) matching
-            TT200 format. Validation must reject non-numeric codes or codes exceeding 4 digits.</constraint>
-        <constraint>Account code hierarchy: Child account codes must start with parent code.
-            Validation must enforce this relationship during seed and any future modifications.</constraint>
-        <constraint>Normal side auto-determination: The normal_side field is automatically
-            determined from account category/code prefix per Circular 200: Assets (1xx) = Debit,
-            Liabilities (3xx) = Credit, Equity (4xx) = Credit, Revenue (5xx) = Credit, Expenses
-            (6xx/7xx/8xx) = Debit.</constraint>
-        <constraint>Postable flag determination: postable=true only for leaf accounts (accounts with
-            no children). Parent accounts are non-postable to enforce leaf-only posting rule (FR10).</constraint>
-        <constraint>Vietnamese search: Use PostgreSQL unaccent extension for unaccented search
-            support (NFR23). The extension must be enabled in the table creation migration before
-            creating the chart_of_accounts table.</constraint>
-        <constraint>Read-only protection: In MVP, COA is read-only. Edit endpoints exist but return
-            403 or warning. Future post-MVP: allow superadmin override with audit trail.</constraint>
-        <constraint>Hierarchical data: Use parent-child relationship with parent_id nullable. Root
-            accounts have parent_id = NULL. Build tree structure in service layer using in-memory
-            grouping (more performant for 154+ accounts).</constraint>
-        <constraint>Performance: COA tree should cache in Redis (TTL: 1 hour) to avoid repeated
-            queries. Invalidate cache on any COA changes (future post-MVP).</constraint>
-        <constraint>Balance calculation: For AC#11 (optional MVP), query from journal_entries table
-            aggregated by account_id and period_id. Use SUM(debit) - SUM(credit) considering
-            normal_side field. Cache results to avoid repeated calculations.</constraint>
-        <constraint>Backend packages: controller/chart/ for Chart of Accounts controller,
-            service/impl/ for service implementations.</constraint>
-        <constraint>Frontend pages: pages/ChartOfAccounts.tsx in pages directory. Components:
-            components/account/ directory for account-related components.</constraint>
-        <constraint>Testing: Backend uses JUnit 5 + Spring Boot Test with TestContainers for
-            integration tests. Frontend uses Vitest + Testing Library + jsdom for component tests.</constraint>
-    </constraints>
+  <constraints>
+    <constraint>Multi-tenancy: All COA accounts must be company-scoped. Use CompanyScopedEntity interface pattern from Epic 1. All queries automatically filtered by company_id via CompanyContext.</constraint>
+    <constraint>Database schema: Follow PostgreSQL conventions: snake_case table names (chart_of_accounts), UUID primary keys, foreign keys with proper constraints.</constraint>
+    <constraint>TT200 compliance: COA structure must follow Circular 200/2014/TT-BTC standards. Account codes follow hierarchy: 1xx (parent), 11x (child), 111 (grandchild). Each account has Vietnamese name with proper accents. Circular 200 defines 9 main account category groups: Assets (1xx), Fixed Assets (2xx), Liabilities (3xx), Equity (4xx), Revenue (5xx), Production Costs (6xx), Operating Expenses (7xx), Other Income/Expenses (8xx), Financial Statement Closing (9xx).</constraint>
+    <constraint>Account code format: Account codes must be numeric strings (1-4 digits) matching TT200 format. Examples: "1" (parent), "11" (child), "111" (grandchild), "1311" (great-grandchild). Validation must reject non-numeric codes or codes exceeding 4 digits.</constraint>
+    <constraint>Account code hierarchy: Child account codes must start with parent code. For example, account "1311" must have parent "131", and "131" must have parent "1". Validation must enforce this relationship during seed and any future modifications.</constraint>
+    <constraint>Normal side auto-determination: The normal_side field is automatically determined from account category/code prefix per Circular 200: Assets (1xx) = Debit, Liabilities (3xx) = Credit, Equity (4xx) = Credit, Revenue (5xx) = Credit, Expenses (6xx/7xx/8xx) = Debit. This should be set automatically during seed migration.</constraint>
+    <constraint>Postable flag determination: postable=true only for leaf accounts (accounts with no children). Parent accounts are non-postable to enforce leaf-only posting rule (FR10). The system should automatically set postable=false for any account that has child accounts.</constraint>
+    <constraint>Vietnamese search: Use PostgreSQL unaccent extension for unaccented search support (NFR23). The extension must be enabled in the table creation migration before creating the chart_of_accounts table. Create custom function unaccent_search(text) in Flyway migration for use in search queries.</constraint>
+    <constraint>Read-only protection: In MVP, COA is read-only. Edit endpoints exist but return 403 or warning. Future post-MVP: allow superadmin override with audit trail.</constraint>
+    <constraint>Hierarchical data: Use parent-child relationship with parent_id nullable. Root accounts have parent_id = NULL. Build tree structure in service layer using in-memory grouping (more performant for 154+ accounts). Group accounts by parent_id, then build tree structure recursively.</constraint>
+    <constraint>Performance: COA tree should cache in Redis (TTL: 1 hour) to avoid repeated queries. Invalidate cache on any COA changes (future post-MVP).</constraint>
+    <constraint>Frontend: Use shadcn/ui components (not MUI) - architecture uses shadcn/ui. Follow feature-first structure: pages in features/accounting/pages/, components in components/account/.</constraint>
+    <constraint>RBAC: All authenticated users can view COA; edit endpoints blocked in MVP. Use @PreAuthorize annotations for API security.</constraint>
+    <constraint>Audit logging: Log blocked COA edit attempts using AuditService. All COA operations should be audit-logged with who/when/what.</constraint>
+  </constraints>
 
-    <interfaces>
-        <interface name="GET /api/v1/chart-of-accounts" kind="REST endpoint"
-            signature="GET /api/v1/chart-of-accounts?postable=true&amp;codePrefix=131&amp;parentId={id}&amp;type=Asset&amp;search=term"
-            path="backend/src/main/java/com/accounting/controller/chart/ChartOfAccountsController.java">
-            Returns hierarchical COA structure. Supports query params: postable (filter leaf
-            accounts), codePrefix (filter by code prefix), parentId (filter children), type (filter
-            by account type), search (unaccented Vietnamese name/code search).
-        </interface>
-        <interface name="GET /api/v1/chart-of-accounts/{id}" kind="REST endpoint"
-            signature="GET /api/v1/chart-of-accounts/{id}"
-            path="backend/src/main/java/com/accounting/controller/chart/ChartOfAccountsController.java">
-            Returns single account details including optional balance calculation (AC#11).
-        </interface>
-        <interface name="ChartOfAccountsService.buildHierarchy()" kind="Java method"
-            signature="List&lt;ChartOfAccountHierarchyDTO&gt; buildHierarchy()"
-            path="backend/src/main/java/com/accounting/service/ChartOfAccountsService.java">
-            Groups accounts by parent_id and returns tree structure recursively.
-        </interface>
-        <interface name="ChartOfAccountsService.findPostableLeafAccounts()" kind="Java method"
-            signature="List&lt;ChartOfAccountDTO&gt; findPostableLeafAccounts()"
-            path="backend/src/main/java/com/accounting/service/ChartOfAccountsService.java">
-            Returns only accounts where postable=true and have no children. Used by voucher account
-            picker.
-        </interface>
-        <interface name="AccountValidator.validateLeafOnly()" kind="Java method"
-            signature="boolean validateLeafOnly(UUID accountId)"
-            path="backend/src/main/java/com/accounting/util/AccountValidator.java">
-            Validates account has no children (is leaf). Called before allowing voucher line item
-            creation.
-        </interface>
-        <interface name="AccountValidator.validatePostable()" kind="Java method"
-            signature="boolean validatePostable(UUID accountId)"
-            path="backend/src/main/java/com/accounting/util/AccountValidator.java">
-            Validates postable=true flag. Called before allowing voucher line item creation.
-        </interface>
-        <interface name="AccountPicker component" kind="React component"
-            signature="AccountPicker({ onSelect: (account: ChartOfAccount) =&gt; void, value?: UUID })"
-            path="frontend/src/components/account/AccountPicker.tsx">
-            Reusable account picker component for voucher forms. Filters to show only postable leaf
-            accounts with search/typeahead support.
-        </interface>
-    </interfaces>
+  <interfaces>
+    <interface name="GET /api/v1/chart-of-accounts" kind="REST endpoint" signature="GET /api/v1/chart-of-accounts?postable=true&amp;codePrefix=131&amp;parentId={id}&amp;type=ASSET&amp;search=term" path="backend/src/main/java/com/accounting/controller/chart/ChartOfAccountsController.java" />
+    <interface name="ChartOfAccountsService.findAll()" kind="method" signature="List&lt;ChartOfAccountHierarchyDTO&gt; findAll(Boolean postable, String codePrefix, Long parentId, AccountType type, String search)" path="backend/src/main/java/com/accounting/service/ChartOfAccountsService.java" />
+    <interface name="ChartOfAccountsService.buildHierarchy()" kind="method" signature="List&lt;ChartOfAccountHierarchyDTO&gt; buildHierarchy(List&lt;ChartOfAccount&gt; accounts)" path="backend/src/main/java/com/accounting/service/ChartOfAccountsService.java" />
+    <interface name="ChartOfAccountsService.findPostableLeafAccounts()" kind="method" signature="List&lt;ChartOfAccountDTO&gt; findPostableLeafAccounts()" path="backend/src/main/java/com/accounting/service/ChartOfAccountsService.java" />
+    <interface name="AccountValidator.validateLeafOnly()" kind="method" signature="boolean validateLeafOnly(Long accountId)" path="backend/src/main/java/com/accounting/util/AccountValidator.java" />
+    <interface name="AccountValidator.validatePostable()" kind="method" signature="boolean validatePostable(Long accountId)" path="backend/src/main/java/com/accounting/util/AccountValidator.java" />
+    <interface name="CompanyScopedEntity" kind="interface" signature="interface CompanyScopedEntity { UUID getCompanyId(); }" path="backend/src/main/java/com/accounting/entity/CompanyScopedEntity.java" />
+  </interfaces>
 
-    <tests>
-        <standards>
-            Backend testing uses JUnit 5 + Spring Boot Test with TestContainers for integration
-            tests. Service unit tests use Mockito for mocking dependencies. Frontend testing uses
-            Vitest + Testing Library + jsdom for component tests. Integration tests verify full
-            flows: seed migration → load COA → search → filter → select account in voucher →
-            validate. Performance tests measure COA tree load time (&lt; 1s target per NFR1) for
-            154+ accounts. Accessibility tests verify keyboard navigation and screen reader support
-            (WCAG AA compliance).
-        </standards>
-        <locations>
-            <location>backend/src/test/java/com/accounting/service/ChartOfAccountsServiceTest.java</location>
-            <location>backend/src/test/java/com/accounting/util/AccountValidatorTest.java</location>
-            <location>
-                backend/src/test/java/com/accounting/integration/ChartOfAccountsControllerTest.java</location>
-            <location>
-                backend/src/test/java/com/accounting/integration/ChartOfAccountsMigrationTest.java</location>
-            <location>frontend/src/components/account/__tests__/AccountTreeView.test.tsx</location>
-            <location>frontend/src/components/account/__tests__/AccountPicker.test.tsx</location>
-            <location>frontend/src/pages/__tests__/ChartOfAccounts.test.tsx</location>
-        </locations>
-        <ideas>
-            <idea criterion="AC#1">Integration test: Run seed migration for test company, verify
-                ≥154 accounts created, verify hierarchy integrity (all parent codes exist), verify
-                no duplicate codes, verify normal_side and postable flags set correctly for each
-                account category.</idea>
-            <idea criterion="AC#2">Unit test: Create ChartOfAccount entity with various code
-                formats, verify validation rejects non-numeric codes and codes exceeding 4 digits,
-                verify code hierarchy validation (child codes must start with parent code).</idea>
-            <idea criterion="AC#3, AC#4, AC#5">Frontend component test: Render ChartOfAccounts page
-                with tree view, test expand/collapse to 3+ levels, test keyboard navigation (Arrow
-                keys, Enter), test search input with unaccented Vietnamese matching, test filters
-                (account class dropdown, postable toggle, code prefix).</idea>
-            <idea criterion="AC#6">Frontend component test: Test AccountDetailsModal displays all
-                account fields correctly, test Postable badge/icon visibility based on postable
-                flag, test keyboard accessibility (Esc to close, focus management).</idea>
-            <idea criterion="AC#7">Integration test: Attempt to access edit endpoint for COA account
-                as admin user, verify 403 response or warning message, verify audit log entry
-                created with blocked action reason.</idea>
-            <idea criterion="AC#8">Integration test: Attempt to select non-leaf account in voucher
-                form account picker, verify client-side validation rejects selection, verify backend
-                API also rejects with 400 error. Test with postable=false account, verify rejection.</idea>
-            <idea criterion="AC#9">Integration test: Call GET /api/v1/chart-of-accounts with various
-                query params (postable=true, codePrefix=131, parentId={id}), verify correct filtered
-                hierarchical response, verify query params work in combination.</idea>
-            <idea criterion="AC#10">Integration test: Attempt to create account with duplicate code
-                (same company_id), verify unique constraint violation, verify detailed error message
-                showing conflicting account code and name.</idea>
-            <idea criterion="AC#11">Integration test: Calculate account balance for account with
-                journal entries in current period, verify calculation: Opening Balance + SUM(debit)
-                - SUM(credit) = Current Balance, verify balance appears in account details endpoint
-                (if implemented).</idea>
-        </ideas>
-    </tests>
+  <tests>
+    <standards>Backend: JUnit 5 + Spring Boot Test with TestContainers for integration tests. Mockito for service unit tests (hierarchy building, filtering). Frontend: Vitest + Testing Library + jsdom for component tests. Integration: Test full COA flow: seed → load → search → filter → select in voucher. Performance: Measure COA tree load time (&lt; 1s target per NFR1) for 154+ accounts. Accessibility: Test keyboard navigation, screen reader support (WCAG AA compliance).</standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/impl/ChartOfAccountsServiceImplTest.java</location>
+      <location>backend/src/test/java/com/accounting/util/AccountValidatorTest.java</location>
+      <location>backend/src/test/java/com/accounting/controller/chart/ChartOfAccountsControllerIntegrationTest.java</location>
+      <location>frontend/src/**/*.test.tsx</location>
+      <location>frontend/src/**/*.spec.tsx</location>
+    </locations>
+    <ideas>
+      <test ac="AC#1">Integration test: Verify seed migration creates ≥154 accounts, hierarchy correct, no duplicates, normal_side and postable flags set correctly</test>
+      <test ac="AC#2">Unit test: Verify entity validation rejects invalid code formats (non-numeric, &gt;4 digits), enforces required fields</test>
+      <test ac="AC#3">Frontend test: Verify tree view expand/collapse works for 3+ levels, keyboard navigation (Arrow keys, Enter) functional</test>
+      <test ac="AC#4">Integration test: Verify search with unaccented Vietnamese matching (e.g., "nha" matches "nhà"), code prefix search works</test>
+      <test ac="AC#5">Frontend test: Verify filters (account class, postable toggle, code prefix) correctly filter tree view results</test>
+      <test ac="AC#6">Frontend test: Verify AccountDetailsModal displays all fields correctly, postable badge visible when postable=true</test>
+      <test ac="AC#7">Integration test: Verify edit attempts return 403 or show warning, blocked attempts logged to audit trail</test>
+      <test ac="AC#8">Integration test: Verify AccountPicker only shows postable leaf accounts, rejects non-leaf/non-postable selections</test>
+      <test ac="AC#9">Integration test: Verify API endpoint returns hierarchical structure, all query params work correctly (postable, codePrefix, parentId, type, search)</test>
+      <test ac="AC#10">Integration test: Verify duplicate code attempts fail with 409 Conflict, error message shows conflicting account</test>
+      <test ac="AC#11">Integration test: Verify balance calculation (optional MVP) - placeholder until Epic 3 journal_entries table exists</test>
+      <test ac="Multi-tenancy">Integration test: Verify company scoping - accounts from different companies are isolated, queries filtered by company_id</test>
+      <test ac="Performance">Performance test: Verify COA tree load time &lt; 1s for 154+ accounts, hierarchy building efficient</test>
+      <test ac="Accessibility">Frontend test: Verify keyboard navigation, screen reader support, ARIA labels present on all interactive elements</test>
+    </ideas>
+  </tests>
 </story-context>
+

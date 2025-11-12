@@ -26,7 +26,7 @@ export function useTheme() {
 
   useEffect(() => {
     localStorage.setItem('theme', theme)
-    
+
     if (theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
       const handler = (e: MediaQueryListEvent) => {
@@ -56,4 +56,3 @@ export function useTheme() {
     toggleTheme,
   }
 }
-

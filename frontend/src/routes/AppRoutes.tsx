@@ -4,10 +4,13 @@ import { CompanySettings } from '@/features/company'
 import { Login, ForgotPassword, ResetPassword } from '@/features/auth'
 import { UserManagement } from '@/features/users'
 import UserProfile from '@/pages/UserProfile'
-import { ChartOfAccounts, VoucherTypeList } from '@/features/accounting'
+import { VoucherTypeList, ChartOfAccounts, DefaultAccounts } from '@/features/accounting'
+import { Customers } from '@/features/customers'
+import { Suppliers } from '@/features/suppliers'
+import { BankAccounts } from '@/features/bankaccounts'
 import AcceptInvitation from '@/pages/AcceptInvitation'
 import ProtectedLayout from '@/layouts/ProtectedLayout'
-import { RoleGuard, CompanyGuard } from '@/components'
+import { RoleGuard, CompanyGuard, ErrorBoundary } from '@/components'
 
 export default function AppRoutes() {
   return (
@@ -58,20 +61,60 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/chart-of-accounts"
-        element={
-          <ProtectedLayout>
-            <ChartOfAccounts />
-          </ProtectedLayout>
-        }
-      />
-      <Route
         path="/voucher-types"
         element={
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
               <VoucherTypeList />
             </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/chart-of-accounts"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <ChartOfAccounts />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/default-accounts"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <DefaultAccounts />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/customers"
+        element={
+          <ProtectedLayout>
+            <Customers />
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/suppliers"
+        element={
+          <ProtectedLayout>
+            <ErrorBoundary>
+              <Suppliers />
+            </ErrorBoundary>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/bank-accounts"
+        element={
+          <ProtectedLayout>
+            <ErrorBoundary>
+              <BankAccounts />
+            </ErrorBoundary>
           </ProtectedLayout>
         }
       />

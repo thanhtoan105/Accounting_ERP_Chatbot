@@ -182,7 +182,7 @@ describe('Visual Regression - Branding Consistency (AC#1, AC#4)', () => {
       setTheme: vi.fn(),
       toggleTheme: vi.fn(),
     })
-    
+
     const { container } = render(
       <BrowserRouter>
         <ProtectedLayout>
@@ -205,9 +205,8 @@ describe('Visual Regression - Branding Consistency (AC#1, AC#4)', () => {
     // This is tested indirectly by checking localStorage is available
     localStorage.setItem('theme', 'dark')
     expect(localStorage.getItem('theme')).toBe('dark')
-    
+
     localStorage.setItem('theme', 'light')
     expect(localStorage.getItem('theme')).toBe('light')
   })
 })
-

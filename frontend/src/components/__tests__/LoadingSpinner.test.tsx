@@ -24,4 +24,3 @@ describe('LoadingSpinner', () => {
     expect(spinner.querySelector('.size-8')).toBeInTheDocument()
   })
 })
-

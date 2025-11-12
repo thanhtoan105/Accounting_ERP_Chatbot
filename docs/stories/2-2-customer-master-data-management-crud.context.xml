@@ -1,0 +1,167 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2</storyId>
+    <title>Customer Master Data Management (CRUD)</title>
+    <status>drafted</status>
+    <generatedAt>2025-02-10</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-2-customer-master-data-management-crud.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>accountant</asA>
+    <iWant>robust CRUD for all customers, including search/filter, import/export</iWant>
+    <soThat>AR tracking, validations, and compliance are always real-time accurate</soThat>
+    <tasks>
+      - Backend: Create Customer entity and migration (AC: #1, #2, #3, #4, #10)
+      - Backend: Customer code generation service (AC: #3)
+      - Backend: Customer service and repository (AC: #1, #4, #5, #6, #10)
+      - Backend: Customer controller and API (AC: #1, #4, #9, #10)
+      - Backend: Customer import/export service (AC: #9, #11)
+      - Backend: Customer AR summary integration (AC: #8)
+      - Backend: Audit logging for customer operations (AC: #11)
+      - Frontend: Customer list page component (AC: #1, #5, #7)
+      - Frontend: Customer form Sheet component (AC: #2, #3, #4, #6)
+      - Frontend: Customer details panel with AR summary (AC: #8)
+      - Frontend: Customer export functionality (AC: #9)
+      - Frontend: Customer delete confirmation with referential check (AC: #10)
+      - Frontend: Customer import wizard (AC: #11)
+      - Testing: Backend unit tests, integration tests, frontend component tests
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. List view: Supports pagination (20 per page), sorting by name or code, filter on status (active/inactive), and typeahead search.
+    2. Add form: All required except for optional fields; real-time validation (e.g., phone number, email format, tax code checksum).
+    3. Autogenerates Customer Code (CUST-YYYY-NNNN) and ensures globally unique per company; number increments even if prior code deleted/deactivated.
+    4. Detect and reject duplicate customers by tax code (and optionally email/cell), displaying exactly where conflict occurred.
+    5. Inactive customers appear grayed-out and are moved to bottom or separate tab.
+    6. Users can deactivate/reactivate, with tooltip explaining that linked AR data will not be deleted.
+    7. CRUD actions update real-time (websockets or polling), so multiple users see live changes.
+    8. Show customer AR summary (open invoices, total owed, average payment days) in details panel.
+    9. Can export customer list to CSV/Excel.
+    10. Attempt to delete customer with existing invoices/payments blocked, with explanatory modal.
+    11. All field edits, activations/deactivations, and import actions logged to the audit trail with before/after data and responsible user.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/PRD.md" title="Product Requirements Document" section="FR22: Customer Master Data Management, FR23: Create Sales Invoices, FR24: Record Customer Payments, FR25: AR Aging Report, NFR23: i18n Support" snippet="The system must support CRUD operations for customers, linked to account 131. Customer master data includes code (auto-generated), name, tax code, address, email, phone, and status (active/inactive). Customers are used in sales invoices and AR tracking." />
+      <doc path="docs/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.2: Customer Master Data Management (CRUD), Customer Entity, Customer API, Customer CRUD Workflow" snippet="Epic 2: Master Data Management establishes foundational data governance. Customer Master Data: Full CRUD operations for customer records with auto-generated codes (CUST-YYYY-NNNN), duplicate detection by tax code, status management (active/inactive), AR summary integration, and import/export functionality. Customer entity includes: id, company_id, code, name, tax_code, address, email, phone, active, createdAt, updatedAt." />
+      <doc path="docs/epics.md" title="Epic Breakdowns" section="Epic 2: Master Data Management - Story 2.2" snippet="As an accountant, I want robust CRUD for all customers, including search/filter, import/export, so that AR tracking, validations, and compliance are always real-time accurate. List view supports pagination, sorting, filtering. Auto-generates Customer Code (CUST-YYYY-NNNN). Detect and reject duplicate customers by tax code." />
+      <doc path="docs/architecture.md" title="Decision Architecture" section="Data Architecture, Multi-Tenancy Strategy, Technology Stack Details" snippet="Enterprise accounting ERP system using Spring Boot 3.5.7 backend with React TypeScript frontend, PostgreSQL via Supabase. Multi-tenancy: Row-level filtering via company_id on all tables. Search: PostgreSQL FTS + unaccent for native Vietnamese unaccented search support. Database schema: snake_case table names (customers), UUID primary keys." />
+      <doc path="docs/ux-design-specification.md" title="UX Design Specification" section="Design System, Navigation, File &amp; Folder Structure" snippet="Components: shadcn/ui (Radix primitives) with Tailwind CSS utilities. Layout: sidebar-06 pattern via ProtectedLayout.tsx. Feature-first structure: pages in features/customers/pages/, components in features/customers/components/." />
+      <doc path="docs/stories/2-2-customer-master-data-management-crud.md" title="Story 2.2" section="Dev Notes, Acceptance Criteria, Tasks, Learnings from Previous Story" snippet="Multi-tenancy: All customer records must be company-scoped. Use CompanyScopedEntity interface pattern from Epic 1. Customer code format: CUST-YYYY-NNNN. Tax code validation: 10-digit Vietnamese tax codes. Duplicate detection by tax code (required) and optionally email/phone. Referential integrity: Customers cannot be deleted if linked to invoices/payments. Vietnamese search using PostgreSQL unaccent extension." />
+      <doc path="docs/stories/2-1-chart-of-accounts-coa-tt200-preload-read-only-management.md" title="Story 2.1" section="Dev Notes, Learnings" snippet="Reference for company scoping patterns, repository patterns, RBAC enforcement, DTO patterns, audit logging patterns, Flyway migration patterns. Frontend patterns: shadcn/ui components, TanStack Table, Sheet modal forms, React Hook Form + Zod validation." />
+    </docs>
+    <code>
+      <artifact path="backend/src/main/java/com/accounting/entity/Customer.java" kind="entity" symbol="Customer" lines="1-82" reason="JPA entity for customers with basic fields (id, companyId, code, name, taxCode, address). Implements CompanyScopedEntity. NOTE: Missing fields: email, phone, active, createdAt, updatedAt - needs completion per story requirements." />
+      <artifact path="backend/src/main/java/com/accounting/repository/CustomerRepository.java" kind="repository" symbol="CustomerRepository" lines="1-12" reason="JPA repository extending JpaRepository and JpaSpecificationExecutor with basic findByCompanyId method. Needs extension to CompanyScopedRepository pattern and custom queries for search/filter." />
+      <artifact path="backend/src/main/java/com/accounting/controller/CustomerController.java" kind="controller" symbol="CustomerController" lines="1-50" reason="Basic REST controller with GET /api/v1/customers and POST /api/v1/customers endpoints. Needs completion: pagination, sorting, filters, search, PUT, DELETE, PATCH activate/deactivate, export endpoints, RBAC, proper error handling." />
+      <artifact path="backend/src/main/java/com/accounting/entity/ChartOfAccount.java" kind="entity" symbol="ChartOfAccount" lines="1-100" reason="Reference for entity structure with CompanyScopedEntity implementation, validation annotations, audit fields (createdAt, updatedAt). Use as pattern for completing Customer entity." />
+      <artifact path="backend/src/main/java/com/accounting/repository/ChartOfAccountsRepository.java" kind="repository" symbol="ChartOfAccountsRepository" lines="1-80" reason="Reference for repository with company scoping, custom queries, unaccented Vietnamese search. Use as pattern for CustomerRepository search and filter methods." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/ChartOfAccountsServiceImpl.java" kind="service" symbol="ChartOfAccountsServiceImpl" lines="1-200" reason="Reference for service implementation with company context management, pagination, filtering, search with unaccented Vietnamese support. Use as pattern for CustomerServiceImpl." />
+      <artifact path="backend/src/main/java/com/accounting/controller/chart/ChartOfAccountsController.java" kind="controller" symbol="ChartOfAccountsController" lines="1-100" reason="Reference for REST controller with pagination, filters, RBAC, proper HTTP status codes, error handling. Use as pattern for completing CustomerController." />
+      <artifact path="backend/src/main/java/com/accounting/service/AuditService.java" kind="service" symbol="AuditService" lines="1-50" reason="Service for audit logging. Use for logging all customer CRUD operations: CREATE, UPDATE, DELETE, ACTIVATE, DEACTIVATE with before/after values in JSONB format." />
+      <artifact path="backend/src/main/java/com/accounting/dto/ChartOfAccountDTO.java" kind="dto" symbol="ChartOfAccountDTO" lines="1-50" reason="Reference for DTO structure. Use as pattern for CustomerDTO, CustomerCreateRequest, CustomerUpdateRequest, CustomerARSummaryDTO." />
+      <artifact path="frontend/src/features/accounting/pages/ChartOfAccounts.tsx" kind="page" symbol="ChartOfAccounts" lines="1-300" reason="Reference for table-based UI with TanStack Table, search, pagination, filters, CRUD operations. Use as pattern for Customers.tsx page component." />
+      <artifact path="frontend/src/components/account/ChartOfAccountFormSheet.tsx" kind="component" symbol="ChartOfAccountFormSheet" lines="1-150" reason="Reference for Sheet modal form with React Hook Form + Zod validation, real-time validation, error display. Use as pattern for CustomerFormSheet.tsx." />
+      <artifact path="frontend/src/services/chartOfAccounts.ts" kind="service" symbol="chartOfAccountsService" lines="1-100" reason="Reference for frontend API service pattern with axios. Use as pattern for features/customers/services/customer.ts." />
+      <artifact path="backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java" kind="interface" symbol="CompanyScopedEntity" lines="1-20" reason="Interface for multi-tenancy pattern requiring companyId field. Customer entity must implement this." />
+      <artifact path="backend/src/main/java/com/accounting/repository/CompanyScopedRepository.java" kind="interface" symbol="CompanyScopedRepository" lines="1-30" reason="Repository interface extending JpaRepository with company scoping methods. CustomerRepository should extend this pattern." />
+    </code>
+    <dependencies>
+      <backend>
+        <framework>Spring Boot 3.5.7</framework>
+        <database>PostgreSQL 15+ (via Supabase)</database>
+        <orm>Spring Data JPA + Hibernate 6.x</orm>
+        <migration>Flyway 11.10.0</migration>
+        <security>Spring Security 6.x</security>
+        <validation>Spring Boot Starter Validation</validation>
+        <excel-processing>Apache POI 5.3.0</excel-processing>
+        <api-docs>SpringDoc OpenAPI 2.8.13</api-docs>
+        <testing>JUnit 5, TestContainers 1.21.3, Mockito</testing>
+      </backend>
+      <frontend>
+        <framework>React 19.1.1 with TypeScript 5.9.3</framework>
+        <build-tool>Vite 7.1.7</build-tool>
+        <ui-library>shadcn/ui (Radix UI primitives)</ui-library>
+        <styling>Tailwind CSS 4.1.16</styling>
+        <icons>Lucide React 0.552.0</icons>
+        <data-tables>@tanstack/react-table 8.21.3</data-tables>
+        <http-client>Axios 1.7.9</http-client>
+        <forms>React Hook Form 7.66.0 with Zod 4.1.12</forms>
+        <routing>React Router DOM 7.9.5</routing>
+        <toasts>sonner (via shadcn/ui)</toasts>
+        <testing>Vitest 2.1.4, Testing Library 16.0.1, jsdom 25.0.1</testing>
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Multi-tenancy: All customer records must be company-scoped. Use CompanyScopedEntity interface pattern from Epic 1. All queries automatically filtered by company_id via CompanyContext.</constraint>
+    <constraint>Database schema: Follow PostgreSQL conventions: snake_case table names (customers), UUID primary keys (or BIGSERIAL), foreign keys with proper constraints. Unique constraint: UNIQUE(company_id, tax_code) at database level.</constraint>
+    <constraint>Customer code format: Auto-generated codes follow pattern CUST-YYYY-NNNN where YYYY is current year and NNNN is sequential number (e.g., CUST-2025-0001). Code generation must be thread-safe to prevent duplicates under concurrency. Use database sequence or atomic counter. Handle year rollover (reset sequence on new year).</constraint>
+    <constraint>Tax code validation: Vietnamese tax codes are 10-digit numeric strings. Validate format and enforce uniqueness per company via UNIQUE(company_id, tax_code) constraint. Use @Pattern annotation for format validation.</constraint>
+    <constraint>Duplicate detection: Check for duplicates by tax code (required), and optionally by email and phone number. When duplicate found, return 409 Conflict with details showing conflicting customer (code, name, tax code). Display exactly where conflict occurred in error message.</constraint>
+    <constraint>Referential integrity: Customers cannot be deleted if they have linked invoices or payments (Epic 5 data). Check references before deletion, return 409 Conflict with explanatory message listing count of linked records. Option to deactivate instead of delete.</constraint>
+    <constraint>Vietnamese search: Use PostgreSQL unaccent extension for unaccented search support (NFR23). Create custom function unaccent_search(text) in Flyway migration for use in search queries. Search must match accented field reliably (e.g., "nha" matches "nhà").</constraint>
+    <constraint>Audit logging: All customer CRUD operations must be logged to audit_logs table with before/after values in JSONB format. Include user ID, company ID, timestamp, IP address, user agent. Import operations create one audit entry per imported row. Log blocked delete attempts with reason.</constraint>
+    <constraint>Import/export: Use Apache POI for Excel parsing. Import must be atomic (all valid rows or none). Validate all rows before saving, collect errors, return error report with row numbers. Export supports CSV and Excel formats with applied filters. Log export action in audit trail.</constraint>
+    <constraint>Real-time updates: For MVP, use polling every 5 minutes to refresh customer list. WebSocket support can be added post-MVP. CRUD actions update real-time so multiple users see live changes.</constraint>
+    <constraint>AR summary integration: Customer AR summary (open invoices, total owed, average payment days) requires Epic 5 (AR Module) data. For MVP, stub the summary or return placeholder values. Show placeholder message if AR data not available.</constraint>
+    <constraint>Frontend: Use shadcn/ui components (not MUI) - architecture uses shadcn/ui. Follow feature-first structure: pages in features/customers/pages/, components in features/customers/components/. Use TanStack Table (data-table-09 pattern) for customer list.</constraint>
+    <constraint>RBAC: All authenticated users can view customers; edit requires admin/accountant roles. Use @PreAuthorize annotations for API security. Frontend UI hiding is not a security boundary - API must enforce permissions.</constraint>
+    <constraint>Form validation: Use React Hook Form with Zod schema validation. Real-time validation: show inline errors on field blur. Validate phone number format, email format, tax code format (10-digit Vietnamese tax code).</constraint>
+    <constraint>Inactive customer display: Inactive customers appear grayed-out (reduced opacity) and are moved to bottom or separate tab (user preference). Deactivate/reactivate with tooltip explaining that linked AR data will not be deleted.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="GET /api/v1/customers" kind="REST endpoint" signature="GET /api/v1/customers?page=0&amp;size=20&amp;sort=name,asc&amp;status=active&amp;search=term" path="backend/src/main/java/com/accounting/controller/CustomerController.java" />
+    <interface name="GET /api/v1/customers/{id}" kind="REST endpoint" signature="GET /api/v1/customers/{id}" path="backend/src/main/java/com/accounting/controller/CustomerController.java" />
+    <interface name="POST /api/v1/customers" kind="REST endpoint" signature="POST /api/v1/customers" path="backend/src/main/java/com/accounting/controller/CustomerController.java" />
+    <interface name="PUT /api/v1/customers/{id}" kind="REST endpoint" signature="PUT /api/v1/customers/{id}" path="backend/src/main/java/com/accounting/controller/CustomerController.java" />
+    <interface name="DELETE /api/v1/customers/{id}" kind="REST endpoint" signature="DELETE /api/v1/customers/{id}" path="backend/src/main/java/com/accounting/controller/CustomerController.java" />
+    <interface name="PATCH /api/v1/customers/{id}/activate" kind="REST endpoint" signature="PATCH /api/v1/customers/{id}/activate" path="backend/src/main/java/com/accounting/controller/CustomerController.java" />
+    <interface name="PATCH /api/v1/customers/{id}/deactivate" kind="REST endpoint" signature="PATCH /api/v1/customers/{id}/deactivate" path="backend/src/main/java/com/accounting/controller/CustomerController.java" />
+    <interface name="GET /api/v1/customers/export" kind="REST endpoint" signature="GET /api/v1/customers/export?format=xlsx&amp;status=active" path="backend/src/main/java/com/accounting/controller/CustomerController.java" />
+    <interface name="POST /api/v1/customers/import" kind="REST endpoint" signature="POST /api/v1/customers/import (multipart file)" path="backend/src/main/java/com/accounting/controller/CustomerController.java" />
+    <interface name="CustomerService.findAll()" kind="method" signature="Page&lt;CustomerDTO&gt; findAll(int page, int size, String sort, String status, String search)" path="backend/src/main/java/com/accounting/service/CustomerService.java" />
+    <interface name="CustomerService.create()" kind="method" signature="CustomerDTO create(CustomerCreateRequest request)" path="backend/src/main/java/com/accounting/service/CustomerService.java" />
+    <interface name="CustomerService.checkDuplicate()" kind="method" signature="Optional&lt;Customer&gt; checkDuplicate(String taxCode, String email, String phone)" path="backend/src/main/java/com/accounting/service/CustomerService.java" />
+    <interface name="CustomerCodeGenerator.generateCode()" kind="method" signature="String generateCode(Long companyId)" path="backend/src/main/java/com/accounting/service/util/CustomerCodeGenerator.java" />
+    <interface name="CustomerService.getCustomerARSummary()" kind="method" signature="CustomerARSummaryDTO getCustomerARSummary(Long customerId)" path="backend/src/main/java/com/accounting/service/CustomerService.java" />
+    <interface name="CompanyScopedEntity" kind="interface" signature="interface CompanyScopedEntity { Long getCompanyId(); }" path="backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java" />
+  </interfaces>
+
+  <tests>
+    <standards>Backend: JUnit 5 + Spring Boot Test with TestContainers for integration tests. Mockito for service unit tests (code generation, validation, duplicate detection). Frontend: Vitest + Testing Library + jsdom for component tests. Integration: Test full customer flow: create → edit → deactivate → view AR summary → export → import. Performance: Measure customer list load time (&lt; 2s target per NFR1) for 1000+ customers. Accessibility: Test keyboard navigation, screen reader support (WCAG AA compliance).</standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/impl/CustomerServiceImplTest.java</location>
+      <location>backend/src/test/java/com/accounting/service/util/CustomerCodeGeneratorTest.java</location>
+      <location>backend/src/test/java/com/accounting/controller/CustomerControllerIntegrationTest.java</location>
+      <location>backend/src/test/java/com/accounting/service/impl/CustomerImportExportServiceImplTest.java</location>
+      <location>frontend/src/features/customers/**/*.test.tsx</location>
+      <location>frontend/src/features/customers/**/*.spec.tsx</location>
+    </locations>
+    <ideas>
+      <test ac="AC#1">Integration test: Verify customer list supports pagination (20 per page), sorting by name/code, filter on status (active/inactive), and typeahead search</test>
+      <test ac="AC#2">Frontend test: Verify form validation - phone number format, email format, tax code format (10-digit), required fields</test>
+      <test ac="AC#3">Unit test: Verify CustomerCodeGenerator generates CUST-YYYY-NNNN format, ensures uniqueness per company, increments correctly, handles year rollover, thread-safe</test>
+      <test ac="AC#4">Integration test: Verify duplicate detection by tax code (required) and optionally email/phone - returns 409 Conflict with conflicting customer details</test>
+      <test ac="AC#5">Frontend test: Verify inactive customers appear grayed-out (reduced opacity) and moved to bottom or separate tab</test>
+      <test ac="AC#6">Frontend test: Verify deactivate/reactivate functionality with tooltip explaining linked AR data preserved</test>
+      <test ac="AC#7">Integration test: Verify real-time updates via polling (5-minute intervals) - multiple users see live changes</test>
+      <test ac="AC#8">Integration test: Verify customer AR summary (stubbed for MVP) - returns placeholder values until Epic 5 implemented</test>
+      <test ac="AC#9">Integration test: Verify export functionality - generates CSV/Excel with applied filters, includes all customer fields, logs export action</test>
+      <test ac="AC#10">Integration test: Verify delete blocked if customer has linked invoices/payments - returns 409 Conflict with explanatory message, option to deactivate</test>
+      <test ac="AC#11">Integration test: Verify audit logging - all CRUD operations logged with before/after values, import operations create one audit entry per row, blocked delete attempts logged</test>
+      <test ac="Multi-tenancy">Integration test: Verify company scoping - customers from different companies are isolated, queries filtered by company_id</test>
+      <test ac="Import/Export">Integration test: Verify import atomicity - all valid rows or none, error report with row numbers, export with filters</test>
+      <test ac="Performance">Performance test: Verify customer list load time &lt; 2s for 1000+ customers, search with unaccented Vietnamese &lt; 500ms</test>
+      <test ac="Accessibility">Frontend test: Verify keyboard navigation, screen reader support, ARIA labels on all interactive elements</test>
+    </ideas>
+  </tests>
+</story-context>
+

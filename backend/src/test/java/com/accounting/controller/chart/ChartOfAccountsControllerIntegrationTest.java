@@ -14,30 +14,50 @@ import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.JwtTokenProvider;
 import com.accounting.security.PasswordEncoder;
+import jakarta.persistence.EntityManager;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import java.time.Instant;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class ChartOfAccountsControllerIntegrationTest extends com.accounting.test.IntegrationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @Autowired private ChartOfAccountsRepository chartOfAccountsRepository;
+  @Autowired
+  private ChartOfAccountsRepository chartOfAccountsRepository;
 
-  @Autowired private CompanyRepository companyRepository;
+  @Autowired
+  private CompanyRepository companyRepository;
 
-  @Autowired private UserRepository userRepository;
+  @Autowired
+  private UserRepository userRepository;
 
-  @Autowired private PasswordEncoder passwordEncoder;
+  @Autowired
+  private PasswordEncoder passwordEncoder;
 
-  @Autowired private JwtTokenProvider jwtTokenProvider;
+  @Autowired
+  private JwtTokenProvider jwtTokenProvider;
+
+  @Autowired
+  private JdbcTemplate jdbcTemplate;
+
+  @Autowired
+  private EntityManager entityManager;
+
+  @Autowired
+  private Validator validator;
 
   private Company testCompany;
   private User testUser;
@@ -45,7 +65,11 @@ class ChartOfAccountsControllerIntegrationTest extends com.accounting.test.Integ
 
   @BeforeEach
   void setUp() {
-    chartOfAccountsRepository.deleteAll();
+    // Clean up existing data using native SQL to handle FK constraints
+    // First, set all parent_id to NULL to break FK relationships
+    jdbcTemplate.execute("UPDATE chart_of_accounts SET parent_id = NULL");
+    // Then delete all accounts
+    jdbcTemplate.execute("DELETE FROM chart_of_accounts");
     userRepository.deleteAll();
     companyRepository.deleteAll();
 
@@ -76,6 +100,11 @@ class ChartOfAccountsControllerIntegrationTest extends com.accounting.test.Integ
 
   @AfterEach
   void tearDown() {
+    // Clean up test data using native SQL to handle FK constraints
+    jdbcTemplate.execute("UPDATE chart_of_accounts SET parent_id = NULL");
+    jdbcTemplate.execute("DELETE FROM chart_of_accounts");
+    userRepository.deleteAll();
+    companyRepository.deleteAll();
     CompanyContext.clear();
   }
 
@@ -204,11 +233,118 @@ class ChartOfAccountsControllerIntegrationTest extends com.accounting.test.Integ
 
   @Test
   void getChartOfAccounts_requiresAuthentication() throws Exception {
+    // Without authentication, Spring Security returns 403 Forbidden (not 401)
     mockMvc
         .perform(
             get("/api/v1/chart-of-accounts")
                 .header("X-Company-Id", String.valueOf(testCompany.getId())))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void createAccount_withDuplicateCode_throwsDataIntegrityViolation() {
+    // Create first account
+    ChartOfAccount account1 = createAccount("1111", "Tiền Việt Nam", null, true);
+
+    // Attempt to create duplicate code for same company
+    ChartOfAccount account2 = new ChartOfAccount();
+    account2.setCompanyId(testCompany.getId());
+    account2.setCode("1111"); // Duplicate code
+    account2.setName("Duplicate Account");
+    account2.setType("Asset");
+    account2.setNormalSide("Debit");
+    account2.setPostable(true);
+    account2.setOrderingPosition(1111);
+
+    // Should throw DataIntegrityViolationException due to unique constraint
+    org.springframework.dao.DataIntegrityViolationException exception = org.junit.jupiter.api.Assertions.assertThrows(
+        org.springframework.dao.DataIntegrityViolationException.class,
+        () -> chartOfAccountsRepository.save(account2));
+
+    assertTrue(
+        exception.getMessage().contains("ux_chart_of_accounts_company_code")
+            || exception.getMessage().contains("duplicate key")
+            || exception.getMessage().contains("unique constraint"));
+  }
+
+  @Test
+  void createAccount_withInvalidCodeFormat_throwsValidationException() {
+    // Test non-numeric code
+    ChartOfAccount account1 = new ChartOfAccount();
+    account1.setCompanyId(testCompany.getId());
+    account1.setCode("ABC"); // Invalid: non-numeric
+    account1.setName("Invalid Code Account");
+    account1.setType("Asset");
+    account1.setNormalSide("Debit");
+    account1.setPostable(true);
+    account1.setOrderingPosition(0);
+
+    // Validate using Validator directly (JPA validation might not trigger on save)
+    Set<ConstraintViolation<ChartOfAccount>> violations = validator.validate(account1);
+    assertTrue(
+        violations.size() > 0,
+        "Should have validation violations for invalid code format");
+    assertTrue(
+        violations.stream()
+            .anyMatch(
+                violation -> violation.getPropertyPath().toString().equals("code")
+                    && (violation.getMessage().contains("numeric")
+                        || violation.getMessage().contains("digits"))),
+        "Should have code format validation error");
+  }
+
+  @Test
+  void createAccount_withCodeExceeding4Digits_throwsValidationException() {
+    // Test code exceeding 4 digits
+    ChartOfAccount account = new ChartOfAccount();
+    account.setCompanyId(testCompany.getId());
+    account.setCode("12345"); // Invalid: exceeds 4 digits
+    account.setName("Invalid Code Account");
+    account.setType("Asset");
+    account.setNormalSide("Debit");
+    account.setPostable(true);
+    account.setOrderingPosition(0);
+
+    // Validate using Validator directly
+    Set<ConstraintViolation<ChartOfAccount>> violations = validator.validate(account);
+    assertTrue(
+        violations.size() > 0,
+        "Should have validation violations for code exceeding 4 digits");
+    assertTrue(
+        violations.stream()
+            .anyMatch(
+                violation -> violation.getPropertyPath().toString().equals("code")
+                    && (violation.getMessage().contains("numeric")
+                        || violation.getMessage().contains("digits"))),
+        "Should have code format validation error");
+  }
+
+  @Test
+  void createAccount_withInvalidCodeHierarchy_createsOrphanedAccount() {
+    // Create parent account
+    ChartOfAccount parent = createAccount("131", "Phải thu", null, false);
+
+    // Attempt to create child with code that doesn't start with parent code
+    ChartOfAccount invalidChild = new ChartOfAccount();
+    invalidChild.setCompanyId(testCompany.getId());
+    invalidChild.setCode("1321"); // Invalid: doesn't start with "131"
+    invalidChild.setName("Invalid Hierarchy Account");
+    invalidChild.setType("Asset");
+    invalidChild.setNormalSide("Debit");
+    invalidChild.setPostable(true);
+    invalidChild.setParentId(parent.getId()); // Set parent but code doesn't match
+    invalidChild.setOrderingPosition(1321);
+
+    // Note: This will save successfully at database level (no DB constraint),
+    // but violates business rule. Validation should be done at service/application
+    // level.
+    // For now, we verify the account can be created (validation happens in service
+    // layer)
+    ChartOfAccount saved = chartOfAccountsRepository.save(invalidChild);
+    assertTrue(saved.getId() != null);
+
+    // The validation should be enforced by AccountValidator in service layer
+    // when used in voucher picker or edit operations
   }
 
   private ChartOfAccount createAccount(String code, String name, Long parentId, boolean postable) {
@@ -220,7 +356,8 @@ class ChartOfAccountsControllerIntegrationTest extends com.accounting.test.Integ
     account.setNormalSide("Debit");
     account.setPostable(postable);
     account.setParentId(parentId);
-    account.setOrderingPosition(Integer.parseInt(code.replaceAll("[^0-9]", "").isEmpty() ? "0" : code.replaceAll("[^0-9]", "")));
+    account.setOrderingPosition(
+        Integer.parseInt(code.replaceAll("[^0-9]", "").isEmpty() ? "0" : code.replaceAll("[^0-9]", "")));
     return chartOfAccountsRepository.save(account);
   }
 }

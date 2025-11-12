@@ -419,8 +419,413 @@ public class AuditServiceImpl implements AuditService {
         if (userId != null) {
             userRepository.findById(userId).ifPresent(user -> log.setEmail(user.getEmail()));
         }
-        log.setAction("REPORT_EXPORTED");
+        log.setAction("REPORT_EXPORT");
         String reason = String.format("c:%s,f:%s", companyId, format);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logCustomerCreated(Long customerId, String customerCode, Long createdByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(createdByUserId);
+        if (createdByUserId != null) {
+            userRepository.findById(createdByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("CUSTOMER_CREATED");
+        String reason = String.format("id:%s,code:%s", customerId, customerCode);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logCustomerUpdated(Long customerId, String customerCode, Long updatedByUserId,
+            java.util.Map<String, String> oldValues, java.util.Map<String, String> newValues,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(updatedByUserId);
+        if (updatedByUserId != null) {
+            userRepository.findById(updatedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("CUSTOMER_UPDATED");
+        String reason = String.format("id:%s,code:%s", customerId, customerCode);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logCustomerDeleted(Long customerId, String customerCode, String reason, Long deletedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(deletedByUserId);
+        if (deletedByUserId != null) {
+            userRepository.findById(deletedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("CUSTOMER_DELETED");
+        String logReason = String.format("id:%s,code:%s,r:%s", customerId, customerCode, reason);
+        if (logReason.length() > 50) {
+            logReason = logReason.substring(0, 47) + "...";
+        }
+        log.setReason(logReason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logCustomerActivated(Long customerId, String customerCode, Long activatedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(activatedByUserId);
+        if (activatedByUserId != null) {
+            userRepository.findById(activatedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("CUSTOMER_ACTIVATED");
+        String reason = String.format("id:%s,code:%s", customerId, customerCode);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logCustomerDeactivated(Long customerId, String customerCode, Long deactivatedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(deactivatedByUserId);
+        if (deactivatedByUserId != null) {
+            userRepository.findById(deactivatedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("CUSTOMER_DEACTIVATED");
+        String reason = String.format("id:%s,code:%s", customerId, customerCode);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logCustomerImport(int importedCount, int errorCount, Long importedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(importedByUserId);
+        if (importedByUserId != null) {
+            userRepository.findById(importedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("CUSTOMER_IMPORTED");
+        String reason = String.format("imported:%d,errors:%d", importedCount, errorCount);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logCustomerExport(int exportedCount, String format, Long exportedByUserId, HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(exportedByUserId);
+        if (exportedByUserId != null) {
+            userRepository.findById(exportedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("CUSTOMER_EXPORTED");
+        String reason = String.format("count:%d,format:%s", exportedCount, format);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logSupplierCreated(Long supplierId, String supplierCode, Long createdByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(createdByUserId);
+        if (createdByUserId != null) {
+            userRepository.findById(createdByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("SUPPLIER_CREATED");
+        String reason = String.format("id:%s,code:%s", supplierId, supplierCode);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logSupplierUpdated(Long supplierId, String supplierCode, Long updatedByUserId,
+            java.util.Map<String, String> oldValues, java.util.Map<String, String> newValues,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(updatedByUserId);
+        if (updatedByUserId != null) {
+            userRepository.findById(updatedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("SUPPLIER_UPDATED");
+        String reason = String.format("id:%s,code:%s", supplierId, supplierCode);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void logSupplierDeleted(Long supplierId, String supplierCode, String reason, Long deletedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(deletedByUserId);
+        if (deletedByUserId != null) {
+            userRepository.findById(deletedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("SUPPLIER_DELETED");
+        String logReason = String.format("id:%s,code:%s,r:%s", supplierId, supplierCode, reason);
+        if (logReason.length() > 50) {
+            logReason = logReason.substring(0, 47) + "...";
+        }
+        log.setReason(logReason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logSupplierActivated(Long supplierId, String supplierCode, Long activatedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(activatedByUserId);
+        if (activatedByUserId != null) {
+            userRepository.findById(activatedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("SUPPLIER_ACTIVATED");
+        String reason = String.format("id:%s,code:%s", supplierId, supplierCode);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logSupplierDeactivated(Long supplierId, String supplierCode, Long deactivatedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(deactivatedByUserId);
+        if (deactivatedByUserId != null) {
+            userRepository.findById(deactivatedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("SUPPLIER_DEACTIVATED");
+        String reason = String.format("id:%s,code:%s", supplierId, supplierCode);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logSupplierImport(int importedCount, int errorCount, Long importedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(importedByUserId);
+        if (importedByUserId != null) {
+            userRepository.findById(importedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("SUPPLIER_IMPORTED");
+        String reason = String.format("imported:%d,errors:%d", importedCount, errorCount);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logSupplierExport(int exportedCount, String format, Long exportedByUserId, HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(exportedByUserId);
+        if (exportedByUserId != null) {
+            userRepository.findById(exportedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("SUPPLIER_EXPORTED");
+        String reason = String.format("count:%d,format:%s", exportedCount, format);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logBankAccountCreated(Long bankAccountId, String accountNumber, Long createdByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(createdByUserId);
+        if (createdByUserId != null) {
+            userRepository.findById(createdByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("BANK_ACCOUNT_CREATED");
+        String reason = String.format("id:%s,acc:%s", bankAccountId, accountNumber);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logBankAccountUpdated(Long bankAccountId, String accountNumber, Long updatedByUserId,
+            java.util.Map<String, String> oldValues, java.util.Map<String, String> newValues, String reason,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(updatedByUserId);
+        if (updatedByUserId != null) {
+            userRepository.findById(updatedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("BANK_ACCOUNT_UPDATED");
+        String logReason = String.format("id:%s,acc:%s", bankAccountId, accountNumber);
+        if (reason != null && !reason.isBlank()) {
+            logReason += ",r:" + reason;
+        }
+        if (logReason.length() > 50) {
+            logReason = logReason.substring(0, 47) + "...";
+        }
+        log.setReason(logReason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logBankAccountDeleted(Long bankAccountId, String accountNumber, String reason, Long deletedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(deletedByUserId);
+        if (deletedByUserId != null) {
+            userRepository.findById(deletedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("BANK_ACCOUNT_DELETED");
+        String logReason = String.format("id:%s,acc:%s,r:%s", bankAccountId, accountNumber, reason);
+        if (logReason.length() > 50) {
+            logReason = logReason.substring(0, 47) + "...";
+        }
+        log.setReason(logReason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logBankAccountActivated(Long bankAccountId, String accountNumber, Long activatedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(activatedByUserId);
+        if (activatedByUserId != null) {
+            userRepository.findById(activatedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("BANK_ACCOUNT_ACTIVATED");
+        String reason = String.format("id:%s,acc:%s", bankAccountId, accountNumber);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logBankAccountDeactivated(Long bankAccountId, String accountNumber, Long deactivatedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(deactivatedByUserId);
+        if (deactivatedByUserId != null) {
+            userRepository.findById(deactivatedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("BANK_ACCOUNT_DEACTIVATED");
+        String reason = String.format("id:%s,acc:%s", bankAccountId, accountNumber);
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        log.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        log.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logBankAccountExport(int exportedCount, String format, Long exportedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(exportedByUserId);
+        if (exportedByUserId != null) {
+            userRepository.findById(exportedByUserId).ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("BANK_ACCOUNT_EXPORTED");
+        String reason = String.format("count:%d,format:%s", exportedCount, format);
         if (reason.length() > 50) {
             reason = reason.substring(0, 47) + "...";
         }

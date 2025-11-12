@@ -10,20 +10,34 @@ import org.testcontainers.utility.DockerImageName;
 
 @Import(TestStorageConfig.class)
 public abstract class IntegrationTest {
+  // QUAN TRỌNG: Static final để container được share giữa tất cả test classes
+  // withReuse(true) cho phép container được reuse giữa các test runs
+  @SuppressWarnings("resource") // Container được reuse intentionally, cleanup khi JVM shutdown
   private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
       DockerImageName.parse("postgres:16.4-alpine"))
       .withDatabaseName("accounting_test")
       .withUsername("test")
-      .withPassword("test");
+      .withPassword("test")
+      .withReuse(true); // <-- QUAN TRỌNG: Cho phép reuse container
 
   @BeforeAll
   static void startContainer() {
+    // Container chỉ khởi động 1 lần cho tất cả tests
+    // Nếu container đã chạy (từ test class trước), sẽ reuse
+    if (!POSTGRES.isRunning()) {
     POSTGRES.start();
+    }
   }
 
   @AfterAll
   static void stopContainer() {
-    POSTGRES.stop();
+    // KHÔNG stop container để có thể reuse cho test classes tiếp theo
+    // Container sẽ tự động stop khi JVM shutdown hoặc khi không còn test nào dùng
+    // Chỉ stop nếu thực sự cần (ví dụ: cleanup cuối cùng)
+    // POSTGRES.stop(); // <-- Commented out để enable reuse
+    
+    // Note: Suppressing resource leak warning vì container được reuse intentionally
+    // Container sẽ được cleanup khi JVM shutdown
   }
 
   @DynamicPropertySource

@@ -41,6 +41,3 @@ export default function CompanyGuard({ children, requiredRoles, fallback }: Comp
 
   return <>{children}</>
 }
-
-
-

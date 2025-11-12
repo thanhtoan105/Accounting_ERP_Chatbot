@@ -46,11 +46,6 @@ const navItems: NavItem[] = [
     requiredRoles: ['admin', 'chief_accountant'],
   },
   {
-    path: '/chart-of-accounts',
-    label: 'Chart of Accounts',
-    // All authenticated users can view COA
-  },
-  {
     path: '/reports',
     label: 'Reports',
     requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
@@ -64,6 +59,31 @@ const navItems: NavItem[] = [
     path: '/voucher-types',
     label: 'Voucher Types',
     requiredRoles: ['admin', 'chief_accountant'],
+  },
+  {
+    path: '/chart-of-accounts',
+    label: 'Chart of Accounts',
+    requiredRoles: ['admin', 'chief_accountant'],
+  },
+  {
+    path: '/default-accounts',
+    label: 'Default Accounts',
+    requiredRoles: ['admin', 'chief_accountant'],
+  },
+  {
+    path: '/customers',
+    label: 'Customers',
+    requiredRoles: ['admin', 'accountant', 'chief_accountant'],
+  },
+  {
+    path: '/suppliers',
+    label: 'Suppliers',
+    requiredRoles: ['admin', 'accountant', 'chief_accountant'],
+  },
+  {
+    path: '/bank-accounts',
+    label: 'Bank Accounts',
+    requiredRoles: ['admin', 'accountant', 'chief_accountant'],
   },
 ]
 
@@ -192,11 +212,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
               onClick={toggleTheme}
               aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {resolvedTheme === 'dark' ? (
-                <Sun className="size-4" />
-              ) : (
-                <Moon className="size-4" />
-              )}
+              {resolvedTheme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
             </Button>
           </div>
         </header>

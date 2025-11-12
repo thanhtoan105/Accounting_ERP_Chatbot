@@ -76,9 +76,7 @@ describe('ProtectedLayout - Authenticated Layout (AC#2, AC#3)', () => {
     const sidebarTriggers = screen.getAllByRole('button', { name: /toggle sidebar/i })
     expect(sidebarTriggers.length).toBeGreaterThan(0)
     // Check that at least one trigger is in the header
-    const headerTrigger = sidebarTriggers.find((btn) => 
-      btn.closest('header') !== null
-    )
+    const headerTrigger = sidebarTriggers.find((btn) => btn.closest('header') !== null)
     expect(headerTrigger).toBeInTheDocument()
   })
 
@@ -113,9 +111,7 @@ describe('ProtectedLayout - Authenticated Layout (AC#2, AC#3)', () => {
     const companyNames = screen.getAllByText('Test Company')
     expect(companyNames.length).toBeGreaterThan(0)
     // Verify at least one is in the header
-    const headerCompanyName = companyNames.find((el) => 
-      el.closest('header') !== null
-    )
+    const headerCompanyName = companyNames.find((el) => el.closest('header') !== null)
     expect(headerCompanyName).toBeInTheDocument()
   })
 
@@ -171,7 +167,7 @@ describe('ProtectedLayout - Authenticated Layout (AC#2, AC#3)', () => {
       }
       return true
     })
-    
+
     // Also need to mock useCompany to return null since it only fetches for admin/chief_accountant
     vi.mocked(companyHook.useCompany).mockReturnValue({
       company: null,
@@ -259,4 +255,3 @@ describe('ProtectedLayout - Authenticated Layout (AC#2, AC#3)', () => {
     expect(mockToggleTheme).toHaveBeenCalledTimes(1)
   })
 })
-

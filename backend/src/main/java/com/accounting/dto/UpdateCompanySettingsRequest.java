@@ -1,87 +1,251 @@
 package com.accounting.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
-import java.time.LocalDate;
+import jakarta.validation.constraints.Size;
 
+/**
+ * DTO for updating advanced CompanySettings. Used in PUT
+ * /api/v1/company-settings endpoint.
+ * All fields are optional to support partial updates.
+ * Includes optimistic locking via updatedAt field.
+ */
 public class UpdateCompanySettingsRequest {
 
-    @NotBlank(message = "name is required")
-    private String name;
+  // General section
+  @Size(max = 255)
+  private String legalName;
 
-    @NotBlank(message = "taxCode is required")
-    @Pattern(regexp = "^\\d{10}$", message = "taxCode must be 10 digits")
-    private String taxCode;
+  @Size(max = 100)
+  private String shortName;
 
-    @NotBlank(message = "address is required")
-    private String address;
+  @Size(max = 50)
+  private String registrationNumber;
 
-    @Email(message = "contactEmail must be a valid email")
-    private String contactEmail;
+  @Min(1)
+  @Max(12)
+  private Integer defaultFiscalYearStartMonth; // 1-12
 
-    @Pattern(regexp = "^[0-9+()\\-\\s]{6,32}$", message = "contactPhone must be a valid phone number")
-    private String contactPhone;
+  @Size(max = 50)
+  private String timezone;
 
-    // Represents the start date (year component ignored by business logic)
-    private LocalDate fiscalYearStart;
+  // Localization section
+  @Size(max = 3)
+  @Pattern(regexp = "^[A-Z]{3}$", message = "Currency code must be 3 uppercase letters")
+  private String defaultCurrency;
 
-    // Optional: if client already has a URL stored from upload integration
-    private String logoUrl;
+  @Size(max = 20)
+  private String currencyFormat;
 
-    public String getName() {
-        return name;
-    }
+  @Size(max = 1)
+  private String thousandSeparator;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  @Size(max = 1)
+  private String decimalSeparator;
 
-    public String getTaxCode() {
-        return taxCode;
-    }
+  @Size(max = 20)
+  private String dateFormat;
 
-    public void setTaxCode(String taxCode) {
-        this.taxCode = taxCode;
-    }
+  @Size(max = 10)
+  private String language;
 
-    public String getAddress() {
-        return address;
-    }
+  // Tax & Compliance section
+  @Size(max = 20)
+  @Pattern(regexp = "^\\d{10}$", message = "VAT registration number must be 10 digits")
+  private String vatRegistrationNumber;
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
+  private String vatRatePresets; // JSON string
 
-    public String getContactEmail() {
-        return contactEmail;
-    }
+  @Size(max = 20)
+  private String invoiceRoundingMode;
 
-    public void setContactEmail(String contactEmail) {
-        this.contactEmail = contactEmail;
-    }
+  @Size(max = 20)
+  private String taxRoundingMode;
 
-    public String getContactPhone() {
-        return contactPhone;
-    }
+  private Boolean eInvoiceEnabled;
 
-    public void setContactPhone(String contactPhone) {
-        this.contactPhone = contactPhone;
-    }
+  @Min(0)
+  private Integer auditRetentionPeriodDays;
 
-    public LocalDate getFiscalYearStart() {
-        return fiscalYearStart;
-    }
+  // Numbering section
+  private String numberingConfig; // JSON string
 
-    public void setFiscalYearStart(LocalDate fiscalYearStart) {
-        this.fiscalYearStart = fiscalYearStart;
-    }
+  // Integrations section
+  private Boolean bankReconciliationEnabled;
 
-    public String getLogoUrl() {
-        return logoUrl;
-    }
+  @Size(max = 10)
+  private String exportFormatDefault;
 
-    public void setLogoUrl(String logoUrl) {
-        this.logoUrl = logoUrl;
-    }
+  // Optimistic locking: client sends updatedAt to detect conflicts
+  private java.time.Instant updatedAt;
+
+  // Getters and Setters
+  public String getLegalName() {
+    return legalName;
+  }
+
+  public void setLegalName(String legalName) {
+    this.legalName = legalName;
+  }
+
+  public String getShortName() {
+    return shortName;
+  }
+
+  public void setShortName(String shortName) {
+    this.shortName = shortName;
+  }
+
+  public String getRegistrationNumber() {
+    return registrationNumber;
+  }
+
+  public void setRegistrationNumber(String registrationNumber) {
+    this.registrationNumber = registrationNumber;
+  }
+
+  public Integer getDefaultFiscalYearStartMonth() {
+    return defaultFiscalYearStartMonth;
+  }
+
+  public void setDefaultFiscalYearStartMonth(Integer defaultFiscalYearStartMonth) {
+    this.defaultFiscalYearStartMonth = defaultFiscalYearStartMonth;
+  }
+
+  public String getTimezone() {
+    return timezone;
+  }
+
+  public void setTimezone(String timezone) {
+    this.timezone = timezone;
+  }
+
+  public String getDefaultCurrency() {
+    return defaultCurrency;
+  }
+
+  public void setDefaultCurrency(String defaultCurrency) {
+    this.defaultCurrency = defaultCurrency;
+  }
+
+  public String getCurrencyFormat() {
+    return currencyFormat;
+  }
+
+  public void setCurrencyFormat(String currencyFormat) {
+    this.currencyFormat = currencyFormat;
+  }
+
+  public String getThousandSeparator() {
+    return thousandSeparator;
+  }
+
+  public void setThousandSeparator(String thousandSeparator) {
+    this.thousandSeparator = thousandSeparator;
+  }
+
+  public String getDecimalSeparator() {
+    return decimalSeparator;
+  }
+
+  public void setDecimalSeparator(String decimalSeparator) {
+    this.decimalSeparator = decimalSeparator;
+  }
+
+  public String getDateFormat() {
+    return dateFormat;
+  }
+
+  public void setDateFormat(String dateFormat) {
+    this.dateFormat = dateFormat;
+  }
+
+  public String getLanguage() {
+    return language;
+  }
+
+  public void setLanguage(String language) {
+    this.language = language;
+  }
+
+  public String getVatRegistrationNumber() {
+    return vatRegistrationNumber;
+  }
+
+  public void setVatRegistrationNumber(String vatRegistrationNumber) {
+    this.vatRegistrationNumber = vatRegistrationNumber;
+  }
+
+  public String getVatRatePresets() {
+    return vatRatePresets;
+  }
+
+  public void setVatRatePresets(String vatRatePresets) {
+    this.vatRatePresets = vatRatePresets;
+  }
+
+  public String getInvoiceRoundingMode() {
+    return invoiceRoundingMode;
+  }
+
+  public void setInvoiceRoundingMode(String invoiceRoundingMode) {
+    this.invoiceRoundingMode = invoiceRoundingMode;
+  }
+
+  public String getTaxRoundingMode() {
+    return taxRoundingMode;
+  }
+
+  public void setTaxRoundingMode(String taxRoundingMode) {
+    this.taxRoundingMode = taxRoundingMode;
+  }
+
+  public Boolean getEInvoiceEnabled() {
+    return eInvoiceEnabled;
+  }
+
+  public void setEInvoiceEnabled(Boolean eInvoiceEnabled) {
+    this.eInvoiceEnabled = eInvoiceEnabled;
+  }
+
+  public Integer getAuditRetentionPeriodDays() {
+    return auditRetentionPeriodDays;
+  }
+
+  public void setAuditRetentionPeriodDays(Integer auditRetentionPeriodDays) {
+    this.auditRetentionPeriodDays = auditRetentionPeriodDays;
+  }
+
+  public String getNumberingConfig() {
+    return numberingConfig;
+  }
+
+  public void setNumberingConfig(String numberingConfig) {
+    this.numberingConfig = numberingConfig;
+  }
+
+  public Boolean getBankReconciliationEnabled() {
+    return bankReconciliationEnabled;
+  }
+
+  public void setBankReconciliationEnabled(Boolean bankReconciliationEnabled) {
+    this.bankReconciliationEnabled = bankReconciliationEnabled;
+  }
+
+  public String getExportFormatDefault() {
+    return exportFormatDefault;
+  }
+
+  public void setExportFormatDefault(String exportFormatDefault) {
+    this.exportFormatDefault = exportFormatDefault;
+  }
+
+  public java.time.Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(java.time.Instant updatedAt) {
+    this.updatedAt = updatedAt;
+  }
 }

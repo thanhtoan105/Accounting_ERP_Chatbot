@@ -96,9 +96,10 @@ describe('UserManagement', () => {
     // Get all "Accountant" texts and click the one that's in the SelectContent (dropdown)
     const accountantOptions = screen.getAllByText('Accountant')
     // The option in the dropdown should be in a SelectItem, not a Badge
-    const accountantOption = accountantOptions.find(opt =>
-      opt.closest('[role="option"]') || opt.closest('[data-radix-select-item]')
-    ) || accountantOptions[0] // Fallback to first if structure is different
+    const accountantOption =
+      accountantOptions.find(
+        (opt) => opt.closest('[role="option"]') || opt.closest('[data-radix-select-item]'),
+      ) || accountantOptions[0] // Fallback to first if structure is different
     await user.click(accountantOption)
 
     await waitFor(() => {
@@ -198,9 +199,7 @@ describe('UserManagement', () => {
 
     // Find the switch for the test user (not the current user)
     const rows = screen.getAllByRole('row')
-    const testUserRow = rows.find((row) =>
-      within(row).queryByText('test@example.com')
-    )
+    const testUserRow = rows.find((row) => within(row).queryByText('test@example.com'))
 
     expect(testUserRow).toBeTruthy()
     const activeSwitch = within(testUserRow!).getByRole('switch', { name: /active/i })
@@ -234,9 +233,7 @@ describe('UserManagement', () => {
 
     // Find the table row containing the inactive user
     const rows = screen.getAllByRole('row')
-    const inactiveUserRow = rows.find((row) =>
-      within(row).queryByText('accountant@example.com')
-    )
+    const inactiveUserRow = rows.find((row) => within(row).queryByText('accountant@example.com'))
 
     expect(inactiveUserRow).toBeTruthy()
 
@@ -265,9 +262,7 @@ describe('UserManagement', () => {
 
     // Find the table row containing the second user
     const rows = screen.getAllByRole('row')
-    const secondUserRow = rows.find((row) =>
-      within(row).queryByText('accountant@example.com')
-    )
+    const secondUserRow = rows.find((row) => within(row).queryByText('accountant@example.com'))
 
     expect(secondUserRow).toBeTruthy()
 

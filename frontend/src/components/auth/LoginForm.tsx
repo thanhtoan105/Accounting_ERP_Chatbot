@@ -123,7 +123,9 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label={
+                  resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+                }
               >
                 {resolvedTheme === 'dark' ? (
                   <Sun className="size-5" />

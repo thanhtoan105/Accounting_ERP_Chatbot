@@ -36,10 +36,7 @@ describe('AppSidebar - Company Branding (AC#1, AC#2)', () => {
     render(
       <BrowserRouter>
         <SidebarProvider>
-          <AppSidebar
-            items={[]}
-            user={{ name: 'Test User', email: 'test@example.com' }}
-          />
+          <AppSidebar items={[]} user={{ name: 'Test User', email: 'test@example.com' }} />
         </SidebarProvider>
       </BrowserRouter>,
     )
@@ -67,10 +64,7 @@ describe('AppSidebar - Company Branding (AC#1, AC#2)', () => {
     render(
       <BrowserRouter>
         <SidebarProvider>
-          <AppSidebar
-            items={[]}
-            user={{ name: 'Test User', email: 'test@example.com' }}
-          />
+          <AppSidebar items={[]} user={{ name: 'Test User', email: 'test@example.com' }} />
         </SidebarProvider>
       </BrowserRouter>,
     )
@@ -98,10 +92,7 @@ describe('AppSidebar - Company Branding (AC#1, AC#2)', () => {
     render(
       <BrowserRouter>
         <SidebarProvider>
-          <AppSidebar
-            items={[]}
-            user={{ name: 'Test User', email: 'test@example.com' }}
-          />
+          <AppSidebar items={[]} user={{ name: 'Test User', email: 'test@example.com' }} />
         </SidebarProvider>
       </BrowserRouter>,
     )
@@ -120,10 +111,7 @@ describe('AppSidebar - Company Branding (AC#1, AC#2)', () => {
     render(
       <BrowserRouter>
         <SidebarProvider>
-          <AppSidebar
-            items={[]}
-            user={{ name: 'Test User', email: 'test@example.com' }}
-          />
+          <AppSidebar items={[]} user={{ name: 'Test User', email: 'test@example.com' }} />
         </SidebarProvider>
       </BrowserRouter>,
     )
@@ -142,10 +130,7 @@ describe('AppSidebar - Company Branding (AC#1, AC#2)', () => {
     render(
       <BrowserRouter>
         <SidebarProvider>
-          <AppSidebar
-            items={[]}
-            user={{ name: 'Test User', email: 'test@example.com' }}
-          />
+          <AppSidebar items={[]} user={{ name: 'Test User', email: 'test@example.com' }} />
         </SidebarProvider>
       </BrowserRouter>,
     )
@@ -154,4 +139,3 @@ describe('AppSidebar - Company Branding (AC#1, AC#2)', () => {
     expect(screen.getByText('test@example.com')).toBeInTheDocument()
   })
 })
-

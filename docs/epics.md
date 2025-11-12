@@ -157,7 +157,7 @@ As a chief accountant/admin, I want the TT200 COA to be preloaded, viewable in a
 4. UX: Select/search input with typeahead for account code or name; unaccented search must match accented field reliably.
 5. Filtering by account class (e.g., asset, income), postable-only toggle, and code prefix filter (e.g., all "131").
 6. "View Details" modal must clearly display all account fields; "Postable" visually distinguished with tag or icon.
-7. If admin requests to change COA: Show clear warning ("preconfigured, only editable by superadmin"); block UI route for edits/removals in MVP; log such attempt as "blocked action" in audit log.
+7. COA CRUD operations: Admin and chief accountant can create, update, soft delete, activate, and deactivate accounts via table UI with Sheet modal form. Table displays 6 columns: Account Code, Account Name, Account Type (Debit/Credit/Hermaphrodite), Account Name in English, Description, Status (In Use/Out of Use). Form includes 5 fields: Account Number (numeric, required), Account Name (required), Primary Account (optional parent), Account Type/Characteristic (required: "Debit Balance", "Credit Balance", "Hermaphrodite", "No Balance"), Description (optional). All operations require RBAC (admin/chief_accountant roles) and are logged in audit.
 8. Only postable-leaf accounts appear in voucher account pickers. Root accounts cannot be added to vouchers (validation both client and server).
 9. API endpoint for COA returns hierarchy, allows filter by postable, code prefix, and parent–child relationships for cascading selectors.
 10. No two accounts can ever have the same code per company. Attempt to add/seed duplicate code must fail with detailed error message.

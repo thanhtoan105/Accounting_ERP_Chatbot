@@ -47,12 +47,12 @@ development_status:
   1-8-admin-demo-data-seed: done
   epic-1-retrospective: completed
 
-  epic-2: backlog
-  2-1-chart-of-accounts-coa-tt200-preload-read-only-management: backlog
-  2-2-customer-master-data-management-crud: backlog
-  2-3-supplier-master-data-management-crud: backlog
-  2-4-bank-account-management-crud: backlog
-  2-5-company-settings-expansion-advanced-fields: backlog
+  epic-2: contexted
+  2-1-chart-of-accounts-coa-tt200-preload-read-only-management: done
+  2-2-customer-master-data-management-crud: done
+  2-3-supplier-master-data-management-crud: done
+  2-4-bank-account-management-crud: done
+  2-5-company-settings-expansion-advanced-fields: review
   2-6-data-import-migration: backlog
   2-7-audit-trail-data-integrity-for-master-data: backlog
   epic-2-retrospective: optional
