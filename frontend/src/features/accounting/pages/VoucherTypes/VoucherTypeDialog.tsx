@@ -153,9 +153,7 @@ export default function VoucherTypeDialog({
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Voucher Type' : 'Create Voucher Type'}</DialogTitle>
             <DialogDescription>
-              {isEditMode
-                ? 'Update the voucher type details below.'
-                : 'Create a new voucher type.'}
+              {isEditMode ? 'Update the voucher type details below.' : 'Create a new voucher type.'}
             </DialogDescription>
           </DialogHeader>
           <FieldGroup className="space-y-4 py-4">

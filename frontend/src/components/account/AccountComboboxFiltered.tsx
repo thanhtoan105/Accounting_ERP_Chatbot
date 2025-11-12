@@ -47,9 +47,7 @@ export default function AccountComboboxFiltered({
     try {
       setLoading(true)
       const response = await getChartOfAccounts({ active: true })
-      const accountList = Array.isArray(response.data) 
-        ? (response.data as ChartOfAccount[])
-        : []
+      const accountList = Array.isArray(response.data) ? (response.data as ChartOfAccount[]) : []
       setAllAccounts(accountList)
     } catch (err) {
       console.error('Failed to load accounts:', err)
@@ -70,15 +68,13 @@ export default function AccountComboboxFiltered({
     const getDescendants = (parentId: number, visited = new Set<number>()): number[] => {
       if (visited.has(parentId)) return []
       visited.add(parentId)
-      
+
       const directChildren = allAccounts
         .filter((acc) => acc.parentId === parentId)
         .map((acc) => acc.id)
-      
-      const nestedChildren = directChildren.flatMap((childId) => 
-        getDescendants(childId, visited)
-      )
-      
+
+      const nestedChildren = directChildren.flatMap((childId) => getDescendants(childId, visited))
+
       return [...directChildren, ...nestedChildren]
     }
 
@@ -90,19 +86,15 @@ export default function AccountComboboxFiltered({
     })
 
     // Get all accounts that are descendants of the selected parents
-    const children = allAccounts.filter((account) => 
-      allDescendantIds.has(account.id)
-    )
+    const children = allAccounts.filter((account) => allDescendantIds.has(account.id))
 
     // Also include the parent accounts themselves if they are in the filter
-    const parents = allAccounts.filter((account) => 
-      parentAccountIds.includes(account.id)
-    )
+    const parents = allAccounts.filter((account) => parentAccountIds.includes(account.id))
 
     // Combine and remove duplicates
     const combined = [...children, ...parents]
     const unique = combined.filter(
-      (account, index, self) => index === self.findIndex((a) => a.id === account.id)
+      (account, index, self) => index === self.findIndex((a) => a.id === account.id),
     )
 
     // Sort by code for better UX
@@ -141,8 +133,8 @@ export default function AccountComboboxFiltered({
           <ChevronsUpDownIcon className="opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="p-0 w-[var(--radix-popover-trigger-width)]" 
+      <PopoverContent
+        className="p-0 w-[var(--radix-popover-trigger-width)]"
         side="bottom"
         align="start"
         sideOffset={4}
@@ -150,26 +142,29 @@ export default function AccountComboboxFiltered({
       >
         <Command className="!overflow-visible">
           <CommandInput placeholder="Search accounts..." className="h-9" />
-          <CommandList 
+          <CommandList
             className="max-h-[300px] overflow-y-auto overscroll-contain"
-            style={{ 
-              overflowY: 'auto',
-              maxHeight: '300px',
-              touchAction: 'pan-y'
-            } as React.CSSProperties}
+            style={
+              {
+                overflowY: 'auto',
+                maxHeight: '300px',
+                touchAction: 'pan-y',
+              } as React.CSSProperties
+            }
           >
             <CommandEmpty>
-              {loading ? 'Loading...' : parentAccountIds && parentAccountIds.length === 0 
-                ? 'Please select account filters first' 
-                : 'No account found.'}
+              {loading
+                ? 'Loading...'
+                : parentAccountIds && parentAccountIds.length === 0
+                  ? 'Please select account filters first'
+                  : 'No account found.'}
             </CommandEmpty>
             <CommandGroup>
-              <CommandItem
-                value="none"
-                onSelect={() => handleSelect(null)}
-              >
+              <CommandItem value="none" onSelect={() => handleSelect(null)}>
                 <span className="text-muted-foreground">Clear selection</span>
-                <CheckIcon className={cn('ml-auto', value === null ? 'opacity-100' : 'opacity-0')} />
+                <CheckIcon
+                  className={cn('ml-auto', value === null ? 'opacity-100' : 'opacity-0')}
+                />
               </CommandItem>
               {filteredAccounts.map((account) => (
                 <CommandItem
@@ -192,4 +187,3 @@ export default function AccountComboboxFiltered({
     </Popover>
   )
 }
-

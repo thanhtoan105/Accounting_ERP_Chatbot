@@ -52,4 +52,3 @@ export interface DefaultAccountsResponse {
   data: DefaultAccount[]
   total: number
 }
-

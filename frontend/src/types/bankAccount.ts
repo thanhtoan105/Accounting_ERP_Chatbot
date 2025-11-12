@@ -69,4 +69,3 @@ export function getStatusLabel(active: boolean): string {
 export function getTypeLabel(type: AccountType): string {
   return type === 'CASH' ? 'Cash' : 'Bank'
 }
-

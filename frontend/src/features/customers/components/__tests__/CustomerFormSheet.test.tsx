@@ -19,35 +19,17 @@ describe('CustomerFormSheet', () => {
 
   describe('Create Mode', () => {
     it('renders dialog when open', () => {
-      render(
-        <CustomerFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<CustomerFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
       expect(screen.getByRole('heading', { name: /create customer/i })).toBeInTheDocument()
     })
 
     it('does not render when closed', () => {
-      render(
-        <CustomerFormSheet
-          open={false}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<CustomerFormSheet open={false} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
       expect(screen.queryByText('Create Customer')).not.toBeInTheDocument()
     })
 
     it('validates required name field', async () => {
-      render(
-        <CustomerFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<CustomerFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const submitButton = screen.getByRole('button', { name: /create customer/i })
       fireEvent.click(submitButton)
@@ -59,13 +41,7 @@ describe('CustomerFormSheet', () => {
     })
 
     it('validates tax code format', async () => {
-      render(
-        <CustomerFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<CustomerFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^customer name/i)
       const taxCodeInput = screen.getByLabelText(/tax code/i)
@@ -82,13 +58,7 @@ describe('CustomerFormSheet', () => {
     })
 
     it('validates email format', async () => {
-      render(
-        <CustomerFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<CustomerFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^customer name/i)
       const emailInput = screen.getByLabelText(/email/i)
@@ -105,13 +75,7 @@ describe('CustomerFormSheet', () => {
     })
 
     it('validates phone format', async () => {
-      render(
-        <CustomerFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<CustomerFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^customer name/i)
       const phoneInput = screen.getByLabelText(/phone/i)
@@ -143,13 +107,7 @@ describe('CustomerFormSheet', () => {
       }
       mockCreateCustomer.mockResolvedValue(mockCustomer)
 
-      render(
-        <CustomerFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<CustomerFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^customer name/i)
       const taxCodeInput = screen.getByLabelText(/tax code/i)
@@ -194,13 +152,7 @@ describe('CustomerFormSheet', () => {
       }
       mockCreateCustomer.mockResolvedValue(mockCustomer)
 
-      render(
-        <CustomerFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<CustomerFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^customer name/i)
       const submitButton = screen.getByRole('button', { name: /create customer/i })
@@ -222,17 +174,12 @@ describe('CustomerFormSheet', () => {
       mockCreateCustomer.mockRejectedValue({
         status: 409,
         error: {
-          message: 'Duplicate customer found with tax code: 1234567890 (Code: CUST-2025-0001, Name: Existing Customer)',
+          message:
+            'Duplicate customer found with tax code: 1234567890 (Code: CUST-2025-0001, Name: Existing Customer)',
         },
       })
 
-      render(
-        <CustomerFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<CustomerFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^customer name/i)
       const taxCodeInput = screen.getByLabelText(/tax code/i)
@@ -249,13 +196,7 @@ describe('CustomerFormSheet', () => {
     })
 
     it('closes dialog on cancel', () => {
-      render(
-        <CustomerFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<CustomerFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const cancelButton = screen.getByRole('button', { name: /cancel/i })
       fireEvent.click(cancelButton)
@@ -360,7 +301,8 @@ describe('CustomerFormSheet', () => {
       mockUpdateCustomer.mockRejectedValue({
         status: 409,
         error: {
-          message: 'Duplicate customer found with email: duplicate@example.com (Code: CUST-2025-0002, Name: Other Customer)',
+          message:
+            'Duplicate customer found with email: duplicate@example.com (Code: CUST-2025-0002, Name: Other Customer)',
         },
       })
 
@@ -386,4 +328,3 @@ describe('CustomerFormSheet', () => {
     })
   })
 })
-

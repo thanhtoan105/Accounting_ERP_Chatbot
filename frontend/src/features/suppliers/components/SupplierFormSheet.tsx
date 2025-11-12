@@ -17,13 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '@/components/ui/field'
+import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -92,10 +86,7 @@ export default function SupplierFormSheet({
   const [duplicateError, setDuplicateError] = useState<string | null>(null)
 
   // Create schema based on edit mode
-  const supplierFormSchema = useMemo(
-    () => createSupplierFormSchema(isEditMode),
-    [isEditMode],
-  )
+  const supplierFormSchema = useMemo(() => createSupplierFormSchema(isEditMode), [isEditMode])
   type SupplierFormValues = z.infer<typeof supplierFormSchema>
 
   const form = useForm<SupplierFormValues>({
@@ -232,7 +223,7 @@ export default function SupplierFormSheet({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Edit Supplier' : 'Create Supplier'}</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Supplier' : 'Create Supplier'}</DialogTitle>
             <DialogDescription>
               {isEditMode
                 ? 'Update the supplier details below.'
@@ -311,7 +302,8 @@ export default function SupplierFormSheet({
                 {!isEditMode && (
                   <Field className="gap-2">
                     <FieldLabel htmlFor="code" className="text-sm font-medium">
-                      Supplier Code <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+                      Supplier Code{' '}
+                      <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
                     </FieldLabel>
                     <FieldContent>
                       <div className="relative">
@@ -333,10 +325,12 @@ export default function SupplierFormSheet({
                       {errors.code?.message && <FieldError>{errors.code.message}</FieldError>}
                       <div className="mt-1.5 space-y-1">
                         <p className="text-xs text-muted-foreground">
-                          <span className="font-medium">Auto-generated format:</span> SUP-YYYY-NNNN (e.g., SUP-2025-0001)
+                          <span className="font-medium">Auto-generated format:</span> SUP-YYYY-NNNN
+                          (e.g., SUP-2025-0001)
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          <span className="font-medium">Custom format:</span> Enter any format, or leave empty to use auto-generated code
+                          <span className="font-medium">Custom format:</span> Enter any format, or
+                          leave empty to use auto-generated code
                         </p>
                       </div>
                     </FieldContent>
@@ -507,12 +501,7 @@ export default function SupplierFormSheet({
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
@@ -531,4 +520,3 @@ export default function SupplierFormSheet({
     </Dialog>
   )
 }
-

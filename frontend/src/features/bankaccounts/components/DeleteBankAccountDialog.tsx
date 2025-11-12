@@ -71,7 +71,8 @@ export default function DeleteBankAccountDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Bank Account</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete bank account &quot;{bankAccount.accountNumber} - {bankAccount.bankName}
+            Are you sure you want to delete bank account &quot;{bankAccount.accountNumber} -{' '}
+            {bankAccount.bankName}
             &quot;? This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -83,7 +84,8 @@ export default function DeleteBankAccountDialog({
                 <div className="mt-2">
                   <p className="text-sm font-medium mb-1">Suggestion:</p>
                   <p className="text-sm">
-                    This account has linked transactions. Consider deactivating it instead to preserve historical data.
+                    This account has linked transactions. Consider deactivating it instead to
+                    preserve historical data.
                   </p>
                 </div>
               )}
@@ -93,11 +95,7 @@ export default function DeleteBankAccountDialog({
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => setError(null)}>Cancel</AlertDialogCancel>
           {isConflictError && (
-            <Button
-              variant="outline"
-              onClick={handleDeactivate}
-              disabled={isDeactivating}
-            >
+            <Button variant="outline" onClick={handleDeactivate} disabled={isDeactivating}>
               {isDeactivating ? 'Deactivating...' : 'Deactivate Instead'}
             </Button>
           )}
@@ -113,4 +111,3 @@ export default function DeleteBankAccountDialog({
     </AlertDialog>
   )
 }
-

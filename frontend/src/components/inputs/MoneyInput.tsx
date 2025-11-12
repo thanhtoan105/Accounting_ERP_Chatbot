@@ -136,4 +136,3 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
 MoneyInput.displayName = 'MoneyInput'
 
 export default MoneyInput
-

@@ -94,4 +94,3 @@ export interface VatRatePreset {
   rate: number
   label?: string
 }
-

@@ -117,14 +117,11 @@ export default function ChartOfAccounts() {
       setLoadingChildren((prev) => ({ ...prev, [parentId]: true }))
       const response = await getChartOfAccounts({ parentId })
       // When querying by parentId, response.data is always ChartOfAccount[]
-      const children = Array.isArray(response.data)
-        ? (response.data as ChartOfAccount[])
-        : []
+      const children = Array.isArray(response.data) ? (response.data as ChartOfAccount[]) : []
       setChildrenCache((prev) => ({ ...prev, [parentId]: children }))
       return children
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to load child accounts'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to load child accounts'
       toast.error('Failed to load child accounts', { description: errorMessage })
       return []
     } finally {
@@ -136,86 +133,91 @@ export default function ChartOfAccounts() {
     }
   }, [])
 
-  const loadAccounts = useCallback(async (preserveExpanded = false, getExpandedIds?: () => number[]) => {
-    try {
-      setLoading(true)
-      setError(null)
-      const params: ChartOfAccountQueryParams = {}
-      if (debouncedSearch.trim()) {
-        params.search = debouncedSearch.trim()
-      }
-      // Load only root accounts (no parentId) when not searching
-      if (!debouncedSearch.trim()) {
-        params.parentId = undefined // Explicitly load root accounts
-      }
-      const response = await getChartOfAccounts(params)
-      // When not using hierarchy endpoint, response.data is ChartOfAccount[]
-      const accountsData = Array.isArray(response.data)
-        ? (response.data as ChartOfAccount[])
-        : []
-
-      // Filter to root accounts and add children property
-      const allAccounts: ChartOfAccountWithChildren[] = accountsData.map(account => {
-        // Debug logging to check active field from API
-        if (process.env.NODE_ENV === 'development' && accountsData.length > 0 && accountsData.indexOf(account) < 3) {
-          console.log('[ChartOfAccounts] API Response Account:', {
-            id: account.id,
-            code: account.code,
-            name: account.name,
-            activeRaw: account.active,
-            activeType: typeof account.active,
-          })
+  const loadAccounts = useCallback(
+    async (preserveExpanded = false, getExpandedIds?: () => number[]) => {
+      try {
+        setLoading(true)
+        setError(null)
+        const params: ChartOfAccountQueryParams = {}
+        if (debouncedSearch.trim()) {
+          params.search = debouncedSearch.trim()
         }
-        return {
-          ...account,
-          children: undefined, // Will be loaded on demand
+        // Load only root accounts (no parentId) when not searching
+        if (!debouncedSearch.trim()) {
+          params.parentId = undefined // Explicitly load root accounts
         }
-      })
+        const response = await getChartOfAccounts(params)
+        // When not using hierarchy endpoint, response.data is ChartOfAccount[]
+        const accountsData = Array.isArray(response.data) ? (response.data as ChartOfAccount[]) : []
 
-      // If searching, show all accounts. Otherwise, show only root accounts (parentId is null)
-      const rootAccounts = debouncedSearch.trim()
-        ? allAccounts
-        : allAccounts.filter(account => !account.parentId)
-
-      setAccounts(rootAccounts)
-
-      // Only clear children cache if not preserving expanded state
-      if (!preserveExpanded) {
-        setChildrenCache({})
-        setExpanded({})
-      } else if (getExpandedIds) {
-        // If preserving expanded state, reload children for expanded parents
-        const expandedParentIds = getExpandedIds()
-
-        // Reload children for expanded parents
-        for (const parentId of expandedParentIds) {
-          const children = await loadChildren(parentId)
-          // Update the account in the list with children
-          setAccounts(prev => prev.map(acc =>
-            acc.id === parentId ? { ...acc, children } : acc
-          ))
-        }
-
-        // Restore expanded state after reloading children
-        // Use account IDs as row IDs (strings)
-        const expandedState: Record<string, boolean> = {}
-        expandedParentIds.forEach(parentId => {
-          const account = rootAccounts.find(acc => acc.id === parentId)
-          if (account) {
-            // Row ID is account ID as string
-            expandedState[parentId.toString()] = true
+        // Filter to root accounts and add children property
+        const allAccounts: ChartOfAccountWithChildren[] = accountsData.map((account) => {
+          // Debug logging to check active field from API
+          if (
+            process.env.NODE_ENV === 'development' &&
+            accountsData.length > 0 &&
+            accountsData.indexOf(account) < 3
+          ) {
+            console.log('[ChartOfAccounts] API Response Account:', {
+              id: account.id,
+              code: account.code,
+              name: account.name,
+              activeRaw: account.active,
+              activeType: typeof account.active,
+            })
+          }
+          return {
+            ...account,
+            children: undefined, // Will be loaded on demand
           }
         })
-        setExpanded(expandedState)
+
+        // If searching, show all accounts. Otherwise, show only root accounts (parentId is null)
+        const rootAccounts = debouncedSearch.trim()
+          ? allAccounts
+          : allAccounts.filter((account) => !account.parentId)
+
+        setAccounts(rootAccounts)
+
+        // Only clear children cache if not preserving expanded state
+        if (!preserveExpanded) {
+          setChildrenCache({})
+          setExpanded({})
+        } else if (getExpandedIds) {
+          // If preserving expanded state, reload children for expanded parents
+          const expandedParentIds = getExpandedIds()
+
+          // Reload children for expanded parents
+          for (const parentId of expandedParentIds) {
+            const children = await loadChildren(parentId)
+            // Update the account in the list with children
+            setAccounts((prev) =>
+              prev.map((acc) => (acc.id === parentId ? { ...acc, children } : acc)),
+            )
+          }
+
+          // Restore expanded state after reloading children
+          // Use account IDs as row IDs (strings)
+          const expandedState: Record<string, boolean> = {}
+          expandedParentIds.forEach((parentId) => {
+            const account = rootAccounts.find((acc) => acc.id === parentId)
+            if (account) {
+              // Row ID is account ID as string
+              expandedState[parentId.toString()] = true
+            }
+          })
+          setExpanded(expandedState)
+        }
+      } catch (err: any) {
+        const errorMessage = err?.error?.message || err?.message || 'Failed to load accounts'
+        setError(errorMessage)
+        toast.error('Failed to load accounts', { description: errorMessage })
+      } finally {
+        setLoading(false)
       }
-    } catch (err: any) {
-      const errorMessage = err?.error?.message || err?.message || 'Failed to load accounts'
-      setError(errorMessage)
-      toast.error('Failed to load accounts', { description: errorMessage })
-    } finally {
-      setLoading(false)
-    }
-  }, [debouncedSearch, loadChildren])
+    },
+    [debouncedSearch, loadChildren],
+  )
 
   useEffect(() => {
     setPage(1)
@@ -251,43 +253,43 @@ export default function ChartOfAccounts() {
 
       // Capture current account statuses before reload to preserve all updates
       const currentStatuses = new Map<number, boolean>()
-      setAccounts(prev => {
-        prev.forEach(acc => {
+      setAccounts((prev) => {
+        prev.forEach((acc) => {
           currentStatuses.set(acc.id, acc.active)
         })
-        return prev.map(acc =>
-          acc.id === account.id ? { ...acc, active: false } : acc
-        )
+        return prev.map((acc) => (acc.id === account.id ? { ...acc, active: false } : acc))
       })
       currentStatuses.set(account.id, false)
 
       // If this is a child account, refresh its parent's children cache
       if (account.parentId) {
-        setChildrenCache(prev => {
+        setChildrenCache((prev) => {
           const next = { ...prev }
           if (next[account.parentId!]) {
             // Update the child in the cached children
-            next[account.parentId!] = next[account.parentId!].map(child =>
-              child.id === account.id ? { ...child, active: false } : child
+            next[account.parentId!] = next[account.parentId!].map((child) =>
+              child.id === account.id ? { ...child, active: false } : child,
             )
           }
           return next
         })
         // Also update in the accounts list if the parent has children loaded
-        setAccounts(prev => prev.map(acc => {
-          if (acc.id === account.parentId && acc.children) {
-            return {
-              ...acc,
-              children: acc.children.map(child =>
-                child.id === account.id ? { ...child, active: false } : child
-              )
+        setAccounts((prev) =>
+          prev.map((acc) => {
+            if (acc.id === account.parentId && acc.children) {
+              return {
+                ...acc,
+                children: acc.children.map((child) =>
+                  child.id === account.id ? { ...child, active: false } : child,
+                ),
+              }
             }
-          }
-          return acc
-        }))
+            return acc
+          }),
+        )
       } else {
         // If this is a parent account, clear its children cache to force reload
-        setChildrenCache(prev => {
+        setChildrenCache((prev) => {
           const next = { ...prev }
           delete next[account.id]
           return next
@@ -296,24 +298,25 @@ export default function ChartOfAccounts() {
 
       // Get expanded parent IDs before reloading
       const expandedParentIds = Object.keys(expanded)
-        .filter(key => expanded[key])
-        .map(key => Number(key))
-        .filter(id => !isNaN(id))
+        .filter((key) => expanded[key])
+        .map((key) => Number(key))
+        .filter((id) => !isNaN(id))
 
       // Reload accounts to ensure consistency, preserving expanded state
       await loadAccounts(true, () => expandedParentIds)
 
       // After reload, restore all account statuses that were updated
-      setAccounts(prev => prev.map(acc => {
-        const savedStatus = currentStatuses.get(acc.id)
-        if (savedStatus !== undefined) {
-          return { ...acc, active: savedStatus }
-        }
-        return acc
-      }))
+      setAccounts((prev) =>
+        prev.map((acc) => {
+          const savedStatus = currentStatuses.get(acc.id)
+          if (savedStatus !== undefined) {
+            return { ...acc, active: savedStatus }
+          }
+          return acc
+        }),
+      )
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to deactivate account'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to deactivate account'
       toast.error('Failed to deactivate account', { description: errorMessage })
     }
   }
@@ -325,43 +328,43 @@ export default function ChartOfAccounts() {
 
       // Capture current account statuses before reload to preserve all updates
       const currentStatuses = new Map<number, boolean>()
-      setAccounts(prev => {
-        prev.forEach(acc => {
+      setAccounts((prev) => {
+        prev.forEach((acc) => {
           currentStatuses.set(acc.id, acc.active)
         })
-        return prev.map(acc =>
-          acc.id === account.id ? { ...acc, active: true } : acc
-        )
+        return prev.map((acc) => (acc.id === account.id ? { ...acc, active: true } : acc))
       })
       currentStatuses.set(account.id, true)
 
       // If this is a child account, refresh its parent's children cache
       if (account.parentId) {
-        setChildrenCache(prev => {
+        setChildrenCache((prev) => {
           const next = { ...prev }
           if (next[account.parentId!]) {
             // Update the child in the cached children
-            next[account.parentId!] = next[account.parentId!].map(child =>
-              child.id === account.id ? { ...child, active: true } : child
+            next[account.parentId!] = next[account.parentId!].map((child) =>
+              child.id === account.id ? { ...child, active: true } : child,
             )
           }
           return next
         })
         // Also update in the accounts list if the parent has children loaded
-        setAccounts(prev => prev.map(acc => {
-          if (acc.id === account.parentId && acc.children) {
-            return {
-              ...acc,
-              children: acc.children.map(child =>
-                child.id === account.id ? { ...child, active: true } : child
-              )
+        setAccounts((prev) =>
+          prev.map((acc) => {
+            if (acc.id === account.parentId && acc.children) {
+              return {
+                ...acc,
+                children: acc.children.map((child) =>
+                  child.id === account.id ? { ...child, active: true } : child,
+                ),
+              }
             }
-          }
-          return acc
-        }))
+            return acc
+          }),
+        )
       } else {
         // If this is a parent account, clear its children cache to force reload
-        setChildrenCache(prev => {
+        setChildrenCache((prev) => {
           const next = { ...prev }
           delete next[account.id]
           return next
@@ -370,21 +373,23 @@ export default function ChartOfAccounts() {
 
       // Get expanded parent IDs before reloading
       const expandedParentIds = Object.keys(expanded)
-        .filter(key => expanded[key])
-        .map(key => Number(key))
-        .filter(id => !isNaN(id))
+        .filter((key) => expanded[key])
+        .map((key) => Number(key))
+        .filter((id) => !isNaN(id))
 
       // Reload accounts to ensure consistency, preserving expanded state
       await loadAccounts(true, () => expandedParentIds)
 
       // After reload, restore all account statuses that were updated
-      setAccounts(prev => prev.map(acc => {
-        const savedStatus = currentStatuses.get(acc.id)
-        if (savedStatus !== undefined) {
-          return { ...acc, active: savedStatus }
-        }
-        return acc
-      }))
+      setAccounts((prev) =>
+        prev.map((acc) => {
+          const savedStatus = currentStatuses.get(acc.id)
+          if (savedStatus !== undefined) {
+            return { ...acc, active: savedStatus }
+          }
+          return acc
+        }),
+      )
     } catch (err: any) {
       const errorMessage = err?.error?.message || err?.message || 'Failed to activate account'
       toast.error('Failed to activate account', { description: errorMessage })
@@ -414,7 +419,7 @@ export default function ChartOfAccounts() {
   const handleRefresh = async () => {
     // Get expanded parent IDs from table state (row IDs are account IDs as strings)
     const expandedParentIds = Object.keys(expanded)
-      .map(key => {
+      .map((key) => {
         // Row ID is the account ID as string
         const accountId = Number(key)
         return isNaN(accountId) ? undefined : accountId
@@ -425,22 +430,25 @@ export default function ChartOfAccounts() {
     await loadAccounts(true, () => expandedParentIds)
   }
 
-  const handleToggleExpand = useCallback(async (row: any) => {
-    const account = row.original as ChartOfAccountWithChildren
-    const isExpanded = row.getIsExpanded()
+  const handleToggleExpand = useCallback(
+    async (row: any) => {
+      const account = row.original as ChartOfAccountWithChildren
+      const isExpanded = row.getIsExpanded()
 
-    if (!isExpanded && account.id) {
-      // Load children when expanding
-      const children = await loadChildren(account.id)
-      // Update the account in the list with children
-      setAccounts(prev => prev.map(acc =>
-        acc.id === account.id ? { ...acc, children } : acc
-      ))
-    }
+      if (!isExpanded && account.id) {
+        // Load children when expanding
+        const children = await loadChildren(account.id)
+        // Update the account in the list with children
+        setAccounts((prev) =>
+          prev.map((acc) => (acc.id === account.id ? { ...acc, children } : acc)),
+        )
+      }
 
-    // Toggle expanded state - this will update the table's expanded state
-    row.toggleExpanded()
-  }, [loadChildren])
+      // Toggle expanded state - this will update the table's expanded state
+      row.toggleExpanded()
+    },
+    [loadChildren],
+  )
 
   const columns = useMemo<ColumnDef<ChartOfAccountWithChildren>[]>(
     () => [
@@ -462,9 +470,11 @@ export default function ChartOfAccounts() {
               className="size-7 shadow-none text-muted-foreground"
               onClick={() => handleToggleExpand(row)}
               aria-expanded={row.getIsExpanded()}
-              aria-label={row.getIsExpanded()
-                ? `Collapse details for ${account.code}`
-                : `Expand details for ${account.code}`}
+              aria-label={
+                row.getIsExpanded()
+                  ? `Collapse details for ${account.code}`
+                  : `Expand details for ${account.code}`
+              }
               size="icon"
               variant="ghost"
             >
@@ -743,7 +753,10 @@ export default function ChartOfAccounts() {
                                   <Table>
                                     <TableBody>
                                       {children.map((child) => (
-                                        <TableRow key={child.id} className="border-b border-border/50">
+                                        <TableRow
+                                          key={child.id}
+                                          className="border-b border-border/50"
+                                        >
                                           {/* Expander column - empty to match parent structure */}
                                           <TableCell className="p-2 align-middle whitespace-nowrap w-12"></TableCell>
                                           {/* Account Code - only this column content should be indented */}
@@ -762,11 +775,15 @@ export default function ChartOfAccounts() {
                                           </TableCell>
                                           {/* Account Name in English - align with parent (no indentation, same padding) */}
                                           <TableCell className="p-2 align-middle whitespace-nowrap">
-                                            <div className="text-muted-foreground">{child.nameEnglish || '-'}</div>
+                                            <div className="text-muted-foreground">
+                                              {child.nameEnglish || '-'}
+                                            </div>
                                           </TableCell>
                                           {/* Description - align with parent (no indentation, same padding) */}
                                           <TableCell className="p-2 align-middle whitespace-nowrap">
-                                            <div className="text-muted-foreground">{child.description || '-'}</div>
+                                            <div className="text-muted-foreground">
+                                              {child.description || '-'}
+                                            </div>
                                           </TableCell>
                                           {/* Status - align with parent (no indentation, same padding) */}
                                           <TableCell className="p-2 align-middle whitespace-nowrap">
@@ -776,7 +793,11 @@ export default function ChartOfAccounts() {
                                               let active: boolean
                                               if (typeof activeValue === 'boolean') {
                                                 active = activeValue
-                                              } else if (activeValue === 'true' || activeValue === 1 || activeValue === '1') {
+                                              } else if (
+                                                activeValue === 'true' ||
+                                                activeValue === 1 ||
+                                                activeValue === '1'
+                                              ) {
                                                 active = true
                                               } else {
                                                 active = false // Handles false, null, undefined, 'false', '0', etc.
@@ -792,7 +813,10 @@ export default function ChartOfAccounts() {
                                                 </Badge>
                                               ) : (
                                                 <Badge className="bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive rounded-full border-none focus-visible:outline-none">
-                                                  <span className="bg-destructive size-1.5 rounded-full" aria-hidden="true" />
+                                                  <span
+                                                    className="bg-destructive size-1.5 rounded-full"
+                                                    aria-hidden="true"
+                                                  />
                                                   {getStatusLabel(active)}
                                                 </Badge>
                                               )
@@ -808,17 +832,23 @@ export default function ChartOfAccounts() {
                                                   </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                  <DropdownMenuItem onClick={() => handleEditClick(child)}>
+                                                  <DropdownMenuItem
+                                                    onClick={() => handleEditClick(child)}
+                                                  >
                                                     <Edit className="mr-2 h-4 w-4" />
                                                     Edit
                                                   </DropdownMenuItem>
                                                   {child.active ? (
-                                                    <DropdownMenuItem onClick={() => handleDeactivateClick(child)}>
+                                                    <DropdownMenuItem
+                                                      onClick={() => handleDeactivateClick(child)}
+                                                    >
                                                       <Ban className="mr-2 h-4 w-4" />
                                                       Deactivate
                                                     </DropdownMenuItem>
                                                   ) : (
-                                                    <DropdownMenuItem onClick={() => handleActivateClick(child)}>
+                                                    <DropdownMenuItem
+                                                      onClick={() => handleActivateClick(child)}
+                                                    >
                                                       <Ban className="mr-2 h-4 w-4 rotate-180" />
                                                       Activate
                                                     </DropdownMenuItem>
@@ -888,12 +918,7 @@ export default function ChartOfAccounts() {
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-              >
+              <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1}>
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
@@ -960,4 +985,3 @@ export default function ChartOfAccounts() {
     </div>
   )
 }
-

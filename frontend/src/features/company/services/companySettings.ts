@@ -18,10 +18,6 @@ export async function getAdvancedCompanySettings(): Promise<CompanySettingsDto> 
 export async function updateAdvancedCompanySettings(
   request: UpdateCompanySettingsRequest,
 ): Promise<CompanySettingsDto> {
-  const res = await axiosInstance.put<{ data: CompanySettingsDto }>(
-    '/company-settings',
-    request,
-  )
+  const res = await axiosInstance.put<{ data: CompanySettingsDto }>('/company-settings', request)
   return res.data.data
 }
-

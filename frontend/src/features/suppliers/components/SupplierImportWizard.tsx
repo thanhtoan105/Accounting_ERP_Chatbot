@@ -42,7 +42,10 @@ export default function SupplierImportWizard({
         'application/vnd.ms-excel', // .xls
         'text/csv', // .csv
       ]
-      if (!validTypes.includes(selectedFile.type) && !selectedFile.name.match(/\.(xlsx|xls|csv)$/i)) {
+      if (
+        !validTypes.includes(selectedFile.type) &&
+        !selectedFile.name.match(/\.(xlsx|xls|csv)$/i)
+      ) {
         toast.error('Invalid file type', {
           description: 'Please select an Excel (.xlsx, .xls) or CSV file.',
         })
@@ -128,8 +131,8 @@ Another Company,9876543210,info@another.com,0987654321,456 Second Street,true`
         <DialogHeader>
           <DialogTitle>Import Suppliers</DialogTitle>
           <DialogDescription>
-            Upload an Excel (.xlsx, .xls) or CSV file to import suppliers. Download the template
-            for the correct format.
+            Upload an Excel (.xlsx, .xls) or CSV file to import suppliers. Download the template for
+            the correct format.
           </DialogDescription>
         </DialogHeader>
 
@@ -229,9 +232,7 @@ Another Company,9876543210,info@another.com,0987654321,456 Second Street,true`
                         {importResult.successCount} suppliers imported successfully
                       </p>
                       {importResult.errorCount > 0 && (
-                        <p className="text-sm">
-                          {importResult.errorCount} rows had errors
-                        </p>
+                        <p className="text-sm">{importResult.errorCount} rows had errors</p>
                       )}
                     </div>
                   </div>
@@ -281,4 +282,3 @@ Another Company,9876543210,info@another.com,0987654321,456 Second Street,true`
     </Dialog>
   )
 }
-

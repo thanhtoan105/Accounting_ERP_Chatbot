@@ -19,35 +19,17 @@ describe('SupplierFormSheet', () => {
 
   describe('Create Mode', () => {
     it('renders dialog when open', () => {
-      render(
-        <SupplierFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<SupplierFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
       expect(screen.getByRole('heading', { name: /create supplier/i })).toBeInTheDocument()
     })
 
     it('does not render when closed', () => {
-      render(
-        <SupplierFormSheet
-          open={false}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<SupplierFormSheet open={false} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
       expect(screen.queryByText('Create Supplier')).not.toBeInTheDocument()
     })
 
     it('validates required name field', async () => {
-      render(
-        <SupplierFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<SupplierFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const submitButton = screen.getByRole('button', { name: /create supplier/i })
       fireEvent.click(submitButton)
@@ -59,13 +41,7 @@ describe('SupplierFormSheet', () => {
     })
 
     it('validates tax code format', async () => {
-      render(
-        <SupplierFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<SupplierFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^supplier name/i)
       const taxCodeInput = screen.getByLabelText(/tax code/i)
@@ -82,13 +58,7 @@ describe('SupplierFormSheet', () => {
     })
 
     it('validates email format', async () => {
-      render(
-        <SupplierFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<SupplierFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^supplier name/i)
       const emailInput = screen.getByLabelText(/email/i)
@@ -105,13 +75,7 @@ describe('SupplierFormSheet', () => {
     })
 
     it('validates phone format', async () => {
-      render(
-        <SupplierFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<SupplierFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^supplier name/i)
       const phoneInput = screen.getByLabelText(/phone/i)
@@ -143,13 +107,7 @@ describe('SupplierFormSheet', () => {
       }
       mockCreateSupplier.mockResolvedValue(mockSupplier)
 
-      render(
-        <SupplierFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<SupplierFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^supplier name/i)
       const taxCodeInput = screen.getByLabelText(/tax code/i)
@@ -194,13 +152,7 @@ describe('SupplierFormSheet', () => {
       }
       mockCreateSupplier.mockResolvedValue(mockSupplier)
 
-      render(
-        <SupplierFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<SupplierFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^supplier name/i)
       const submitButton = screen.getByRole('button', { name: /create supplier/i })
@@ -227,13 +179,7 @@ describe('SupplierFormSheet', () => {
         },
       })
 
-      render(
-        <SupplierFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<SupplierFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const nameInput = screen.getByLabelText(/^supplier name/i)
       const taxCodeInput = screen.getByLabelText(/tax code/i)
@@ -250,13 +196,7 @@ describe('SupplierFormSheet', () => {
     })
 
     it('closes dialog on cancel', () => {
-      render(
-        <SupplierFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<SupplierFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const cancelButton = screen.getByRole('button', { name: /cancel/i })
       fireEvent.click(cancelButton)
@@ -388,4 +328,3 @@ describe('SupplierFormSheet', () => {
     })
   })
 })
-

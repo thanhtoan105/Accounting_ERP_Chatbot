@@ -77,14 +77,21 @@ export function AccountPicker({
                 <Button
                   type="button"
                   variant="outline"
-                  className={cn('w-full justify-between', isLocked && 'cursor-not-allowed opacity-80')}
+                  className={cn(
+                    'w-full justify-between',
+                    isLocked && 'cursor-not-allowed opacity-80',
+                  )}
                   disabled={disabled || isLocked}
                   role="combobox"
                   aria-expanded={open}
                   aria-label="Chọn tài khoản kế toán"
                 >
                   <span className="truncate">{selectedLabel}</span>
-                  {isLocked ? <LockIcon className="size-4 opacity-60" /> : <span className="text-xs">⌄</span>}
+                  {isLocked ? (
+                    <LockIcon className="size-4 opacity-60" />
+                  ) : (
+                    <span className="text-xs">⌄</span>
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent
@@ -118,9 +125,15 @@ export function AccountPicker({
                                 {account.code} • {account.name}
                               </span>
                               <div className="flex gap-2">
-                                {account.group ? <Badge variant="outline">{account.group}</Badge> : null}
-                                <Badge variant="secondary">{BALANCE_LABEL[account.balanceSide]}</Badge>
-                                {!account.isLeaf ? <Badge variant="destructive">Không hạch toán</Badge> : null}
+                                {account.group ? (
+                                  <Badge variant="outline">{account.group}</Badge>
+                                ) : null}
+                                <Badge variant="secondary">
+                                  {BALANCE_LABEL[account.balanceSide]}
+                                </Badge>
+                                {!account.isLeaf ? (
+                                  <Badge variant="destructive">Không hạch toán</Badge>
+                                ) : null}
                               </div>
                             </div>
                             <CheckIcon
@@ -169,4 +182,3 @@ export function AccountPicker({
 }
 
 export default AccountPicker
-

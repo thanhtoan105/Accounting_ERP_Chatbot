@@ -4,8 +4,20 @@ import * as React from 'react'
 import { useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
@@ -212,11 +224,15 @@ export function VoucherLineGrid({
                     </TableCell>
                     <TableCell>
                       {renderDimensionCell ? (
-                        renderDimensionCell('customer', line, index, (patch) => updateLine(index, patch))
+                        renderDimensionCell('customer', line, index, (patch) =>
+                          updateLine(index, patch),
+                        )
                       ) : (
                         <Input
                           value={line.customerId ?? ''}
-                          onChange={(event) => updateLine(index, { customerId: event.target.value })}
+                          onChange={(event) =>
+                            updateLine(index, { customerId: event.target.value })
+                          }
                           disabled={readOnly || loading}
                           placeholder="Khách hàng"
                         />
@@ -224,7 +240,9 @@ export function VoucherLineGrid({
                     </TableCell>
                     <TableCell>
                       {renderDimensionCell ? (
-                        renderDimensionCell('vendor', line, index, (patch) => updateLine(index, patch))
+                        renderDimensionCell('vendor', line, index, (patch) =>
+                          updateLine(index, patch),
+                        )
                       ) : (
                         <Input
                           value={line.vendorId ?? ''}
@@ -236,11 +254,15 @@ export function VoucherLineGrid({
                     </TableCell>
                     <TableCell>
                       {renderDimensionCell ? (
-                        renderDimensionCell('costCenter', line, index, (patch) => updateLine(index, patch))
+                        renderDimensionCell('costCenter', line, index, (patch) =>
+                          updateLine(index, patch),
+                        )
                       ) : (
                         <Input
                           value={line.costCenterId ?? ''}
-                          onChange={(event) => updateLine(index, { costCenterId: event.target.value })}
+                          onChange={(event) =>
+                            updateLine(index, { costCenterId: event.target.value })
+                          }
                           disabled={readOnly || loading}
                           placeholder="Trung tâm chi phí"
                         />
@@ -248,7 +270,9 @@ export function VoucherLineGrid({
                     </TableCell>
                     <TableCell>
                       {renderDimensionCell ? (
-                        renderDimensionCell('item', line, index, (patch) => updateLine(index, patch))
+                        renderDimensionCell('item', line, index, (patch) =>
+                          updateLine(index, patch),
+                        )
                       ) : (
                         <Input
                           value={line.itemId ?? ''}
@@ -272,7 +296,9 @@ export function VoucherLineGrid({
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          {line.attachmentCount ? `${line.attachmentCount} tập tin` : 'Thêm đính kèm'}
+                          {line.attachmentCount
+                            ? `${line.attachmentCount} tập tin`
+                            : 'Thêm đính kèm'}
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
@@ -291,10 +317,15 @@ export function VoucherLineGrid({
                             <DropdownMenuItem onClick={() => insertLine(index)}>
                               Chèn dòng bên trên
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateLine(index, createEmptyLine(index))}>
+                            <DropdownMenuItem
+                              onClick={() => updateLine(index, createEmptyLine(index))}
+                            >
                               Xóa nội dung
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => removeLine(index)}>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => removeLine(index)}
+                            >
                               <TrashIcon className="mr-2 size-4" />
                               Xóa dòng
                             </DropdownMenuItem>
@@ -330,4 +361,3 @@ export function VoucherLineGrid({
 }
 
 export default VoucherLineGrid
-

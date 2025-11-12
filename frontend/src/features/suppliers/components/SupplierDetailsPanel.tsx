@@ -1,7 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2, Building2, Mail, Phone, MapPin, ToggleLeft, Receipt, Calendar } from 'lucide-react'
+import {
+  Loader2,
+  Building2,
+  Mail,
+  Phone,
+  MapPin,
+  ToggleLeft,
+  Receipt,
+  Calendar,
+} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -13,15 +22,8 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
-import {
-  Field,
-  FieldContent,
-  FieldLabel,
-} from '@/components/ui/field'
-import {
-  getSupplierById,
-  getSupplierAPSummary,
-} from '@/features/suppliers/services/supplier'
+import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
+import { getSupplierById, getSupplierAPSummary } from '@/features/suppliers/services/supplier'
 import type { Supplier, SupplierAPSummary } from '@/types/supplier'
 import { getStatusLabel } from '@/types/supplier'
 import { toast } from 'sonner'
@@ -231,7 +233,9 @@ export default function SupplierDetailsPanel({
                   )}
 
                   {!supplierData.email && !supplierData.phone && !supplierData.address && (
-                    <p className="text-sm text-muted-foreground italic">No contact information available</p>
+                    <p className="text-sm text-muted-foreground italic">
+                      No contact information available
+                    </p>
                   )}
                 </div>
               </div>
@@ -265,7 +269,9 @@ export default function SupplierDetailsPanel({
                       <FieldLabel className="text-sm font-medium">Total Owed</FieldLabel>
                       <FieldContent>
                         <div className="px-3 py-2 rounded-md border bg-muted/30">
-                          <span className="text-sm font-medium">{formatCurrency(apSummary.totalOwed)}</span>
+                          <span className="text-sm font-medium">
+                            {formatCurrency(apSummary.totalOwed)}
+                          </span>
                         </div>
                       </FieldContent>
                     </Field>
@@ -274,7 +280,9 @@ export default function SupplierDetailsPanel({
                       <FieldLabel className="text-sm font-medium">Average Payment Days</FieldLabel>
                       <FieldContent>
                         <div className="px-3 py-2 rounded-md border bg-muted/30">
-                          <span className="text-sm font-medium">{apSummary.averagePaymentDays} days</span>
+                          <span className="text-sm font-medium">
+                            {apSummary.averagePaymentDays} days
+                          </span>
                         </div>
                       </FieldContent>
                     </Field>
@@ -302,7 +310,9 @@ export default function SupplierDetailsPanel({
                     <FieldLabel className="text-sm font-medium">Created At</FieldLabel>
                     <FieldContent>
                       <div className="px-3 py-2 rounded-md border bg-muted/30">
-                        <span className="text-sm font-medium">{formatDate(supplierData.createdAt)}</span>
+                        <span className="text-sm font-medium">
+                          {formatDate(supplierData.createdAt)}
+                        </span>
                       </div>
                     </FieldContent>
                   </Field>
@@ -311,7 +321,9 @@ export default function SupplierDetailsPanel({
                     <FieldLabel className="text-sm font-medium">Updated At</FieldLabel>
                     <FieldContent>
                       <div className="px-3 py-2 rounded-md border bg-muted/30">
-                        <span className="text-sm font-medium">{formatDate(supplierData.updatedAt)}</span>
+                        <span className="text-sm font-medium">
+                          {formatDate(supplierData.updatedAt)}
+                        </span>
                       </div>
                     </FieldContent>
                   </Field>
@@ -324,4 +336,3 @@ export default function SupplierDetailsPanel({
     </Dialog>
   )
 }
-

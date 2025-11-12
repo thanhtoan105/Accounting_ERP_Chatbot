@@ -235,10 +235,7 @@ export default function BankAccounts() {
   }
 
   // Separate active and inactive bank accounts for display
-  const activeBankAccounts = useMemo(
-    () => bankAccounts.filter((ba) => ba.active),
-    [bankAccounts],
-  )
+  const activeBankAccounts = useMemo(() => bankAccounts.filter((ba) => ba.active), [bankAccounts])
   const inactiveBankAccounts = useMemo(
     () => bankAccounts.filter((ba) => !ba.active),
     [bankAccounts],
@@ -254,7 +251,9 @@ export default function BankAccounts() {
       {
         header: 'Account Number',
         accessorKey: 'accountNumber',
-        cell: ({ row }) => <div className="font-medium">{row.getValue<string>('accountNumber')}</div>,
+        cell: ({ row }) => (
+          <div className="font-medium">{row.getValue<string>('accountNumber')}</div>
+        ),
       },
       {
         header: 'Bank Name',
@@ -394,7 +393,9 @@ export default function BankAccounts() {
         <Select value={typeFilter} onValueChange={(value: any) => setTypeFilter(value)}>
           <SelectTrigger
             className="w-32"
-            aria-label={typeFilter === 'all' ? 'All Types' : typeFilter === 'CASH' ? 'Cash' : 'Bank'}
+            aria-label={
+              typeFilter === 'all' ? 'All Types' : typeFilter === 'CASH' ? 'Cash' : 'Bank'
+            }
           >
             <SelectValue />
           </SelectTrigger>
@@ -407,7 +408,13 @@ export default function BankAccounts() {
         <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
           <SelectTrigger
             className="w-32"
-            aria-label={statusFilter === 'all' ? 'All Status' : statusFilter === 'active' ? 'Active' : 'Inactive'}
+            aria-label={
+              statusFilter === 'all'
+                ? 'All Status'
+                : statusFilter === 'active'
+                  ? 'Active'
+                  : 'Inactive'
+            }
           >
             <SelectValue />
           </SelectTrigger>
@@ -489,10 +496,7 @@ export default function BankAccounts() {
                   table.getRowModel().rows.map((row) => {
                     const bankAccount = row.original
                     return (
-                      <TableRow
-                        key={row.id}
-                        className={!bankAccount.active ? 'opacity-60' : ''}
-                      >
+                      <TableRow key={row.id} className={!bankAccount.active ? 'opacity-60' : ''}>
                         {row.getVisibleCells().map((cell) => (
                           <TableCell key={cell.id}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -539,12 +543,7 @@ export default function BankAccounts() {
               <span className="text-sm text-muted-foreground">per page</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-              >
+              <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1}>
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
@@ -595,4 +594,3 @@ export default function BankAccounts() {
     </div>
   )
 }
-

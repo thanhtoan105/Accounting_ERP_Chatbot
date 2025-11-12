@@ -336,7 +336,9 @@ describe('Customers', () => {
 
   it('exports customers', async () => {
     const user = userEvent.setup()
-    const mockBlob = new Blob(['mock export data'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const mockBlob = new Blob(['mock export data'], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
     mockExportCustomers.mockResolvedValue(mockBlob)
 
     render(
@@ -357,4 +359,3 @@ describe('Customers', () => {
     })
   })
 })
-

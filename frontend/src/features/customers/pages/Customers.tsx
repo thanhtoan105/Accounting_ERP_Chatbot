@@ -189,8 +189,7 @@ export default function Customers() {
       toast.success('Customer deactivated successfully')
       await loadCustomers()
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to deactivate customer'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to deactivate customer'
       toast.error('Failed to deactivate customer', { description: errorMessage })
     }
   }
@@ -263,14 +262,8 @@ export default function Customers() {
   }
 
   // Separate active and inactive customers for display
-  const activeCustomers = useMemo(
-    () => customers.filter((c) => c.active),
-    [customers],
-  )
-  const inactiveCustomers = useMemo(
-    () => customers.filter((c) => !c.active),
-    [customers],
-  )
+  const activeCustomers = useMemo(() => customers.filter((c) => c.active), [customers])
+  const inactiveCustomers = useMemo(() => customers.filter((c) => !c.active), [customers])
 
   // Sort inactive customers to bottom
   const sortedCustomers = useMemo(() => {
@@ -329,7 +322,10 @@ export default function Customers() {
           const active = row.original.active
           const label = getStatusLabel(active)
           return active ? (
-            <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5" aria-label={label}>
+            <Badge
+              className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5"
+              aria-label={label}
+            >
               <span
                 className="size-1.5 rounded-full bg-green-600 dark:bg-green-400"
                 aria-hidden="true"
@@ -337,7 +333,10 @@ export default function Customers() {
               Enabled
             </Badge>
           ) : (
-            <Badge className="bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive rounded-full border-none focus-visible:outline-none" aria-label={label}>
+            <Badge
+              className="bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive rounded-full border-none focus-visible:outline-none"
+              aria-label={label}
+            >
               <span className="bg-destructive size-1.5 rounded-full" aria-hidden="true" />
               Inactive
             </Badge>
@@ -654,4 +653,3 @@ export default function Customers() {
     </div>
   )
 }
-

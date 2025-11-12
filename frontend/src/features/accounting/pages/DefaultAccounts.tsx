@@ -91,8 +91,7 @@ export default function DefaultAccounts() {
       setDefaultAccounts(response.data)
       setTotalElements(typeof response.total === 'number' ? response.total : response.data.length)
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to load default accounts'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to load default accounts'
       setError(errorMessage)
       toast.error('Failed to load default accounts', { description: errorMessage })
     } finally {
@@ -122,8 +121,7 @@ export default function DefaultAccounts() {
       setSelectedDefaultAccount(null)
       await loadDefaultAccounts()
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to delete default account'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to delete default account'
       toast.error('Failed to delete default account', { description: errorMessage })
     }
   }
@@ -151,9 +149,7 @@ export default function DefaultAccounts() {
     const debit = account.accountDefaults.find((ad) =>
       ad.columnName.toLowerCase().includes('debit'),
     )
-    return debit
-      ? `${debit.accountCode || ''} - ${debit.accountName || ''}`.trim()
-      : '-'
+    return debit ? `${debit.accountCode || ''} - ${debit.accountName || ''}`.trim() : '-'
   }
 
   // Helper to get credit account from accountDefaults
@@ -161,9 +157,7 @@ export default function DefaultAccounts() {
     const credit = account.accountDefaults.find((ad) =>
       ad.columnName.toLowerCase().includes('credit'),
     )
-    return credit
-      ? `${credit.accountCode || ''} - ${credit.accountName || ''}`.trim()
-      : '-'
+    return credit ? `${credit.accountCode || ''} - ${credit.accountName || ''}`.trim() : '-'
   }
 
   const columns = useMemo<ColumnDef<DefaultAccount>[]>(
@@ -171,9 +165,7 @@ export default function DefaultAccounts() {
       {
         header: 'Type',
         accessorKey: 'voucherType',
-        cell: ({ row }) => (
-          <div className="font-medium">{row.getValue<string>('voucherType')}</div>
-        ),
+        cell: ({ row }) => <div className="font-medium">{row.getValue<string>('voucherType')}</div>,
       },
       {
         header: 'Debit Account',
@@ -367,12 +359,7 @@ export default function DefaultAccounts() {
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-              >
+              <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1}>
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
@@ -468,4 +455,3 @@ export default function DefaultAccounts() {
     </div>
   )
 }
-

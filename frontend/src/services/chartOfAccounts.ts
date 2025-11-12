@@ -21,7 +21,7 @@ async function handleJsonResponse<T>(response: Response): Promise<T> {
  * Get Chart of Accounts with optional filters
  */
 export async function getChartOfAccounts(
-  params?: ChartOfAccountQueryParams
+  params?: ChartOfAccountQueryParams,
 ): Promise<ChartOfAccountsResponse> {
   const queryParams = new URLSearchParams()
   if (params?.postable !== undefined) {
@@ -82,7 +82,7 @@ export async function getPostableAccounts(): Promise<ChartOfAccount[]> {
  * Create a new account
  */
 export async function createChartOfAccount(
-  request: ChartOfAccountCreateRequest
+  request: ChartOfAccountCreateRequest,
 ): Promise<ChartOfAccount> {
   const res = await fetchWithAuth(`${API_BASE}/chart-of-accounts`, {
     method: 'POST',
@@ -100,7 +100,7 @@ export async function createChartOfAccount(
  */
 export async function updateChartOfAccount(
   id: number,
-  request: ChartOfAccountUpdateRequest
+  request: ChartOfAccountUpdateRequest,
 ): Promise<ChartOfAccount> {
   const res = await fetchWithAuth(`${API_BASE}/chart-of-accounts/${id}`, {
     method: 'PUT',

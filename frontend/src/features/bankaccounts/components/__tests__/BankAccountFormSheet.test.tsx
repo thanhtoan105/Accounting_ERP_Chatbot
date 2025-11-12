@@ -19,35 +19,17 @@ describe('BankAccountFormSheet', () => {
 
   describe('Create Mode', () => {
     it('renders dialog when open', () => {
-      render(
-        <BankAccountFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<BankAccountFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
       expect(screen.getByRole('heading', { name: /add bank account/i })).toBeInTheDocument()
     })
 
     it('does not render when closed', () => {
-      render(
-        <BankAccountFormSheet
-          open={false}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<BankAccountFormSheet open={false} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
       expect(screen.queryByText('Add Bank Account')).not.toBeInTheDocument()
     })
 
     it('validates required account number field', async () => {
-      render(
-        <BankAccountFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<BankAccountFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const submitButton = screen.getByRole('button', { name: /create/i })
       fireEvent.click(submitButton)
@@ -59,13 +41,7 @@ describe('BankAccountFormSheet', () => {
     })
 
     it('validates required bank name field', async () => {
-      render(
-        <BankAccountFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<BankAccountFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const accountNumberInput = screen.getByLabelText(/^account number/i)
       fireEvent.change(accountNumberInput, { target: { value: 'ACC-001' } })
@@ -80,13 +56,7 @@ describe('BankAccountFormSheet', () => {
     })
 
     it('validates required account type field', async () => {
-      render(
-        <BankAccountFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<BankAccountFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const accountNumberInput = screen.getByLabelText(/^account number/i)
       const bankNameInput = screen.getByLabelText(/^bank name/i)
@@ -106,13 +76,7 @@ describe('BankAccountFormSheet', () => {
     })
 
     it('validates opening balance is non-negative', async () => {
-      render(
-        <BankAccountFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<BankAccountFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const accountNumberInput = screen.getByLabelText(/^account number/i)
       const bankNameInput = screen.getByLabelText(/^bank name/i)
@@ -147,13 +111,7 @@ describe('BankAccountFormSheet', () => {
       }
       mockCreateBankAccount.mockResolvedValue(mockBankAccount)
 
-      render(
-        <BankAccountFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<BankAccountFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const accountNumberInput = screen.getByLabelText(/^account number/i)
       const bankNameInput = screen.getByLabelText(/^bank name/i)
@@ -195,13 +153,7 @@ describe('BankAccountFormSheet', () => {
       }
       mockCreateBankAccount.mockRejectedValue(error)
 
-      render(
-        <BankAccountFormSheet
-          open={true}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-        />,
-      )
+      render(<BankAccountFormSheet open={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const accountNumberInput = screen.getByLabelText(/^account number/i)
       const bankNameInput = screen.getByLabelText(/^bank name/i)
@@ -336,4 +288,3 @@ describe('BankAccountFormSheet', () => {
     })
   })
 })
-

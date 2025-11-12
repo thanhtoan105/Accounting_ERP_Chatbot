@@ -200,4 +200,3 @@ export async function importSuppliers(file: File): Promise<ImportResult> {
   })
   return await handleJsonResponse<ImportResult>(res)
 }
-

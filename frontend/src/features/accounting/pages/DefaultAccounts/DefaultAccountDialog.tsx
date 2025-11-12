@@ -139,10 +139,11 @@ export default function DefaultAccountDialog({
         reset({
           voucherType: initialData.voucherType || 'Cash Payment',
           entryName: initialData.entryName || '',
-          accountDefaults: initialData.accountDefaults?.map((ad) => ({
-            columnName: ad.columnName,
-            defaultAccountId: ad.defaultAccountId ?? 0,
-          })) || [],
+          accountDefaults:
+            initialData.accountDefaults?.map((ad) => ({
+              columnName: ad.columnName,
+              defaultAccountId: ad.defaultAccountId ?? 0,
+            })) || [],
         })
         setAccountDefaults(initialData.accountDefaults || createInitialAccountDefaults())
       } else {
@@ -172,8 +173,7 @@ export default function DefaultAccountDialog({
       setAccountDefaults(defaultAccount.accountDefaults)
       setFormError(null)
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to load default account'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to load default account'
       setFormError(errorMessage)
       toast.error('Failed to load default account', { description: errorMessage })
     }
@@ -245,8 +245,7 @@ export default function DefaultAccountDialog({
       }
       onSuccess()
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to save default account'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to save default account'
       setFormError(errorMessage)
       toast.error('Failed to save default account', { description: errorMessage })
     }
@@ -323,9 +322,7 @@ export default function DefaultAccountDialog({
                     disabled={isSubmitting}
                     autoFocus
                   />
-                  {errors.entryName?.message && (
-                    <FieldError>{errors.entryName.message}</FieldError>
-                  )}
+                  {errors.entryName?.message && <FieldError>{errors.entryName.message}</FieldError>}
                 </FieldContent>
               </Field>
             </div>
@@ -368,4 +365,3 @@ export default function DefaultAccountDialog({
     </Dialog>
   )
 }
-

@@ -26,12 +26,10 @@ export default function AccountFilterButton({
     try {
       setLoading(true)
       const response = await getChartOfAccounts({ active: true, search: searchTerm || undefined })
-      const accountList = Array.isArray(response.data)
-        ? (response.data as ChartOfAccount[])
-        : []
+      const accountList = Array.isArray(response.data) ? (response.data as ChartOfAccount[]) : []
       // No filter - show all active accounts
       setAccounts(accountList)
-      
+
       // Convert to options
       return accountList.map((account) => ({
         value: account.id.toString(),
@@ -52,10 +50,8 @@ export default function AccountFilterButton({
   // Load selected account details if not in loaded list
   useEffect(() => {
     if (value && value.length > 0) {
-      const missingIds = value.filter(
-        (id) => !accounts.find((acc) => acc.id === id)
-      )
-      
+      const missingIds = value.filter((id) => !accounts.find((acc) => acc.id === id))
+
       if (missingIds.length > 0) {
         // Load missing account details
         getChartOfAccounts({ active: true })
@@ -83,7 +79,7 @@ export default function AccountFilterButton({
   // Convert selected value to Option format
   const selectedOptions = useMemo<Option[]>(() => {
     if (!value || value.length === 0) return []
-    
+
     // Try to find in loaded accounts first
     const foundInAccounts = accounts
       .filter((acc) => value.includes(acc.id))
@@ -91,7 +87,7 @@ export default function AccountFilterButton({
         value: acc.id.toString(),
         label: `${acc.code} - ${acc.name}`,
       }))
-    
+
     // Add any missing from selectedAccountDetails
     const foundInDetails = selectedAccountDetails
       .filter((acc) => value.includes(acc.id) && !accounts.find((a) => a.id === acc.id))
@@ -99,7 +95,7 @@ export default function AccountFilterButton({
         value: acc.id.toString(),
         label: `${acc.code} - ${acc.name}`,
       }))
-    
+
     return [...foundInAccounts, ...foundInDetails]
   }, [value, accounts, selectedAccountDetails])
 

@@ -23,7 +23,9 @@ async function handleJsonResponse<T>(response: Response): Promise<T> {
 /**
  * Get bank accounts with optional filters
  */
-export async function getBankAccounts(params?: BankAccountQueryParams): Promise<BankAccountsResponse> {
+export async function getBankAccounts(
+  params?: BankAccountQueryParams,
+): Promise<BankAccountsResponse> {
   const queryParams = new URLSearchParams()
   if (params?.page) {
     queryParams.append('page', String(params.page - 1)) // Backend uses 0-based pages
@@ -188,4 +190,3 @@ export async function exportBankAccounts(
   }
   return res.blob()
 }
-

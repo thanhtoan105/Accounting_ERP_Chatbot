@@ -11,11 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import AccountFilterButton from '@/components/account/AccountFilterButton'
 import AccountComboboxFiltered from '@/components/account/AccountComboboxFiltered'
 import { getChartOfAccounts } from '@/services/chartOfAccounts'
@@ -123,7 +119,9 @@ export default function AccountDefaultsTable({
                   <TableCell>
                     <AccountFilterButton
                       value={row.accountFilterIds || null}
-                      onValueChange={(accountFilterIds) => handleAccountFilterChange(index, accountFilterIds)}
+                      onValueChange={(accountFilterIds) =>
+                        handleAccountFilterChange(index, accountFilterIds)
+                      }
                       disabled={disabled}
                       placeholder="Select account filters..."
                     />
@@ -182,4 +180,3 @@ export default function AccountDefaultsTable({
     </div>
   )
 }
-

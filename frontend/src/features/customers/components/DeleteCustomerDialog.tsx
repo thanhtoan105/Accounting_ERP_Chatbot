@@ -59,7 +59,10 @@ export default function DeleteCustomerDialog({
         )}
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => setError(null)}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogAction
+            onClick={handleConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -67,4 +70,3 @@ export default function DeleteCustomerDialog({
     </AlertDialog>
   )
 }
-

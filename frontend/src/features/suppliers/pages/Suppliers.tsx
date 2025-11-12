@@ -192,8 +192,7 @@ export default function Suppliers() {
       toast.success('Supplier deactivated successfully')
       await loadSuppliers()
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to deactivate supplier'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to deactivate supplier'
       toast.error('Failed to deactivate supplier', { description: errorMessage })
     }
   }
@@ -266,14 +265,8 @@ export default function Suppliers() {
   }
 
   // Separate active and inactive suppliers for display
-  const activeSuppliers = useMemo(
-    () => suppliers.filter((s) => s.active),
-    [suppliers],
-  )
-  const inactiveSuppliers = useMemo(
-    () => suppliers.filter((s) => !s.active),
-    [suppliers],
-  )
+  const activeSuppliers = useMemo(() => suppliers.filter((s) => s.active), [suppliers])
+  const inactiveSuppliers = useMemo(() => suppliers.filter((s) => !s.active), [suppliers])
 
   // Sort inactive suppliers to bottom
   const sortedSuppliers = useMemo(() => {
@@ -332,12 +325,21 @@ export default function Suppliers() {
           const active = row.original.active
           const label = getStatusLabel(active)
           return active ? (
-            <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5" aria-label={label}>
-              <span className="size-1.5 rounded-full bg-green-600 dark:bg-green-400" aria-hidden="true" />
+            <Badge
+              className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5"
+              aria-label={label}
+            >
+              <span
+                className="size-1.5 rounded-full bg-green-600 dark:bg-green-400"
+                aria-hidden="true"
+              />
               Enabled
             </Badge>
           ) : (
-            <Badge className="bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive rounded-full border-none focus-visible:outline-none" aria-label={label}>
+            <Badge
+              className="bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive rounded-full border-none focus-visible:outline-none"
+              aria-label={label}
+            >
               <span className="bg-destructive size-1.5 rounded-full" aria-hidden="true" />
               Inactive
             </Badge>
@@ -377,7 +379,10 @@ export default function Suppliers() {
                       Activate
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem variant="destructive" onClick={() => handleDeleteClick(supplier)}>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => handleDeleteClick(supplier)}
+                  >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                   </DropdownMenuItem>
@@ -489,7 +494,9 @@ export default function Suppliers() {
         <div className="text-center py-8 text-muted-foreground">
           <p className="text-lg font-medium">No suppliers found</p>
           <p className="text-sm">
-            {debouncedSearch ? 'Try adjusting your search criteria.' : 'Get started by creating your first supplier.'}
+            {debouncedSearch
+              ? 'Try adjusting your search criteria.'
+              : 'Get started by creating your first supplier.'}
           </p>
         </div>
       ) : (
@@ -649,4 +656,3 @@ export default function Suppliers() {
     </div>
   )
 }
-

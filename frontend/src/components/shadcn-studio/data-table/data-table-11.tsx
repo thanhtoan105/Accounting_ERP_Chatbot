@@ -10,15 +10,33 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable
+  useReactTable,
 } from '@tanstack/react-table'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+} from '@/components/ui/pagination'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 import { usePagination } from '@/hooks/use-pagination'
 
@@ -35,30 +53,32 @@ const columns: ColumnDef<Item>[] = [
     id: 'select',
     header: ({ table }) => (
       <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-        onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-        aria-label='Select all'
+        checked={
+          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
       />
     ),
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
-        onCheckedChange={value => row.toggleSelected(!!value)}
-        aria-label='Select row'
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
       />
     ),
     size: 28,
-    enableSorting: false
+    enableSorting: false,
   },
   {
     header: 'Product Name',
     accessorKey: 'product_name',
-    cell: ({ row }) => <div className='font-medium'>{row.getValue('product_name')}</div>
+    cell: ({ row }) => <div className="font-medium">{row.getValue('product_name')}</div>,
   },
   {
     header: 'Price',
     accessorKey: 'price',
-    cell: ({ row }) => <div className='font-medium'>{row.getValue('price')}</div>
+    cell: ({ row }) => <div className="font-medium">{row.getValue('price')}</div>,
   },
   {
     header: 'Availability',
@@ -72,7 +92,7 @@ const columns: ColumnDef<Item>[] = [
         'Out of Stock':
           'bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive',
         Limited:
-          'bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-400 dark:focus-visible:ring-amber-400/40 [a&]:hover:bg-amber-600/5 dark:[a&]:hover:bg-amber-400/5'
+          'bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-400 dark:focus-visible:ring-amber-400/40 [a&]:hover:bg-amber-600/5 dark:[a&]:hover:bg-amber-400/5',
       }[availability]
 
       return (
@@ -80,8 +100,8 @@ const columns: ColumnDef<Item>[] = [
           {row.getValue('availability')}
         </Badge>
       )
-    }
-  }
+    },
+  },
 ]
 
 const DataTableWithPaginationDemo = () => {
@@ -89,21 +109,23 @@ const DataTableWithPaginationDemo = () => {
 
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: pageSize
+    pageSize: pageSize,
   })
 
   const [sorting, setSorting] = useState<SortingState>([
     {
       id: 'product_name',
-      desc: false
-    }
+      desc: false,
+    },
   ])
 
   const [data, setData] = useState<Item[]>([])
 
   useEffect(() => {
     async function fetchPosts() {
-      const res = await fetch('https://cdn.jsdelivr.net/gh/themeselection/fy-assets/assets/json/mobile-stock.json')
+      const res = await fetch(
+        'https://cdn.jsdelivr.net/gh/themeselection/fy-assets/assets/json/mobile-stock.json',
+      )
 
       if (!res.ok) {
         throw new Error('Failed to fetch data')
@@ -130,35 +152,42 @@ const DataTableWithPaginationDemo = () => {
     onPaginationChange: setPagination,
     state: {
       sorting,
-      pagination
-    }
+      pagination,
+    },
   })
 
   const { pages, showLeftEllipsis, showRightEllipsis } = usePagination({
     currentPage: table.getState().pagination.pageIndex + 1,
     totalPages: table.getPageCount(),
-    paginationItemsToDisplay: 5
+    paginationItemsToDisplay: 5,
   })
 
   return (
-    <div className='w-full space-y-4'>
-      <div className='rounded-md border'>
+    <div className="w-full space-y-4">
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id} className='hover:bg-transparent'>
-                {headerGroup.headers.map(header => {
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} style={{ width: `${header.getSize()}px` }} className='h-11'>
+                    <TableHead
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }}
+                      className="h-11"
+                    >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              'flex h-full cursor-pointer items-center justify-between gap-2 select-none'
+                              'flex h-full cursor-pointer items-center justify-between gap-2 select-none',
                           )}
                           onClick={header.column.getToggleSortingHandler()}
-                          onKeyDown={e => {
-                            if (header.column.getCanSort() && (e.key === 'Enter' || e.key === ' ')) {
+                          onKeyDown={(e) => {
+                            if (
+                              header.column.getCanSort() &&
+                              (e.key === 'Enter' || e.key === ' ')
+                            ) {
                               e.preventDefault()
                               header.column.getToggleSortingHandler()?.(e)
                             }
@@ -167,8 +196,20 @@ const DataTableWithPaginationDemo = () => {
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {{
-                            asc: <ChevronUpIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />,
-                            desc: <ChevronDownIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />
+                            asc: (
+                              <ChevronUpIcon
+                                className="shrink-0 opacity-60"
+                                size={16}
+                                aria-hidden="true"
+                              />
+                            ),
+                            desc: (
+                              <ChevronDownIcon
+                                className="shrink-0 opacity-60"
+                                size={16}
+                                aria-hidden="true"
+                              />
+                            ),
                           }[header.column.getIsSorted() as string] ?? null}
                         </div>
                       ) : (
@@ -182,16 +223,18 @@ const DataTableWithPaginationDemo = () => {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map(row => (
+              table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className='h-24 text-center'>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -200,25 +243,25 @@ const DataTableWithPaginationDemo = () => {
         </Table>
       </div>
 
-      <div className='flex items-center justify-between gap-3 max-sm:flex-col'>
-        <p className='text-muted-foreground flex-1 text-sm whitespace-nowrap' aria-live='polite'>
-          Page <span className='text-foreground'>{table.getState().pagination.pageIndex + 1}</span> of{' '}
-          <span className='text-foreground'>{table.getPageCount()}</span>
+      <div className="flex items-center justify-between gap-3 max-sm:flex-col">
+        <p className="text-muted-foreground flex-1 text-sm whitespace-nowrap" aria-live="polite">
+          Page <span className="text-foreground">{table.getState().pagination.pageIndex + 1}</span>{' '}
+          of <span className="text-foreground">{table.getPageCount()}</span>
         </p>
 
-        <div className='grow'>
+        <div className="grow">
           <Pagination>
             <PaginationContent>
               <PaginationItem>
                 <Button
-                  size='icon'
-                  variant='outline'
-                  className='disabled:pointer-events-none disabled:opacity-50'
+                  size="icon"
+                  variant="outline"
+                  className="disabled:pointer-events-none disabled:opacity-50"
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
-                  aria-label='Go to previous page'
+                  aria-label="Go to previous page"
                 >
-                  <ChevronLeftIcon size={16} aria-hidden='true' />
+                  <ChevronLeftIcon size={16} aria-hidden="true" />
                 </Button>
               </PaginationItem>
 
@@ -228,13 +271,13 @@ const DataTableWithPaginationDemo = () => {
                 </PaginationItem>
               )}
 
-              {pages.map(page => {
+              {pages.map((page) => {
                 const isActive = page === table.getState().pagination.pageIndex + 1
 
                 return (
                   <PaginationItem key={page}>
                     <Button
-                      size='icon'
+                      size="icon"
                       variant={`${isActive ? 'outline' : 'ghost'}`}
                       onClick={() => table.setPageIndex(page - 1)}
                       aria-current={isActive ? 'page' : undefined}
@@ -253,32 +296,36 @@ const DataTableWithPaginationDemo = () => {
 
               <PaginationItem>
                 <Button
-                  size='icon'
-                  variant='outline'
-                  className='disabled:pointer-events-none disabled:opacity-50'
+                  size="icon"
+                  variant="outline"
+                  className="disabled:pointer-events-none disabled:opacity-50"
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
-                  aria-label='Go to next page'
+                  aria-label="Go to next page"
                 >
-                  <ChevronRightIcon size={16} aria-hidden='true' />
+                  <ChevronRightIcon size={16} aria-hidden="true" />
                 </Button>
               </PaginationItem>
             </PaginationContent>
           </Pagination>
         </div>
 
-        <div className='flex flex-1 justify-end'>
+        <div className="flex flex-1 justify-end">
           <Select
             value={table.getState().pagination.pageSize.toString()}
-            onValueChange={value => {
+            onValueChange={(value) => {
               table.setPageSize(Number(value))
             }}
           >
-            <SelectTrigger id='results-per-page' className='w-fit whitespace-nowrap' aria-label='Results per page'>
-              <SelectValue placeholder='Select number of results' />
+            <SelectTrigger
+              id="results-per-page"
+              className="w-fit whitespace-nowrap"
+              aria-label="Results per page"
+            >
+              <SelectValue placeholder="Select number of results" />
             </SelectTrigger>
             <SelectContent>
-              {[5, 10, 25, 50].map(pageSize => (
+              {[5, 10, 25, 50].map((pageSize) => (
                 <SelectItem key={pageSize} value={pageSize.toString()}>
                   {pageSize} / page
                 </SelectItem>
@@ -287,9 +334,13 @@ const DataTableWithPaginationDemo = () => {
           </Select>
         </div>
       </div>
-      <p className='text-muted-foreground mt-4 text-center text-sm'>
+      <p className="text-muted-foreground mt-4 text-center text-sm">
         Data table with pagination{' '}
-        <a href='https://originui.com/table' className='hover:text-primary underline' target='_blank'>
+        <a
+          href="https://originui.com/table"
+          className="hover:text-primary underline"
+          target="_blank"
+        >
           Origin UI
         </a>
       </p>

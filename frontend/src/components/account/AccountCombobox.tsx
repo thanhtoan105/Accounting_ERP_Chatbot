@@ -45,30 +45,26 @@ export default function AccountCombobox({
   // Ensure CommandList can scroll when popover opens
   useEffect(() => {
     if (!open) return
-    
+
     // Use setTimeout to ensure DOM is ready after popover renders
     const timer = setTimeout(() => {
-      const popoverContent = document.querySelector(
-        '[data-slot="popover-content"]'
-      ) as HTMLElement
-      const commandList = popoverContent?.querySelector(
-        '[data-slot="command-list"]'
-      ) as HTMLElement
-      
+      const popoverContent = document.querySelector('[data-slot="popover-content"]') as HTMLElement
+      const commandList = popoverContent?.querySelector('[data-slot="command-list"]') as HTMLElement
+
       if (commandList) {
         // Force scrollable styles
         commandList.style.setProperty('overflow-y', 'auto', 'important')
         commandList.style.setProperty('max-height', '300px', 'important')
         commandList.style.setProperty('overscroll-behavior', 'contain', 'important')
         commandList.style.setProperty('touch-action', 'pan-y', 'important')
-        
+
         // Add wheel event handler to ensure scrolling works
         const handleWheel = (e: WheelEvent) => {
           const element = commandList
           const { scrollTop, scrollHeight, clientHeight } = element
           const isAtTop = scrollTop <= 0
           const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1
-          
+
           // If we can scroll in the direction of the wheel, do it
           if ((e.deltaY > 0 && !isAtBottom) || (e.deltaY < 0 && !isAtTop)) {
             element.scrollTop += e.deltaY
@@ -76,19 +72,19 @@ export default function AccountCombobox({
             e.stopPropagation()
           }
         }
-        
+
         commandList.addEventListener('wheel', handleWheel, { passive: false })
-        
+
         // Store cleanup
         ;(commandList as any).__wheelHandler = handleWheel
       }
     }, 50)
-    
+
     return () => {
       clearTimeout(timer)
       // Cleanup
       const commandList = document.querySelector(
-        '[data-slot="popover-content"] [data-slot="command-list"]'
+        '[data-slot="popover-content"] [data-slot="command-list"]',
       ) as HTMLElement
       if (commandList && (commandList as any).__wheelHandler) {
         commandList.removeEventListener('wheel', (commandList as any).__wheelHandler)
@@ -104,9 +100,7 @@ export default function AccountCombobox({
       const response = await getChartOfAccounts({ active: true })
       // Filter out the account being edited to prevent circular references
       // Ensure we only use ChartOfAccount type (not ChartOfAccountHierarchy)
-      const accountList = Array.isArray(response.data) 
-        ? (response.data as ChartOfAccount[])
-        : []
+      const accountList = Array.isArray(response.data) ? (response.data as ChartOfAccount[]) : []
       const filtered = excludeAccountId
         ? accountList.filter((acc) => acc.id !== excludeAccountId)
         : accountList
@@ -152,8 +146,8 @@ export default function AccountCombobox({
           <ChevronsUpDownIcon className="opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="p-0 w-[var(--radix-popover-trigger-width)]" 
+      <PopoverContent
+        className="p-0 w-[var(--radix-popover-trigger-width)]"
         side="bottom"
         align="start"
         sideOffset={4}
@@ -162,13 +156,13 @@ export default function AccountCombobox({
         onWheel={(e) => {
           // Forward wheel events to CommandList if it exists
           const commandList = (e.currentTarget as HTMLElement).querySelector(
-            '[data-slot="command-list"]'
+            '[data-slot="command-list"]',
           ) as HTMLElement
           if (commandList) {
             const { scrollTop, scrollHeight, clientHeight } = commandList
             const isAtTop = scrollTop <= 0
             const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1
-            
+
             if ((e.deltaY > 0 && !isAtBottom) || (e.deltaY < 0 && !isAtTop)) {
               commandList.scrollTop += e.deltaY
               e.preventDefault()
@@ -179,22 +173,23 @@ export default function AccountCombobox({
       >
         <Command className="!overflow-visible">
           <CommandInput placeholder="Search accounts..." className="h-9" />
-          <CommandList 
+          <CommandList
             className="max-h-[300px] overflow-y-auto overscroll-contain"
-            style={{ 
-              overflowY: 'auto',
-              maxHeight: '300px',
-              touchAction: 'pan-y'
-            } as React.CSSProperties}
+            style={
+              {
+                overflowY: 'auto',
+                maxHeight: '300px',
+                touchAction: 'pan-y',
+              } as React.CSSProperties
+            }
           >
             <CommandEmpty>{loading ? 'Loading...' : 'No account found.'}</CommandEmpty>
             <CommandGroup>
-              <CommandItem
-                value="none"
-                onSelect={() => handleSelect(null)}
-              >
+              <CommandItem value="none" onSelect={() => handleSelect(null)}>
                 <span className="text-muted-foreground">Clear selection</span>
-                <CheckIcon className={cn('ml-auto', value === null ? 'opacity-100' : 'opacity-0')} />
+                <CheckIcon
+                  className={cn('ml-auto', value === null ? 'opacity-100' : 'opacity-0')}
+                />
               </CommandItem>
               {accounts.map((account) => (
                 <CommandItem
@@ -217,4 +212,3 @@ export default function AccountCombobox({
     </Popover>
   )
 }
-

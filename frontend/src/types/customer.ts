@@ -77,4 +77,3 @@ export interface ImportError {
 export function getStatusLabel(active: boolean): string {
   return active ? 'Active' : 'Inactive'
 }
-

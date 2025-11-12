@@ -17,13 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '@/components/ui/field'
+import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -78,7 +72,7 @@ const createCustomerFormSchema = (isEditMode: boolean) =>
         message: 'Invalid phone number format',
       }),
     address: z.string().optional(),
-    active: z.boolean().default(true),
+    active: z.boolean(),
   })
 
 export default function CustomerFormSheet({
@@ -92,10 +86,7 @@ export default function CustomerFormSheet({
   const [duplicateError, setDuplicateError] = useState<string | null>(null)
 
   // Create schema based on edit mode
-  const customerFormSchema = useMemo(
-    () => createCustomerFormSchema(isEditMode),
-    [isEditMode],
-  )
+  const customerFormSchema = useMemo(() => createCustomerFormSchema(isEditMode), [isEditMode])
   type CustomerFormValues = z.infer<typeof customerFormSchema>
 
   const form = useForm<CustomerFormValues>({
@@ -182,7 +173,7 @@ export default function CustomerFormSheet({
         const request: CustomerUpdateRequest = {}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const dirty: any = form.formState.dirtyFields
-        if (dirty?.code) request.code = values.code.trim()
+        if (dirty?.code && values.code) request.code = values.code.trim()
         if (dirty?.name) request.name = values.name.trim()
         if (dirty?.taxCode) request.taxCode = values.taxCode?.trim() || undefined
         if (dirty?.email) request.email = values.email?.trim() || undefined
@@ -311,7 +302,8 @@ export default function CustomerFormSheet({
                 {!isEditMode && (
                   <Field className="gap-2">
                     <FieldLabel htmlFor="code" className="text-sm font-medium">
-                      Customer Code <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+                      Customer Code{' '}
+                      <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
                     </FieldLabel>
                     <FieldContent>
                       <div className="relative">
@@ -333,10 +325,12 @@ export default function CustomerFormSheet({
                       {errors.code?.message && <FieldError>{errors.code.message}</FieldError>}
                       <div className="mt-1.5 space-y-1">
                         <p className="text-xs text-muted-foreground">
-                          <span className="font-medium">Auto-generated format:</span> CUST-YYYY-NNNN (e.g., CUST-2025-0001)
+                          <span className="font-medium">Auto-generated format:</span> CUST-YYYY-NNNN
+                          (e.g., CUST-2025-0001)
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          <span className="font-medium">Custom format:</span> Enter any format, or leave empty to use auto-generated code
+                          <span className="font-medium">Custom format:</span> Enter any format, or
+                          leave empty to use auto-generated code
                         </p>
                       </div>
                     </FieldContent>
@@ -507,12 +501,7 @@ export default function CustomerFormSheet({
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
@@ -531,4 +520,3 @@ export default function CustomerFormSheet({
     </Dialog>
   )
 }
-

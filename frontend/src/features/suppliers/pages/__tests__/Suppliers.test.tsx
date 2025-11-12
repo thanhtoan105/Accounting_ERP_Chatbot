@@ -121,10 +121,15 @@ describe('Suppliers', () => {
 
     // Find the status filter select (it shows "All Status" by default)
     const statusSelects = screen.getAllByRole('combobox')
-    const statusFilter = statusSelects.find((select) => {
-      const parent = select.closest('div')
-      return parent?.textContent?.includes('All Status') || parent?.textContent?.includes('Active') || parent?.textContent?.includes('Inactive')
-    }) || statusSelects[0]
+    const statusFilter =
+      statusSelects.find((select) => {
+        const parent = select.closest('div')
+        return (
+          parent?.textContent?.includes('All Status') ||
+          parent?.textContent?.includes('Active') ||
+          parent?.textContent?.includes('Inactive')
+        )
+      }) || statusSelects[0]
 
     await user.click(statusFilter)
 
@@ -338,7 +343,11 @@ describe('Suppliers', () => {
     const buttons = screen.getAllByRole('button')
     const refreshButton = buttons.find((btn) => {
       const svg = btn.querySelector('svg')
-      return svg && (svg.getAttribute('class')?.includes('refresh') || svg.getAttribute('class')?.includes('RefreshCw'))
+      return (
+        svg &&
+        (svg.getAttribute('class')?.includes('refresh') ||
+          svg.getAttribute('class')?.includes('RefreshCw'))
+      )
     })
 
     expect(refreshButton).toBeTruthy()
@@ -390,10 +399,11 @@ describe('Suppliers', () => {
 
     // Find the sort select (it shows "Name (A-Z)" or similar)
     const sortSelects = screen.getAllByRole('combobox')
-    const sortSelect = sortSelects.find((select) => {
-      const parent = select.closest('div')
-      return parent?.textContent?.includes('Name') || parent?.textContent?.includes('Code')
-    }) || sortSelects[1] // Second select is usually the sort
+    const sortSelect =
+      sortSelects.find((select) => {
+        const parent = select.closest('div')
+        return parent?.textContent?.includes('Name') || parent?.textContent?.includes('Code')
+      }) || sortSelects[1] // Second select is usually the sort
 
     if (sortSelect) {
       await user.click(sortSelect)
@@ -407,13 +417,16 @@ describe('Suppliers', () => {
       })
 
       // Verify the API was called with sort parameter
-      await waitFor(() => {
-        const calls = mockGetSuppliers.mock.calls
-        const lastCall = calls[calls.length - 1]
-        if (lastCall && lastCall[0]) {
-          expect(lastCall[0].sort).toContain('name')
-        }
-      }, { timeout: 1000 })
+      await waitFor(
+        () => {
+          const calls = mockGetSuppliers.mock.calls
+          const lastCall = calls[calls.length - 1]
+          if (lastCall && lastCall[0]) {
+            expect(lastCall[0].sort).toContain('name')
+          }
+        },
+        { timeout: 1000 },
+      )
     }
   })
 
@@ -430,7 +443,8 @@ describe('Suppliers', () => {
     })
 
     // Find page size select by id
-    const pageSizeSelect = document.getElementById('rows-per-page')?.closest('button') ||
+    const pageSizeSelect =
+      document.getElementById('rows-per-page')?.closest('button') ||
       screen.getAllByRole('combobox').find((select) => {
         const id = select.getAttribute('id')
         return id === 'rows-per-page'
@@ -449,14 +463,16 @@ describe('Suppliers', () => {
       })
 
       // Verify the API was called with new size
-      await waitFor(() => {
-        const calls = mockGetSuppliers.mock.calls
-        const lastCall = calls[calls.length - 1]
-        if (lastCall && lastCall[0]) {
-          expect(lastCall[0].size).toBe(50)
-        }
-      }, { timeout: 1000 })
+      await waitFor(
+        () => {
+          const calls = mockGetSuppliers.mock.calls
+          const lastCall = calls[calls.length - 1]
+          if (lastCall && lastCall[0]) {
+            expect(lastCall[0].size).toBe(50)
+          }
+        },
+        { timeout: 1000 },
+      )
     }
   })
 })
-

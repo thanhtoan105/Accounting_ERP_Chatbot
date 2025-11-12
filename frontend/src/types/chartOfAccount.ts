@@ -77,15 +77,15 @@ export type AccountTypeOption = 'Debit Balance' | 'Credit Balance' | 'Hermaphrod
 export const ACCOUNT_TYPE_MAP: Record<AccountTypeOption, string> = {
   'Debit Balance': 'Debit',
   'Credit Balance': 'Credit',
-  'Hermaphrodite': 'Hermaphrodite',
+  Hermaphrodite: 'Hermaphrodite',
   'No Balance': 'No Balance',
 }
 
 // Reverse map: backend normalSide to form option
 export const NORMAL_SIDE_TO_ACCOUNT_TYPE: Record<string, AccountTypeOption> = {
-  'Debit': 'Debit Balance',
-  'Credit': 'Credit Balance',
-  'Hermaphrodite': 'Hermaphrodite',
+  Debit: 'Debit Balance',
+  Credit: 'Credit Balance',
+  Hermaphrodite: 'Hermaphrodite',
   'No Balance': 'No Balance',
 }
 

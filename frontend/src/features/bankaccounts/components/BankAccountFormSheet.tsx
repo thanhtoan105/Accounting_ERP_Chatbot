@@ -16,13 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '@/components/ui/field'
+import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -37,7 +31,12 @@ import {
   updateBankAccount,
   getBankAccountById,
 } from '@/features/bankaccounts/services/bankAccount'
-import type { BankAccount, BankAccountCreateRequest, BankAccountUpdateRequest, AccountType } from '@/types/bankAccount'
+import type {
+  BankAccount,
+  BankAccountCreateRequest,
+  BankAccountUpdateRequest,
+  AccountType,
+} from '@/types/bankAccount'
 
 interface BankAccountFormSheetProps {
   open: boolean
@@ -47,8 +46,14 @@ interface BankAccountFormSheetProps {
 }
 
 const bankAccountFormSchema = z.object({
-  accountNumber: z.string().min(1, 'Account number is required').max(50, 'Account number must be at most 50 characters'),
-  bankName: z.string().min(1, 'Bank name is required').max(255, 'Bank name must be at most 255 characters'),
+  accountNumber: z
+    .string()
+    .min(1, 'Account number is required')
+    .max(50, 'Account number must be at most 50 characters'),
+  bankName: z
+    .string()
+    .min(1, 'Bank name is required')
+    .max(255, 'Bank name must be at most 255 characters'),
   branch: z.string().max(255, 'Branch must be at most 255 characters').optional().or(z.literal('')),
   type: z.enum(['CASH', 'BANK'], { required_error: 'Account type is required' }),
   openingBalance: z.number().min(0, 'Opening balance must be non-negative'),
@@ -253,9 +258,7 @@ export default function BankAccountFormSheet({
                       disabled={isSubmitting}
                       className="h-10"
                     />
-                    {errors.bankName?.message && (
-                      <FieldError>{errors.bankName.message}</FieldError>
-                    )}
+                    {errors.bankName?.message && <FieldError>{errors.bankName.message}</FieldError>}
                   </FieldContent>
                 </Field>
 
@@ -374,4 +377,3 @@ export default function BankAccountFormSheet({
     </Dialog>
   )
 }
-

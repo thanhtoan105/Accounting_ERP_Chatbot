@@ -17,13 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '@/components/ui/field'
+import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Command,
@@ -48,7 +42,11 @@ import type {
   ChartOfAccountUpdateRequest,
   AccountTypeValue,
 } from '@/types/chartOfAccount'
-import { ACCOUNT_TYPE_OPTIONS, ACCOUNT_TYPE_MAP, NORMAL_SIDE_TO_ACCOUNT_TYPE } from '@/types/chartOfAccount'
+import {
+  ACCOUNT_TYPE_OPTIONS,
+  ACCOUNT_TYPE_MAP,
+  NORMAL_SIDE_TO_ACCOUNT_TYPE,
+} from '@/types/chartOfAccount'
 import AccountCombobox from './AccountCombobox'
 
 interface ChartOfAccountFormSheetProps {
@@ -147,7 +145,11 @@ export default function ChartOfAccountFormSheet({
         name: accountData.name,
         nameEnglish: accountData.nameEnglish || null,
         description: accountData.description || null,
-        accountType: accountType as 'Debit Balance' | 'Credit Balance' | 'Hermaphrodite' | 'No Balance',
+        accountType: accountType as
+          | 'Debit Balance'
+          | 'Credit Balance'
+          | 'Hermaphrodite'
+          | 'No Balance',
         parentId: accountData.parentId || null,
         orderingPosition: accountData.orderingPosition || 0,
       })
@@ -163,9 +165,8 @@ export default function ChartOfAccountFormSheet({
     try {
       const response = await getChartOfAccounts({ active: true })
       // Filter out the account being edited to prevent circular references
-      const filtered = isEditMode && account
-        ? response.data.filter((acc) => acc.id !== account.id)
-        : response.data
+      const filtered =
+        isEditMode && account ? response.data.filter((acc) => acc.id !== account.id) : response.data
       setParentAccounts(filtered)
     } catch (err) {
       console.error('Failed to load parent accounts:', err)
@@ -178,7 +179,7 @@ export default function ChartOfAccountFormSheet({
     try {
       // Map form accountType to backend normalSide
       const normalSide = ACCOUNT_TYPE_MAP[values.accountType]
-      
+
       if (isEditMode && account) {
         const request: ChartOfAccountUpdateRequest = {
           code: values.code.trim(),
@@ -394,4 +395,3 @@ export default function ChartOfAccountFormSheet({
     </Sheet>
   )
 }
-

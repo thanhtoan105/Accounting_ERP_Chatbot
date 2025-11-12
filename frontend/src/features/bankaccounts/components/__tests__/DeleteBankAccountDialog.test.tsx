@@ -155,4 +155,3 @@ describe('DeleteBankAccountDialog', () => {
     expect(mockOnConfirm).not.toHaveBeenCalled()
   })
 })
-
