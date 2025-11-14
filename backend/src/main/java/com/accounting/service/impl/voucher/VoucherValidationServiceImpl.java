@@ -1,6 +1,7 @@
 package com.accounting.service.impl.voucher;
 
 import com.accounting.dto.VoucherCreateRequest;
+import com.accounting.dto.VoucherEntryLineRequest;
 import com.accounting.dto.VoucherLineDTO;
 import com.accounting.dto.VoucherValidationResult;
 import com.accounting.entity.ChartOfAccount;
@@ -11,8 +12,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,9 +23,6 @@ import org.springframework.web.server.ResponseStatusException;
  */
 @Service
 public class VoucherValidationServiceImpl implements VoucherValidationService {
-
-  private static final Logger logger =
-      LoggerFactory.getLogger(VoucherValidationServiceImpl.class);
 
   private final ChartOfAccountsRepository chartOfAccountsRepository;
 
@@ -43,32 +40,154 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
           HttpStatus.BAD_REQUEST, "Missing company context");
     }
 
-    if (request == null || request.getLines() == null || request.getLines().isEmpty()) {
-      result.addError(0, "general", "At least one line item is required");
+    if (request == null) {
+      result.addError(0, "general", "Request payload is required");
       return result;
     }
 
-    List<VoucherLineDTO> lines = request.getLines();
-    BigDecimal totalDebit = BigDecimal.ZERO;
-    BigDecimal totalCredit = BigDecimal.ZERO;
+    List<VoucherEntryLineRequest> entryLines = request.getEntryLines();
+    if (entryLines != null && !entryLines.isEmpty()) {
+      validateEntryLines(entryLines, companyId, result);
+      return result;
+    }
 
-    // Validate each line and accumulate totals
+    List<VoucherLineDTO> ledgerLines = request.getLines();
+    if (ledgerLines != null && !ledgerLines.isEmpty()) {
+      validateLedgerLines(ledgerLines, companyId, result);
+      return result;
+    }
+
+    result.addError(0, "general", "At least one line item is required");
+    return result;
+  }
+
+  /**
+   * Validate a single line item.
+   *
+   * @param line       line item to validate
+   * @param lineNumber 1-based line number for error reporting
+   * @param companyId  company ID for account lookups
+   * @param result     validation result to add errors to
+   */
+  private void validateEntryLines(
+      List<VoucherEntryLineRequest> lines, Long companyId, VoucherValidationResult result) {
+
+    BigDecimal totalAmount = BigDecimal.ZERO;
+    Map<Long, ChartOfAccount> accountCache = new HashMap<>();
+
     for (int i = 0; i < lines.size(); i++) {
-      VoucherLineDTO line = lines.get(i);
-      int lineNumber = i + 1; // 1-based line numbers for user-facing errors
+      VoucherEntryLineRequest line = lines.get(i);
+      int lineNumber = i + 1;
+      validateEntryLine(line, lineNumber, companyId, result, accountCache);
 
-      // Validate line-level business rules
-      validateLine(line, lineNumber, companyId, result);
-
-      // Accumulate totals (only if line is valid for totals)
-      if (!hasLineErrors(result, lineNumber)) {
-        totalDebit = totalDebit.add(line.getDebit() != null ? line.getDebit() : BigDecimal.ZERO);
-        totalCredit =
-            totalCredit.add(line.getCredit() != null ? line.getCredit() : BigDecimal.ZERO);
+      if (!result.hasErrorsForLine(lineNumber)) {
+        totalAmount = totalAmount.add(line.getAmount() != null ? line.getAmount() : BigDecimal.ZERO);
       }
     }
 
-    // Validate double-entry balance (Total Debit == Total Credit)
+    if (totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+      result.addError(0, "amount", "Total amount must be greater than 0");
+    }
+  }
+
+  private void validateEntryLine(
+      VoucherEntryLineRequest line,
+      int lineNumber,
+      Long companyId,
+      VoucherValidationResult result,
+      Map<Long, ChartOfAccount> accountCache) {
+
+    if (line.getDebitAccountId() == null) {
+      result.addError(lineNumber, "debitAccount", "Debit account is required");
+    }
+    if (line.getCreditAccountId() == null) {
+      result.addError(lineNumber, "creditAccount", "Credit account is required");
+    }
+
+    if (line.getDebitAccountId() != null
+        && line.getCreditAccountId() != null
+        && Objects.equals(line.getDebitAccountId(), line.getCreditAccountId())) {
+      result.addError(lineNumber, "creditAccount", "Debit and credit accounts must be different");
+    }
+
+    if (line.getAmount() == null || line.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+      result.addError(lineNumber, "amount", "Amount must be greater than 0");
+    }
+
+    ChartOfAccount debitAccount = resolveAccount(line.getDebitAccountId(), companyId, lineNumber, "debitAccount",
+        result, accountCache);
+    ChartOfAccount creditAccount = resolveAccount(line.getCreditAccountId(), companyId, lineNumber, "creditAccount",
+        result, accountCache);
+
+    if (debitAccount != null) {
+      validateAccountIsPostable(debitAccount, lineNumber, "debitAccount", result);
+      validateDimensionRequirements(
+          debitAccount,
+          line.getCustomerId(),
+          line.getSupplierId(),
+          line.getCostCenterId(),
+          lineNumber,
+          result);
+    }
+
+    if (creditAccount != null) {
+      validateAccountIsPostable(creditAccount, lineNumber, "creditAccount", result);
+      validateDimensionRequirements(
+          creditAccount,
+          line.getCustomerId(),
+          line.getSupplierId(),
+          line.getCostCenterId(),
+          lineNumber,
+          result);
+    }
+  }
+
+  private void validateLedgerLines(
+      List<VoucherLineDTO> lines, Long companyId, VoucherValidationResult result) {
+
+    BigDecimal totalDebit = BigDecimal.ZERO;
+    BigDecimal totalCredit = BigDecimal.ZERO;
+    Map<Long, ChartOfAccount> accountCache = new HashMap<>();
+
+    for (int i = 0; i < lines.size(); i++) {
+      VoucherLineDTO line = lines.get(i);
+      int lineNumber = i + 1;
+
+      ChartOfAccount account = resolveAccount(line.getAccountId(), companyId, lineNumber, "accountId", result,
+          accountCache);
+      BigDecimal debit = line.getDebit() != null ? line.getDebit() : BigDecimal.ZERO;
+      BigDecimal credit = line.getCredit() != null ? line.getCredit() : BigDecimal.ZERO;
+
+      if (debit.compareTo(BigDecimal.ZERO) < 0) {
+        result.addError(lineNumber, "debit", "Debit amount must be non-negative");
+      }
+
+      if (credit.compareTo(BigDecimal.ZERO) < 0) {
+        result.addError(lineNumber, "credit", "Credit amount must be non-negative");
+      }
+
+      if (debit.compareTo(BigDecimal.ZERO) == 0 && credit.compareTo(BigDecimal.ZERO) == 0) {
+        result.addError(lineNumber, "debit", "Either debit or credit must be greater than zero");
+        result.addError(lineNumber, "credit", "Either debit or credit must be greater than zero");
+      }
+
+      if (!result.hasErrorsForLine(lineNumber)) {
+        totalDebit = totalDebit.add(debit);
+        totalCredit = totalCredit.add(credit);
+      }
+
+      if (account != null) {
+        validateAccountIsPostable(account, lineNumber, "accountId", result);
+        validateDimensionRequirements(
+            account,
+            line.getCustomerId(),
+            line.getVendorId(),
+            line.getCostCenterId(),
+            lineNumber,
+            result);
+      }
+    }
+
     if (totalDebit.compareTo(totalCredit) != 0) {
       result.addError(
           0,
@@ -77,150 +196,82 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
               "Double-entry balance error: Total Debit (%s) must equal Total Credit (%s)",
               totalDebit, totalCredit));
     }
-
-    return result;
   }
 
-  /**
-   * Validate a single line item.
-   *
-   * @param line line item to validate
-   * @param lineNumber 1-based line number for error reporting
-   * @param companyId company ID for account lookups
-   * @param result validation result to add errors to
-   */
-  private void validateLine(
-      VoucherLineDTO line, int lineNumber, Long companyId, VoucherValidationResult result) {
+  private ChartOfAccount resolveAccount(
+      Long accountId,
+      Long companyId,
+      int lineNumber,
+      String fieldName,
+      VoucherValidationResult result,
+      Map<Long, ChartOfAccount> cache) {
 
-    // Validate account ID is provided
-    if (line.getAccountId() == null) {
-      result.addError(lineNumber, "accountId", "Account is required");
-      return; // Can't validate further without account
+    if (accountId == null) {
+      return null;
     }
 
-    // Validate account exists and is postable (leaf-only)
-    ChartOfAccount account =
-        chartOfAccountsRepository
-            .findById(line.getAccountId())
-            .orElse(null);
+    if (cache.containsKey(accountId)) {
+      return cache.get(accountId);
+    }
 
+    ChartOfAccount account = chartOfAccountsRepository.findById(accountId).orElse(null);
     if (account == null) {
-      result.addError(lineNumber, "accountId", "Account not found");
-      return;
+      result.addError(lineNumber, fieldName, "Account not found");
+      cache.put(accountId, null);
+      return null;
     }
 
-    // Validate company scoping
-    if (!account.getCompanyId().equals(companyId)) {
-      result.addError(
-          lineNumber, "accountId", "Account does not belong to your company");
-      return;
+    if (!companyId.equals(account.getCompanyId())) {
+      result.addError(lineNumber, fieldName, "Account does not belong to your company");
+      cache.put(accountId, null);
+      return null;
     }
 
-    // Validate leaf-only (postable accounts only)
+    cache.put(accountId, account);
+    return account;
+  }
+
+  private void validateAccountIsPostable(
+      ChartOfAccount account, int lineNumber, String fieldName, VoucherValidationResult result) {
     if (Boolean.FALSE.equals(account.getPostable())) {
       result.addError(
           lineNumber,
-          "accountId",
-          "Only leaf (postable) accounts can be used. Account "
+          fieldName,
+          "Account "
               + account.getCode()
-              + " is not postable.");
+              + " is not postable. Please select a leaf level account.");
     }
-
-    // Validate debit/credit amounts
-    BigDecimal debit = line.getDebit() != null ? line.getDebit() : BigDecimal.ZERO;
-    BigDecimal credit = line.getCredit() != null ? line.getCredit() : BigDecimal.ZERO;
-
-    if (debit.compareTo(BigDecimal.ZERO) < 0) {
-      result.addError(lineNumber, "debit", "Debit amount must be non-negative");
-    }
-
-    if (credit.compareTo(BigDecimal.ZERO) < 0) {
-      result.addError(lineNumber, "credit", "Credit amount must be non-negative");
-    }
-
-    // Validate mutual exclusivity: either debit OR credit must be 0
-    if (debit.compareTo(BigDecimal.ZERO) > 0 && credit.compareTo(BigDecimal.ZERO) > 0) {
-      result.addError(
-          lineNumber,
-          "debit",
-          "Debit and credit cannot both be greater than zero in the same line");
-      result.addError(
-          lineNumber,
-          "credit",
-          "Debit and credit cannot both be greater than zero in the same line");
-    }
-
-    // Validate at least one is > 0
-    if (debit.compareTo(BigDecimal.ZERO) == 0 && credit.compareTo(BigDecimal.ZERO) == 0) {
-      result.addError(
-          lineNumber, "debit", "Either debit or credit must be greater than zero");
-      result.addError(
-          lineNumber, "credit", "Either debit or credit must be greater than zero");
-    }
-
-    // Validate required dimensions based on account code
-    String accountCode = account.getCode();
-    validateDimensions(line, lineNumber, accountCode, result);
   }
 
   /**
    * Validate required dimensions based on account type.
    *
-   * @param line line item
-   * @param lineNumber line number for error reporting
+   * @param line        line item
+   * @param lineNumber  line number for error reporting
    * @param accountCode account code (e.g., "131", "331", "154", "621")
-   * @param result validation result
+   * @param result      validation result
    */
-  private void validateDimensions(
-      VoucherLineDTO line, int lineNumber, String accountCode, VoucherValidationResult result) {
+  private void validateDimensionRequirements(
+      ChartOfAccount account,
+      Long customerId,
+      Long supplierId,
+      Long costCenterId,
+      int lineNumber,
+      VoucherValidationResult result) {
 
-    // Account 131 (Accounts Receivable) requires customer_id
-    if ("131".equals(accountCode)) {
-      if (line.getCustomerId() == null) {
-        result.addError(
-            lineNumber,
-            "customerId",
-            "Customer is required for Accounts Receivable (account 131)");
-      }
+    String accountCode = account.getCode();
+
+    if (accountCode.startsWith("131") && customerId == null) {
+      result.addError(lineNumber, "customerId", "Customer is required for account " + accountCode);
     }
 
-    // Account 331 (Accounts Payable) requires vendor_id
-    if ("331".equals(accountCode)) {
-      if (line.getVendorId() == null) {
-        result.addError(
-            lineNumber,
-            "vendorId",
-            "Vendor is required for Accounts Payable (account 331)");
-      }
+    if (accountCode.startsWith("331") && supplierId == null) {
+      result.addError(lineNumber, "supplierId", "Supplier is required for account " + accountCode);
     }
 
-    // Account 154 (Work in Progress) or 621 (Cost of Goods Sold) requires cost_center_id
-    if ("154".equals(accountCode) || "621".equals(accountCode)) {
-      if (line.getCostCenterId() == null) {
-        result.addError(
-            lineNumber,
-            "costCenterId",
-            "Cost Center is required for account " + accountCode);
-      }
+    if ((accountCode.startsWith("154") || accountCode.startsWith("621")) && costCenterId == null) {
+      result.addError(
+          lineNumber, "costCenterId", "Cost Center is required for account " + accountCode);
     }
-
-    // Note: Additional dimension rules can be added here based on business requirements
-  }
-
-  /**
-   * Check if a line has any errors in the validation result.
-   *
-   * @param result validation result
-   * @param lineNumber line number to check
-   * @return true if line has errors, false otherwise
-   */
-  private boolean hasLineErrors(VoucherValidationResult result, int lineNumber) {
-    Map<Integer, Map<String, String>> errors = result.getErrors();
-    if (errors == null) {
-      return false;
-    }
-    Map<String, String> lineErrors = errors.get(lineNumber);
-    return lineErrors != null && !lineErrors.isEmpty();
   }
 }
-

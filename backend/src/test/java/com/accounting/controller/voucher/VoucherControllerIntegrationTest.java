@@ -29,6 +29,7 @@ import com.accounting.security.PasswordEncoder;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -836,6 +837,462 @@ class VoucherControllerIntegrationTest extends com.accounting.test.IntegrationTe
                 .header("Authorization", "Bearer " + testToken)
                 .header("X-Company-Id", String.valueOf(testCompany.getId())))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  void createVoucher_withEntryLines_transformsToTwoVoucherLines() throws Exception {
+    Long account1Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(0).getId();
+    Long account2Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(1).getId();
+
+    // Create voucher with entryLines (one-line-per-entry format)
+    String requestJson =
+        objectMapper.writeValueAsString(
+            Map.of(
+                "date", LocalDate.now().toString(),
+                "description", "Test voucher with entry lines",
+                "entryLines",
+                    List.of(
+                        Map.of(
+                            "debitAccountId", account1Id,
+                            "creditAccountId", account2Id,
+                            "amount", 1000,
+                            "description", "Cash receipt"))));
+
+    mockMvc
+        .perform(
+            post("/api/v1/vouchers")
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.data.voucherNumber").exists())
+        .andExpect(jsonPath("$.data.status").value("draft"))
+        .andExpect(jsonPath("$.data.lines").isArray())
+        .andExpect(jsonPath("$.data.lines.length()").value(2)) // 1 entry line → 2 voucher lines
+        .andExpect(jsonPath("$.data.lines[0].debit").value(1000))
+        .andExpect(jsonPath("$.data.lines[0].credit").value(0))
+        .andExpect(jsonPath("$.data.lines[1].debit").value(0))
+        .andExpect(jsonPath("$.data.lines[1].credit").value(1000));
+
+    // Verify voucher and lines are saved with sequential line numbers
+    List<Voucher> vouchers = voucherRepository.findByCompanyId(testCompany.getId());
+    assertEquals(1, vouchers.size());
+    Voucher savedVoucher = vouchers.get(0);
+    List<VoucherLine> lines =
+        voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(savedVoucher.getId());
+    assertEquals(2, lines.size());
+    assertEquals(1, lines.get(0).getLineNumber());
+    assertEquals(2, lines.get(1).getLineNumber());
+    assertEquals(account1Id, lines.get(0).getAccountId());
+    assertEquals(account2Id, lines.get(1).getAccountId());
+  }
+
+  @Test
+  void createVoucher_withEntryLines_returnsFieldLevelValidationErrors() throws Exception {
+    Long account1Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(0).getId();
+
+    // Create invalid entry line (missing credit account)
+    String requestJson =
+        objectMapper.writeValueAsString(
+            Map.of(
+                "date", LocalDate.now().toString(),
+                "description", "Invalid voucher",
+                "entryLines",
+                    List.of(
+                        Map.of(
+                            "debitAccountId", account1Id,
+                            "amount", 1000))));
+
+    mockMvc
+        .perform(
+            post("/api/v1/vouchers")
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+        .andExpect(jsonPath("$.error.details.lines").exists())
+        .andExpect(jsonPath("$.error.details.lines.1").exists()) // Line number 1
+        .andExpect(jsonPath("$.error.details.lines.1.creditAccount").exists()); // Field-level error
+  }
+
+  @Test
+  void createVoucher_withEntryLines_sameAccountOnBothSides_returnsValidationError() throws Exception {
+    Long account1Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(0).getId();
+
+    // Create entry line with same account on both sides (invalid)
+    String requestJson =
+        objectMapper.writeValueAsString(
+            Map.of(
+                "date", LocalDate.now().toString(),
+                "description", "Invalid voucher",
+                "entryLines",
+                    List.of(
+                        Map.of(
+                            "debitAccountId", account1Id,
+                            "creditAccountId", account1Id, // Same account
+                            "amount", 1000))));
+
+    mockMvc
+        .perform(
+            post("/api/v1/vouchers")
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+        .andExpect(jsonPath("$.error.details.lines.1.creditAccount").exists());
+  }
+
+  @Test
+  void updateVoucher_withEntryLines_transformsToTwoVoucherLines() throws Exception {
+    Voucher draftVoucher =
+        createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+    draftVoucher = voucherRepository.save(draftVoucher);
+
+    Long account1Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(0).getId();
+    Long account2Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(1).getId();
+
+    // Update voucher with entryLines
+    String requestJson =
+        objectMapper.writeValueAsString(
+            Map.of(
+                "date", LocalDate.now().toString(),
+                "description", "Updated voucher with entry lines",
+                "entryLines",
+                    List.of(
+                        Map.of(
+                            "debitAccountId", account1Id,
+                            "creditAccountId", account2Id,
+                            "amount", 2000,
+                            "description", "Updated cash receipt"))));
+
+    mockMvc
+        .perform(
+            put("/api/v1/vouchers/" + draftVoucher.getId())
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.lines").isArray())
+        .andExpect(jsonPath("$.data.lines.length()").value(2))
+        .andExpect(jsonPath("$.data.lines[0].debit").value(2000))
+        .andExpect(jsonPath("$.data.lines[1].credit").value(2000));
+  }
+
+  @Test
+  void updateVoucher_postedVoucherWithEntryLines_returnsConflict() throws Exception {
+    Voucher postedVoucher =
+        createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "posted");
+    postedVoucher = voucherRepository.save(postedVoucher);
+
+    Long account1Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(0).getId();
+    Long account2Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(1).getId();
+
+    String requestJson =
+        objectMapper.writeValueAsString(
+            Map.of(
+                "date", LocalDate.now().toString(),
+                "description", "Attempt to update posted voucher",
+                "entryLines",
+                    List.of(
+                        Map.of(
+                            "debitAccountId", account1Id,
+                            "creditAccountId", account2Id,
+                            "amount", 1000))));
+
+    mockMvc
+        .perform(
+            put("/api/v1/vouchers/" + postedVoucher.getId())
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isConflict());
+  }
+
+  @Test
+  void uploadAttachment_validFile_uploadsSuccessfully() throws Exception {
+    Voucher draftVoucher =
+        createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+    draftVoucher = voucherRepository.save(draftVoucher);
+
+    // Create a mock file (text file that looks like an image)
+    byte[] fileContent = "fake image content".getBytes();
+    org.springframework.mock.web.MockMultipartFile file =
+        new org.springframework.mock.web.MockMultipartFile(
+            "file", "test-image.jpg", "image/jpeg", fileContent);
+
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(
+                    "/api/v1/vouchers/" + draftVoucher.getId() + "/attachments")
+                .file(file)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.message").value("Attachment uploaded successfully"))
+        .andExpect(jsonPath("$.voucherId").value(draftVoucher.getId().toString()))
+        .andExpect(jsonPath("$.fileName").value("test-image.jpg"));
+  }
+
+  @Test
+  void uploadAttachment_invalidFileType_returnsBadRequest() throws Exception {
+    Voucher draftVoucher =
+        createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+    draftVoucher = voucherRepository.save(draftVoucher);
+
+    // Create a file with invalid type
+    byte[] fileContent = "invalid content".getBytes();
+    org.springframework.mock.web.MockMultipartFile file =
+        new org.springframework.mock.web.MockMultipartFile(
+            "file", "test.txt", "text/plain", fileContent);
+
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(
+                    "/api/v1/vouchers/" + draftVoucher.getId() + "/attachments")
+                .file(file)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.message").value(org.hamcrest.Matchers.containsStringIgnoringCase("Invalid file type")));
+  }
+
+  @Test
+  void uploadAttachment_fileTooLarge_returnsBadRequest() throws Exception {
+    Voucher draftVoucher =
+        createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+    draftVoucher = voucherRepository.save(draftVoucher);
+
+    // Create a file larger than 10MB
+    byte[] largeFileContent = new byte[11 * 1024 * 1024]; // 11MB
+    org.springframework.mock.web.MockMultipartFile file =
+        new org.springframework.mock.web.MockMultipartFile(
+            "file", "large-image.jpg", "image/jpeg", largeFileContent);
+
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(
+                    "/api/v1/vouchers/" + draftVoucher.getId() + "/attachments")
+                .file(file)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.message").value(org.hamcrest.Matchers.containsStringIgnoringCase("File size exceeds")));
+  }
+
+  @Test
+  void uploadAttachment_voucherNotFound_returnsNotFound() throws Exception {
+    UUID nonExistentId = UUID.randomUUID();
+
+    byte[] fileContent = "test content".getBytes();
+    org.springframework.mock.web.MockMultipartFile file =
+        new org.springframework.mock.web.MockMultipartFile(
+            "file", "test.pdf", "application/pdf", fileContent);
+
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(
+                    "/api/v1/vouchers/" + nonExistentId + "/attachments")
+                .file(file)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void applyTemplate_invalidTemplateId_returnsNotFound() throws Exception {
+    // Test that apply-template endpoint exists and returns 404 for non-existent template
+    String requestJson =
+        objectMapper.writeValueAsString(
+            Map.of(
+                "templateId", UUID.randomUUID().toString(),
+                "voucherDate", LocalDate.now().toString(),
+                "description", "Test template application"));
+
+    mockMvc
+        .perform(
+            post("/api/v1/vouchers/apply-template")
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isNotFound()); // Template doesn't exist, but endpoint is accessible
+  }
+
+  @Test
+  void applyTemplate_missingTemplateId_returnsBadRequest() throws Exception {
+    String requestJson =
+        objectMapper.writeValueAsString(
+            Map.of(
+                "voucherDate", LocalDate.now().toString()));
+
+    mockMvc
+        .perform(
+            post("/api/v1/vouchers/apply-template")
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void createVoucher_withEntryLines_multipleLines_createsCorrectVoucherLines() throws Exception {
+    Long account1Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(0).getId();
+    Long account2Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(1).getId();
+    Long account3Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).size() > 2 
+        ? chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(2).getId()
+        : account1Id; // Fallback if only 2 accounts
+
+    // Create voucher with multiple entry lines
+    String requestJson =
+        objectMapper.writeValueAsString(
+            Map.of(
+                "date", LocalDate.now().toString(),
+                "description", "Test voucher with multiple entry lines",
+                "entryLines",
+                    List.of(
+                        Map.of(
+                            "debitAccountId", account1Id,
+                            "creditAccountId", account2Id,
+                            "amount", 1000,
+                            "description", "First entry"),
+                        Map.of(
+                            "debitAccountId", account2Id,
+                            "creditAccountId", account3Id,
+                            "amount", 2000,
+                            "description", "Second entry"))));
+
+    mockMvc
+        .perform(
+            post("/api/v1/vouchers")
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.data.lines").isArray())
+        .andExpect(jsonPath("$.data.lines.length()").value(4)) // 2 entry lines → 4 voucher lines
+        .andExpect(jsonPath("$.data.lines[0].lineNumber").value(1))
+        .andExpect(jsonPath("$.data.lines[1].lineNumber").value(2))
+        .andExpect(jsonPath("$.data.lines[2].lineNumber").value(3))
+        .andExpect(jsonPath("$.data.lines[3].lineNumber").value(4));
+
+    // Verify sequential line numbers in database
+    List<Voucher> vouchers = voucherRepository.findByCompanyId(testCompany.getId());
+    assertEquals(1, vouchers.size());
+    Voucher savedVoucher = vouchers.get(0);
+    List<VoucherLine> lines =
+        voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(savedVoucher.getId());
+    assertEquals(4, lines.size());
+    for (int i = 0; i < 4; i++) {
+      assertEquals(i + 1, lines.get(i).getLineNumber());
+    }
+  }
+
+  @Test
+  void createVoucher_withEntryLines_zeroAmount_returnsValidationError() throws Exception {
+    Long account1Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(0).getId();
+    Long account2Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(1).getId();
+
+    String requestJson =
+        objectMapper.writeValueAsString(
+            Map.of(
+                "date", LocalDate.now().toString(),
+                "description", "Invalid voucher with zero amount",
+                "entryLines",
+                    List.of(
+                        Map.of(
+                            "debitAccountId", account1Id,
+                            "creditAccountId", account2Id,
+                            "amount", 0)))); // Zero amount
+
+    mockMvc
+        .perform(
+            post("/api/v1/vouchers")
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+        .andExpect(jsonPath("$.error.details.lines.1.amount").exists());
+  }
+
+  @Test
+  void createVoucher_withEntryLines_negativeAmount_returnsValidationError() throws Exception {
+    Long account1Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(0).getId();
+    Long account2Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(1).getId();
+
+    // Use BigDecimal for negative amount to avoid Map.of() issues
+    Map<String, Object> entryLine = new HashMap<>();
+    entryLine.put("debitAccountId", account1Id);
+    entryLine.put("creditAccountId", account2Id);
+    entryLine.put("amount", -100);
+    
+    Map<String, Object> request = new HashMap<>();
+    request.put("date", LocalDate.now().toString());
+    request.put("description", "Invalid voucher with negative amount");
+    request.put("entryLines", List.of(entryLine));
+    
+    String requestJson = objectMapper.writeValueAsString(request);
+
+    mockMvc
+        .perform(
+            post("/api/v1/vouchers")
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+        .andExpect(jsonPath("$.error.details.lines.1.amount").exists());
+  }
+
+  @Test
+  void createVoucher_withEntryLines_nonPostableAccount_returnsValidationError() throws Exception {
+    // Find a non-postable account (parent account)
+    List<ChartOfAccount> allAccounts = chartOfAccountsRepository.findByCompanyId(testCompany.getId());
+    ChartOfAccount nonPostableAccount = allAccounts.stream()
+        .filter(acc -> !Boolean.TRUE.equals(acc.getPostable()))
+        .findFirst()
+        .orElse(null);
+    
+    if (nonPostableAccount == null) {
+      // Skip test if no non-postable account exists
+      return;
+    }
+
+    Long account2Id = chartOfAccountsRepository.findByCompanyId(testCompany.getId()).get(0).getId();
+
+    String requestJson =
+        objectMapper.writeValueAsString(
+            Map.of(
+                "date", LocalDate.now().toString(),
+                "description", "Invalid voucher with non-postable account",
+                "entryLines",
+                    List.of(
+                        Map.of(
+                            "debitAccountId", nonPostableAccount.getId(),
+                            "creditAccountId", account2Id,
+                            "amount", 1000))));
+
+    mockMvc
+        .perform(
+            post("/api/v1/vouchers")
+                .contentType(APPLICATION_JSON)
+                .content(requestJson)
+                .header("Authorization", "Bearer " + testToken)
+                .header("X-Company-Id", String.valueOf(testCompany.getId())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+        .andExpect(jsonPath("$.error.details.lines.1.debitAccount").exists());
   }
 }
 

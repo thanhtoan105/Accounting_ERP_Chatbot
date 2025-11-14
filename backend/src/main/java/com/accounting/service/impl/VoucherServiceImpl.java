@@ -3,9 +3,11 @@ package com.accounting.service.impl;
 import com.accounting.dto.VoucherCreateRequest;
 import com.accounting.dto.VoucherCountDTO;
 import com.accounting.dto.VoucherDTO;
+import com.accounting.dto.VoucherEntryLineRequest;
 import com.accounting.dto.VoucherLineDTO;
 import com.accounting.dto.VoucherListDTO;
 import com.accounting.dto.VoucherValidationResult;
+import com.accounting.exception.VoucherValidationException;
 import com.accounting.entity.User;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
@@ -241,17 +243,24 @@ public class VoucherServiceImpl implements VoucherService {
     voucher.setPeriodId(request.getPeriodId());
     voucher.setDescription(request.getDescription());
     voucher.setStatus("draft"); // Always create as draft
-    voucher.setCurrency("VND");
+    voucher.setCurrency(
+        request.getCurrency() != null ? request.getCurrency() : "VND");
     voucher.setEnteredBy(enteredBy);
     voucher.setCreatedAt(Instant.now());
     voucher.setUpdatedAt(Instant.now());
 
-    // Calculate totals from lines
+    List<VoucherLineDTO> ledgerLines = resolveLedgerLines(request);
+    if (ledgerLines == null || ledgerLines.isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "At least one voucher line is required");
+    }
+
     BigDecimal totalDebit = BigDecimal.ZERO;
     BigDecimal totalCredit = BigDecimal.ZERO;
-    for (VoucherLineDTO lineDto : request.getLines()) {
+    for (VoucherLineDTO lineDto : ledgerLines) {
       totalDebit = totalDebit.add(lineDto.getDebit() != null ? lineDto.getDebit() : BigDecimal.ZERO);
-      totalCredit = totalCredit.add(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
+      totalCredit =
+          totalCredit.add(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
     }
     voucher.setTotalDebit(totalDebit);
     voucher.setTotalCredit(totalCredit);
@@ -262,7 +271,7 @@ public class VoucherServiceImpl implements VoucherService {
     // Save voucher lines
     int lineNumber = 1;
     List<VoucherLine> lines = new ArrayList<>();
-    for (VoucherLineDTO lineDto : request.getLines()) {
+    for (VoucherLineDTO lineDto : ledgerLines) {
       VoucherLine line = new VoucherLine();
       line.setVoucherId(voucher.getId());
       line.setLineNumber(lineNumber++);
@@ -320,14 +329,23 @@ public class VoucherServiceImpl implements VoucherService {
     voucher.setVoucherDate(request.getDate());
     voucher.setPeriodId(request.getPeriodId());
     voucher.setDescription(request.getDescription());
+    if (request.getCurrency() != null) {
+      voucher.setCurrency(request.getCurrency());
+    }
     voucher.setUpdatedAt(Instant.now());
 
-    // Calculate totals from lines
+    List<VoucherLineDTO> ledgerLines = resolveLedgerLines(request);
+    if (ledgerLines == null || ledgerLines.isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "At least one voucher line is required");
+    }
+
     BigDecimal totalDebit = BigDecimal.ZERO;
     BigDecimal totalCredit = BigDecimal.ZERO;
-    for (VoucherLineDTO lineDto : request.getLines()) {
+    for (VoucherLineDTO lineDto : ledgerLines) {
       totalDebit = totalDebit.add(lineDto.getDebit() != null ? lineDto.getDebit() : BigDecimal.ZERO);
-      totalCredit = totalCredit.add(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
+      totalCredit =
+          totalCredit.add(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
     }
     voucher.setTotalDebit(totalDebit);
     voucher.setTotalCredit(totalCredit);
@@ -342,7 +360,7 @@ public class VoucherServiceImpl implements VoucherService {
     // Save new voucher lines
     int lineNumber = 1;
     List<VoucherLine> lines = new ArrayList<>();
-    for (VoucherLineDTO lineDto : request.getLines()) {
+    for (VoucherLineDTO lineDto : ledgerLines) {
       VoucherLine line = new VoucherLine();
       line.setVoucherId(voucher.getId());
       line.setLineNumber(lineNumber++);
@@ -402,18 +420,50 @@ public class VoucherServiceImpl implements VoucherService {
    * @param validationResult validation result with errors
    */
   private void throwValidationException(VoucherValidationResult validationResult) {
-    // Convert validation errors to a format suitable for HTTP response
-    Map<Integer, Map<String, String>> errors = validationResult.getErrors();
-    StringBuilder errorMessage = new StringBuilder("Validation failed:\n");
-    for (Map.Entry<Integer, Map<String, String>> entry : errors.entrySet()) {
-      Integer lineNumber = entry.getKey();
-      Map<String, String> lineErrors = entry.getValue();
-      for (Map.Entry<String, String> fieldError : lineErrors.entrySet()) {
-        errorMessage.append(String.format("Line %d, %s: %s\n", lineNumber, fieldError.getKey(), fieldError.getValue()));
-      }
+    throw new VoucherValidationException(validationResult);
+  }
+
+  private List<VoucherLineDTO> resolveLedgerLines(VoucherCreateRequest request) {
+    if (request.getEntryLines() != null && !request.getEntryLines().isEmpty()) {
+      return convertEntryLines(request.getEntryLines());
     }
-    throw new ResponseStatusException(
-        HttpStatus.BAD_REQUEST, errorMessage.toString());
+    return request.getLines();
+  }
+
+  private List<VoucherLineDTO> convertEntryLines(List<VoucherEntryLineRequest> entryLines) {
+    List<VoucherLineDTO> lines = new ArrayList<>();
+    if (entryLines == null) {
+      return lines;
+    }
+
+    for (VoucherEntryLineRequest entry : entryLines) {
+      BigDecimal amount =
+          entry.getAmount() != null ? entry.getAmount() : BigDecimal.ZERO;
+
+      VoucherLineDTO debitLine = new VoucherLineDTO();
+      debitLine.setAccountId(entry.getDebitAccountId());
+      debitLine.setDebit(amount);
+      debitLine.setCredit(BigDecimal.ZERO);
+      debitLine.setDescription(entry.getDescription());
+      debitLine.setCustomerId(entry.getCustomerId());
+      debitLine.setVendorId(entry.getSupplierId());
+      debitLine.setCostCenterId(entry.getCostCenterId());
+      debitLine.setItemId(entry.getItemId());
+      lines.add(debitLine);
+
+      VoucherLineDTO creditLine = new VoucherLineDTO();
+      creditLine.setAccountId(entry.getCreditAccountId());
+      creditLine.setDebit(BigDecimal.ZERO);
+      creditLine.setCredit(amount);
+      creditLine.setDescription(entry.getDescription());
+      creditLine.setCustomerId(entry.getCustomerId());
+      creditLine.setVendorId(entry.getSupplierId());
+      creditLine.setCostCenterId(entry.getCostCenterId());
+      creditLine.setItemId(entry.getItemId());
+      lines.add(creditLine);
+    }
+
+    return lines;
   }
 
   @Override

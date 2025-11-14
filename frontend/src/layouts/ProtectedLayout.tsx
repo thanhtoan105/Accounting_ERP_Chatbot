@@ -56,6 +56,11 @@ const navItems: NavItem[] = [
     requiredRoles: ['admin', 'accountant', 'chief_accountant'],
   },
   {
+    path: '/voucher-templates',
+    label: 'Voucher Templates',
+    requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+  },
+  {
     path: '/voucher-types',
     label: 'Voucher Types',
     requiredRoles: ['admin', 'chief_accountant'],

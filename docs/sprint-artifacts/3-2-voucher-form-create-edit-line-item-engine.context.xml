@@ -1,0 +1,279 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>2</storyId>
+    <title>Voucher Form (Create/Edit) – Line Item Engine</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-2-voucher-form-create-edit-line-item-engine.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>accountant</asA>
+    <iWant>create and edit vouchers with line items using keyboard-first navigation and inline validation</iWant>
+    <soThat>journal entries are always captured with full detail, accuracy, and compliance while maintaining efficient data entry workflows</soThat>
+    <tasks>
+- [ ] Build VoucherFormPage component with header and line item grid (AC: #1, #2, #3, #4, #5, #6, #7, #9, #10)
+  - [ ] Create `frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx` with voucher header form (number, date, description, status)
+  - [ ] Integrate VoucherLineGrid component for line item editing
+  - [ ] Implement keyboard navigation (Tab/Enter) through header fields and grid cells
+  - [ ] Add auto-add new line when tabbing out of last cell in last row
+  - [ ] Implement inline error indicators (red border, error icon) and tooltips for required fields
+  - [ ] Add date picker with period validation (disables closed/future periods, auto-jumps to latest open period)
+  - [ ] Set currency to VND (hidden/read-only field)
+  - [ ] Implement row reordering via drag/drop
+  - [ ] Add keyboard shortcuts: Ctrl+N (insert row), Ctrl+D (duplicate row), Ctrl+Backspace (delete row)
+  - [ ] Add visual markers for invalid/incomplete lines (error badges)
+  - [ ] Implement virtual scrolling for 20+ lines with smooth rendering
+  - [ ] Add draft auto-save with optimistic UI updates (30s interval or on blur)
+  - [ ] Implement edit lock with timeout (clears if session lost >5 min)
+  - [ ] Add undo functionality for row/cell revert with persistence on draft save
+- [ ] Build VoucherLineGrid component with keyboard-first editing (AC: #1, #2, #5, #7, #10, #13)
+  - [ ] Create `frontend/src/components/voucher/VoucherLineItemGrid.tsx` using TanStack Table
+  - [ ] Implement grid columns: STT, Tài khoản Nợ (Debit Account), Tài khoản Có (Credit Account), Mô tả (Description), Số tiền (Amount - single column), Dimensions
+  - [ ] Add AccountPicker for debit account column with leaf-only validation
+  - [ ] Add AccountPicker for credit account column with leaf-only validation
+  - [ ] Add MoneyInput for amount column (single input, automatically creates balanced entry)
+  - [ ] Implement keyboard navigation (Tab/Enter/Arrow keys) through cells
+  - [ ] Add inline validation with error indicators and tooltips for both accounts and amount
+  - [ ] Implement row operations: insert, duplicate, delete with keyboard shortcuts
+  - [ ] Add drag/drop row reordering
+  - [ ] Implement virtual scrolling for performance (20+ lines)
+  - [ ] Add sticky footer showing total amount (automatically balanced: Total Debit = Total Credit)
+  - [ ] Implement dimension pickers (customer/vendor/cost center) with required field validation for both accounts
+  - [ ] Add auto-add row on last field tab-out
+  - [ ] Implement undo/redo functionality with state persistence
+- [ ] Implement voucher templates feature (AC: #12, #14)
+  - [ ] Create VoucherTemplateSelector component (`frontend/src/components/voucher/VoucherTemplateSelector.tsx`)
+  - [ ] Build template library display (list/grid of available templates)
+  - [ ] Add template selection modal/dialog
+  - [ ] Implement template preview with default accounts
+  - [ ] Wire to GET /api/v1/voucher-templates endpoint
+  - [ ] Implement POST /api/v1/vouchers/apply-template endpoint integration
+  - [ ] Add locked accounts display (read-only with lock icon) when template specifies lockAccounts=true
+  - [ ] Allow user to add additional lines or modify template-applied lines
+- [ ] Build Voucher Template Management page (AC: #14)
+  - [ ] Create `frontend/src/features/accounting/pages/VoucherTemplates/VoucherTemplateManagementPage.tsx`
+  - [ ] Implement template list table with columns: STT, Name, Debit Account (first line's debit account code and name), Credit Account (first line's credit account code and name), Status (Active/Inactive), Actions
+  - [ ] Display debit and credit accounts from the first template line (if template has multiple lines, show first line's accounts)
+  - [ ] Add filters: Status (Active/Inactive), search by name/description
+  - [ ] Add actions: Create, Edit, Delete, Duplicate, Activate/Deactivate
+  - [ ] Implement Create/Edit template form/dialog with:
+    - Template name (required)
+    - Template description (optional)
+    - Template lines grid (similar to VoucherLineGrid but for template):
+      - Debit Account picker
+      - Credit Account picker
+      - Default Description input
+      - Required dimensions checkboxes (requiresCustomer, requiresSupplier, requiresCostCenter)
+      - Lock Accounts checkbox
+    - Active status toggle
+  - [ ] Add validation: template name required, at least one template line required, both accounts must be leaf accounts
+  - [ ] Implement duplicate template functionality (copy template with new name)
+  - [ ] Add confirmation dialog for delete action
+  - [ ] Apply RoleGuard: Chief Accountant+ only
+  - [ ] Wire to template CRUD endpoints (GET, POST, PUT, DELETE)
+- [ ] Create backend API endpoints for voucher CRUD (AC: #6, #8, #9, #11, #13)
+  - [ ] Implement POST /api/v1/vouchers for creating draft vouchers
+  - [ ] Implement PUT /api/v1/vouchers/{id} for updating draft vouchers
+  - [ ] Implement GET /api/v1/vouchers/{id} for retrieving voucher details
+  - [ ] **Backend transformation logic:** Transform 1 entry line (debitAccount + creditAccount + amount) → 2 voucher lines (one debit line with debitAmount=amount, one credit line with creditAmount=amount). Ensure line numbers are sequential and properly linked.
+  - [ ] Add field-level validation error map response format: `{ lines: { [lineNumber]: { [field]: [errors] } } }` - errors can reference either debitAccount, creditAccount, or amount fields
+  - [ ] Validate both debit and credit accounts (leaf-only, required dimensions) before transformation
+  - [ ] Implement draft auto-save endpoint with edit lock management
+  - [ ] Add attachment upload endpoint POST /api/v1/vouchers/{id}/attachments (basic implementation, full feature in Story 3.7)
+  - [ ] Ensure company scoping via CompanyScopeAspect
+  - [ ] Block editing posted vouchers (409 Conflict)
+- [ ] Create backend API endpoints for voucher template CRUD (AC: #14)
+  - [ ] Implement GET /api/v1/voucher-templates endpoint (list all templates, filter by isActive)
+    - Response should include first line's debit and credit account info for list display (account code, account name)
+    - Return template summary with: id, name, description, firstLineDebitAccount (code, name), firstLineCreditAccount (code, name), isActive, createdBy, createdAt
+    - If template has no lines, return null for account fields
+  - [ ] Implement GET /api/v1/voucher-templates/{templateId} endpoint (get template details with lines)
+  - [ ] Implement POST /api/v1/voucher-templates endpoint (create new template)
+    - Request body: `{ name: string, description: string, lines: VoucherTemplateLineDTO[], isActive: boolean }`
+    - Validate: name required, at least one line, both accounts must be leaf accounts
+    - Ensure company scoping via CompanyScopeAspect
+    - RBAC: Chief Accountant+ only
+  - [ ] Implement PUT /api/v1/voucher-templates/{templateId} endpoint (update template)
+    - Same validation as POST
+    - Block updating if template is in use (optional, can be deferred)
+    - RBAC: Chief Accountant+ only
+  - [ ] Implement DELETE /api/v1/voucher-templates/{templateId} endpoint (delete template)
+    - Soft delete or hard delete (check if template is referenced by vouchers)
+    - Return 409 Conflict if template is in use
+    - RBAC: Chief Accountant+ only
+  - [ ] Implement PATCH /api/v1/voucher-templates/{templateId}/activate endpoint (activate template)
+  - [ ] Implement PATCH /api/v1/voucher-templates/{templateId}/deactivate endpoint (deactivate template)
+  - [ ] Create VoucherTemplateService with CRUD operations
+  - [ ] Create VoucherTemplateRepository extending JpaRepository
+  - [ ] Ensure all operations are company-scoped
+- [ ] Implement validation service for line items (AC: #2, #6, #11, #13)
+  - [ ] Create VoucherValidationService for real-time validation
+  - [ ] Add leaf-only account validation for both debit and credit accounts (check postable flag and no children)
+  - [ ] Add required dimension validation for both accounts (customer for AR accounts, supplier for AP accounts, cost center for expense accounts)
+  - [ ] Add positive amount validation (block negative or zero amounts)
+  - [ ] Add period validation (voucher date within open period)
+  - [ ] Validate that debit account and credit account are different (prevent same account on both sides)
+  - [ ] Return detailed field-level error map (not generic 400) with errors for debitAccount, creditAccount, or amount fields
+  - [ ] Implement bulk validation for all entry lines before transformation and posting
+- [ ] Add attachment management UI (AC: #8)
+  - [ ] Create attachment dropzone component with drag-and-drop support
+  - [ ] Add inline image/PDF preview
+  - [ ] Implement file type validation (PDF, images) with error messages
+  - [ ] Add file size validation (10MB max) with error messages
+  - [ ] Add virus scan simulation with error handling
+  - [ ] Wire to POST /api/v1/vouchers/{id}/attachments endpoint
+  - [ ] Display attachment count badge on voucher form
+  - [ ] Allow attachments before and after draft save
+- [ ] Implement testing (AC: #1-#14)
+  - [ ] Unit tests for VoucherFormPage component (keyboard navigation, validation, auto-save)
+  - [ ] Unit tests for VoucherLineGrid component (row operations, keyboard shortcuts, undo/redo)
+  - [ ] Unit tests for VoucherTemplateSelector component (template selection, application)
+  - [ ] Unit tests for VoucherTemplateManagementPage component (CRUD operations, validation, RBAC)
+  - [ ] Integration tests for POST /api/v1/vouchers endpoint (create draft, validation errors, company scoping)
+  - [ ] Integration tests for PUT /api/v1/vouchers/{id} endpoint (update draft, edit lock, block posted vouchers)
+  - [ ] Integration tests for POST /api/v1/vouchers/apply-template endpoint (template application, locked accounts)
+  - [ ] Integration tests for GET /api/v1/voucher-templates endpoint (list, filter by isActive, company scoping, verify firstLineDebitAccount and firstLineCreditAccount in response)
+  - [ ] Integration tests for POST /api/v1/voucher-templates endpoint (create template, validation, RBAC)
+  - [ ] Integration tests for PUT /api/v1/voucher-templates/{templateId} endpoint (update template, validation, RBAC)
+  - [ ] Integration tests for DELETE /api/v1/voucher-templates/{templateId} endpoint (delete template, block if in use, RBAC)
+  - [ ] Integration tests for PATCH /api/v1/voucher-templates/{templateId}/activate and /deactivate endpoints
+  - [ ] Integration tests for VoucherTemplateService (CRUD operations, company scoping, validation)
+  - [ ] Integration tests for VoucherValidationService (leaf-only, required dimensions, positive amounts, period validation)
+  - [ ] Performance test: 20 lines entered in <60 seconds (QA target)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Tab/keyboard navigation through header/line grid; auto-add line on last field tab-out. [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+2. Inline error indicators and tooltips for any required field or dimension. [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+3. Date picker: disables non-open/closed periods, jumps to latest open period. [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+4. Currency set to VND, read-only in MVP/hidden on form. [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+5. Row reordering (drag/drop); hotkeys for duplicate/delete/move. [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+6. Invalid/incomplete lines saved as draft, clearly marked—cannot post until fully valid. [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+7. List supports 20+ lines with smooth rendering and on-the-fly entry (target: 20 lines < 60s for QA). [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+8. Attachments (see 3.7) allowed before and after draft save; in-line error for type, size, or virus scan error. [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+9. "Save draft" is optimistic and tolerant of browser close/crash; clears edit lock if session lost >5 min. [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+10. Undo supports row/cell revert, persists on draft save. [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+11. API returns precise error map for all field validation failures (not just generic 400). [Source: docs/epics/epic-3-voucher-engine-general-ledger-core.md#story-32-voucher-form-createedit--line-item-engine] [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+12. **Voucher Templates:** Template selector available when creating new voucher; displays list of pre-configured templates (e.g., "Thu tiền mặt khách hàng", "Chi tiền mặt cho nhà cung cấp"); selecting template auto-fills debit/credit accounts and default descriptions; locked accounts (if template specifies) display as read-only with lock icon; user can add additional lines or modify template-applied lines. [Source: docs/sprint-artifacts/tech-spec-epic-3.md#story-32-voucher-form-createedit--line-item-engine]
+13. **One-line-per-entry UI design:** Each grid row represents one complete accounting entry (1 debit account + 1 credit account + 1 amount). Grid displays columns: STT, Tài khoản Nợ (Debit Account), Tài khoản Có (Credit Account), Mô tả (Description), Số tiền (Amount - single column), Dimensions. When user enters amount, system automatically creates 2 voucher lines in backend (one debit line, one credit line) ensuring double-entry balance. Footer shows total amount (automatically balanced: Total Debit = Total Credit). [Source: UX Design Decision - Compact entry format for efficiency]
+14. **Voucher Template Management:** Template management page allows Chief Accountant+ to create, edit, delete, and activate/deactivate voucher templates. Page displays list of templates with columns: STT, Name, Debit Account (first line's debit account code and name), Credit Account (first line's credit account code and name), Status (Active/Inactive), Actions. Create/Edit form includes: template name, description, template lines (debit account, credit account, default description, required dimensions, lock accounts flag), and active status. Templates are company-scoped and can be duplicated. [Source: docs/sprint-artifacts/tech-spec-epic-3.md#apis-and-interfaces]
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic Technical Specification: Voucher Engine & General Ledger Core" section="Story 3.2: Voucher Form (Create/Edit) – Line Item Engine" snippet="Story 3.2 delivers the voucher form with keyboard-first editing, inline validation, draft auto-save, and voucher templates. Key features include one-line-per-entry UI design (each row = 1 debit account + 1 credit account + 1 amount), backend transformation (1 entry line → 2 voucher lines), template-based voucher creation, and comprehensive validation." />
+      <doc path="docs/epics/epic-3-voucher-engine-general-ledger-core.md" title="Epic 3: Voucher Engine & General Ledger Core" section="Story 3.2: Voucher Form (Create/Edit) – Line Item Engine" snippet="As an accountant, I want to create and edit vouchers with line items, so that journal entries are always captured with full detail, accuracy, and compliance. Acceptance criteria cover keyboard navigation, inline validation, date picker with period validation, row operations, draft auto-save, undo functionality, and field-level error maps." />
+      <doc path="docs/architecture/data-architecture.md" title="Data Architecture" section="Transactions" snippet="Core transaction entities: vouchers (id, voucher_number, date, description, status, company_id), voucher_lines (id, voucher_id, account_id, debit, credit), journal_entries (id, voucher_id, account_id, debit, credit, period_id). Multi-tenancy via row-level filtering with company_id." />
+      <doc path="docs/architecture/security-architecture.md" title="Security Architecture" section="Authorization" snippet="Role-Based Access Control (RBAC): Admin, Accountant, Chief Accountant, CFO. Spring Security method-level security. API-level permission checks. Company-level data isolation." />
+      <doc path="docs/architecture/architecture-decision-records-adrs.md" title="Architecture Decision Records" section="ADR-005: Shadcn UI + Tailwind CSS" snippet="Use Shadcn UI component library with Tailwind CSS for styling. Modern, accessible component library built on Radix UI primitives. TanStack Table integration for complex data grids." />
+    </docs>
+    <code>
+      <artifact path="backend/src/main/java/com/accounting/controller/voucher/VoucherController.java" kind="controller" symbol="VoucherController" lines="1-280" reason="Existing voucher controller with GET, POST, PUT, DELETE endpoints. Provides patterns for company scoping, RBAC enforcement (@PreAuthorize), error handling, and response format. Story 3.2 will extend this controller with template endpoints and apply-template endpoint." />
+      <artifact path="frontend/src/features/accounting/pages/Vouchers/VoucherList.tsx" kind="component" symbol="VoucherList" lines="1-771" reason="Existing voucher list page using TanStack Table, DataTablePro patterns, filter persistence (localStorage), error handling with retry buttons, and server-side pagination. Story 3.2 will create VoucherFormPage following similar patterns for consistency." />
+      <artifact path="frontend/package.json" kind="manifest" symbol="package.json" lines="17-83" reason="Frontend dependencies: React 19.1.1 (line 50), TanStack Table 8.21.3 (line 41), TanStack React Query 5.62.0 (line 40), shadcn/ui components via Radix UI primitives (lines 24-38), date-fns 4.1.0 (line 47), react-hook-form 7.66.0 (line 54), zod 4.1.12 (line 59). Testing: Vitest 2.1.4 (line 82), Testing Library (lines 63-65)." />
+      <artifact path="backend/pom.xml" kind="manifest" symbol="pom.xml" lines="25-146" reason="Backend dependencies: Spring Boot 3.5.7 (line 10), Java 21 (line 21), Spring Data JPA (line 36), Spring Security (line 60), PostgreSQL 42.7.4 (line 45), Flyway 11.10.0 (lines 51, 56), JWT jjwt 0.12.5 (lines 64-77), Lombok (lines 96-98), SpringDoc OpenAPI 2.8.13 (lines 86-89). Testing: JUnit 5 via spring-boot-starter-test (line 120), TestContainers 1.21.3 (lines 124-139)." />
+    </code>
+    <dependencies>
+      <node>
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="@tanstack/react-table" version="^8.21.3" />
+        <package name="@tanstack/react-query" version="^5.62.0" />
+        <package name="axios" version="^1.7.9" />
+        <package name="react-hook-form" version="^7.66.0" />
+        <package name="zod" version="^4.1.12" />
+        <package name="date-fns" version="^4.1.0" />
+        <package name="react-router-dom" version="^7.9.5" />
+        <package name="sonner" version="^2.0.7" />
+        <package name="lucide-react" version="^0.552.0" />
+      </node>
+      <java>
+        <package name="org.springframework.boot:spring-boot-starter-web" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-data-jpa" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-security" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-validation" version="3.5.7" />
+        <package name="org.postgresql:postgresql" version="42.7.4" />
+        <package name="org.flywaydb:flyway-core" version="11.10.0" />
+        <package name="io.jsonwebtoken:jjwt-api" version="0.12.5" />
+        <package name="org.projectlombok:lombok" />
+      </java>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Keyboard-first voucher entry: Implement comprehensive keyboard navigation through header fields and line item grid with Tab/Enter/Arrow keys, auto-add row functionality, and keyboard shortcuts for row operations to enable efficient data entry workflows.</constraint>
+    <constraint>One-line-per-entry UI design: Each grid row represents one complete accounting entry with columns: STT, Tài khoản Nợ (Debit Account), Tài khoản Có (Credit Account), Mô tả (Description), Số tiền (Amount - single column), Dimensions. Backend transforms 1 entry line → 2 voucher lines (one debit, one credit) maintaining data integrity.</constraint>
+    <constraint>Inline validation and error display: Provide real-time validation feedback with inline error indicators (red border, error icon), tooltips for required fields and missing dimensions for both debit and credit accounts, and visual markers for invalid/incomplete lines to prevent posting until all validation passes.</constraint>
+    <constraint>Field-level error map API: Return detailed validation error responses with structure `{ lines: { [lineNumber]: { [field]: [errors] } } }` instead of generic 400 errors to enable precise error display and user guidance. Error fields can be: `debitAccount`, `creditAccount`, `amount`, `description`, or dimension fields.</constraint>
+    <constraint>Backend entry-to-lines transformation: When saving voucher, backend receives entry lines (each with debitAccount, creditAccount, amount) and transforms them into voucher lines (one debit line with debitAmount=amount, one credit line with creditAmount=amount). This transformation ensures double-entry balance automatically and maintains audit trail with proper line numbering.</constraint>
+    <constraint>Draft auto-save with optimistic updates: Implement optimistic UI updates with background persistence every 30 seconds or on blur, retry logic with exponential backoff, and edit lock management (clears if session lost >5 minutes) to ensure data integrity and user experience.</constraint>
+    <constraint>Performance targets: Support 20+ lines with virtual scrolling for smooth rendering, target 20 lines entered in <60 seconds for QA testing, and ensure draft auto-save completes in <1 second per NFR1.</constraint>
+    <constraint>Company scoping: All voucher operations enforce company-level isolation via `company_id` filtering and `CompanyScopeAspect`. RBAC: Accountant role can create/edit drafts; Chief Accountant can post/unpost; Admin has full access.</constraint>
+    <constraint>Reuse VoucherListPage patterns: Leverage the DataTablePro patterns, filter persistence, and error handling implementations from Story 3.1 to maintain UI consistency and code reuse.</constraint>
+    <constraint>Follow feature-first structure: Place VoucherFormPage under `frontend/src/features/accounting/pages/Vouchers/` and VoucherLineGrid under `frontend/src/components/voucher/` to align with feature-first architecture and maintain clear component boundaries.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="POST /api/v1/vouchers" kind="REST endpoint" signature="POST /api/v1/vouchers
+Request: { voucherDate: string, description: string, entryLines: [{ debitAccountId, creditAccountId, amount, description, dimensions }] }
+Response: { data: VoucherDTO, meta: {...} }
+Auth: JWT required, company-scoped
+RBAC: Accountant+ can create
+Validation: Returns field-level error map on validation failure" path="backend/src/main/java/com/accounting/controller/voucher/VoucherController.java" />
+    <interface name="PUT /api/v1/vouchers/{voucherId}" kind="REST endpoint" signature="PUT /api/v1/vouchers/{voucherId}
+Request: Same as POST
+Response: { data: VoucherDTO, meta: {...} }
+Auth: JWT required, company-scoped
+RBAC: Accountant+ can edit (drafts only)
+Validation: Blocks editing posted vouchers (409 Conflict)" path="backend/src/main/java/com/accounting/controller/voucher/VoucherController.java" />
+    <interface name="GET /api/v1/vouchers/{voucherId}" kind="REST endpoint" signature="GET /api/v1/vouchers/{voucherId}
+Response: { data: VoucherDTO, meta: {...} }
+Auth: JWT required, company-scoped
+RBAC: Accountant+ can view" path="backend/src/main/java/com/accounting/controller/voucher/VoucherController.java" />
+    <interface name="GET /api/v1/voucher-templates" kind="REST endpoint" signature="GET /api/v1/voucher-templates
+Query Params: isActive (optional filter)
+Response: { data: VoucherTemplateSummaryDTO[], meta: {...} } where VoucherTemplateSummaryDTO includes: id, name, description, firstLineDebitAccount (code, name), firstLineCreditAccount (code, name), isActive, createdBy, createdAt
+Auth: JWT required, company-scoped
+RBAC: Accountant+ can view" path="backend/src/main/java/com/accounting/controller/voucher/VoucherTemplateController.java (to be created)" />
+    <interface name="POST /api/v1/vouchers/apply-template" kind="REST endpoint" signature="POST /api/v1/vouchers/apply-template
+Request: { templateId: string, voucherDate: string, description?: string }
+Response: { data: { voucher: VoucherDTO, template: VoucherTemplateDTO }, meta: {...} }
+Auth: JWT required, company-scoped
+RBAC: Accountant+ can apply templates
+Behavior: Creates new draft voucher with pre-filled lines from template" path="backend/src/main/java/com/accounting/controller/voucher/VoucherController.java (to be extended)" />
+    <interface name="VoucherValidationService" kind="Java service" signature="public class VoucherValidationService {
+  VoucherValidationResult validate(VoucherCreateRequest request);
+  // Validates: leaf-only accounts, required dimensions, positive amounts, period validation, double-entry balance
+  // Returns: ValidationResult with field-level error map { lines: { [lineNumber]: { [field]: [errors] } } }
+}" path="backend/src/main/java/com/accounting/service/VoucherValidationService.java (to be created)" />
+  </interfaces>
+
+  <tests>
+    <standards>Testing follows comprehensive approach from Story 3.1: 19 frontend unit tests and 24 backend integration tests. Frontend: Vitest + Testing Library + jsdom for component tests covering keyboard navigation, validation, row operations, undo/redo, auto-save. Backend: JUnit 5 + TestContainers for integration tests covering API endpoints, RBAC enforcement, company scoping, validation error responses, draft auto-save, edit lock management. Performance test: 20 lines entered in <60 seconds (QA target).</standards>
+    <locations>
+      <location>frontend/src/**/*.test.tsx</location>
+      <location>frontend/src/**/*.test.ts</location>
+      <location>backend/src/test/java/com/accounting/**/*Test.java</location>
+      <location>backend/src/test/java/com/accounting/**/*IntegrationTest.java</location>
+    </locations>
+    <ideas>
+      <test acId="1" idea="Unit test: VoucherLineGrid keyboard navigation - Tab moves to next cell, Enter adds new row when on last cell, Arrow keys navigate within grid" />
+      <test acId="2" idea="Unit test: Inline error indicators display red border and error icon when account is missing or invalid, tooltip shows specific error message" />
+      <test acId="3" idea="Integration test: Date picker disables dates outside open periods, auto-jumps to latest open period on open, API returns 400 if voucher date in closed period" />
+      <test acId="5" idea="Unit test: Row reordering via drag/drop updates line numbers, keyboard shortcuts Ctrl+N (insert), Ctrl+D (duplicate), Ctrl+Backspace (delete) work correctly" />
+      <test acId="6" idea="Integration test: Invalid/incomplete lines saved as draft with error badges, posting blocked until all lines valid, API returns validation errors" />
+      <test acId="7" idea="Performance test: 20 lines entered in <60 seconds, virtual scrolling renders smoothly with 20+ lines, no lag during entry" />
+      <test acId="9" idea="Integration test: Draft auto-save optimistic UI updates immediately, persists every 30s or on blur, edit lock cleared if session lost >5 min, retry logic with exponential backoff" />
+      <test acId="10" idea="Unit test: Undo functionality reverts row/cell changes, undo state persists on draft save, redo works correctly" />
+      <test acId="11" idea="Integration test: API returns detailed error map with structure { lines: { [lineNumber]: { [field]: [errors] } } } for debitAccount, creditAccount, amount fields, not generic 400" />
+      <test acId="12" idea="Integration test: Template selector displays list of templates, selecting template auto-fills debit/credit accounts, locked accounts show as read-only with lock icon, user can add/modify lines" />
+      <test acId="13" idea="Integration test: One-line-per-entry UI - backend transforms 1 entry line (debitAccount + creditAccount + amount) → 2 voucher lines (one debit, one credit), footer shows balanced totals" />
+      <test acId="14" idea="Integration test: Template management page CRUD operations, Chief Accountant+ RBAC enforcement, template list shows first line's debit/credit accounts, duplicate template works" />
+    </ideas>
+  </tests>
+</story-context>
+

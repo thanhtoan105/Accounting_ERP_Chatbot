@@ -58,9 +58,9 @@ development_status:
   epic-2-retrospective: completed
 
   epic-3: contexted
-  3-1-voucher-list-and-search: review
-  3-2-voucher-form-create-edit-line-item-engine: backlog
-  3-3-posting-unposting-reversal-workflows: backlog
+  3-1-voucher-list-and-search: done
+  3-2-voucher-form-create-edit-line-item-engine: done
+  3-3-posting-unposting-reversal-workflows: drafted
   3-4-leaf-only-and-double-entry-validation-engine: backlog
   3-5-audit-trail-for-voucher-lifecycle: backlog
   3-6-period-selector-voucher-period-mapping: backlog
