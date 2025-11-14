@@ -9,6 +9,8 @@ import com.accounting.dto.VoucherValidationResult;
 import com.accounting.entity.User;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.repository.SupplierRepository;
 import com.accounting.repository.UserRepository;
 import com.accounting.repository.VoucherLineRepository;
 import com.accounting.repository.VoucherRepository;
@@ -54,6 +56,8 @@ public class VoucherServiceImpl implements VoucherService {
   private final VoucherRepository voucherRepository;
   private final VoucherLineRepository voucherLineRepository;
   private final UserRepository userRepository;
+  private final CustomerRepository customerRepository;
+  private final SupplierRepository supplierRepository;
   private final AuditService auditService;
   private final JwtTokenProvider jwtTokenProvider;
   private final VoucherValidationService voucherValidationService;
@@ -65,12 +69,16 @@ public class VoucherServiceImpl implements VoucherService {
       VoucherRepository voucherRepository,
       VoucherLineRepository voucherLineRepository,
       UserRepository userRepository,
+      CustomerRepository customerRepository,
+      SupplierRepository supplierRepository,
       AuditService auditService,
       JwtTokenProvider jwtTokenProvider,
       VoucherValidationService voucherValidationService) {
     this.voucherRepository = voucherRepository;
     this.voucherLineRepository = voucherLineRepository;
     this.userRepository = userRepository;
+    this.customerRepository = customerRepository;
+    this.supplierRepository = supplierRepository;
     this.auditService = auditService;
     this.jwtTokenProvider = jwtTokenProvider;
     this.voucherValidationService = voucherValidationService;
@@ -78,7 +86,7 @@ public class VoucherServiceImpl implements VoucherService {
 
   @Override
   public Page<VoucherListDTO> findAll(
-      Pageable pageable, String status, LocalDate dateFrom, LocalDate dateTo, String search) {
+      Pageable pageable, String status, LocalDate dateFrom, LocalDate dateTo, String search, Long accountId) {
     Long companyId = CompanyContext.getCompanyId();
     if (companyId == null) {
       throw new ResponseStatusException(
@@ -120,6 +128,22 @@ public class VoucherServiceImpl implements VoucherService {
             }
           }
 
+          // Filter by account ID (if provided, filter vouchers that have lines with this account)
+          if (accountId != null) {
+            List<UUID> voucherIdsWithAccount = voucherLineRepository
+                .findByCompanyIdAndAccountId(companyId, accountId)
+                .stream()
+                .map(VoucherLine::getVoucherId)
+                .distinct()
+                .collect(Collectors.toList());
+            if (voucherIdsWithAccount.isEmpty()) {
+              // No vouchers with this account, return empty result
+              predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
+            } else {
+              predicates.add(root.get("id").in(voucherIdsWithAccount));
+            }
+          }
+
           return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
 
@@ -142,7 +166,8 @@ public class VoucherServiceImpl implements VoucherService {
             null, // status
             null, // dateFrom
             null, // dateTo
-            searchTerm);
+            searchTerm,
+            null); // accountId
 
     // Convert ListDTO to full DTO
     return results.getContent().stream()
@@ -479,6 +504,28 @@ public class VoucherServiceImpl implements VoucherService {
     String enteredByName = getUserName(voucher.getEnteredBy());
     String postedByName = voucher.getPostedBy() != null ? getUserName(voucher.getPostedBy()) : null;
 
+    // Extract AR/AP Entity (customer or supplier name) from voucher lines
+    String arApEntity = null;
+    Long companyId = voucher.getCompanyId();
+    List<VoucherLine> lines = voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(voucher.getId());
+    
+    // Find first line with customer or vendor ID
+    for (VoucherLine line : lines) {
+      if (line.getCustomerId() != null) {
+        arApEntity = customerRepository
+            .findByCompanyIdAndId(companyId, line.getCustomerId())
+            .map(customer -> customer.getName())
+            .orElse(null);
+        break;
+      } else if (line.getVendorId() != null) {
+        arApEntity = supplierRepository
+            .findByCompanyIdAndId(companyId, line.getVendorId())
+            .map(supplier -> supplier.getName())
+            .orElse(null);
+        break;
+      }
+    }
+
     return new VoucherListDTO(
         voucher.getId(),
         voucher.getVoucherNumber(),
@@ -489,6 +536,7 @@ public class VoucherServiceImpl implements VoucherService {
         voucher.getStatus(),
         enteredByName,
         postedByName,
+        arApEntity,
         voucher.getReversalOf() != null, // Has reversal badge
         0, // Attachment count - placeholder (deferred to Epic 4/5)
         voucher.getCurrency());

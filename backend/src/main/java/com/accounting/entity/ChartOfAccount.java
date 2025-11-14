@@ -40,6 +40,17 @@ public class ChartOfAccount implements CompanyScopedEntity {
   @Column(name = "name", nullable = false, length = 255)
   private String name;
 
+  @Size(max = 255)
+  @Column(name = "name_english", length = 255)
+  private String nameEnglish;
+
+  @Column(name = "description", columnDefinition = "TEXT")
+  private String description;
+
+  @NotNull
+  @Column(name = "active", nullable = false)
+  private Boolean active = true;
+
   @NotBlank
   @Column(name = "type", nullable = false, length = 50)
   private String type; // Asset, Liability, Equity, Revenue, Expense
@@ -94,6 +105,30 @@ public class ChartOfAccount implements CompanyScopedEntity {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public String getNameEnglish() {
+    return nameEnglish;
+  }
+
+  public void setNameEnglish(String nameEnglish) {
+    this.nameEnglish = nameEnglish;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public Boolean getActive() {
+    return active;
+  }
+
+  public void setActive(Boolean active) {
+    this.active = active;
   }
 
   public String getType() {

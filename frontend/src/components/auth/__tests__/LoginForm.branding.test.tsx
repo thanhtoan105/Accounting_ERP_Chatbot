@@ -163,4 +163,3 @@ describe('LoginForm - Branding (AC#1)', () => {
     expect(themeButton).toBeInTheDocument()
   })
 })
-

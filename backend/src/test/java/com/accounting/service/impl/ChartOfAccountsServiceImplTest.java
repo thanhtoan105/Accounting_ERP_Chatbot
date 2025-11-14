@@ -84,7 +84,7 @@ class ChartOfAccountsServiceImplTest {
     List<ChartOfAccount> filteredAccounts = List.of(account1);
     when(chartOfAccountsRepository.findAll(any(Specification.class))).thenReturn(filteredAccounts);
 
-    var result = chartOfAccountsService.findAll(true, null, null, null, null);
+    var result = chartOfAccountsService.findAll(true, null, null, null, null, null);
 
     assertEquals(1, result.size());
     assertEquals("1111", result.get(0).getCode());

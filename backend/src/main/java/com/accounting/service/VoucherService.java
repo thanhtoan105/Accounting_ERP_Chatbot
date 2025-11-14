@@ -21,10 +21,11 @@ public interface VoucherService {
    * @param dateFrom filter by date from (optional)
    * @param dateTo filter by date to (optional)
    * @param search search term for voucher number or description (optional, supports Vietnamese unaccented matching)
+   * @param accountId filter by account ID (optional, filters vouchers that have lines with this account)
    * @return paginated list of vouchers
    */
   Page<VoucherListDTO> findAll(
-      Pageable pageable, String status, LocalDate dateFrom, LocalDate dateTo, String search);
+      Pageable pageable, String status, LocalDate dateFrom, LocalDate dateTo, String search, Long accountId);
 
   /**
    * Search vouchers by number or description with Vietnamese unaccented support.

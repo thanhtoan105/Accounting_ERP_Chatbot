@@ -1,0 +1,199 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>7</storyId>
+    <title>Audit Trail &amp; Data Integrity for Master Data</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/2-7-audit-trail-data-integrity-for-master-data.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As an admin or auditor</asA>
+    <iWant>I want to review master-data audit trails and run automated integrity checks</iWant>
+    <soThat>so that we maintain traceable change history and quickly surface orphaned records before they impact downstream modules</soThat>
+    <tasks>
+      <task id="T1" title="Expand audit logging services (AC: #3, #4, #6)">
+        <subtask>Extend AuditLogService to record IP address and user-agent metadata on each audit entry.</subtask>
+        <subtask>Persist blocked modification attempts with actor context, company scope, and reason codes.</subtask>
+        <subtask>Emit per-row audit entries from batch and import facades for both success and failure paths.</subtask>
+      </task>
+      <task id="T2" title="Deliver RBAC-aware audit retrieval APIs (AC: #2)">
+        <subtask>Expose REST endpoints under backend/src/main/java/com/accounting/controller/admin with pagination and export support.</subtask>
+        <subtask>Implement repository filters for company scope, date range, user email, and action type.</subtask>
+        <subtask>Return response envelopes following the { data, error?, meta? } contract with export manifest hashes.</subtask>
+      </task>
+      <task id="T3" title="Build audit log UI experiences (AC: #1, #2, #6)">
+        <subtask>Create React feature module at frontend/src/features/audit with TanStack Table, search, refresh, and page size selector (10/20/30/50/100).</subtask>
+        <subtask>Wire export controls to new backend APIs and enforce role guards inside ProtectedLayout routing.</subtask>
+        <subtask>Localize table copy in English and Vietnamese, including audit result metadata and status badges.</subtask>
+      </task>
+      <task id="T4" title="Implement automated data integrity scans (AC: #5)">
+        <subtask>Introduce DataIntegrityService routines to detect orphaned customers, suppliers, and chart-of-accounts entries.</subtask>
+        <subtask>Expose an admin-only endpoint to run scans, persist findings, and log each execution.</subtask>
+        <subtask>Throttle scan scheduling per company and emit audit entries for each run with execution metadata.</subtask>
+      </task>
+      <testing>
+        <item>AC1: Validate UI filtering by user, action, and date across master-data entities with RBAC guards enforced.</item>
+        <item>AC2: API integration tests confirm company scoping, export payload metadata, and role restrictions.</item>
+        <item>AC3: Unit tests assert audit records include field diffs, actor identity, IP address, and user agent attributes.</item>
+        <item>AC4: Negative tests simulate blocked modifications and expect audit entries describing the rejection.</item>
+        <item>AC5: Integrity scan integration test detects seeded orphan records and logs an audit trail of the run.</item>
+        <item>AC6: Import and batch tests ensure per-row audit entries are produced for successful and failed outcomes.</item>
+      </testing>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" title="Audit Log UI">
+      <detail>Deliver audit log views per master-data entity (customers, suppliers, chart of accounts, bank accounts) with filters for date range, user, and action.</detail>
+    </criterion>
+    <criterion id="AC2" title="RBAC Audit APIs">
+      <detail>Expose company-scoped, role-protected REST endpoints that return filtered audit logs and export payloads for compliance reviews.</detail>
+    </criterion>
+    <criterion id="AC3" title="Rich Audit Payload">
+      <detail>Persist audit entries capturing record type, field-level diffs, user email and role, timestamp, IP address, and user agent metadata.</detail>
+    </criterion>
+    <criterion id="AC4" title="Failed Modification Telemetry">
+      <detail>Detect and log blocked modification attempts so governance teams can identify abuse or misuse patterns.</detail>
+    </criterion>
+    <criterion id="AC5" title="Integrity Scan Endpoint">
+      <detail>Provide an admin-only endpoint that scans for orphaned master data, reports findings, and logs each execution.</detail>
+    </criterion>
+    <criterion id="AC6" title="Batch Transparency">
+      <detail>Ensure bulk imports and batch operations emit per-row audit entries for both success and failure outcomes.</detail>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact path="docs/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.7: Audit Trail &amp; Data Integrity for Master Data">
+        <snippet>1. UI "Audit Log" per entity: shows all changes for that customer/supplier/account, filterable by date/user/action type.
+2. Exposes audit log API for download/filtering (respecting role-based access).
+3. Log format includes: record type, affected fields (old/new), user/email/role, datetime, IP/user agent if present.</snippet>
+      </artifact>
+      <artifact path="docs/sprint-artifacts/2-6-data-import-migration.md" title="Story 2.6: Data Import &amp; Migration" section="Acceptance Criteria #5-#6">
+        <snippet>Import attempt logs inserted/skipped/error counts and per-row audit entries capturing before/after payloads where applicable.
+Validate/import up to 1,000 rows in ≤ 30s; for larger sets, provide chunking or background strategy note (out of scope to build fully now).</snippet>
+      </artifact>
+      <artifact path="docs/architecture/security-architecture.md" title="Security Architecture" section="Authorization &amp; Data Protection">
+        <snippet>Role-Based Access Control (RBAC): Admin, Accountant, Chief Accountant, CFO.
+API-level permission checks.
+Audit trail: Immutable append-only logs.</snippet>
+      </artifact>
+      <artifact path="docs/rbac-testing-guide.md" title="RBAC Testing Guide" section="Test 3: Chief Accountant User - Management Access">
+        <snippet>Objective: Verify chief accountant can manage users and access company settings.
+Expected Results: Company Settings menu item visible; User Management menu item visible.
+Test Access: Navigate to `/company` → page loads; navigate to `/users` → page loads.</snippet>
+      </artifact>
+      <artifact path="docs/architecture/project-structure.md" title="Project Structure" section="Backend &amp; Frontend Layout">
+        <snippet>├── backend/ ── controller/, service/, repository/, entity/.
+├── frontend/ ── features/, components/, layouts/, routes/.
+└── docs/ ── Documentation.</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <file path="backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java" kind="service" symbol="AuditServiceImpl" lineHints="1-922">
+        <reason>Central audit service already captures IP, user agent, import row telemetry, and REQUIRES_NEW writes—extend to master-data CRUD, failed attempts, and integrity scan events.</reason>
+      </file>
+      <file path="backend/src/main/java/com/accounting/entity/AuditLog.java" kind="entity" symbol="AuditLog" lineHints="1-104">
+        <reason>Current schema lacks companyId, entity metadata, and JSON diffs required by AC3/AC4—identify gaps for migration planning.</reason>
+      </file>
+      <file path="backend/src/main/java/com/accounting/entity/ImportAuditEntry.java" kind="entity" symbol="ImportAuditEntry" lineHints="1-172">
+        <reason>JSONB-backed per-row import auditing pattern to reuse for master-data batch transparency (AC6).</reason>
+      </file>
+      <file path="backend/src/main/java/com/accounting/controller/ImportController.java" kind="controller" symbol="ImportController" lineHints="1-179">
+        <reason>Demonstrates RBAC enforcement, company context checks, and audit logging hooks guiding new audit log and integrity endpoints.</reason>
+      </file>
+      <file path="frontend/src/features/customers/pages/Customers.tsx" kind="page" symbol="Customers" lineHints="380-655">
+        <reason>Existing TanStack Table implementation with search, refresh, page-size selector, and pagination to mirror in audit log UI (AC1).</reason>
+      </file>
+    </code>
+    <dependencies>
+      <backend>
+        <dep>Spring Boot 3.5.x (Web, Data JPA, Security) for audit APIs, company scoping, and RBAC guards.</dep>
+        <dep>PostgreSQL + Flyway for JSONB audit storage, partition strategies, and schema migrations.</dep>
+        <dep>SpringDoc OpenAPI for documenting new audit and integrity endpoints.</dep>
+      </backend>
+      <frontend>
+        <dep>React 18 + @tanstack/react-table 8.x for interactive audit log tables with filtering and pagination.</dep>
+        <dep>shadcn/ui (Dialog, Select, Table) and Lucide icons for consistent admin tooling UX.</dep>
+        <dep>React Query + Axios for RBAC-aware data fetching, export triggers, and optimistic refresh.</dep>
+      </frontend>
+      <tooling>
+        <dep>JUnit 5 + Testcontainers for integration tests covering audit log persistence and integrity scans.</dep>
+        <dep>Vitest + Testing Library + MSW for verifying audit UI filters, role guards, and localized copy.</dep>
+      </tooling>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <item>Audit trail must remain append-only with REQUIRES_NEW transactions and include companyId, actor metadata, and field diffs per AC3.</item>
+    <item>All audit log and integrity endpoints require ADMIN or CHIEF_ACCOUNTANT roles and enforce CompanyContext scoping (X-Company-Id header).</item>
+    <item>Integrity scans must throttle per company and log invocation metadata (actor, timestamp, scope) to prevent abuse.</item>
+    <item>Bulk operations must emit per-row ImportAuditEntry payloads while keeping main transaction latency within 30s for 1k rows.</item>
+    <item>Frontend audit tables must match platform accessibility patterns (keyboard navigation, screen reader labels, localized English/Vietnamese copy).</item>
+  </constraints>
+  <interfaces>
+    <endpoint method="GET" path="/api/v1/admin/audit-logs" auth="JWT + RBAC" scope="company">
+      <request headers="X-Company-Id, Accept" query="entityType?, entityId?, userEmail?, role?, action?, from?, to?, page?, size?, sort?">
+        <description>Returns paginated audit entries for all master-data entities filtered by actor, action, and time window.</description>
+      </request>
+      <response dto="PagedAuditLogResponse">
+        <fields>records[], total, page, size, links.export</fields>
+      </response>
+      <errors>
+        <error code="400">Invalid filters or missing company context</error>
+        <error code="403">Insufficient role (non admin/chief accountant)</error>
+      </errors>
+    </endpoint>
+    <endpoint method="GET" path="/api/v1/admin/audit-logs/{entityType}/{entityId}" auth="JWT + RBAC" scope="company">
+      <description>Fetches full change history timeline for a specific master-data record with field-level diffs.</description>
+    </endpoint>
+    <endpoint method="GET" path="/api/v1/admin/audit-logs/export" auth="JWT + RBAC" scope="company">
+      <request query="entityType?, entityId?, userEmail?, action?, from?, to?" />
+      <response dto="Streamed CSV/JSON export" headers="Content-Disposition: attachment; hash-manifest">
+        <description>Generates signed export for compliance reviews; logs export attempt.</description>
+      </response>
+    </endpoint>
+    <endpoint method="POST" path="/api/v1/admin/data-integrity/check" auth="JWT + RBAC" scope="company">
+      <request body="IntegrityCheckRequest (entities?, throttleBypass?)" />
+      <response dto="IntegrityCheckResponse">
+        <fields>jobId, startedAt, triggeredBy, summary, warnings</fields>
+      </response>
+      <errors>
+        <error code="429">Integrity scan throttled (too frequent)</error>
+      </errors>
+    </endpoint>
+    <endpoint method="GET" path="/api/v1/admin/data-integrity/results/{jobId}" auth="JWT + RBAC" scope="company">
+      <response dto="IntegrityCheckResult">
+        <fields>orphans[], references[], recommendations, auditLogId</fields>
+      </response>
+      <errors>
+        <error code="404">Job not found for company</error>
+      </errors>
+    </endpoint>
+  </interfaces>
+  <tests>
+    <standards>
+      <item>Backend: Spring Boot + Testcontainers PostgreSQL verifying audit persistence, RBAC guards, and integrity scan orchestration.</item>
+      <item>Frontend: Vitest + Testing Library with MSW to simulate audit APIs, filter interactions, and Vietnamese copy.</item>
+      <item>Ops: Manual regression using RBAC Testing Guide to confirm admin/chief-only access.</item>
+    </standards>
+    <locations>
+      <item>backend/src/test/java/com/accounting/controller/admin/AuditLogControllerIT.java</item>
+      <item>backend/src/test/java/com/accounting/service/audit/DataIntegrityServiceIT.java</item>
+      <item>frontend/src/features/audit/pages/__tests__/AuditLogPage.test.tsx</item>
+    </locations>
+    <ideas>
+      <item>AC1: UI test loads audit logs for customers, applies user/action/date filters, verifies pagination controls.</item>
+      <item>AC2/AC3: Integration test confirms audit entries store entity metadata, user email/role, IP, and user agent; RBAC denies ACCOUNTANT role.</item>
+      <item>AC4: Service test simulates blocked delete (e.g., customer with invoices) and asserts audit entry with failure reason.</item>
+      <item>AC5: Integrity scan test seeds orphaned supplier references, runs endpoint, and expects findings plus audit log record.</item>
+      <item>AC6: Import facade test ensures per-row ImportAuditEntry writes for success/failure rows with attempt metadata.</item>
+    </ideas>
+  </tests>
+</story-context>
+
+

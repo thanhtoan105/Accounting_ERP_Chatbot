@@ -7,7 +7,7 @@ PROJECT_TYPE: software
 PROJECT_LEVEL: 4
 FIELD_TYPE: greenfield
 START_DATE: 2025-10-30T08:11:03
-WORKFLOW_PATH: /home/duong/code/accounting/bmad/bmm/workflows/workflow-status/paths/greenfield-level-4.yaml
+WORKFLOW_PATH: /home/duong/code/accounting/bmad/bmm/workflows/workflow-status/paths/method-greenfield.yaml
 
 ## Current State
 

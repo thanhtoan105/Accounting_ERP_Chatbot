@@ -1,7 +1,9 @@
 package com.accounting.service.impl;
 
+import com.accounting.dto.ChartOfAccountCreateRequest;
 import com.accounting.dto.ChartOfAccountDTO;
 import com.accounting.dto.ChartOfAccountHierarchyDTO;
+import com.accounting.dto.ChartOfAccountUpdateRequest;
 import com.accounting.entity.ChartOfAccount;
 import com.accounting.repository.ChartOfAccountsRepository;
 import com.accounting.security.CompanyContext;
@@ -97,7 +99,7 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
 
   @Override
   public List<ChartOfAccountDTO> findAll(
-      Boolean postable, String codePrefix, Long parentId, String type, String search) {
+      Boolean postable, String codePrefix, Long parentId, String type, String search, Boolean active) {
     Long companyId = CompanyContext.getCompanyId();
     if (companyId == null) {
       throw new ResponseStatusException(
@@ -130,6 +132,9 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
               }
             }
             if (type != null && !type.isBlank() && !account.getType().equals(type)) {
+              return false;
+            }
+            if (active != null && account.getActive() != active) {
               return false;
             }
             return true;
@@ -165,6 +170,11 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
       // Filter by type
       if (type != null && !type.isBlank()) {
         predicates.add(criteriaBuilder.equal(root.get("type"), type));
+      }
+
+      // Filter by active status
+      if (active != null) {
+        predicates.add(criteriaBuilder.equal(root.get("active"), active));
       }
 
       return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
@@ -213,7 +223,165 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
     }
 
     // Use findAll with search filter
-    return findAll(null, null, null, null, searchTerm);
+    return findAll(null, null, null, null, searchTerm, null);
+  }
+
+  @Override
+  public ChartOfAccountDTO createAccount(ChartOfAccountCreateRequest request) {
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Missing company context (X-Company-Id header required)");
+    }
+
+    // Validate code uniqueness
+    if (chartOfAccountsRepository.existsByCompanyIdAndCode(companyId, request.getCode(), null)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Account code already exists: " + request.getCode());
+    }
+
+    // Validate parent exists if provided
+    if (request.getParentId() != null) {
+      Optional<ChartOfAccount> parent = chartOfAccountsRepository.findById(request.getParentId());
+      if (parent.isEmpty() || !parent.get().getCompanyId().equals(companyId)) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Parent account not found or belongs to different company");
+      }
+    }
+
+    ChartOfAccount account = new ChartOfAccount();
+    account.setCompanyId(companyId);
+    account.setCode(request.getCode());
+    account.setName(request.getName());
+    account.setNameEnglish(request.getNameEnglish());
+    account.setDescription(request.getDescription());
+    account.setType(request.getType());
+    account.setNormalSide(request.getNormalSide());
+    account.setParentId(request.getParentId());
+    account.setOrderingPosition(request.getOrderingPosition());
+    account.setPostable(false); // Will be updated based on children
+    account.setActive(true); // New accounts are active by default
+
+    ChartOfAccount saved = chartOfAccountsRepository.save(account);
+    return toDTO(saved);
+  }
+
+  @Override
+  public ChartOfAccountDTO updateAccount(Long id, ChartOfAccountUpdateRequest request) {
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Missing company context (X-Company-Id header required)");
+    }
+
+    ChartOfAccount account = chartOfAccountsRepository
+        .findById(id)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Account not found: " + id));
+
+    // Verify company scope
+    if (!account.getCompanyId().equals(companyId)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Account belongs to different company");
+    }
+
+    // Update fields if provided
+    if (request.getCode() != null) {
+      // Validate code uniqueness (excluding current account)
+      if (chartOfAccountsRepository.existsByCompanyIdAndCode(companyId, request.getCode(), id)) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Account code already exists: " + request.getCode());
+      }
+      account.setCode(request.getCode());
+    }
+    if (request.getName() != null) {
+      account.setName(request.getName());
+    }
+    if (request.getNameEnglish() != null) {
+      account.setNameEnglish(request.getNameEnglish());
+    }
+    if (request.getDescription() != null) {
+      account.setDescription(request.getDescription());
+    }
+    if (request.getType() != null) {
+      account.setType(request.getType());
+    }
+    if (request.getNormalSide() != null) {
+      account.setNormalSide(request.getNormalSide());
+    }
+    if (request.getParentId() != null) {
+      // Validate parent exists if provided
+      if (request.getParentId() != null) {
+        Optional<ChartOfAccount> parent = chartOfAccountsRepository.findById(request.getParentId());
+        if (parent.isEmpty() || !parent.get().getCompanyId().equals(companyId)) {
+          throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST, "Parent account not found or belongs to different company");
+        }
+        // Prevent circular reference
+        if (request.getParentId().equals(id)) {
+          throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST, "Account cannot be its own parent");
+        }
+      }
+      account.setParentId(request.getParentId());
+    }
+    if (request.getOrderingPosition() != null) {
+      account.setOrderingPosition(request.getOrderingPosition());
+    }
+
+    ChartOfAccount saved = chartOfAccountsRepository.save(account);
+    return toDTO(saved);
+  }
+
+  @Override
+  public void softDeleteAccount(Long id) {
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Missing company context (X-Company-Id header required)");
+    }
+
+    ChartOfAccount account = chartOfAccountsRepository
+        .findById(id)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Account not found: " + id));
+
+    // Verify company scope
+    if (!account.getCompanyId().equals(companyId)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Account belongs to different company");
+    }
+
+    account.setActive(false);
+    chartOfAccountsRepository.save(account);
+  }
+
+  @Override
+  public void activateAccount(Long id) {
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Missing company context (X-Company-Id header required)");
+    }
+
+    ChartOfAccount account = chartOfAccountsRepository
+        .findById(id)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Account not found: " + id));
+
+    // Verify company scope
+    if (!account.getCompanyId().equals(companyId)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Account belongs to different company");
+    }
+
+    account.setActive(true);
+    chartOfAccountsRepository.save(account);
+  }
+
+  @Override
+  public void deactivateAccount(Long id) {
+    softDeleteAccount(id); // Same as soft delete
   }
 
   /**
@@ -233,6 +401,9 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
         account.getCompanyId(),
         account.getCode(),
         account.getName(),
+        account.getNameEnglish(),
+        account.getDescription(),
+        account.getActive(),
         account.getType(),
         account.getNormalSide(),
         account.getPostable(),
@@ -256,6 +427,7 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
         account.getType(),
         account.getNormalSide(),
         account.getPostable(),
+        account.getActive(),
         account.getParentId(),
         account.getOrderingPosition());
   }

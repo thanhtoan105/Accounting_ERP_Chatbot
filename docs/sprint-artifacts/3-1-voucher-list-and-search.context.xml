@@ -1,0 +1,192 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>1</storyId>
+    <title>Voucher List and Search</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-27</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-1-voucher-list-and-search.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>accountant or chief accountant</asA>
+    <iWant>view, search, and filter vouchers with server-side pagination and real-time status counts</iWant>
+    <soThat>efficiently navigate and manage voucher entries while maintaining performance with large datasets</soThat>
+    <tasks>
+- [ ] Build VoucherListPage component with DataTablePro (AC: #1, #7, #8)
+  - [ ] Create `frontend/src/features/accounting/pages/Vouchers/VoucherList.tsx` with TanStack Table integration
+  - [ ] Implement column definitions: Voucher Number, Date, Type, Amount, Status, Entered By, Posted By, AR/AP Entity, Reversal Badge, Attachment Count
+  - [ ] Add server-side pagination with page size selector (10/20/30/50/100)
+  - [ ] Implement empty state with "Create First Voucher" CTA and "Reset Filters" link
+- [ ] Implement filtering and search functionality (AC: #2, #4)
+  - [ ] Add filter controls: status dropdown, date range picker, account selector
+  - [ ] Implement fuzzy search with unaccented Vietnamese text matching (voucher number, description)
+  - [ ] Persist filter/search/sort state in localStorage per company
+  - [ ] Wire filters to backend API query parameters
+- [ ] Add live badge counts and real-time updates (AC: #3)
+  - [ ] Create badge component showing draft vs posted counts
+  - [ ] Implement real-time updates after create/post operations (optimistic updates or polling)
+  - [ ] Wire to GET /api/v1/vouchers/count endpoint
+- [ ] Implement multi-column sorting (AC: #5)
+  - [ ] Configure TanStack Table for multi-column sort
+  - [ ] Persist sort state in session/localStorage
+  - [ ] Wire sort parameters to backend API
+- [ ] Build delete functionality with audit logging (AC: #6)
+  - [ ] Add delete action in row menu (only for DRAFT status)
+  - [ ] Create delete confirmation dialog with mandatory reason field
+  - [ ] Wire to DELETE /api/v1/vouchers/{id} endpoint
+  - [ ] Ensure reason is captured in audit log
+- [ ] Implement error handling UI (AC: #9)
+  - [ ] Add error toast with retry button
+  - [ ] Create error details modal with "Copy Error Details" button (exports JSON)
+  - [ ] Handle network errors, validation errors, and business rule violations
+- [ ] Enforce RBAC and company scoping (AC: #10)
+  - [ ] Apply RoleGuard to VoucherListPage route
+  - [ ] Verify backend API enforces company scoping via CompanyContext
+  - [ ] Test cross-company data isolation
+- [ ] Create backend API endpoints (AC: #1, #2, #4, #5, #7)
+  - [ ] Implement GET /api/v1/vouchers with pagination, filtering, search, sorting
+  - [ ] Implement GET /api/v1/vouchers/count for badge counts
+  - [ ] Implement DELETE /api/v1/vouchers/{id} with reason parameter
+  - [ ] Add server-side fuzzy search with unaccented Vietnamese support
+  - [ ] Ensure company scoping via CompanyScopeAspect
+- [ ] Add testing subtasks (AC: #1-#10)
+  - [ ] Unit tests for VoucherListPage component (filtering, sorting, pagination)
+  - [ ] Integration tests for GET /api/v1/vouchers endpoint (pagination, filters, search, company scoping)
+  - [ ] Integration tests for DELETE /api/v1/vouchers/{id} (RBAC, audit logging, reason capture)
+  - [ ] E2E tests for voucher list workflow (deferred to post-MVP if needed)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Voucher list table displays columns: Voucher Number, Date, Type, Amount (total), Status (DRAFT/POSTED/REVERSED), Entered By (user name), Posted By (user name, if posted), AR/AP Entity (customer/supplier name if applicable), Reversal Badge (if reversed), Attachment Count.
+2. Filters (status, date range, account), search query text, and sort order persist in user session/localStorage per company.
+3. Live badge counts display draft vs posted voucher totals, updated in real-time after create/post operations.
+4. Fuzzy search supports unaccented Vietnamese text matching on voucher number, description fields; Unicode-aware search.
+5. Multi-column sorting supported (e.g., date DESC + status ASC); sort state persists in session.
+6. Delete action allowed only for vouchers with status=DRAFT and no references (no linked payments/receipts); requires mandatory reason field captured in audit log.
+7. Server-side pagination with page size selector (10/20/30/50/100); infinite scroll deferred to post-MVP.
+8. Empty state displays when no vouchers found: helpful message, "Create First Voucher" CTA, "Reset Filters" link.
+9. API error handling: retry button on error toast, detailed error message in modal, "Copy Error Details" button exports JSON for support.
+10. RBAC enforcement: non-admin users see only their company's vouchers; department/role scoping deferred to post-MVP.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Story 3.1: Voucher List and Search">
+        Comprehensive technical specification for voucher engine including Story 3.1 requirements: server-side pagination, filtering, fuzzy Vietnamese search, multi-column sorting, RBAC enforcement, and audit logging. Defines API contracts, data models, and performance targets.
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="APIs and Interfaces">
+        REST endpoint specifications for GET /api/v1/vouchers with pagination, filtering, search, sorting. Response format: { data: { content: VoucherDTO[], totalElements: number, totalPages: number }, meta: {...} }. DELETE /api/v1/vouchers/{id} with reason parameter for audit logging.
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Performance">
+        Server-side pagination target: &lt;2s page load per NFR1. Redis caching for period status and COA metadata. Optimistic UI updates for draft saves. Search with unaccented Vietnamese support may load all results before pagination (acceptable for MVP with &lt;1000 records per company).
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Security">
+        All voucher operations enforce company-level isolation via company_id filtering. RBAC: Accountant role can create/edit drafts; Chief Accountant can post/unpost; Admin has full access. Delete action requires mandatory reason field captured in audit log.
+      </doc>
+      <doc path="docs/architecture/data-architecture.md" title="Data Architecture" section="Multi-Tenancy Strategy">
+        Row-level filtering via company_id on all tables. Spring Data JPA filter at repository level. API-level enforcement via security filter. Core entities: vouchers, voucher_lines, journal_entries tables with company_id column.
+      </doc>
+      <doc path="docs/architecture/security-architecture.md" title="Security Architecture" section="Authorization">
+        Role-Based Access Control (RBAC): Admin, Accountant, Chief Accountant, CFO. Spring Security method-level security. API-level permission checks. Company-level data isolation.
+      </doc>
+      <doc path="docs/architecture/project-structure.md" title="Project Structure" section="Frontend Structure">
+        Feature-first structure: Create voucher pages under frontend/src/features/accounting/pages/Vouchers/ with VoucherList.tsx as main component. Reuse shared components from @/components/ui (DataTablePro, filters, badges) and @/components/app (layout components).
+      </doc>
+      <doc path="docs/architecture/project-structure.md" title="Project Structure" section="Backend Structure">
+        Place voucher controller under backend/src/main/java/com/accounting/controller/voucher/ following modular structure. Service layer under backend/src/main/java/com/accounting/service/voucher/ or service/gl/. Repository under backend/src/main/java/com/accounting/repository/.
+      </doc>
+      <doc path="docs/ux-design-specification.md" title="UX Design Specification" section="DataTablePro — Detailed Spec">
+        Table foundation for list screens supporting enterprise-scale datasets with server-side operations: pagination, sorting (multi-column), filtering, search. Column presets, density toggle, column visibility. Keyboard navigation, row action menu, export CSV/Excel.
+      </doc>
+      <doc path="docs/ux-component-spec-generic-data-table.md" title="Generic Data Table Component Spec" section="Core UX Requirements">
+        Search (debounced 300ms), refresh button, record summary, page size selector (10/20/30/50/100), pagination, sorting, column visibility, filters slot, row selection, empty state, error state with retry, loading state with skeleton rows.
+      </doc>
+      <doc path="docs/sprint-artifacts/2-7-audit-trail-data-integrity-for-master-data.md" title="Story 2.7: Audit Trail" section="Completion Notes">
+        AuditServiceImpl with builder pattern for consistent audit entry creation. Service supports entity metadata, field-level diffs, IP/user-agent capture, failure reason logging. Use auditService.logVoucherDeleted() method following pattern established for master data entities.
+      </doc>
+      <doc path="docs/sprint-artifacts/2-7-audit-trail-data-integrity-for-master-data.md" title="Story 2.7: Audit Trail" section="File List">
+        DataTablePro patterns created comprehensive audit log UI with TanStack Table, filters, pagination, page size selector. Reuse these patterns for VoucherListPage to maintain UI consistency. Key component: frontend/src/features/audit/pages/AuditLogPage.tsx for reference.
+      </doc>
+      <doc path="docs/rbac-testing-guide.md" title="RBAC Testing Guide" section="">
+        Reference guide for role-based access control validation patterns, ensuring proper test user setup and permission verification. Covers test user creation, role assignment, and permission testing strategies.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="frontend/src/features/audit/pages/AuditLogPage.tsx" kind="component" symbol="AuditLogPage" lines="1-628" reason="Reference implementation for DataTablePro pattern with TanStack Table, server-side pagination, filtering, search, page size selector, and localStorage persistence. Reuse patterns for VoucherListPage."/>
+      <artifact path="backend/src/test/java/com/accounting/controller/admin/AuditLogControllerIT.java" kind="test" symbol="AuditLogControllerIT" lines="1-369" reason="Integration test pattern for API endpoints with RBAC enforcement, company scoping, filtering, pagination. Reference for VoucherControllerIT implementation covering all acceptance criteria."/>
+      <artifact path="backend/src/main/java/com/accounting/security/CompanyScopeAspect.java" kind="aspect" symbol="CompanyScopeAspect" reason="Aspect for automatic company-level data filtering. Ensures all voucher repository queries are filtered by company_id to prevent cross-company data access."/>
+      <artifact path="backend/src/main/java/com/accounting/controller/CustomerController.java" kind="controller" reason="Reference for REST API endpoint patterns with pagination, filtering, company scoping. Follow same structure for VoucherController."/>
+      <artifact path="backend/src/main/java/com/accounting/controller/SupplierController.java" kind="controller" reason="Reference for REST API endpoint patterns with pagination, filtering, company scoping. Follow same structure for VoucherController."/>
+    </code>
+    <dependencies>
+      <node>
+        <package name="@tanstack/react-table" version="latest">Table library for VoucherListPage with server-side pagination, sorting, filtering</package>
+        <package name="shadcn/ui" version="latest">UI component library: Table, Button, Input, Select, Badge, Dialog, Skeleton, Alert</package>
+        <package name="date-fns" version="latest">Date formatting utilities</package>
+        <package name="sonner" version="latest">Toast notifications for error handling</package>
+      </node>
+      <java>
+        <package name="org.springframework.boot" version="3.5.7">Spring Boot framework</package>
+        <package name="org.springframework.data.jpa" version="latest">JPA repositories with company scoping</package>
+        <package name="org.springframework.security" version="latest">Spring Security for RBAC enforcement</package>
+        <package name="org.postgresql" version="latest">PostgreSQL driver</package>
+      </java>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Follow feature-first structure: Place VoucherListPage under frontend/src/features/accounting/pages/Vouchers/ to align with feature-first architecture</constraint>
+    <constraint>Backend API patterns: Follow REST endpoint conventions established in Epic 2 (/api/v1/vouchers), use standard pagination response format { data: { content: VoucherDTO[], totalElements: number, totalPages: number }, meta: {...} }</constraint>
+    <constraint>Reuse audit logging infrastructure: Extend AuditLogService from Story 2.7 to log delete operations with reason field, following established audit payload format with entity metadata and field-level changes</constraint>
+    <constraint>Reuse DataTablePro patterns: Leverage DataTablePro patterns, filter persistence, and pagination implementations from master data management pages (customers, suppliers) to maintain UI consistency</constraint>
+    <constraint>Company scoping: All queries filtered by CompanyContext.getCompanyId() to prevent cross-company data access. Ensure voucher repository queries use CompanyScopeAspect or explicit company filtering</constraint>
+    <constraint>RBAC enforcement: All audit endpoints use @PreAuthorize("hasAnyRole('ADMIN','CHIEF_ACCOUNTANT')") and company scoping via CompanyContext.getCompanyId(). Apply same pattern to voucher endpoints, ensuring Accountant+ roles can view vouchers</constraint>
+    <constraint>Filter persistence: Story 2.7 implemented localStorage persistence for filters per company. Apply same pattern for voucher list filters (status, date range, account, search, sort) to improve user experience</constraint>
+    <constraint>Testing pattern: Follow comprehensive testing approach from Story 2.7, which achieved 28 tests across all acceptance criteria with integration, unit, and negative test scenarios</constraint>
+    <constraint>Performance: Server-side pagination target &lt;2s page load per NFR1. Acceptable for MVP with &lt;1000 records per company</constraint>
+    <constraint>Vietnamese search: Support unaccented Vietnamese text matching on voucher number and description fields with Unicode-aware search capabilities</constraint>
+  </constraints>
+  <interfaces>
+    <interface name="GET /api/v1/vouchers" kind="REST endpoint" signature="GET /api/v1/vouchers?page={page}&amp;size={size}&amp;status={status}&amp;dateFrom={dateFrom}&amp;dateTo={dateTo}&amp;accountId={accountId}&amp;search={search}&amp;sort={sort}" path="backend/src/main/java/com/accounting/controller/voucher/VoucherController.java">
+      Query parameters: page, size, status, dateFrom, dateTo, accountId, search, sort. Response: { data: { content: VoucherDTO[], totalElements: number, totalPages: number }, meta: {...} }. Auth: JWT required, company-scoped. RBAC: Accountant+ can view.
+    </interface>
+    <interface name="GET /api/v1/vouchers/count" kind="REST endpoint" signature="GET /api/v1/vouchers/count?status={status}" path="backend/src/main/java/com/accounting/controller/voucher/VoucherController.java">
+      Returns badge counts for draft vs posted vouchers. Response: { data: { draft: number, posted: number }, meta: {...} }. Auth: JWT required, company-scoped.
+    </interface>
+    <interface name="DELETE /api/v1/vouchers/{id}" kind="REST endpoint" signature="DELETE /api/v1/vouchers/{id} with body: { reason: string }" path="backend/src/main/java/com/accounting/controller/voucher/VoucherController.java">
+      Request body: { reason: string } (required for audit). Response: 204 No Content. Auth: JWT required, company-scoped. RBAC: Accountant+ can delete (drafts only, unreferenced). Validation: Blocks deletion of posted vouchers or vouchers with references.
+    </interface>
+    <interface name="VoucherDTO" kind="TypeScript interface" signature="interface VoucherDTO { id: string; voucherNumber: string; voucherDate: string; description: string; status: 'DRAFT' | 'POSTED' | 'REVERSED'; periodId: string; enteredBy: UserSummary; postedBy?: UserSummary; postedAt?: string; lines: VoucherLineDTO[]; reversalVoucherId?: string; reversedByVoucherId?: string; attachmentCount: number; createdAt: string; updatedAt: string; }" path="frontend/src/types/voucher.ts">
+      Main DTO for voucher data transfer between backend and frontend. Includes all fields required for voucher list display.
+    </interface>
+    <interface name="AuditLogService.logVoucherDeleted()" kind="Java method" signature="void logVoucherDeleted(UUID voucherId, String voucherNumber, String reason, User user)" path="backend/src/main/java/com/accounting/service/AuditLogService.java">
+      Method for logging voucher deletion with reason field. Follows builder pattern established in Story 2.7. Captures entity metadata, field-level changes, IP/user-agent, and failure reason.
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+      Follow comprehensive testing approach from Story 2.7: Integration tests using @SpringBootTest with IntegrationTest base class for API endpoint tests, covering RBAC enforcement, company scoping, filtering, pagination, and error handling. Unit tests for service layer validation logic. Negative test scenarios for blocked operations. Reference AuditLogControllerIT (13 tests) as pattern for voucher endpoint integration tests. Test coverage target: 70% for business logic layer, 60% for frontend components.
+    </standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/controller/voucher/VoucherControllerIT.java</location>
+      <location>backend/src/test/java/com/accounting/service/voucher/VoucherServiceTest.java</location>
+      <location>frontend/src/features/accounting/pages/Vouchers/__tests__/VoucherList.test.tsx</location>
+    </locations>
+    <ideas>
+      <test ac="3.1.1">Verify all columns render correctly in VoucherListPage: Voucher Number, Date, Type, Amount, Status, Entered By, Posted By, AR/AP Entity, Reversal Badge, Attachment Count. Test API response structure matches expected DTO format.</test>
+      <test ac="3.1.2">Test filter state persistence across page reloads: status, date range, account, search query, sort order stored in localStorage per company. Verify state restored on component mount.</test>
+      <test ac="3.1.3">Test badge counts update after create/post operations. Verify GET /api/v1/vouchers/count returns correct draft vs posted totals. Test real-time updates via optimistic updates or polling.</test>
+      <test ac="3.1.4">Test unaccented Vietnamese search: search "phieu" matches "phiếu", "chung tu" matches "chứng từ". Test Unicode-aware search on voucher number and description fields.</test>
+      <test ac="3.1.5">Test multi-column sorting: date DESC + status ASC. Verify sort state persists in session/localStorage. Test sort parameters wired to backend API correctly.</test>
+      <test ac="3.1.6">Test delete blocked for posted vouchers (409 Conflict). Test delete requires reason field. Test delete only allowed for DRAFT status and no references. Verify reason captured in audit log.</test>
+      <test ac="3.1.7">Test server-side pagination with page size selector (10/20/30/50/100). Verify pagination controls work correctly. Test page size persists in localStorage.</test>
+      <test ac="3.1.8">Test empty state UI: helpful message, "Create First Voucher" CTA, "Reset Filters" link. Verify empty state displays when no vouchers found.</test>
+      <test ac="3.1.9">Test error handling: retry button on error toast, detailed error message in modal, "Copy Error Details" button exports JSON. Test network errors, validation errors, business rule violations.</test>
+      <test ac="3.1.10">Test RBAC enforcement: non-admin users see only their company's vouchers. Test company isolation via CompanyScopeAspect. Test cross-company data access blocked. Verify RoleGuard applied to VoucherListPage route.</test>
+    </ideas>
+  </tests>
+</story-context>
+

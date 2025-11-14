@@ -1,0 +1,142 @@
+{
+  "customers": {
+    "headers": [
+      {
+        "name": "customer_code",
+        "type": "string? (auto if blank)"
+      },
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "tax_code",
+        "type": "numeric string (10 digits)?"
+      },
+      {
+        "name": "email",
+        "type": "string (email)?"
+      },
+      {
+        "name": "phone",
+        "type": "string?"
+      },
+      {
+        "name": "address",
+        "type": "string?"
+      },
+      {
+        "name": "active",
+        "type": "boolean (TRUE/FALSE)"
+      }
+    ],
+    "demo_records": 2
+  },
+  "suppliers": {
+    "headers": [
+      {
+        "name": "supplier_code",
+        "type": "string? (auto if blank)"
+      },
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "tax_code",
+        "type": "numeric string (10 digits)?"
+      },
+      {
+        "name": "email",
+        "type": "string (email)?"
+      },
+      {
+        "name": "phone",
+        "type": "string?"
+      },
+      {
+        "name": "address",
+        "type": "string?"
+      },
+      {
+        "name": "active",
+        "type": "boolean (TRUE/FALSE)"
+      }
+    ],
+    "demo_records": 2
+  },
+  "bank-accounts": {
+    "headers": [
+      {
+        "name": "account_code",
+        "type": "string? (auto if blank)"
+      },
+      {
+        "name": "account_number",
+        "type": "string"
+      },
+      {
+        "name": "bank_name",
+        "type": "string"
+      },
+      {
+        "name": "branch",
+        "type": "string?"
+      },
+      {
+        "name": "account_type",
+        "type": "enum [CASH|BANK]"
+      },
+      {
+        "name": "opening_balance",
+        "type": "decimal"
+      },
+      {
+        "name": "active",
+        "type": "boolean (TRUE/FALSE)"
+      }
+    ],
+    "demo_records": 2
+  },
+  "opening-balances": {
+    "headers": [
+      {
+        "name": "journal_code",
+        "type": "string"
+      },
+      {
+        "name": "account_code",
+        "type": "string (TT200 code)"
+      },
+      {
+        "name": "account_name",
+        "type": "string"
+      },
+      {
+        "name": "currency",
+        "type": "ISO 4217"
+      },
+      {
+        "name": "debit",
+        "type": "decimal"
+      },
+      {
+        "name": "credit",
+        "type": "decimal"
+      },
+      {
+        "name": "period_start",
+        "type": "ISO date YYYY-MM-DD"
+      },
+      {
+        "name": "period_end",
+        "type": "ISO date YYYY-MM-DD"
+      },
+      {
+        "name": "note",
+        "type": "string?"
+      }
+    ],
+    "demo_records": 4
+  }
+}

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>User Journey — Supplier/AP Payment</title>
+    <style>
+      :root{
+        --bg:#f9f4f1; --fg:#0a0a0a; --card:#ffffff; --border:#dfe7f1;
+        --primary:#0040ff; --on-primary:#ffffff; --muted:#cce9ff; --warn:#fd6f00;
+      }
+      *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+      header{position:sticky;top:0;background:#fff7;border-bottom:1px solid var(--border);backdrop-filter:blur(8px);padding:14px 20px}
+      h1{margin:0;font-size:16px}
+      .wrap{max-width:1200px;margin:0 auto;padding:20px}
+      .step{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:14px;overflow:hidden}
+      .top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--muted)}
+      .pill{font-size:12px;padding:4px 8px;border-radius:999px;background:#fff;border:1px solid var(--border)}
+      .screen{padding:14px}
+      .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+      .btn{border:1px solid var(--border);background:#fff;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:600}
+      .btn.primary{background:var(--primary);color:var(--on-primary);border-color:transparent}
+      .input{border:1px solid var(--border);border-radius:10px;padding:8px 10px;min-width:160px}
+      .table{border:1px solid var(--border);border-radius:12px;overflow:hidden} table{width:100%;border-collapse:collapse;font-size:12px} th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left} th{color:#445}
+      .note{font-size:12px;color:#556;margin-top:8px}
+    </style>
+  </head>
+  <body>
+    <header><h1>Supplier/AP Payment — Journey Visualization</h1></header>
+    <main class="wrap">
+      <!-- Step 1: From Bill or Payments List -->
+      <section class="step">
+        <div class="top"><strong>1) Entry</strong><span class="pill">From Bill banner “Create Payment” or Payments List</span></div>
+        <div class="screen">
+          <div class="row">
+            <button class="btn primary">Create Payment</button>
+            <span class="pill">Prefilled: Supplier = XYZ Ltd., Amount Due = ₫5.500.000</span>
+          </div>
+          <div class="note">Users can also start at Payments → New and pick Supplier/Bills manually.</div>
+        </div>
+      </section>
+
+      <!-- Step 2: Payment Sheet/Dialog -->
+      <section class="step">
+        <div class="top"><strong>2) Payment — Sheet/Dialog</strong><span class="pill">Spacious Header • Inline Workflow</span></div>
+        <div class="screen">
+          <h3 style="margin:0 0 8px 0">Basic Info</h3>
+          <div class="row">
+            <input class="input" placeholder="Payment Date (default: Today)" />
+            <input class="input" placeholder="Reference No (optional)" />
+            <input class="input" placeholder="Payment Method (Bank Transfer / Cash / Cheque)" />
+            <input class="input" placeholder="Supplier Code/ID (search/create)" />
+            <input class="input" placeholder="Supplier Name (auto‑fill)" />
+            <input class="input" placeholder="Bank/Cash Account (111/112 — auto‑suggested)" />
+            <input class="input" placeholder="Notes" />
+          </div>
+
+          <h3 style="margin:14px 0 8px 0">Apply to Bills</h3>
+          <div class="table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Bill No.</th>
+                  <th>Date</th>
+                  <th>Due Date</th>
+                  <th>Original</th>
+                  <th>Paid to Date</th>
+                  <th>Due</th>
+                  <th>Pay</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>PB‑2025‑0204</td>
+                  <td>2025‑11‑08</td>
+                  <td>2025‑12‑08</td>
+                  <td>₫5.500.000</td>
+                  <td>₫0</td>
+                  <td>₫5.500.000</td>
+                  <td><input class="input" placeholder="₫5.500.000" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="row" style="margin-top:10px;justify-content:space-between">
+            <div class="row">
+              <span class="pill">Payment Amount: ₫5.500.000</span>
+              <span class="pill">Total Applied: ₫5.500.000</span>
+              <span class="pill">Unapplied/Prepayment: ₫0</span>
+            </div>
+            <div class="row"><button class="btn">Save Draft</button><button class="btn primary">Save & Post</button></div>
+          </div>
+          <div class="note">Keyboard: edit “Pay”, Tab/Enter to move, Ctrl+K focus Supplier, Ctrl+S save.</div>
+        </div>
+      </section>
+
+      <!-- Step 3: Validation -->
+      <section class="step">
+        <div class="top"><strong>3) Validation</strong><span class="pill">Required Fields • Amount Rules • Period Open</span></div>
+        <div class="screen">
+          <ul style="margin:0 0 0 18px">
+            <li>Required: Date, Supplier, Bank/Cash account, at least one pay amount.</li>
+            <li>Pay amount ≤ Bill Due; total applied ≤ Payment amount (if payment amount specified).</li>
+            <li>Period open; accounts 111/112 and 331 are postable.</li>
+            <li>Payment amount &gt; 0 — negative payments are not allowed.</li>
+            <li>Bank balance check (warning only): if Payment Amount &gt; selected bank balance → show non‑blocking warning.</li>
+            <li>Duplicate payment check (warning): same supplier + same bills paid within last X days.</li>
+            <li>Payment terms check: if paying before bill due date and terms have early-payment discount → suggest/auto‑apply discount line (optional confirmation).</li>
+            <li>Prepayment handling:
+              <ul>
+                <li>If Total Applied &lt; Payment Amount → difference recorded as Prepayment/Advance to supplier on 331 (debit balance).</li>
+                <li>If Total Applied &gt; Payment Amount → inline error; prevent posting.</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Step 4: Posting -->
+      <section class="step">
+        <div class="top"><strong>4) Posting</strong><span class="pill">Double‑entry</span></div>
+        <div class="screen">
+          <ul style="margin:0 0 0 18px">
+            <li>Dr 331 (Supplier) = Total Applied (by supplier_id)</li>
+            <li>Cr 111/112 (Cash/Bank) = Payment Amount</li>
+            <li>Dr 331 (Supplier, advance) = Prepayment amount (if any)</li>
+          </ul>
+          <div class="note">Status updates: Bills to Paid/Partially Paid; prepayment available to apply on future bills.</div>
+        </div>
+      </section>
+
+      <!-- Step 5: Success -->
+      <section class="step">
+        <div class="top"><strong>5) Success</strong><span class="pill">Toast + Banner • Follow‑ups</span></div>
+        <div class="screen">
+          <div class="row">
+            <span class="pill" style="background:var(--muted)">Payment PM‑2025‑044 posted. PB‑2025‑0204 marked Paid.</span>
+            <button class="btn">View Bill</button>
+            <button class="btn">Print/Share Payment</button>
+            <button class="btn">New Payment</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Behavior: Auto-suggest Bank/Cash -->
+      <section class="step">
+        <div class="top"><strong>Auto‑Suggest Bank/Cash Account</strong><span class="pill">Smart default</span></div>
+        <div class="screen">
+          <ul style="margin:0 0 0 18px">
+            <li>Priority 1: Last used account for this supplier.</li>
+            <li>Priority 2: Company default payment account (settings).</li>
+            <li>Priority 3: First active bank account; if none, cash.</li>
+          </ul>
+          <div class="note">User override is remembered per supplier.</div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+
+

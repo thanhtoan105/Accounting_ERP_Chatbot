@@ -39,17 +39,17 @@ export function useCompany() {
     try {
       const fiscalStart = new Date(company.fiscalYearStart)
       const now = new Date()
-      
+
       // Calculate which fiscal year we're in
       let fiscalYear = now.getFullYear()
       if (now < new Date(fiscalYear, fiscalStart.getMonth(), fiscalStart.getDate())) {
         fiscalYear -= 1
       }
-      
+
       // Calculate month in fiscal year (1-12)
       const monthDiff = (now.getMonth() - fiscalStart.getMonth() + 12) % 12
       const fiscalMonth = monthDiff + 1
-      
+
       return `${fiscalYear}-${String(fiscalMonth).padStart(2, '0')}`
     } catch {
       // Fallback to current year-month
@@ -65,4 +65,3 @@ export function useCompany() {
     currentPeriod: company ? getCurrentPeriod() : null,
   }
 }
-

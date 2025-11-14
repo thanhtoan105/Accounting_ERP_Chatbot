@@ -46,11 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
               {this.state.error?.message || 'An unexpected error occurred'}
             </AlertDescription>
             <div className="mt-4 flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.location.reload()}
-              >
+              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
                 <RefreshCw className="mr-2 size-4" />
                 Reload Page
               </Button>
@@ -66,4 +62,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children
   }
 }
-

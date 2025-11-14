@@ -12,6 +12,9 @@ public class ChartOfAccountDTO {
   private Long companyId;
   private String code;
   private String name;
+  private String nameEnglish;
+  private String description;
+  private Boolean active;
   private String type;
   private String normalSide;
   private Boolean postable;
@@ -29,6 +32,9 @@ public class ChartOfAccountDTO {
       Long companyId,
       String code,
       String name,
+      String nameEnglish,
+      String description,
+      Boolean active,
       String type,
       String normalSide,
       Boolean postable,
@@ -42,6 +48,9 @@ public class ChartOfAccountDTO {
     this.companyId = companyId;
     this.code = code;
     this.name = name;
+    this.nameEnglish = nameEnglish;
+    this.description = description;
+    this.active = active;
     this.type = type;
     this.normalSide = normalSide;
     this.postable = postable;
@@ -155,5 +164,29 @@ public class ChartOfAccountDTO {
 
   public void setUpdatedAt(Instant updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public String getNameEnglish() {
+    return nameEnglish;
+  }
+
+  public void setNameEnglish(String nameEnglish) {
+    this.nameEnglish = nameEnglish;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public Boolean getActive() {
+    return active;
+  }
+
+  public void setActive(Boolean active) {
+    this.active = active;
   }
 }
