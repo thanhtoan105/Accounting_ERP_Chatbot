@@ -239,16 +239,7 @@ export function VoucherLineGrid({
         onRedo?.()
       }
     },
-    [
-      activeRowIndex,
-      duplicateLineAt,
-      insertLine,
-      loading,
-      onRedo,
-      onUndo,
-      readOnly,
-      removeLine,
-    ],
+    [activeRowIndex, duplicateLineAt, insertLine, loading, onRedo, onUndo, readOnly, removeLine],
   )
 
   React.useEffect(() => {
@@ -272,8 +263,7 @@ export function VoucherLineGrid({
     const scrollTop = element.scrollTop
     const viewportHeight = element.clientHeight || 0
     const start = Math.max(0, Math.floor(scrollTop / VIRTUAL_ROW_HEIGHT) - VIRTUAL_OVERSCAN)
-    const visibleCount =
-      Math.ceil(viewportHeight / VIRTUAL_ROW_HEIGHT) + VIRTUAL_OVERSCAN * 2
+    const visibleCount = Math.ceil(viewportHeight / VIRTUAL_ROW_HEIGHT) + VIRTUAL_OVERSCAN * 2
     const end = Math.min(lines.length, start + visibleCount)
     setVirtualWindow({ start, end })
   }, [lines.length, shouldVirtualize])
@@ -315,16 +305,16 @@ export function VoucherLineGrid({
           {!readOnly ? (
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => insertLine(lines.length)}
-                disabled={loading}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Thêm dòng
-              </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => insertLine(lines.length)}
+                  disabled={loading}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Thêm dòng
+                </Button>
                 <Button
                   type="button"
                   size="sm"
@@ -349,8 +339,8 @@ export function VoucherLineGrid({
                 </Button>
               </div>
               <div className="text-xs text-muted-foreground">
-                Phím tắt: Ctrl+N (thêm), Ctrl+D (nhân bản), Ctrl+Backspace (xóa), Ctrl+Z / Ctrl+Shift+Z
-                (hoàn tác), kéo thả để sắp xếp
+                Phím tắt: Ctrl+N (thêm), Ctrl+D (nhân bản), Ctrl+Backspace (xóa), Ctrl+Z /
+                Ctrl+Shift+Z (hoàn tác), kéo thả để sắp xếp
               </div>
             </div>
           ) : null}
@@ -388,7 +378,8 @@ export function VoucherLineGrid({
                 const actualIndex = shouldVirtualize ? virtualWindow.start + index : index
                 const errors = lineErrors[actualIndex + 1] || {}
                 const hasErrors = Object.keys(errors).length > 0
-                const lockedDebit = line.debitAccount && lockedAccountIds.includes(line.debitAccount.id)
+                const lockedDebit =
+                  line.debitAccount && lockedAccountIds.includes(line.debitAccount.id)
                 const lockedCredit =
                   line.creditAccount && lockedAccountIds.includes(line.creditAccount.id)
                 const dimensionRequirements = deriveDimensionRequirements(
@@ -444,7 +435,9 @@ export function VoucherLineGrid({
                         }
                       />
                       {errors.debitAccount ? (
-                        <p className="mt-1 text-xs text-destructive">{errors.debitAccount.join(', ')}</p>
+                        <p className="mt-1 text-xs text-destructive">
+                          {errors.debitAccount.join(', ')}
+                        </p>
                       ) : null}
                     </TableCell>
                     <TableCell>
@@ -470,7 +463,9 @@ export function VoucherLineGrid({
                       <Input
                         value={line.description ?? ''}
                         onFocus={() => setActiveRowIndex(actualIndex)}
-                        onChange={(event) => updateLine(actualIndex, { description: event.target.value })}
+                        onChange={(event) =>
+                          updateLine(actualIndex, { description: event.target.value })
+                        }
                         disabled={readOnly || loading}
                         placeholder="Diễn giải dòng"
                       />
@@ -502,10 +497,7 @@ export function VoucherLineGrid({
                       <div className="grid gap-3 sm:grid-cols-2">
                         <DimensionPicker
                           type="customer"
-                          value={
-                            line.customer ??
-                            fallbackDimensionOption(line.customerId, 'KH')
-                          }
+                          value={line.customer ?? fallbackDimensionOption(line.customerId, 'KH')}
                           onChange={(option) =>
                             updateLine(actualIndex, {
                               customer: option,
@@ -522,10 +514,7 @@ export function VoucherLineGrid({
                         />
                         <DimensionPicker
                           type="supplier"
-                          value={
-                            line.supplier ??
-                            fallbackDimensionOption(line.supplierId, 'NCC')
-                          }
+                          value={line.supplier ?? fallbackDimensionOption(line.supplierId, 'NCC')}
                           onChange={(option) =>
                             updateLine(actualIndex, {
                               supplier: option,
@@ -544,8 +533,7 @@ export function VoucherLineGrid({
                           <DimensionPicker
                             type="costCenter"
                             value={
-                              line.costCenter ??
-                              fallbackDimensionOption(line.costCenterId, 'TTCP')
+                              line.costCenter ?? fallbackDimensionOption(line.costCenterId, 'TTCP')
                             }
                             onChange={(option) =>
                               updateLine(actualIndex, {
@@ -553,18 +541,20 @@ export function VoucherLineGrid({
                                 costCenterId: option?.id ?? null,
                               })
                             }
-                          disabled={readOnly || loading}
+                            disabled={readOnly || loading}
                             required={requireCostCenter}
                             error={
                               requireCostCenter && !(line.costCenterId || line.costCenter?.id)
                                 ? 'Bắt buộc chọn trung tâm chi phí'
                                 : null
                             }
-                        />
+                          />
                         </div>
                       </div>
                       {errors.dimensions ? (
-                        <p className="mt-1 text-xs text-destructive">{errors.dimensions.join(', ')}</p>
+                        <p className="mt-1 text-xs text-destructive">
+                          {errors.dimensions.join(', ')}
+                        </p>
                       ) : null}
                     </TableCell>
                     <TableCell className="text-center">
@@ -609,7 +599,11 @@ export function VoucherLineGrid({
                               <Plus className="mr-2 h-4 w-4" />
                               Thêm bên dưới
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => reorderLines(actualIndex, Math.max(0, actualIndex - 1))}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                reorderLines(actualIndex, Math.max(0, actualIndex - 1))
+                              }
+                            >
                               <ArrowUpDown className="mr-2 h-4 w-4" />
                               Đưa lên
                             </DropdownMenuItem>
@@ -646,10 +640,7 @@ export function VoucherLineGrid({
           <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-4 py-2 text-sm backdrop-blur supports-[backdrop-filter]:bg-background/75">
             <span>
               {lines.length} dòng • Tổng tiền{' '}
-              <span className="font-semibold">
-                {amountFormatter.format(totals.amount)}
-              </span>{' '}
-              VND
+              <span className="font-semibold">{amountFormatter.format(totals.amount)}</span> VND
             </span>
             <span className="text-xs text-muted-foreground">Tổng Nợ = Tổng Có</span>
           </div>

@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, Search, X } from 'lucide-react'
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Command,
   CommandEmpty,
@@ -214,4 +210,3 @@ export function DimensionPicker({
 }
 
 export type { DimensionType }
-

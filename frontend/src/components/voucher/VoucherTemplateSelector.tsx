@@ -140,16 +140,12 @@ export function VoucherTemplateSelector({
             </Button>
           </div>
 
-          {error ? (
-            <p className="text-sm text-destructive">{error}</p>
-          ) : null}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-md border">
               <div className="flex items-center justify-between border-b px-4 py-2">
-                <p className="text-sm font-semibold">
-                  Mẫu có sẵn ({filteredTemplates.length})
-                </p>
+                <p className="text-sm font-semibold">Mẫu có sẵn ({filteredTemplates.length})</p>
                 {loading ? <span className="text-xs text-muted-foreground">Đang tải…</span> : null}
               </div>
               <ScrollArea className="h-[360px]">
@@ -241,16 +237,19 @@ export function VoucherTemplateSelector({
                             className="rounded-md border p-3 text-xs leading-relaxed"
                           >
                             <p className="font-semibold">
-                              Dòng {line.lineNumber}: Nợ{' '}
-                              {line.debitAccountCode || '---'} / Có{' '}
+                              Dòng {line.lineNumber}: Nợ {line.debitAccountCode || '---'} / Có{' '}
                               {line.creditAccountCode || '---'}
                             </p>
                             {line.defaultDescription ? (
                               <p className="text-muted-foreground">{line.defaultDescription}</p>
                             ) : null}
                             <div className="mt-1 flex flex-wrap gap-2">
-                              {line.requiresCustomer ? <Badge variant="outline">Yêu cầu KH</Badge> : null}
-                              {line.requiresSupplier ? <Badge variant="outline">Yêu cầu NCC</Badge> : null}
+                              {line.requiresCustomer ? (
+                                <Badge variant="outline">Yêu cầu KH</Badge>
+                              ) : null}
+                              {line.requiresSupplier ? (
+                                <Badge variant="outline">Yêu cầu NCC</Badge>
+                              ) : null}
                               {line.requiresCostCenter ? (
                                 <Badge variant="outline">Yêu cầu trung tâm CP</Badge>
                               ) : null}
@@ -293,4 +292,3 @@ export function VoucherTemplateSelector({
 }
 
 export default VoucherTemplateSelector
-
