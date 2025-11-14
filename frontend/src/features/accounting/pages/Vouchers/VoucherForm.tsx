@@ -12,7 +12,15 @@ import {
   parseISO,
   startOfMonth,
 } from 'date-fns'
-import { AlertCircle, CalendarIcon, Loader2, Save, ShieldAlert, Sparkles, FileText } from 'lucide-react'
+import {
+  AlertCircle,
+  CalendarIcon,
+  Loader2,
+  Save,
+  ShieldAlert,
+  Sparkles,
+  FileText,
+} from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
 
@@ -67,11 +75,7 @@ import type { ChartOfAccount } from '@/types/chartOfAccount'
 
 const formSchema = z.object({
   voucherDate: z.string({ required_error: 'Ngày chứng từ bắt buộc' }),
-  description: z
-    .string()
-    .max(500, 'Mô tả tối đa 500 ký tự')
-    .optional()
-    .or(z.literal('')),
+  description: z.string().max(500, 'Mô tả tối đa 500 ký tự').optional().or(z.literal('')),
 })
 
 type VoucherFormValues = z.infer<typeof formSchema>
@@ -101,12 +105,11 @@ function mapAccountsToSummaries(accounts: ChartOfAccount[]): AccountSummary[] {
       id: String(account.id),
       code: account.code,
       name: account.name,
-      balanceSide:
-        account.normalSide?.toLowerCase().includes('debit')
-          ? 'debit'
-          : account.normalSide?.toLowerCase().includes('credit')
-            ? 'credit'
-            : 'both',
+      balanceSide: account.normalSide?.toLowerCase().includes('debit')
+        ? 'debit'
+        : account.normalSide?.toLowerCase().includes('credit')
+          ? 'credit'
+          : 'both',
       group: account.type,
       isLeaf: account.postable,
     }))
@@ -213,9 +216,7 @@ function convertLedgerLinesToEntries(
     return createInitialLines()
   }
 
-  const sorted = [...ledgerLines].sort(
-    (a, b) => (a.lineNumber ?? 0) - (b.lineNumber ?? 0),
-  )
+  const sorted = [...ledgerLines].sort((a, b) => (a.lineNumber ?? 0) - (b.lineNumber ?? 0))
   const entries: VoucherEntryLine[] = []
 
   for (let i = 0; i < sorted.length; ) {
@@ -232,7 +233,7 @@ function convertLedgerLinesToEntries(
         ? first
         : second && second.credit && second.credit > 0
           ? second
-          : second ?? first
+          : (second ?? first)
 
     entries.push({
       id: `loaded-${i}`,
@@ -240,24 +241,12 @@ function convertLedgerLinesToEntries(
       creditAccount: getAccountById(accounts, creditLine?.accountId),
       amount: Number(debitLine?.debit ?? creditLine?.credit ?? 0),
       description: debitLine?.description || creditLine?.description || '',
-      customerId:
-        (debitLine?.customerId ?? creditLine?.customerId)?.toString() ?? null,
-      supplierId:
-        (debitLine?.vendorId ?? creditLine?.vendorId)?.toString() ?? null,
-      costCenterId:
-        (debitLine?.costCenterId ?? creditLine?.costCenterId)?.toString() ?? null,
-      customer: buildDimensionOption(
-        debitLine?.customerId ?? creditLine?.customerId,
-        'KH',
-      ),
-      supplier: buildDimensionOption(
-        debitLine?.vendorId ?? creditLine?.vendorId,
-        'NCC',
-      ),
-      costCenter: buildDimensionOption(
-        debitLine?.costCenterId ?? creditLine?.costCenterId,
-        'TTCP',
-      ),
+      customerId: (debitLine?.customerId ?? creditLine?.customerId)?.toString() ?? null,
+      supplierId: (debitLine?.vendorId ?? creditLine?.vendorId)?.toString() ?? null,
+      costCenterId: (debitLine?.costCenterId ?? creditLine?.costCenterId)?.toString() ?? null,
+      customer: buildDimensionOption(debitLine?.customerId ?? creditLine?.customerId, 'KH'),
+      supplier: buildDimensionOption(debitLine?.vendorId ?? creditLine?.vendorId, 'NCC'),
+      costCenter: buildDimensionOption(debitLine?.costCenterId ?? creditLine?.costCenterId, 'TTCP'),
       source: 'manual',
       status: 'clean',
     })
@@ -315,13 +304,15 @@ export default function VoucherForm() {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loadingAccounts, setLoadingAccounts] = useState(true)
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(
+    'idle',
+  )
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(
     initialState.updatedAt ? new Date(initialState.updatedAt) : null,
   )
   const [draftLock, setDraftLock] = useState<DraftLock | null>(initialState.lock)
-  const [isLocked, setIsLocked] = useState(() =>
-    !isEditing && isLockedByOther(initialState.lock, currentUserId),
+  const [isLocked, setIsLocked] = useState(
+    () => !isEditing && isLockedByOther(initialState.lock, currentUserId),
   )
   const [lockCountdown, setLockCountdown] = useState<string | null>(null)
   const [loadingVoucher, setLoadingVoucher] = useState(false)
@@ -331,7 +322,9 @@ export default function VoucherForm() {
   const [applyingTemplate, setApplyingTemplate] = useState(false)
   const today = useMemo(() => new Date(), [])
   const openPeriodRange = useMemo(() => {
-    const fiscalStartBase = company?.fiscalYearStart ? parseISO(company.fiscalYearStart) : startOfMonth(new Date(today.getFullYear(), 0, 1))
+    const fiscalStartBase = company?.fiscalYearStart
+      ? parseISO(company.fiscalYearStart)
+      : startOfMonth(new Date(today.getFullYear(), 0, 1))
     const fiscalMonth = fiscalStartBase.getMonth()
     const fiscalDay = fiscalStartBase.getDate()
     let startYear = today.getFullYear()
@@ -538,7 +531,10 @@ export default function VoucherForm() {
     try {
       setSaving(true)
       const payload = buildRequest(values)
-      const response = isEditing && voucherId ? await updateVoucher(voucherId, payload) : await createVoucher(payload)
+      const response =
+        isEditing && voucherId
+          ? await updateVoucher(voucherId, payload)
+          : await createVoucher(payload)
       toast.success(isEditing ? 'Đã cập nhật chứng từ' : 'Đã lưu nháp chứng từ', {
         description: `Mã chứng từ: ${response.voucherNumber}`,
       })
@@ -559,27 +555,28 @@ export default function VoucherForm() {
     const lockedIds = new Set<string>()
     const mapped =
       template.lines?.map<VoucherEntryLine>((line) => {
-      const debitAccount = accounts.find((account) => account.id === line.debitAccountId) || null
-      const creditAccount = accounts.find((account) => account.id === line.creditAccountId) || null
+        const debitAccount = accounts.find((account) => account.id === line.debitAccountId) || null
+        const creditAccount =
+          accounts.find((account) => account.id === line.creditAccountId) || null
         if (line.lockAccounts) {
           if (line.debitAccountId) lockedIds.add(String(line.debitAccountId))
           if (line.creditAccountId) lockedIds.add(String(line.creditAccountId))
         }
-      return {
-        id: `tpl-${template.id}-${line.lineNumber}-${Date.now()}`,
-        debitAccount,
-        creditAccount,
-        description: line.defaultDescription || '',
-        amount: null,
-        customerId: null,
-        supplierId: null,
-        costCenterId: null,
+        return {
+          id: `tpl-${template.id}-${line.lineNumber}-${Date.now()}`,
+          debitAccount,
+          creditAccount,
+          description: line.defaultDescription || '',
+          amount: null,
+          customerId: null,
+          supplierId: null,
+          costCenterId: null,
           customer: null,
           supplier: null,
           costCenter: null,
-        source: 'template',
-        status: 'dirty',
-      }
+          source: 'template',
+          status: 'dirty',
+        }
       }) ?? []
     const nextLines =
       overrideEntries && overrideEntries.length
@@ -653,8 +650,8 @@ export default function VoucherForm() {
         <Alert variant="destructive">
           <AlertTitle>Phiếu đang bị khóa</AlertTitle>
           <AlertDescription className="flex flex-wrap items-center gap-2 text-sm">
-            {draftLock.ownerName || 'Người dùng khác'} đang chỉnh sửa bản nháp này. Khóa sẽ hết hạn sau{' '}
-            <span className="font-semibold">{lockCountdown ?? '—'}</span>.
+            {draftLock.ownerName || 'Người dùng khác'} đang chỉnh sửa bản nháp này. Khóa sẽ hết hạn
+            sau <span className="font-semibold">{lockCountdown ?? '—'}</span>.
             <Button
               size="sm"
               variant="outline"
@@ -708,18 +705,28 @@ export default function VoucherForm() {
             onClick={form.handleSubmit(handleValidate)}
             disabled={formDisabled}
           >
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldAlert className="mr-2 h-4 w-4" />}
+            {saving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ShieldAlert className="mr-2 h-4 w-4" />
+            )}
             Kiểm tra
           </Button>
           <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={formDisabled}>
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {saving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
             Lưu nháp
           </Button>
         </div>
       </div>
       <div className="text-xs text-muted-foreground">
         {autoSaveStatus === 'saving' && 'Đang lưu nháp...'}
-        {autoSaveStatus === 'saved' && lastSavedAt && `Đã lưu nháp lúc ${formatDistanceToNow(lastSavedAt, { addSuffix: true })}`}
+        {autoSaveStatus === 'saved' &&
+          lastSavedAt &&
+          `Đã lưu nháp lúc ${formatDistanceToNow(lastSavedAt, { addSuffix: true })}`}
         {autoSaveStatus === 'error' && (
           <span className="text-destructive flex items-center gap-1">
             <AlertCircle className="h-3 w-3" />
@@ -760,7 +767,9 @@ export default function VoucherForm() {
                         <Calendar
                           mode="single"
                           selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                          onSelect={(date) =>
+                            field.onChange(date ? format(date, 'yyyy-MM-dd') : '')
+                          }
                           month={calendarMonth}
                           onMonthChange={setCalendarMonth}
                           disabled={isDateDisabled}
@@ -860,4 +869,3 @@ export default function VoucherForm() {
     </div>
   )
 }
-

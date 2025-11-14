@@ -144,14 +144,17 @@ export function VoucherAttachmentDropzone({
     [voucherId, onUploadSuccess, onUploadError],
   )
 
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!disabled) {
-      setIsDragging(true)
-      setDragError(null)
-    }
-  }, [disabled])
+  const handleDragEnter = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (!disabled) {
+        setIsDragging(true)
+        setDragError(null)
+      }
+    },
+    [disabled],
+  )
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -350,4 +353,3 @@ export function VoucherAttachmentDropzone({
     </div>
   )
 }
-

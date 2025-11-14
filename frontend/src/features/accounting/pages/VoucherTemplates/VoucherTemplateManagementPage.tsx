@@ -140,17 +140,16 @@ function mapTemplateToForm(
     name: template.name,
     description: template.description || '',
     isActive: template.isActive,
-    lines:
-      template.lines?.map((line) => ({
-        id: `${template.id}-${line.lineNumber}-${Math.random().toString(36).slice(2, 6)}`,
-        debitAccount: findAccount(line.debitAccountId),
-        creditAccount: findAccount(line.creditAccountId),
-        defaultDescription: line.defaultDescription || '',
-        requiresCustomer: Boolean(line.requiresCustomer),
-        requiresSupplier: Boolean(line.requiresSupplier),
-        requiresCostCenter: Boolean(line.requiresCostCenter),
-        lockAccounts: Boolean(line.lockAccounts),
-      })) ?? [createEmptyLine()],
+    lines: template.lines?.map((line) => ({
+      id: `${template.id}-${line.lineNumber}-${Math.random().toString(36).slice(2, 6)}`,
+      debitAccount: findAccount(line.debitAccountId),
+      creditAccount: findAccount(line.creditAccountId),
+      defaultDescription: line.defaultDescription || '',
+      requiresCustomer: Boolean(line.requiresCustomer),
+      requiresSupplier: Boolean(line.requiresSupplier),
+      requiresCostCenter: Boolean(line.requiresCostCenter),
+      lockAccounts: Boolean(line.lockAccounts),
+    })) ?? [createEmptyLine()],
   }
 }
 
@@ -599,7 +598,10 @@ export default function VoucherTemplateManagementPage() {
               className="pl-9"
             />
           </div>
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+          >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Trạng thái" />
             </SelectTrigger>
@@ -637,7 +639,10 @@ export default function VoucherTemplateManagementPage() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2">
               <span>Kích thước trang</span>
-              <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(value) => setPageSize(Number(value))}
+              >
                 <SelectTrigger className="w-[90px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -862,25 +867,29 @@ export default function VoucherTemplateManagementPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteState.open} onOpenChange={(open) => setDeleteState({ open, template: open ? deleteState.template : null })}>
+      <Dialog
+        open={deleteState.open}
+        onOpenChange={(open) =>
+          setDeleteState({ open, template: open ? deleteState.template : null })
+        }
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Xoá mẫu chứng từ</DialogTitle>
             <DialogDescription>
               Bạn chắc chắn muốn xoá mẫu{' '}
-              <span className="font-semibold">{deleteState.template?.name}</span>? Hành động
-              này không thể hoàn tác.
+              <span className="font-semibold">{deleteState.template?.name}</span>? Hành động này
+              không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteState({ open: false, template: null })}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteState({ open: false, template: null })}
+            >
               Huỷ
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteLoading}
-            >
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>
               {deleteLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -896,4 +905,3 @@ export default function VoucherTemplateManagementPage() {
     </RoleGuard>
   )
 }
-
