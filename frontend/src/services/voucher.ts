@@ -6,9 +6,13 @@ import type {
   PaginatedResponse,
   VoucherCountResponse,
   VoucherCreateRequest,
-  VoucherCreateResponse,
   VoucherValidationResult,
-  VoucherValidationResponse,
+  VoucherValidationErrorMap,
+  VoucherTemplateSummaryDTO,
+  VoucherTemplateDTO,
+  VoucherTemplatePayload,
+  ApplyTemplateRequest,
+  ApplyTemplateResponse,
 } from '../types/voucher'
 import { fetchWithAuth } from '../utils/axios'
 
@@ -85,7 +89,7 @@ export async function createVoucher(request: VoucherCreateRequest): Promise<Vouc
     const error = await res.json().catch(() => ({ message: 'Request failed' }))
     throw error
   }
-  const payload = await handleJsonResponse<VoucherCreateResponse>(res)
+  const payload = await handleJsonResponse<{ data: VoucherDTO }>(res)
   return payload.data
 }
 
@@ -101,7 +105,7 @@ export async function updateVoucher(
     const error = await res.json().catch(() => ({ message: 'Request failed' }))
     throw error
   }
-  const payload = await handleJsonResponse<VoucherCreateResponse>(res)
+  const payload = await handleJsonResponse<{ data: VoucherDTO }>(res)
   return payload.data
 }
 
@@ -119,9 +123,136 @@ export async function validateVoucher(
     const error = await res.json().catch(() => ({ message: 'Validation request failed' }))
     throw error
   }
-  const payload = await handleJsonResponse<VoucherValidationResponse>(res)
+  const payload = await handleJsonResponse<{
+    valid: boolean
+    errors: VoucherValidationErrorMap
+  }>(res)
   return {
     valid: payload.valid,
     errors: payload.errors || {},
   }
+}
+
+export async function getVoucherTemplates(): Promise<VoucherTemplateSummaryDTO[]> {
+  const res = await fetchWithAuth(`${API_BASE}/voucher-templates`, { method: 'GET' })
+  const payload = await handleJsonResponse<{ data: VoucherTemplateSummaryDTO[] }>(res)
+  return payload.data
+}
+
+export async function getVoucherTemplateById(id: string): Promise<VoucherTemplateDTO> {
+  const res = await fetchWithAuth(`${API_BASE}/voucher-templates/${id}`, { method: 'GET' })
+  const payload = await handleJsonResponse<{ data: VoucherTemplateDTO }>(res)
+  return payload.data
+}
+
+export async function createVoucherTemplate(
+  payload: VoucherTemplatePayload,
+): Promise<VoucherTemplateDTO> {
+  const res = await fetchWithAuth(`${API_BASE}/voucher-templates`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  const response = await handleJsonResponse<{ data: VoucherTemplateDTO }>(res)
+  return response.data
+}
+
+export async function updateVoucherTemplate(
+  id: string,
+  payload: VoucherTemplatePayload,
+): Promise<VoucherTemplateDTO> {
+  const res = await fetchWithAuth(`${API_BASE}/voucher-templates/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+  const response = await handleJsonResponse<{ data: VoucherTemplateDTO }>(res)
+  return response.data
+}
+
+export async function deleteVoucherTemplate(id: string): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/voucher-templates/${id}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Delete template failed' }))
+    throw error
+  }
+}
+
+export async function activateVoucherTemplate(id: string): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/voucher-templates/${id}/activate`, {
+    method: 'PATCH',
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Activate template failed' }))
+    throw error
+  }
+}
+
+export async function deactivateVoucherTemplate(id: string): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/voucher-templates/${id}/deactivate`, {
+    method: 'PATCH',
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Deactivate template failed' }))
+    throw error
+  }
+}
+
+export async function applyVoucherTemplate(
+  request: ApplyTemplateRequest,
+): Promise<ApplyTemplateResponse> {
+  const res = await fetchWithAuth(`${API_BASE}/vouchers/apply-template`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Template application failed' }))
+    throw error
+  }
+  return await handleJsonResponse<ApplyTemplateResponse>(res)
+}
+
+export interface UploadAttachmentResponse {
+  message: string
+  voucherId: string
+  fileName: string
+  fileSize: number
+  contentType: string
+}
+
+export async function uploadVoucherAttachment(
+  voucherId: string,
+  file: File,
+): Promise<UploadAttachmentResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  // For FormData, we need to use fetch directly to avoid Content-Type header
+  // Import getAccessToken and getCompanyId from utils
+  const { getAccessToken, getCompanyId } = await import('../utils/axios')
+  const token = getAccessToken()
+  const companyId = getCompanyId()
+
+  const headers: HeadersInit = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  if (companyId !== null && companyId !== undefined) {
+    headers['X-Company-Id'] = String(companyId)
+  }
+  // Don't set Content-Type - browser will set it with boundary for FormData
+
+  const res = await fetch(`${API_BASE}/vouchers/${voucherId}/attachments`, {
+    method: 'POST',
+    body: formData,
+    headers,
+    credentials: 'include',
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Upload failed' }))
+    throw error
+  }
+
+  return await handleJsonResponse<UploadAttachmentResponse>(res)
 }

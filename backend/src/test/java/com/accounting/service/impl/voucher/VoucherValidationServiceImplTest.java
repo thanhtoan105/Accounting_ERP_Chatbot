@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.accounting.dto.VoucherCreateRequest;
+import com.accounting.dto.VoucherEntryLineRequest;
 import com.accounting.dto.VoucherLineDTO;
 import com.accounting.dto.VoucherValidationResult;
 import com.accounting.entity.ChartOfAccount;
@@ -316,5 +317,164 @@ class VoucherValidationServiceImplTest {
     line.setCredit(credit);
     line.setDescription(description);
     return line;
+  }
+
+  @Test
+  void validate_withEntryLines_validEntry_returnsValid() {
+    ChartOfAccount account1 = createPostableAccount(1L, "111", "Cash");
+    ChartOfAccount account2 = createPostableAccount(2L, "411", "Revenue");
+
+    when(chartOfAccountsRepository.findById(1L)).thenReturn(Optional.of(account1));
+    when(chartOfAccountsRepository.findById(2L)).thenReturn(Optional.of(account2));
+
+    VoucherCreateRequest request = new VoucherCreateRequest();
+    request.setDate(LocalDate.now());
+    request.setDescription("Test voucher with entry lines");
+
+    VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
+    entryLine.setDebitAccountId(1L);
+    entryLine.setCreditAccountId(2L);
+    entryLine.setAmount(BigDecimal.valueOf(1000));
+    entryLine.setDescription("Cash receipt");
+
+    request.setEntryLines(List.of(entryLine));
+
+    VoucherValidationResult result = validationService.validate(request);
+
+    assertTrue(result.isValid());
+    assertTrue(result.getErrors().isEmpty());
+  }
+
+  @Test
+  void validate_withEntryLines_missingCreditAccount_returnsFieldLevelError() {
+    ChartOfAccount account1 = createPostableAccount(1L, "111", "Cash");
+
+    when(chartOfAccountsRepository.findById(1L)).thenReturn(Optional.of(account1));
+
+    VoucherCreateRequest request = new VoucherCreateRequest();
+    request.setDate(LocalDate.now());
+    request.setDescription("Test voucher");
+
+    VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
+    entryLine.setDebitAccountId(1L);
+    entryLine.setCreditAccountId(null); // Missing credit account
+    entryLine.setAmount(BigDecimal.valueOf(1000));
+
+    request.setEntryLines(List.of(entryLine));
+
+    VoucherValidationResult result = validationService.validate(request);
+
+    assertFalse(result.isValid());
+    assertTrue(result.getErrors().containsKey(1)); // Line number 1
+    assertTrue(result.getErrors().get(1).containsKey("creditAccount")); // Field-level error
+  }
+
+  @Test
+  void validate_withEntryLines_sameAccountOnBothSides_returnsFieldLevelError() {
+    ChartOfAccount account1 = createPostableAccount(1L, "111", "Cash");
+
+    when(chartOfAccountsRepository.findById(1L)).thenReturn(Optional.of(account1));
+
+    VoucherCreateRequest request = new VoucherCreateRequest();
+    request.setDate(LocalDate.now());
+    request.setDescription("Test voucher");
+
+    VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
+    entryLine.setDebitAccountId(1L);
+    entryLine.setCreditAccountId(1L); // Same account on both sides
+    entryLine.setAmount(BigDecimal.valueOf(1000));
+
+    request.setEntryLines(List.of(entryLine));
+
+    VoucherValidationResult result = validationService.validate(request);
+
+    assertFalse(result.isValid());
+    assertTrue(result.getErrors().containsKey(1));
+    assertTrue(result.getErrors().get(1).containsKey("creditAccount"));
+  }
+
+  @Test
+  void validate_withEntryLines_zeroAmount_returnsFieldLevelError() {
+    ChartOfAccount account1 = createPostableAccount(1L, "111", "Cash");
+    ChartOfAccount account2 = createPostableAccount(2L, "411", "Revenue");
+
+    when(chartOfAccountsRepository.findById(1L)).thenReturn(Optional.of(account1));
+    when(chartOfAccountsRepository.findById(2L)).thenReturn(Optional.of(account2));
+
+    VoucherCreateRequest request = new VoucherCreateRequest();
+    request.setDate(LocalDate.now());
+    request.setDescription("Test voucher");
+
+    VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
+    entryLine.setDebitAccountId(1L);
+    entryLine.setCreditAccountId(2L);
+    entryLine.setAmount(BigDecimal.ZERO); // Zero amount
+
+    request.setEntryLines(List.of(entryLine));
+
+    VoucherValidationResult result = validationService.validate(request);
+
+    assertFalse(result.isValid());
+    assertTrue(result.getErrors().containsKey(1));
+    assertTrue(result.getErrors().get(1).containsKey("amount"));
+  }
+
+  @Test
+  void validate_withEntryLines_nonPostableAccount_returnsFieldLevelError() {
+    ChartOfAccount nonPostableAccount = createNonPostableAccount(1L, "111", "Cash");
+    ChartOfAccount postableAccount = createPostableAccount(2L, "411", "Revenue");
+
+    when(chartOfAccountsRepository.findById(1L)).thenReturn(Optional.of(nonPostableAccount));
+    when(chartOfAccountsRepository.findById(2L)).thenReturn(Optional.of(postableAccount));
+
+    VoucherCreateRequest request = new VoucherCreateRequest();
+    request.setDate(LocalDate.now());
+    request.setDescription("Test voucher");
+
+    VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
+    entryLine.setDebitAccountId(1L); // Non-postable account
+    entryLine.setCreditAccountId(2L);
+    entryLine.setAmount(BigDecimal.valueOf(1000));
+
+    request.setEntryLines(List.of(entryLine));
+
+    VoucherValidationResult result = validationService.validate(request);
+
+    assertFalse(result.isValid());
+    assertTrue(result.getErrors().containsKey(1));
+    assertTrue(result.getErrors().get(1).containsKey("debitAccount"));
+  }
+
+  @Test
+  void validate_withEntryLines_multipleLines_returnsErrorsForEachLine() {
+    ChartOfAccount account1 = createPostableAccount(1L, "111", "Cash");
+    ChartOfAccount account2 = createPostableAccount(2L, "411", "Revenue");
+
+    when(chartOfAccountsRepository.findById(1L)).thenReturn(Optional.of(account1));
+    when(chartOfAccountsRepository.findById(2L)).thenReturn(Optional.of(account2));
+
+    VoucherCreateRequest request = new VoucherCreateRequest();
+    request.setDate(LocalDate.now());
+    request.setDescription("Test voucher");
+
+    VoucherEntryLineRequest entryLine1 = new VoucherEntryLineRequest();
+    entryLine1.setDebitAccountId(1L);
+    entryLine1.setCreditAccountId(null); // Missing credit account - line 1 error
+    entryLine1.setAmount(BigDecimal.valueOf(1000));
+
+    VoucherEntryLineRequest entryLine2 = new VoucherEntryLineRequest();
+    entryLine2.setDebitAccountId(null); // Missing debit account - line 2 error
+    entryLine2.setCreditAccountId(2L);
+    entryLine2.setAmount(BigDecimal.valueOf(2000));
+
+    request.setEntryLines(List.of(entryLine1, entryLine2));
+
+    VoucherValidationResult result = validationService.validate(request);
+
+    assertFalse(result.isValid());
+    assertTrue(result.getErrors().containsKey(1));
+    assertTrue(result.getErrors().containsKey(2));
+    assertTrue(result.getErrors().get(1).containsKey("creditAccount"));
+    assertTrue(result.getErrors().get(2).containsKey("debitAccount"));
   }
 }

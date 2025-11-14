@@ -10,6 +10,8 @@ import {
   DefaultAccounts,
   ImportWizard,
   VoucherList,
+  VoucherForm,
+  VoucherTemplateManagementPage,
 } from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
@@ -83,6 +85,36 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
               <VoucherList />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/vouchers/new"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <VoucherForm />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/vouchers/:voucherId"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <VoucherForm />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/voucher-templates"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
+              <VoucherTemplateManagementPage />
             </RoleGuard>
           </ProtectedLayout>
         }

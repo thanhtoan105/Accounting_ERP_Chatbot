@@ -1,13 +1,20 @@
 package com.accounting.controller.voucher;
 
 import com.accounting.dto.VoucherCreateRequest;
+import com.accounting.dto.ApplyVoucherTemplateRequest;
 import com.accounting.dto.VoucherCountDTO;
 import com.accounting.dto.VoucherDTO;
 import com.accounting.dto.VoucherListDTO;
 import com.accounting.dto.VoucherValidationResult;
+import com.accounting.dto.VoucherLineDTO;
+import com.accounting.dto.VoucherTemplateDTO;
 import com.accounting.service.VoucherService;
+import com.accounting.service.VoucherTemplateService;
 import com.accounting.service.VoucherValidationService;
+import com.accounting.security.CompanyContext;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,12 +38,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import jakarta.persistence.OptimisticLockException;
 
 /**
  * REST controller for Voucher operations.
- * All authenticated users with Accountant+ role can view vouchers; delete requires Accountant+ role.
+ * All authenticated users with Accountant+ role can view vouchers; delete
+ * requires Accountant+ role.
  */
 @RestController
 @RequestMapping("/api/v1/vouchers")
@@ -44,11 +53,15 @@ public class VoucherController {
 
   private final VoucherService voucherService;
   private final VoucherValidationService voucherValidationService;
+  private final VoucherTemplateService voucherTemplateService;
 
   public VoucherController(
-      VoucherService voucherService, VoucherValidationService voucherValidationService) {
+      VoucherService voucherService,
+      VoucherValidationService voucherValidationService,
+      VoucherTemplateService voucherTemplateService) {
     this.voucherService = voucherService;
     this.voucherValidationService = voucherValidationService;
+    this.voucherTemplateService = voucherTemplateService;
   }
 
   /**
@@ -56,13 +69,15 @@ public class VoucherController {
    * Supports query params: page, size, status, dateFrom, dateTo, search, sort.
    * Requires authenticated user with Accountant+ role.
    *
-   * @param page page number (0-based, default: 0)
-   * @param size page size (default: 20, max: 50)
-   * @param status filter by status (optional: draft, posted, unposted)
+   * @param page     page number (0-based, default: 0)
+   * @param size     page size (default: 20, max: 50)
+   * @param status   filter by status (optional: draft, posted, unposted)
    * @param dateFrom filter by date from (optional, format: YYYY-MM-DD)
-   * @param dateTo filter by date to (optional, format: YYYY-MM-DD)
-   * @param search search term for voucher number or description (optional, supports Vietnamese unaccented matching)
-   * @param sort sort parameters (optional, format: field,direction e.g., date,desc or status,asc)
+   * @param dateTo   filter by date to (optional, format: YYYY-MM-DD)
+   * @param search   search term for voucher number or description (optional,
+   *                 supports Vietnamese unaccented matching)
+   * @param sort     sort parameters (optional, format: field,direction e.g.,
+   *                 date,desc or status,asc)
    * @return paginated voucher list
    */
   @GetMapping
@@ -89,9 +104,12 @@ public class VoucherController {
       for (String sortParam : sort) {
         String[] parts = sortParam.split(",");
         if (parts.length == 2) {
-          String field = parts[0].trim();
-          Sort.Direction direction =
-              "desc".equalsIgnoreCase(parts[1].trim()) ? Sort.Direction.DESC : Sort.Direction.ASC;
+          String field = parts[0] == null ? "" : parts[0].trim();
+          if (field.isEmpty()) {
+            continue;
+          }
+          Sort.Direction direction = "desc".equalsIgnoreCase(parts[1].trim()) ? Sort.Direction.DESC
+              : Sort.Direction.ASC;
           orders.add(new Sort.Order(direction, field));
         }
       }
@@ -104,24 +122,49 @@ public class VoucherController {
     Pageable pageable = PageRequest.of(page, size, sortObj);
 
     // Call service
-    Page<VoucherListDTO> vouchers =
-        voucherService.findAll(pageable, status, dateFrom, dateTo, search, accountId);
+    Page<VoucherListDTO> vouchers = voucherService.findAll(pageable, status, dateFrom, dateTo, search, accountId);
 
-    // Build response matching spec format: { data: { content: VoucherDTO[], totalElements: number, totalPages: number }, meta: {...} }
+    // Build response matching spec format: { data: { content: VoucherDTO[],
+    // totalElements: number, totalPages: number }, meta: {...} }
     Map<String, Object> data = new HashMap<>();
     data.put("content", vouchers.getContent());
     data.put("totalElements", vouchers.getTotalElements());
     data.put("totalPages", vouchers.getTotalPages());
-    
+
     Map<String, Object> meta = new HashMap<>();
     meta.put("page", vouchers.getNumber());
     meta.put("size", vouchers.getSize());
     meta.put("totalElements", vouchers.getTotalElements());
     meta.put("totalPages", vouchers.getTotalPages());
-    
+
     Map<String, Object> body = new HashMap<>();
     body.put("data", data);
     body.put("meta", meta);
+
+    return ResponseEntity.ok(body);
+  }
+
+  /**
+   * Apply a voucher template and return preview voucher data.
+   */
+  @PostMapping("/apply-template")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Map<String, Object>> applyTemplate(
+      @Valid @RequestBody ApplyVoucherTemplateRequest request) {
+    VoucherTemplateDTO template = voucherTemplateService
+        .getById(request.getTemplateId())
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Voucher template not found"));
+
+    VoucherDTO previewVoucher = buildTemplatePreviewVoucher(template, request);
+
+    Map<String, Object> data = new HashMap<>();
+    data.put("template", template);
+    data.put("voucher", previewVoucher);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("data", data);
 
     return ResponseEntity.ok(body);
   }
@@ -170,7 +213,7 @@ public class VoucherController {
    * Requires authenticated user with Accountant+ role.
    *
    * @param voucherId voucher ID
-   * @param request voucher update request with line items
+   * @param request   voucher update request with line items
    * @return updated voucher DTO
    */
   @PutMapping("/{voucherId}")
@@ -178,10 +221,10 @@ public class VoucherController {
   public ResponseEntity<Map<String, Object>> updateVoucher(
       @PathVariable UUID voucherId, @Valid @RequestBody VoucherCreateRequest request) {
     try {
-    VoucherDTO voucher = voucherService.update(voucherId, request);
-    Map<String, Object> body = new HashMap<>();
-    body.put("data", voucher);
-    return ResponseEntity.ok(body);
+      VoucherDTO voucher = voucherService.update(voucherId, request);
+      Map<String, Object> body = new HashMap<>();
+      body.put("data", voucher);
+      return ResponseEntity.ok(body);
     } catch (OptimisticLockException e) {
       // Handle optimistic locking conflict - voucher was modified by another user
       Map<String, Object> errorBody = new HashMap<>();
@@ -198,7 +241,7 @@ public class VoucherController {
    * Requires authenticated user with Accountant+ role.
    *
    * @param voucherId voucher ID (use placeholder UUID for new vouchers)
-   * @param request voucher request to validate
+   * @param request   voucher request to validate
    * @return validation result with errors (if any)
    */
   @PostMapping("/{voucherId}/validate")
@@ -206,7 +249,8 @@ public class VoucherController {
   public ResponseEntity<Map<String, Object>> validateVoucher(
       @PathVariable UUID voucherId,
       @Valid @RequestBody VoucherCreateRequest request) {
-    // Note: voucherId is in path per story requirements, but validation doesn't require it
+    // Note: voucherId is in path per story requirements, but validation doesn't
+    // require it
     // For new vouchers, clients should use a placeholder UUID
     VoucherValidationResult result = voucherValidationService.validate(request);
     Map<String, Object> body = new HashMap<>();
@@ -251,7 +295,7 @@ public class VoucherController {
    * Requires authenticated user with Accountant+ role.
    *
    * @param voucherId voucher ID
-   * @param reason deletion reason (required)
+   * @param reason    deletion reason (required)
    * @return success response
    */
   @DeleteMapping("/{voucherId}")
@@ -275,5 +319,125 @@ public class VoucherController {
     body.put("voucherId", voucherId);
 
     return ResponseEntity.ok(body);
+  }
+
+  private VoucherDTO buildTemplatePreviewVoucher(
+      VoucherTemplateDTO template, ApplyVoucherTemplateRequest request) {
+    VoucherDTO dto = new VoucherDTO();
+    dto.setId(null);
+    dto.setCompanyId(CompanyContext.getCompanyId());
+    dto.setVoucherNumber(null);
+    dto.setVoucherDate(request.getVoucherDate());
+    dto.setPeriodId(null);
+    dto.setDescription(
+        request.getDescription() != null && !request.getDescription().isBlank()
+            ? request.getDescription()
+            : template.getDescription());
+    dto.setStatus("draft");
+    dto.setCurrency("VND");
+    dto.setTotalDebit(BigDecimal.ZERO);
+    dto.setTotalCredit(BigDecimal.ZERO);
+    dto.setEnteredBy(null);
+    dto.setEnteredByName(null);
+    dto.setPostedBy(null);
+    dto.setPostedByName(null);
+    dto.setPostedAt(null);
+    dto.setReversalOf(null);
+    dto.setReversedBy(null);
+    dto.setReversedByName(null);
+    dto.setCreatedAt(Instant.now());
+    dto.setUpdatedAt(Instant.now());
+    dto.setVersion(0L);
+    dto.setAttachmentCount(0);
+    dto.setLines(buildLinesFromTemplate(template));
+    return dto;
+  }
+
+  private List<VoucherLineDTO> buildLinesFromTemplate(VoucherTemplateDTO template) {
+    List<VoucherLineDTO> lines = new ArrayList<>();
+    if (template.getLines() == null) {
+      return lines;
+    }
+    int lineNumber = 1;
+    for (var templateLine : template.getLines()) {
+      if (templateLine.getDebitAccountId() != null) {
+        VoucherLineDTO debitLine = new VoucherLineDTO();
+        debitLine.setLineNumber(lineNumber++);
+        debitLine.setAccountId(templateLine.getDebitAccountId());
+        debitLine.setDebit(BigDecimal.ZERO);
+        debitLine.setCredit(BigDecimal.ZERO);
+        debitLine.setDescription(templateLine.getDefaultDescription());
+        lines.add(debitLine);
+      }
+      if (templateLine.getCreditAccountId() != null) {
+        VoucherLineDTO creditLine = new VoucherLineDTO();
+        creditLine.setLineNumber(lineNumber++);
+        creditLine.setAccountId(templateLine.getCreditAccountId());
+        creditLine.setDebit(BigDecimal.ZERO);
+        creditLine.setCredit(BigDecimal.ZERO);
+        creditLine.setDescription(templateLine.getDefaultDescription());
+        lines.add(creditLine);
+      }
+    }
+    return lines;
+  }
+
+  /**
+   * Upload attachment for a voucher (basic implementation).
+   * Full attachment management will be implemented in Story 3.7.
+   * Requires authenticated user with Accountant+ role.
+   *
+   * @param voucherId voucher ID
+   * @param file      file to upload
+   * @return success response
+   */
+  @PostMapping("/{voucherId}/attachments")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Map<String, Object>> uploadAttachment(
+      @PathVariable UUID voucherId,
+      @RequestParam("file") MultipartFile file) {
+
+    // Verify voucher exists and belongs to company
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Missing company context");
+    }
+
+    voucherService.getVoucherById(voucherId)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
+
+    // Basic validation
+    if (file == null || file.isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "File is required");
+    }
+
+    // Basic file type validation (PDF and images)
+    String contentType = file.getContentType();
+    if (contentType == null ||
+        (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Invalid file type. Only PDF and image files are allowed.");
+    }
+
+    // Basic file size validation (10MB max)
+    long maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.getSize() > maxSize) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "File size exceeds maximum allowed size of 10MB.");
+    }
+
+    // TODO: Full implementation in Story 3.7
+    // For now, return success response
+    Map<String, Object> body = new HashMap<>();
+    body.put("message", "Attachment uploaded successfully");
+    body.put("voucherId", voucherId);
+    body.put("fileName", file.getOriginalFilename());
+    body.put("fileSize", file.getSize());
+    body.put("contentType", contentType);
+
+    return ResponseEntity.status(HttpStatus.CREATED).body(body);
   }
 }

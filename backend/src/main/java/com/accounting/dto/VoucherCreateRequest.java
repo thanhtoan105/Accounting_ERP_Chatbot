@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * DTO for creating or updating a voucher with its line items.
@@ -22,18 +21,32 @@ public class VoucherCreateRequest {
 
   private Long periodId; // Optional - Period ID
 
-  @NotNull(message = "At least one line item is required")
-  @Size(min = 1, message = "At least one line item is required")
+  private String currency = "VND";
+
+  @Valid
+  private List<VoucherEntryLineRequest> entryLines;
+
+  /**
+   * Legacy payload support – direct ledger lines (each line represents a single debit or credit).
+   * Prefer {@link #entryLines} for new functionality.
+   */
   @Valid
   private List<VoucherLineDTO> lines;
 
   public VoucherCreateRequest() {}
 
-  public VoucherCreateRequest(LocalDate date, String description, Long periodId,
+  public VoucherCreateRequest(
+      LocalDate date,
+      String description,
+      Long periodId,
+      String currency,
+      List<VoucherEntryLineRequest> entryLines,
       List<VoucherLineDTO> lines) {
     this.date = date;
     this.description = description;
     this.periodId = periodId;
+    this.currency = currency;
+    this.entryLines = entryLines;
     this.lines = lines;
   }
 
@@ -60,6 +73,22 @@ public class VoucherCreateRequest {
 
   public void setPeriodId(Long periodId) {
     this.periodId = periodId;
+  }
+
+  public String getCurrency() {
+    return currency;
+  }
+
+  public void setCurrency(String currency) {
+    this.currency = currency;
+  }
+
+  public List<VoucherEntryLineRequest> getEntryLines() {
+    return entryLines;
+  }
+
+  public void setEntryLines(List<VoucherEntryLineRequest> entryLines) {
+    this.entryLines = entryLines;
   }
 
   public List<VoucherLineDTO> getLines() {
