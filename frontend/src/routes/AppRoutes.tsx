@@ -4,7 +4,13 @@ import { CompanySettings } from '@/features/company'
 import { Login, ForgotPassword, ResetPassword } from '@/features/auth'
 import { UserManagement } from '@/features/users'
 import UserProfile from '@/pages/UserProfile'
-import { VoucherTypeList, ChartOfAccounts, DefaultAccounts, ImportWizard, VoucherList } from '@/features/accounting'
+import {
+  VoucherTypeList,
+  ChartOfAccounts,
+  DefaultAccounts,
+  ImportWizard,
+  VoucherList,
+} from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
 import { BankAccounts } from '@/features/bankaccounts'

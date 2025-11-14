@@ -45,10 +45,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  getAuditLogs,
-  exportAuditLogs,
-} from '@/features/audit/services/audit'
+import { getAuditLogs, exportAuditLogs } from '@/features/audit/services/audit'
 import type { AuditLogItem, AuditLogQueryParams } from '@/types/audit'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]
@@ -134,8 +131,7 @@ export default function AuditLogPage() {
         entityType: entityType !== 'all' ? entityType : undefined,
         eventType: eventType !== 'all' ? eventType : undefined,
         actorRole: actorRole !== 'all' ? actorRole : undefined,
-        success:
-          successFilter === 'all' ? undefined : successFilter === 'success',
+        success: successFilter === 'all' ? undefined : successFilter === 'success',
         userEmail: userEmail.trim() || undefined,
         action: actionSearch.trim() || undefined,
         entityId: entityId.trim() || undefined,
@@ -148,10 +144,7 @@ export default function AuditLogPage() {
       setTotalPages(response.meta.totalPages)
       setPage(response.meta.page + 1)
     } catch (err: any) {
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Unable to load audit logs'
+      const message = err?.response?.data?.message || err?.message || 'Unable to load audit logs'
       setError(message)
       toast.error('Failed to load audit logs', { description: message })
     } finally {
@@ -186,8 +179,7 @@ export default function AuditLogPage() {
         entityType: entityType !== 'all' ? entityType : undefined,
         eventType: eventType !== 'all' ? eventType : undefined,
         actorRole: actorRole !== 'all' ? actorRole : undefined,
-        success:
-          successFilter === 'all' ? undefined : successFilter === 'success',
+        success: successFilter === 'all' ? undefined : successFilter === 'success',
         userEmail: userEmail.trim() || undefined,
         action: actionSearch.trim() || undefined,
         entityId: entityId.trim() || undefined,
@@ -205,122 +197,116 @@ export default function AuditLogPage() {
       window.URL.revokeObjectURL(url)
       toast.success('Audit log export started')
     } catch (err: any) {
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Export failed'
+      const message = err?.response?.data?.message || err?.message || 'Export failed'
       toast.error('Failed to export audit logs', { description: message })
     }
   }
 
-  const columns = useMemo<ColumnDef<AuditLogItem>[]>(() => [
-    {
-      accessorKey: 'occurredAt',
-      header: 'Timestamp',
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span>{formatDate(row.original.occurredAt)}</span>
-          <span className="text-xs text-muted-foreground">{row.original.traceId || '—'}</span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'entity',
-      header: 'Entity',
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="font-medium">{row.original.entityType || '—'}</span>
-          <span className="text-xs text-muted-foreground">
-            {row.original.entityDisplay || row.original.entityId || '—'}
-          </span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'action',
-      header: 'Action',
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span>{row.original.action || '—'}</span>
-          <span className="text-xs text-muted-foreground">
-            {row.original.eventType || '—'}
-          </span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'actor',
-      header: 'Actor',
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span>{row.original.actor?.email || '—'}</span>
-          <span className="text-xs text-muted-foreground">
-            {row.original.actor?.role || '—'}
-          </span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'success',
-      header: 'Outcome',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Badge variant={row.original.success ? 'success' : 'destructive'}>
-            {row.original.success ? 'Success / Thành công' : 'Failure / Thất bại'}
-          </Badge>
-          {row.original.failureReason && (
+  const columns = useMemo<ColumnDef<AuditLogItem>[]>(
+    () => [
+      {
+        accessorKey: 'occurredAt',
+        header: 'Timestamp',
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <span>{formatDate(row.original.occurredAt)}</span>
+            <span className="text-xs text-muted-foreground">{row.original.traceId || '—'}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'entity',
+        header: 'Entity',
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <span className="font-medium">{row.original.entityType || '—'}</span>
             <span className="text-xs text-muted-foreground">
-              {row.original.failureReason}
+              {row.original.entityDisplay || row.original.entityId || '—'}
             </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'ipAddress',
-      header: 'Network',
-      cell: ({ row }) => (
-        <div className="flex flex-col text-xs text-muted-foreground">
-          <span>{row.original.ipAddress || '—'}</span>
-          <span className="line-clamp-2">{row.original.userAgent || '—'}</span>
-        </div>
-      ),
-    },
-    {
-      id: 'details',
-      header: 'Details',
-      cell: ({ row }) => (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" onClick={() => setDetailLog(row.original)}>
-              View / Xem
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Audit Entry Details / Chi tiết nhật ký</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[70vh]">
-              <div className="space-y-4">
-                <section>
-                  <h3 className="font-semibold text-sm mb-1">Changes</h3>
-                  <pre className="rounded bg-muted p-3 text-xs">
-                    {prettyJson(row.original.changes)}
-                  </pre>
-                </section>
-                <section>
-                  <h3 className="font-semibold text-sm mb-1">Metadata</h3>
-                  <pre className="rounded bg-muted p-3 text-xs">
-                    {prettyJson(row.original.metadata)}
-                  </pre>
-                </section>
-              </div>
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-      ),
-    },
-  ], [])
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'action',
+        header: 'Action',
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <span>{row.original.action || '—'}</span>
+            <span className="text-xs text-muted-foreground">{row.original.eventType || '—'}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'actor',
+        header: 'Actor',
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <span>{row.original.actor?.email || '—'}</span>
+            <span className="text-xs text-muted-foreground">{row.original.actor?.role || '—'}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'success',
+        header: 'Outcome',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Badge variant={row.original.success ? 'success' : 'destructive'}>
+              {row.original.success ? 'Success / Thành công' : 'Failure / Thất bại'}
+            </Badge>
+            {row.original.failureReason && (
+              <span className="text-xs text-muted-foreground">{row.original.failureReason}</span>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'ipAddress',
+        header: 'Network',
+        cell: ({ row }) => (
+          <div className="flex flex-col text-xs text-muted-foreground">
+            <span>{row.original.ipAddress || '—'}</span>
+            <span className="line-clamp-2">{row.original.userAgent || '—'}</span>
+          </div>
+        ),
+      },
+      {
+        id: 'details',
+        header: 'Details',
+        cell: ({ row }) => (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" onClick={() => setDetailLog(row.original)}>
+                View / Xem
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Audit Entry Details / Chi tiết nhật ký</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[70vh]">
+                <div className="space-y-4">
+                  <section>
+                    <h3 className="font-semibold text-sm mb-1">Changes</h3>
+                    <pre className="rounded bg-muted p-3 text-xs">
+                      {prettyJson(row.original.changes)}
+                    </pre>
+                  </section>
+                  <section>
+                    <h3 className="font-semibold text-sm mb-1">Metadata</h3>
+                    <pre className="rounded bg-muted p-3 text-xs">
+                      {prettyJson(row.original.metadata)}
+                    </pre>
+                  </section>
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+        ),
+      },
+    ],
+    [],
+  )
 
   const table = useReactTable({
     data: logs,
@@ -516,7 +502,7 @@ export default function AuditLogPage() {
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
-                    {header.isPlaceholder ? null : header.column.columnDef.header as string}
+                    {header.isPlaceholder ? null : (header.column.columnDef.header as string)}
                   </TableHead>
                 ))}
               </TableRow>
@@ -554,8 +540,7 @@ export default function AuditLogPage() {
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="text-sm text-muted-foreground">
-          Showing{' '}
-          <span className="font-medium text-foreground">{logs.length}</span> of{' '}
+          Showing <span className="font-medium text-foreground">{logs.length}</span> of{' '}
           <span className="font-medium text-foreground">{totalElements}</span> records
         </div>
         <div className="flex items-center gap-4">
@@ -623,6 +608,3 @@ export default function AuditLogPage() {
     </div>
   )
 }
-
-
-

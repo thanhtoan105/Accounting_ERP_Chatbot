@@ -1,165 +1,173 @@
-import { useId, useMemo, useRef, useState } from "react";
-import { z } from "zod";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "sonner";
-import { Download, Loader2, RefreshCw, Upload } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { importApi } from "@/features/accounting/services/importApi";
+import { useId, useMemo, useRef, useState } from 'react'
+import { z } from 'zod'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { toast } from 'sonner'
+import { Download, Loader2, RefreshCw, Upload } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { importApi } from '@/features/accounting/services/importApi'
 
 const importTypes = [
-  { value: "customers", label: "Customers" },
-  { value: "suppliers", label: "Suppliers" },
-  { value: "bank-accounts", label: "Bank Accounts" },
-  { value: "opening-balances", label: "Opening Balances" },
-] as const;
+  { value: 'customers', label: 'Customers' },
+  { value: 'suppliers', label: 'Suppliers' },
+  { value: 'bank-accounts', label: 'Bank Accounts' },
+  { value: 'opening-balances', label: 'Opening Balances' },
+] as const
 
 const ErrorRowSchema = z.object({
   rowNumber: z.number(),
   field: z.string(),
   message: z.string(),
-});
+})
 
 const ImportResultSchema = z.object({
   successCount: z.number(),
   skippedCount: z.number().optional().default(0),
   errorCount: z.number(),
   errors: z.array(ErrorRowSchema).default([]),
-  errorReportId: z
-    .string()
-    .trim()
-    .min(1)
-    .nullable()
-    .optional(),
-});
+  errorReportId: z.string().trim().min(1).nullable().optional(),
+})
 
-type ImportType = (typeof importTypes)[number]["value"];
-type ImportResult = z.infer<typeof ImportResultSchema>;
+type ImportType = (typeof importTypes)[number]['value']
+type ImportResult = z.infer<typeof ImportResultSchema>
 
 export default function ImportWizard() {
-  const [type, setType] = useState<ImportType>("customers");
-  const [file, setFile] = useState<File | null>(null);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const uploadInputId = useId();
-  const [errorResult, setErrorResult] = useState<ImportResult | null>(null);
+  const [type, setType] = useState<ImportType>('customers')
+  const [file, setFile] = useState<File | null>(null)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const uploadInputId = useId()
+  const [errorResult, setErrorResult] = useState<ImportResult | null>(null)
 
   const { data: templateLoadingKey, refetch: refetchTemplate } = useQuery({
-    queryKey: ["template-metadata", type],
+    queryKey: ['template-metadata', type],
     queryFn: async () => {
       // Placeholder to align with pattern; backend generates on demand.
-      return { type };
+      return { type }
     },
-  });
+  })
 
   const uploadMutation = useMutation<ImportResult, any>({
     mutationFn: async () => {
       if (!file) {
-        throw new Error("Please choose a file to upload.");
+        throw new Error('Please choose a file to upload.')
       }
-      const payload = await importApi.upload(type, file);
-      return ImportResultSchema.parse(payload);
+      const payload = await importApi.upload(type, file)
+      return ImportResultSchema.parse(payload)
     },
     onSuccess: (res) => {
-      toast[res.errorCount > 0 ? "error" : "success"](
+      toast[res.errorCount > 0 ? 'error' : 'success'](
         res.errorCount > 0
           ? `Imported with ${res.errorCount} error(s).`
-          : `Imported successfully: ${res.successCount} row(s).`
-      );
+          : `Imported successfully: ${res.successCount} row(s).`,
+      )
     },
     onError: (err: any) => {
-      const payload = err?.response?.data;
-      const parsed = payload ? ImportResultSchema.safeParse(payload) : null;
+      const payload = err?.response?.data
+      const parsed = payload ? ImportResultSchema.safeParse(payload) : null
       if (parsed?.success) {
-        setErrorResult(parsed.data);
+        setErrorResult(parsed.data)
       }
-      const msg = payload?.message || err?.message || "Import failed.";
-      toast.error(msg);
+      const msg = payload?.message || err?.message || 'Import failed.'
+      toast.error(msg)
     },
-  });
+  })
 
-  const result = errorResult ?? uploadMutation.data ?? null;
+  const result = errorResult ?? uploadMutation.data ?? null
 
   const filteredErrors = useMemo(() => {
-    if (!result?.errors) return [];
-    const term = search.trim().toLowerCase();
-    if (!term) return result.errors;
+    if (!result?.errors) return []
+    const term = search.trim().toLowerCase()
+    if (!term) return result.errors
     return result.errors.filter((e) => {
       return (
         String(e.rowNumber).includes(term) ||
         e.field.toLowerCase().includes(term) ||
         e.message.toLowerCase().includes(term)
-      );
-    });
-  }, [result, search]);
+      )
+    })
+  }, [result, search])
 
-  const total = filteredErrors.length;
-  const from = (page - 1) * pageSize;
-  const to = Math.min(from + pageSize, total);
-  const pageItems = filteredErrors.slice(from, to);
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const total = filteredErrors.length
+  const from = (page - 1) * pageSize
+  const to = Math.min(from + pageSize, total)
+  const pageItems = filteredErrors.slice(from, to)
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   const onDownloadTemplate = async () => {
     try {
-      const blob = await importApi.downloadTemplate(type, "xlsx");
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${type}-template.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const blob = await importApi.downloadTemplate(type, 'xlsx')
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${type}-template.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
     } catch (e: any) {
-      toast.error("Failed to download template.");
+      toast.error('Failed to download template.')
     }
-  };
+  }
 
   const onDownloadErrorReport = async () => {
-    const id = result?.errorReportId;
+    const id = result?.errorReportId
     if (!id) {
-      toast.info("No error report available.");
-      return;
+      toast.info('No error report available.')
+      return
     }
     try {
-      const blob = await importApi.downloadErrorReport(id);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `import-error-report-${id}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const blob = await importApi.downloadErrorReport(id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `import-error-report-${id}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
     } catch (e: any) {
-      toast.error("Failed to download error report.");
+      toast.error('Failed to download error report.')
     }
-  };
+  }
 
   const onUpload = async () => {
     if (uploadMutation.isPending) {
-      return;
+      return
     }
-    setPage(1);
-    setErrorResult(null);
+    setPage(1)
+    setErrorResult(null)
     try {
-      await uploadMutation.mutateAsync();
+      await uploadMutation.mutateAsync()
     } catch (_err) {
       // handled via onError
     }
-  };
+  }
 
   const onRefresh = () => {
-    setSearch("");
-    setPage(1);
-    if (inputRef.current) inputRef.current.value = "";
-    setErrorResult(null);
-    refetchTemplate();
-    toast.success("Refreshed.");
-  };
+    setSearch('')
+    setPage(1)
+    if (inputRef.current) inputRef.current.value = ''
+    setErrorResult(null)
+    refetchTemplate()
+    toast.success('Refreshed.')
+  }
 
   return (
     <div className="space-y-6">
@@ -230,11 +238,12 @@ export default function ImportWizard() {
                 className="max-w-md"
               />
               <div className="text-sm text-muted-foreground">
-                Showing {to - from} of {total} error(s){result ? ` • ${result.successCount} success` : ""}
+                Showing {to - from} of {total} error(s)
+                {result ? ` • ${result.successCount} success` : ''}
               </div>
             </div>
 
-            <div className={cn("rounded-md border", result?.errors?.length ? "" : "opacity-60")}>
+            <div className={cn('rounded-md border', result?.errors?.length ? '' : 'opacity-60')}>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -246,8 +255,11 @@ export default function ImportWizard() {
                 <TableBody>
                   {pageItems.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="h-24 text-center text-sm text-muted-foreground">
-                        {result ? "No errors found." : "Upload a file to see results."}
+                      <TableCell
+                        colSpan={3}
+                        className="h-24 text-center text-sm text-muted-foreground"
+                      >
+                        {result ? 'No errors found.' : 'Upload a file to see results.'}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -266,30 +278,50 @@ export default function ImportWizard() {
             <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-2">
               <div className="flex items-center gap-2">
                 <Label htmlFor="page-size">Rows per page</Label>
-                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(parseInt(v, 10)); setPage(1); }}>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(v) => {
+                    setPageSize(parseInt(v, 10))
+                    setPage(1)
+                  }}
+                >
                   <SelectTrigger id="page-size" className="w-[100px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {[10, 20, 30, 50, 100].map((n) => (
-                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                      <SelectItem key={n} value={String(n)}>
+                        {n}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                <Button
+                  variant="outline"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
                   Prev
                 </Button>
                 <div className="text-sm text-muted-foreground">
                   Page {page} of {totalPages}
                 </div>
-                <Button variant="outline" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+                <Button
+                  variant="outline"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
                   Next
                 </Button>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="secondary" onClick={onDownloadErrorReport} disabled={!result?.errorReportId}>
+                <Button
+                  variant="secondary"
+                  onClick={onDownloadErrorReport}
+                  disabled={!result?.errorReportId}
+                >
                   <Download className="mr-2 h-4 w-4" />
                   Download Error Report
                 </Button>
@@ -299,7 +331,5 @@ export default function ImportWizard() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }
-
-

@@ -1,8 +1,5 @@
 import api from '@/utils/axios'
-import type {
-  AuditLogResponse,
-  AuditLogQueryParams,
-} from '@/types/audit'
+import type { AuditLogResponse, AuditLogQueryParams } from '@/types/audit'
 
 export async function getAuditLogs(params: AuditLogQueryParams): Promise<AuditLogResponse> {
   const response = await api.get('/api/v1/admin/audit-logs', {
@@ -24,6 +21,3 @@ export async function exportAuditLogs(params: AuditLogQueryParams): Promise<Blob
   })
   return response.data as Blob
 }
-
-
-

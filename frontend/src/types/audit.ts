@@ -49,6 +49,3 @@ export interface AuditLogQueryParams {
   page?: number
   size?: number
 }
-
-
-

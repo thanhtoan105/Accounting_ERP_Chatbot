@@ -155,7 +155,7 @@ describe('VoucherList', () => {
     // Status appears in both table header and filter, so find the one in filter section (not in table)
     const table = screen.getByRole('table')
     const statusLabels = screen.getAllByText(/^status$/i)
-    const statusLabel = statusLabels.find(label => {
+    const statusLabel = statusLabels.find((label) => {
       // Find the one that's not in the table
       return !table.contains(label)
     })
@@ -164,13 +164,16 @@ describe('VoucherList', () => {
     }
     const statusContainer = statusLabel.closest('div')
     const comboboxes = screen.getAllByRole('combobox')
-    const statusSelect = statusContainer?.querySelector('button[role="combobox"]') || 
-                         comboboxes.find(cb => {
-                           const container = cb.closest('div')
-                           return container?.querySelector('label')?.textContent?.toLowerCase().includes('status') &&
-                                  !table.contains(cb)
-                         }) ||
-                         comboboxes[0] // Fallback to first combobox
+    const statusSelect =
+      statusContainer?.querySelector('button[role="combobox"]') ||
+      comboboxes.find((cb) => {
+        const container = cb.closest('div')
+        return (
+          container?.querySelector('label')?.textContent?.toLowerCase().includes('status') &&
+          !table.contains(cb)
+        )
+      }) ||
+      comboboxes[0] // Fallback to first combobox
     if (!statusSelect) {
       throw new Error('Status select not found')
     }
@@ -298,16 +301,19 @@ describe('VoucherList', () => {
     })
 
     // Wait for pagination controls to be visible
-    await waitFor(() => {
-      const pageTexts = screen.getAllByText(/page/i)
-      const pageText = pageTexts.find(text => /page \d+ of \d+/i.test(text.textContent || ''))
-      expect(pageText).toBeInTheDocument()
-    }, { timeout: 2000 })
+    await waitFor(
+      () => {
+        const pageTexts = screen.getAllByText(/page/i)
+        const pageText = pageTexts.find((text) => /page \d+ of \d+/i.test(text.textContent || ''))
+        expect(pageText).toBeInTheDocument()
+      },
+      { timeout: 2000 },
+    )
 
     // Find the pagination section - it should contain "Page X of Y" text
     const pageTexts = screen.getAllByText(/page/i)
-    const pageText = pageTexts.find(text => /page \d+ of \d+/i.test(text.textContent || ''))
-    
+    const pageText = pageTexts.find((text) => /page \d+ of \d+/i.test(text.textContent || ''))
+
     if (!pageText) {
       throw new Error('Page text not found')
     }
@@ -319,20 +325,21 @@ describe('VoucherList', () => {
     }
 
     // Wait for pagination buttons to be rendered
-    await waitFor(() => {
-      const buttons = Array.from(paginationSection.querySelectorAll('button'))
-      expect(buttons.length).toBeGreaterThan(0)
-    }, { timeout: 2000 })
+    await waitFor(
+      () => {
+        const buttons = Array.from(paginationSection.querySelectorAll('button'))
+        expect(buttons.length).toBeGreaterThan(0)
+      },
+      { timeout: 2000 },
+    )
 
     // Get all buttons in the pagination section
     const allButtons = Array.from(paginationSection.querySelectorAll('button'))
-    
+
     // Filter for icon buttons (pagination buttons have SVG icons)
     // The structure is: [first] [prev] "Page X of Y" [next] [last]
     // On page 0, first and prev are disabled, next and last should be enabled
-    const iconButtons = allButtons.filter(btn => 
-      btn.querySelector('svg') !== null
-    )
+    const iconButtons = allButtons.filter((btn) => btn.querySelector('svg') !== null)
 
     // Find the next button - it should be after the page text
     // Get the index of the page text's parent in the container
@@ -346,7 +353,7 @@ describe('VoucherList', () => {
 
     // The next button should be after the page text
     // Find buttons that come after the page text in the DOM
-    const nextButton = iconButtons.find(btn => {
+    const nextButton = iconButtons.find((btn) => {
       const btnParent = btn.closest('div')
       if (!btnParent) return false
       const btnIndex = siblings.indexOf(btnParent)
@@ -357,15 +364,18 @@ describe('VoucherList', () => {
     if (nextButton) {
       // Click the next button
       await user.click(nextButton)
-      
+
       // Verify that the API was called with page: 1
-      await waitFor(() => {
-        expect(mockGetVouchers).toHaveBeenCalledWith(
-          expect.objectContaining({
-            page: 1,
-          }),
-        )
-      }, { timeout: 2000 })
+      await waitFor(
+        () => {
+          expect(mockGetVouchers).toHaveBeenCalledWith(
+            expect.objectContaining({
+              page: 1,
+            }),
+          )
+        },
+        { timeout: 2000 },
+      )
     } else {
       // If we can't find the next button, at least verify pagination controls exist
       // This might happen if the component doesn't render pagination when there's only 1 page
@@ -388,7 +398,10 @@ describe('VoucherList', () => {
       expect(screen.getByText(/rows per page/i)).toBeInTheDocument()
     })
 
-    const pageSizeSelect = screen.getByText(/rows per page/i).closest('div')?.querySelector('button')
+    const pageSizeSelect = screen
+      .getByText(/rows per page/i)
+      .closest('div')
+      ?.querySelector('button')
     if (pageSizeSelect) {
       await user.click(pageSizeSelect)
       const size50 = screen.getByText('50')
@@ -448,7 +461,7 @@ describe('VoucherList', () => {
     // Status appears in both table header and filter, so find the one in filter section (not in table)
     const table = screen.getByRole('table')
     const statusLabels = screen.getAllByText(/^status$/i)
-    const statusLabel = statusLabels.find(label => {
+    const statusLabel = statusLabels.find((label) => {
       // Find the one that's not in the table
       return !table.contains(label)
     })
@@ -457,13 +470,16 @@ describe('VoucherList', () => {
     }
     const statusContainer = statusLabel.closest('div')
     const comboboxes = screen.getAllByRole('combobox')
-    const statusSelect = statusContainer?.querySelector('button[role="combobox"]') || 
-                         comboboxes.find(cb => {
-                           const container = cb.closest('div')
-                           return container?.querySelector('label')?.textContent?.toLowerCase().includes('status') &&
-                                  !table.contains(cb)
-                         }) ||
-                         comboboxes[0] // Fallback to first combobox
+    const statusSelect =
+      statusContainer?.querySelector('button[role="combobox"]') ||
+      comboboxes.find((cb) => {
+        const container = cb.closest('div')
+        return (
+          container?.querySelector('label')?.textContent?.toLowerCase().includes('status') &&
+          !table.contains(cb)
+        )
+      }) ||
+      comboboxes[0] // Fallback to first combobox
     if (!statusSelect) {
       throw new Error('Status select not found')
     }
@@ -497,24 +513,21 @@ describe('VoucherList', () => {
     // The actions column contains a button with MoreVertical icon
     const table = screen.getByRole('table')
     const tableRows = within(table).getAllByRole('row')
-    
+
     // Find the row containing VC2025-001 (first voucher, draft status)
-    const firstVoucherRow = tableRows.find((row) => 
-      within(row).queryByText('VC2025-001') !== null
-    )
-    
+    const firstVoucherRow = tableRows.find((row) => within(row).queryByText('VC2025-001') !== null)
+
     if (firstVoucherRow) {
       // Find the action button in this row (should be in the Actions column)
       const actionButtons = within(firstVoucherRow).getAllByRole('button')
       const moreButton = actionButtons.find((btn) => {
         // Button with MoreVertical icon (has svg child)
-        return btn.querySelector('svg') !== null && 
-               btn.closest('td')?.textContent?.includes('') // Actions column
+        return btn.querySelector('svg') !== null && btn.closest('td')?.textContent?.includes('') // Actions column
       })
-      
+
       if (moreButton) {
         await user.click(moreButton)
-        
+
         await waitFor(() => {
           const deleteButton = screen.queryByText(/delete/i)
           if (deleteButton) {
@@ -559,7 +572,7 @@ describe('VoucherList', () => {
     // Status appears in both table header and filter, so find the one in filter section (not in table)
     const table = screen.getByRole('table')
     const statusLabels = screen.getAllByText(/^status$/i)
-    const statusLabel = statusLabels.find(label => {
+    const statusLabel = statusLabels.find((label) => {
       // Find the one that's not in the table
       return !table.contains(label)
     })
@@ -568,13 +581,16 @@ describe('VoucherList', () => {
     }
     const statusContainer = statusLabel.closest('div')
     const comboboxes = screen.getAllByRole('combobox')
-    const statusSelect = statusContainer?.querySelector('button[role="combobox"]') || 
-                         comboboxes.find(cb => {
-                           const container = cb.closest('div')
-                           return container?.querySelector('label')?.textContent?.toLowerCase().includes('status') &&
-                                  !table.contains(cb)
-                         }) ||
-                         comboboxes[0] // Fallback to first combobox
+    const statusSelect =
+      statusContainer?.querySelector('button[role="combobox"]') ||
+      comboboxes.find((cb) => {
+        const container = cb.closest('div')
+        return (
+          container?.querySelector('label')?.textContent?.toLowerCase().includes('status') &&
+          !table.contains(cb)
+        )
+      }) ||
+      comboboxes[0] // Fallback to first combobox
     if (!statusSelect) {
       throw new Error('Status select not found')
     }
@@ -626,8 +642,12 @@ describe('VoucherList', () => {
 
     // Check column headers - use getAllByText for potentially multiple matches
     expect(screen.getAllByText(/voucher number/i)[0]).toBeInTheDocument()
-    expect(screen.getAllByText(/^date$/i)[0] || screen.getAllByText(/voucher date/i)[0]).toBeInTheDocument()
-    expect(screen.getAllByText(/^type$/i)[0] || screen.getAllByText(/voucher type/i)[0]).toBeInTheDocument()
+    expect(
+      screen.getAllByText(/^date$/i)[0] || screen.getAllByText(/voucher date/i)[0],
+    ).toBeInTheDocument()
+    expect(
+      screen.getAllByText(/^type$/i)[0] || screen.getAllByText(/voucher type/i)[0],
+    ).toBeInTheDocument()
     expect(screen.getAllByText(/amount/i)[0]).toBeInTheDocument()
     expect(screen.getAllByText(/status/i)[0]).toBeInTheDocument()
     expect(screen.getAllByText(/entered by/i)[0]).toBeInTheDocument()
@@ -696,4 +716,3 @@ describe('VoucherList', () => {
     })
   })
 })
-

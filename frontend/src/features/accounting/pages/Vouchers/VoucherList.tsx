@@ -233,8 +233,7 @@ export default function VoucherList() {
       setTotalElements(response.data.totalElements)
       setTotalPages(response.data.totalPages)
     } catch (err: any) {
-      const message =
-        err?.response?.data?.message || err?.message || 'Unable to load vouchers'
+      const message = err?.response?.data?.message || err?.message || 'Unable to load vouchers'
       setError(message)
       setErrorDetails(err)
       toast.error('Failed to load vouchers', {
@@ -364,11 +363,7 @@ export default function VoucherList() {
         id: 'reversal',
         header: 'Reversal',
         cell: ({ row }) =>
-          row.original.hasReversal ? (
-            <Badge variant="outline">Reversed</Badge>
-          ) : (
-            '-'
-          ),
+          row.original.hasReversal ? <Badge variant="outline">Reversed</Badge> : '-',
       },
       {
         accessorKey: 'attachmentCount',
@@ -594,7 +589,8 @@ export default function VoucherList() {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete voucher <strong>{voucherToDelete?.voucherNumber}</strong>? This action cannot be undone.
+              Are you sure you want to delete voucher{' '}
+              <strong>{voucherToDelete?.voucherNumber}</strong>? This action cannot be undone.
             </p>
             <div>
               <Label htmlFor="delete-reason">
@@ -613,11 +609,7 @@ export default function VoucherList() {
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={!deleteReason.trim()}
-            >
+            <Button variant="destructive" onClick={handleDelete} disabled={!deleteReason.trim()}>
               Delete
             </Button>
           </DialogFooter>
@@ -643,9 +635,7 @@ export default function VoucherList() {
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {header.column.getIsSorted() && (
-                          <span>
-                            {header.column.getIsSorted() === 'desc' ? '↓' : '↑'}
-                          </span>
+                          <span>{header.column.getIsSorted() === 'desc' ? '↓' : '↑'}</span>
                         )}
                       </div>
                     )}
@@ -778,4 +768,3 @@ export default function VoucherList() {
     </div>
   )
 }
-

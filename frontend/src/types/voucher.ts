@@ -62,10 +62,10 @@ export interface PaginatedResponse<T> {
     totalPages: number
   }
   meta: {
-  page: number
-  size: number
+    page: number
+    size: number
     totalElements: number
-  totalPages: number
+    totalPages: number
   }
 }
 
