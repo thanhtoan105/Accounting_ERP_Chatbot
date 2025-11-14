@@ -1,0 +1,447 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>4</storyId>
+    <title>Bank Account Management (CRUD)</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-10</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-4-bank-account-management-crud.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>an accountant or administrator</asA>
+    <iWant>to manage cash and bank accounts with full CRUD and integrity protections</iWant>
+    <soThat>transactions can be posted accurately and account selections remain consistent across the system.</soThat>
+    <tasks>
+- [ ] Backend: Create BankAccount entity and Flyway migration
+  - [ ] Table bank_accounts with UNIQUE(company_id, account_number)
+  - [ ] Fields: id, company_id, accountNumber, bankName, branch, type (CASH/BANK), openingBalance, active (default true), createdAt/updatedAt
+- [ ] Backend: Repository, service, and controller
+  - [ ] BankAccountRepository with company-scoped queries
+  - [ ] BankAccountService CRUD with validation and referential integrity checks (block delete when referenced)
+  - [ ] BankAccountController:
+    - [ ] GET /api/v1/bank-accounts with filters: type, status, pagination, sorting
+    - [ ] POST /api/v1/bank-accounts (validate unique accountNumber per company)
+    - [ ] PUT /api/v1/bank-accounts/{id}
+    - [ ] DELETE /api/v1/bank-accounts/{id} → 409 if referenced
+    - [ ] PATCH /api/v1/bank-accounts/{id}/activate|deactivate
+    - [ ] GET /api/v1/bank-accounts/export (CSV/Excel)
+- [ ] Backend: Audit logging
+  - [ ] Log create/update/delete/activate/deactivate with before/after JSON and user context
+- [ ] Backend: Balance tooltip data
+  - [ ] Endpoint to return current and prior period balances for a given account id (for tooltip)
+- [ ] Frontend: Bank Accounts list page (features/bankaccounts/pages/BankAccounts.tsx)
+  - [ ] Data table with search, filters (type/status), sort, pagination, refresh button
+  - [ ] Record count, page size selector (10, 20, 30, 50, 100), pagination controls
+  - [ ] Export button (matches table filters)
+- [ ] Frontend: Bank Account form (features/bankaccounts/components/BankAccountFormSheet.tsx)
+  - [ ] Fields: Account Number, Bank Name (combobox with free-entry), Branch, Type (CASH/BANK), Opening Balance, Status
+  - [ ] Zod validation; show duplicate account number error
+- [ ] Frontend: Deactivate/Delete flows
+  - [ ] Delete dialog that surfaces 409 referential integrity messages; suggest deactivation
+  - [ ] Inactivate removes from pickers; visually distinguish inactive rows
+- [ ] Frontend: Tooltip on account selector
+  - [ ] Shows current and prior period balances (calls tooltip balance endpoint)
+- [ ] Testing
+  - [ ] Backend unit and integration tests for CRUD, unique constraint, referential integrity, audit logging
+  - [ ] Frontend tests for table interactions, form validation, export, and delete 409 handling
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. List view shows all cash and bank accounts; supports filtering by type/status and sorting by last balance update.
+2. Add form validates: account number (required, unique per company), bank name (validated from list; free text allowed), opening balance (must align with migration/opening entry).
+3. Edit operations are fully audited; when a value changes, the audit log records the change and optional reason.
+4. Deleting an account is blocked if it is referenced by any voucher, period, or reconciliation (return 409 with details).
+5. Inactivating an account removes it from pickers but preserves historical references and integrity.
+6. Bank account selector tooltip shows current and prior period balances.
+7. Users can export the accounts list and balances to Excel for audit purposes.
+8. All data is scoped to the current company (multi-tenancy).
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/PRD.md" section="5. Cash & Bank Management">
+        <snippet>
+**FR27: Manage Cash/Bank Accounts:** The system must manage a list of cash/bank accounts, linked to accounts 111 (Cash) and 112 (Bank).
+        </snippet>
+      </doc>
+      <doc path="docs/tech-spec-epic-2.md" section="Story 2.4: Bank Account Management (CRUD)">
+        <snippet>
+1. List view shows all cash and bank accounts; enables filtering by type/status, sort by last balance update.
+2. "Add" form: Account number (required, must be unique), bank name (validated from list, open entry allowed), opening balance (must match accounting entry at migration).
+3. On edit, audit trail logs all changes with reason if field value changed.
+4. Cannot delete bank/cash account if referenced in any voucher, period, or reconciliation.
+5. Closing (inactivating) an account removes it from pickers, but does not break referential integrity with historical vouchers.
+6. Tooltip on bank account selector shows current and prior period balances.
+7. Export list of accounts and balances to Excel for audit.
+8. Multi-company: Accounts scoped to company_id.
+        </snippet>
+      </doc>
+      <doc path="docs/epics.md" section="Story 2.4: Bank Account Management (CRUD)">
+        <snippet>
+As an accountant, I want to manage cash and bank accounts for all cash receipt/payment flows.
+**Prerequisites:** Stories 2.1, 2.2
+        </snippet>
+      </doc>
+      <doc path="docs/architecture.md" section="Multi-Tenancy Strategy">
+        <snippet>
+- Row-level filtering via `company_id` on all tables
+- Spring Data JPA filter at repository level
+- API-level enforcement via security filter
+- Supabase RLS policies as additional layer
+        </snippet>
+      </doc>
+      <doc path="docs/architecture.md" section="Core Entities">
+        <snippet>
+**Master Data:**
+- `bank_accounts` (id, account_number, bank_name, company_id, ...)
+        </snippet>
+      </doc>
+      <doc path="docs/architecture.md" section="Audit">
+        <snippet>
+- `audit_logs` (id, entity_type, entity_id, action, user_id, timestamp, changes, ...)
+        </snippet>
+      </doc>
+      <doc path="docs/ux-design-specification.md" section="6.4 DataTablePro — Detailed Spec">
+        <snippet>
+- Server-side pagination, sorting (multi-column), filtering, and search
+- Column presets (save/load), density toggle (compact/comfortable), column visibility
+- Export CSV/Excel with current filters; debounce and cancel in-flight requests
+- Record count, page size selector (10, 20, 30, 50, 100), pagination controls
+        </snippet>
+      </doc>
+      <doc path="docs/stories/2-4-bank-account-management-crud.md" section="Dev Notes">
+        <snippet>
+- Multi-tenancy: implement `CompanyScopedEntity` for `BankAccount`; filter all queries by `company_id`.
+- Constraints: enforce `UNIQUE(company_id, account_number)` at the DB level; validate uniqueness in service.
+- Referential integrity: deletion must return 409 when referenced by vouchers/reconciliations; prefer deactivation to preserve history.
+- Observability: structured audit logs for all CRUD with before/after values and user id; export actions must be logged.
+- Frontend table UX must include search, refresh, record count, page size selector (10/20/30/50/100), and pagination controls per project standards.
+        </snippet>
+      </doc>
+      <doc path="docs/stories/2-4-bank-account-management-crud.md" section="Learnings from Previous Story">
+        <snippet>
+From Story `2-3-supplier-master-data-management-crud` (Status: done):
+- Reuse established patterns: `CompanyScopedEntity`, company-scoped repositories, RBAC guards, and comprehensive audit logging.
+- Ensure delete paths return 409 with clear details when referenced; prefer deactivation to preserve history.
+- Maintain export/audit parity and configurable polling for lists where applicable.
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <reference file="backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java" lines="1-6" reason="BankAccount must implement this interface for multi-tenancy support">
+        <snippet>
+public interface CompanyScopedEntity {
+  Long getCompanyId();
+}
+        </snippet>
+      </reference>
+      <reference file="backend/src/main/java/com/accounting/entity/Customer.java" lines="24-31" reason="Example entity implementing CompanyScopedEntity pattern - BankAccount should follow same structure">
+        <snippet>
+@Entity
+@Table(name = "customers")
+public class Customer implements CompanyScopedEntity {
+  @Column(name = "company_id", nullable = false)
+  private Long companyId;
+  // ... other fields
+}
+        </snippet>
+      </reference>
+      <reference file="backend/src/main/java/com/accounting/repository/CustomerRepository.java" lines="14-32" reason="Example company-scoped repository pattern - BankAccountRepository should follow same pattern with findByCompanyId methods">
+        <snippet>
+public interface CustomerRepository
+    extends JpaRepository&lt;Customer, Long&gt;, JpaSpecificationExecutor&lt;Customer&gt; {
+  List&lt;Customer&gt; findByCompanyId(Long companyId);
+  Optional&lt;Customer&gt; findByCompanyIdAndId(Long companyId, Long id);
+}
+        </snippet>
+      </reference>
+      <reference file="backend/src/main/java/com/accounting/service/impl/CustomerServiceImpl.java" lines="36-50" reason="Example service implementation pattern with audit logging - BankAccountService should follow same structure">
+        <snippet>
+@Service
+@Transactional
+public class CustomerServiceImpl implements CustomerService {
+  private final CustomerRepository customerRepository;
+  private final AuditService auditService;
+  // ... CRUD methods with audit logging
+}
+        </snippet>
+      </reference>
+      <reference file="backend/src/main/java/com/accounting/entity/AuditLog.java" lines="12-38" reason="Audit log entity structure - BankAccount CRUD operations should log to this entity">
+        <snippet>
+@Entity
+@Table(name = "audit_logs")
+public class AuditLog {
+  @Column(name = "action", nullable = false, length = 50)
+  private String action;
+  @Column(name = "reason", length = 50)
+  private String reason;
+  // ... user context fields
+}
+        </snippet>
+      </reference>
+      <reference file="backend/src/main/java/com/accounting/security/CompanyScopeEnforcer.java" reason="Enforces company scoping on write operations - must be used in BankAccountService">
+        <snippet>
+public static void enforceForWrite(CompanyScopedEntity entity)
+        </snippet>
+      </reference>
+    </code>
+    <dependencies>
+      <backend>
+        <framework>Spring Boot 3.5.7</framework>
+        <orm>Spring Data JPA with Hibernate</orm>
+        <database>PostgreSQL Driver 42.7.4</database>
+        <migration>Flyway 11.10.0</migration>
+        <security>Spring Security</security>
+        <validation>Spring Boot Starter Validation</validation>
+        <api-docs>SpringDoc OpenAPI 2.8.13</api-docs>
+        <jwt>io.jsonwebtoken 0.12.5</jwt>
+        <lombok>Project Lombok</lombok>
+      </backend>
+      <frontend>
+        <framework>React 19.1.1</framework>
+        <language>TypeScript 5.9.3</language>
+        <build>Vite 7.1.7</build>
+        <ui>shadcn/ui (Radix UI primitives)</ui>
+        <table>@tanstack/react-table 8.21.3</table>
+        <http>axios 1.7.9</http>
+        <form>react-hook-form 7.66.0 + zod 4.1.12</form>
+        <routing>react-router-dom 7.9.5</routing>
+        <icons>lucide-react 0.552.0</icons>
+        <styling>Tailwind CSS 4.1.16</styling>
+        <mui>@mui/material 7.3.4 (for complex tables)</mui>
+      </frontend>
+      <testing>
+        <backend>JUnit 5, TestContainers 1.21.3</backend>
+        <frontend>Vitest 2.1.4, @testing-library/react 16.0.1, jsdom 25.0.1</frontend>
+      </testing>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="multi-tenancy">
+      <description>BankAccount must implement CompanyScopedEntity interface and all queries must filter by company_id</description>
+      <enforcement>Repository level via ScopedSpecifications, Service level via CompanyScopeEnforcer, API level via CompanyContextFilter</enforcement>
+    </constraint>
+    <constraint type="database">
+      <description>Enforce UNIQUE(company_id, account_number) constraint at database level via Flyway migration</description>
+      <enforcement>Database unique constraint + service-level validation before insert/update</enforcement>
+    </constraint>
+    <constraint type="referential-integrity">
+      <description>Deletion must return HTTP 409 (Conflict) when bank account is referenced by vouchers, periods, or reconciliations</description>
+      <enforcement>Service-level check before delete, return 409 with detailed error message suggesting deactivation instead</enforcement>
+    </constraint>
+    <constraint type="audit">
+      <description>All CRUD operations (create, update, delete, activate, deactivate) must log to audit_logs table with before/after JSON, user context, and optional reason</description>
+      <enforcement>AuditService methods called from BankAccountService for all state changes</enforcement>
+    </constraint>
+    <constraint type="frontend-ux">
+      <description>Table must include: search, refresh button, record count display, page size selector (10/20/30/50/100), and pagination controls per project standards</description>
+      <enforcement>Follow DataTablePro pattern from ux-design-specification.md</enforcement>
+    </constraint>
+    <constraint type="validation">
+      <description>Account number must be unique per company; bank name supports free text entry but should validate against known bank list if available</description>
+      <enforcement>Service-level uniqueness check + Zod validation on frontend form</enforcement>
+    </constraint>
+  </constraints>
+  <interfaces>
+    <api path="GET /api/v1/bank-accounts">
+      <description>List bank accounts with filtering, sorting, and pagination</description>
+      <query-params>
+        <param name="type" type="string" enum="CASH,BANK" description="Filter by account type"/>
+        <param name="status" type="string" enum="active,inactive" description="Filter by active status"/>
+        <param name="page" type="integer" default="0" description="Page number (0-indexed)"/>
+        <param name="size" type="integer" default="20" description="Page size"/>
+        <param name="sort" type="string" description="Sort field and direction (e.g., 'accountNumber,asc')"/>
+        <param name="search" type="string" description="Search term for account number or bank name"/>
+      </query-params>
+      <response>
+        <status>200 OK</status>
+        <body>
+          <field name="content" type="BankAccountDTO[]" description="Array of bank account DTOs"/>
+          <field name="totalElements" type="long" description="Total number of records"/>
+          <field name="totalPages" type="int" description="Total number of pages"/>
+          <field name="page" type="int" description="Current page number"/>
+          <field name="size" type="int" description="Page size"/>
+        </body>
+      </response>
+      <auth>Required - JWT token with company context</auth>
+    </api>
+    <api path="POST /api/v1/bank-accounts">
+      <description>Create a new bank account</description>
+      <request-body type="BankAccountCreateRequest">
+        <field name="accountNumber" type="string" required="true" description="Unique account number per company"/>
+        <field name="bankName" type="string" required="true" description="Bank name (free text allowed)"/>
+        <field name="branch" type="string" description="Branch name (optional)"/>
+        <field name="type" type="enum" enum="CASH,BANK" required="true" description="Account type"/>
+        <field name="openingBalance" type="BigDecimal" required="true" description="Opening balance"/>
+        <field name="active" type="boolean" default="true" description="Active status"/>
+      </request-body>
+      <response>
+        <status>201 Created</status>
+        <body type="BankAccountDTO"/>
+      </response>
+      <errors>
+        <error status="400" description="Validation error (duplicate account number, invalid data)"/>
+        <error status="409" description="Account number already exists for this company"/>
+      </errors>
+      <auth>Required - JWT token, RBAC: ACCOUNTANT or ADMIN role</auth>
+    </api>
+    <api path="PUT /api/v1/bank-accounts/{id}">
+      <description>Update an existing bank account</description>
+      <path-params>
+        <param name="id" type="long" required="true" description="Bank account ID"/>
+      </path-params>
+      <request-body type="BankAccountUpdateRequest">
+        <field name="bankName" type="string" description="Bank name"/>
+        <field name="branch" type="string" description="Branch name"/>
+        <field name="type" type="enum" enum="CASH,BANK" description="Account type"/>
+        <field name="openingBalance" type="BigDecimal" description="Opening balance"/>
+        <field name="reason" type="string" description="Optional reason for change (for audit)"/>
+      </request-body>
+      <response>
+        <status>200 OK</status>
+        <body type="BankAccountDTO"/>
+      </response>
+      <errors>
+        <error status="404" description="Bank account not found or not accessible"/>
+        <error status="400" description="Validation error"/>
+      </errors>
+      <auth>Required - JWT token, RBAC: ACCOUNTANT or ADMIN role</auth>
+      <audit>Logs before/after values and optional reason</audit>
+    </api>
+    <api path="DELETE /api/v1/bank-accounts/{id}">
+      <description>Delete a bank account (blocked if referenced)</description>
+      <path-params>
+        <param name="id" type="long" required="true" description="Bank account ID"/>
+      </path-params>
+      <response>
+        <status>204 No Content</status>
+      </response>
+      <errors>
+        <error status="404" description="Bank account not found or not accessible"/>
+        <error status="409" description="Cannot delete: account is referenced by vouchers, periods, or reconciliations. Details in response body."/>
+      </errors>
+      <auth>Required - JWT token, RBAC: ACCOUNTANT or ADMIN role</auth>
+      <audit>Logs deletion with user context</audit>
+    </api>
+    <api path="PATCH /api/v1/bank-accounts/{id}/activate">
+      <description>Activate a bank account</description>
+      <path-params>
+        <param name="id" type="long" required="true" description="Bank account ID"/>
+      </path-params>
+      <response>
+        <status>200 OK</status>
+        <body type="BankAccountDTO"/>
+      </response>
+      <auth>Required - JWT token, RBAC: ACCOUNTANT or ADMIN role</auth>
+      <audit>Logs activation</audit>
+    </api>
+    <api path="PATCH /api/v1/bank-accounts/{id}/deactivate">
+      <description>Deactivate a bank account</description>
+      <path-params>
+        <param name="id" type="long" required="true" description="Bank account ID"/>
+      </path-params>
+      <response>
+        <status>200 OK</status>
+        <body type="BankAccountDTO"/>
+      </response>
+      <auth>Required - JWT token, RBAC: ACCOUNTANT or ADMIN role</auth>
+      <audit>Logs deactivation</audit>
+    </api>
+    <api path="GET /api/v1/bank-accounts/export">
+      <description>Export bank accounts list to CSV/Excel</description>
+      <query-params>
+        <param name="format" type="string" enum="csv,xlsx" default="xlsx" description="Export format"/>
+        <param name="type" type="string" enum="CASH,BANK" description="Filter by account type (applies to export)"/>
+        <param name="status" type="string" enum="active,inactive" description="Filter by status (applies to export)"/>
+      </query-params>
+      <response>
+        <status>200 OK</status>
+        <content-type>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet (xlsx) or text/csv (csv)</content-type>
+        <body type="file-download"/>
+      </response>
+      <auth>Required - JWT token, RBAC: ACCOUNTANT or ADMIN role</auth>
+      <audit>Logs export action with format and filters</audit>
+    </api>
+    <api path="GET /api/v1/bank-accounts/{id}/balance-tooltip">
+      <description>Get current and prior period balances for tooltip display</description>
+      <path-params>
+        <param name="id" type="long" required="true" description="Bank account ID"/>
+      </path-params>
+      <response>
+        <status>200 OK</status>
+        <body>
+          <field name="currentBalance" type="BigDecimal" description="Current period balance"/>
+          <field name="priorBalance" type="BigDecimal" description="Prior period balance"/>
+          <field name="currentPeriod" type="string" description="Current period identifier"/>
+          <field name="priorPeriod" type="string" description="Prior period identifier"/>
+        </body>
+      </response>
+      <auth>Required - JWT token</auth>
+    </api>
+  </interfaces>
+  <tests>
+    <standards>
+      <backend>
+        <framework>JUnit 5 with TestContainers for integration tests</framework>
+        <coverage>Unit tests for service layer, integration tests for repository and controller layers</coverage>
+        <patterns>Follow existing test patterns from CustomerServiceTest and SupplierServiceTest</patterns>
+        <validation>Test all validation rules: unique account number, referential integrity, company scoping</validation>
+        <audit>Verify audit log entries are created for all CRUD operations with correct before/after values</audit>
+      </backend>
+      <frontend>
+        <framework>Vitest with @testing-library/react and jsdom</framework>
+        <coverage>Component tests for forms and tables, integration tests for API interactions</coverage>
+        <patterns>Follow existing test patterns from Customer and Supplier feature tests</patterns>
+        <validation>Test form validation, error handling (409 responses), and user interactions</validation>
+        <accessibility>Test keyboard navigation, screen reader support, and ARIA attributes</accessibility>
+      </frontend>
+    </standards>
+    <locations>
+      <backend-unit>backend/src/test/java/com/accounting/service/BankAccountServiceTest.java</backend-unit>
+      <backend-integration>backend/src/test/java/com/accounting/controller/BankAccountControllerTest.java</backend-integration>
+      <backend-repository>backend/src/test/java/com/accounting/repository/BankAccountRepositoryTest.java</backend-repository>
+      <frontend-component>frontend/src/features/bankaccounts/components/**/*.test.tsx</frontend-component>
+      <frontend-page>frontend/src/features/bankaccounts/pages/**/*.test.tsx</frontend-page>
+      <frontend-service>frontend/src/services/bankAccount.test.ts</frontend-service>
+    </locations>
+    <ideas>
+      <test-scenario name="Unique Account Number Validation">
+        <description>Test that creating/updating a bank account with duplicate account number (same company) returns 409 error</description>
+        <steps>1. Create account with number "ACC-001", 2. Attempt to create another with "ACC-001" (same company), 3. Verify 409 response</steps>
+      </test-scenario>
+      <test-scenario name="Referential Integrity on Delete">
+        <description>Test that deleting a bank account referenced by a voucher returns 409 with detailed error message</description>
+        <steps>1. Create bank account, 2. Create voucher referencing account, 3. Attempt delete, 4. Verify 409 with suggestion to deactivate</steps>
+      </test-scenario>
+      <test-scenario name="Company Scoping">
+        <description>Test that users can only access bank accounts from their company</description>
+        <steps>1. Create accounts for Company A and B, 2. Login as Company A user, 3. Verify only Company A accounts visible</steps>
+      </test-scenario>
+      <test-scenario name="Audit Logging">
+        <description>Test that all CRUD operations create audit log entries with before/after values</description>
+        <steps>1. Perform create/update/delete/activate/deactivate, 2. Query audit logs, 3. Verify entries with correct action, user, and changes</steps>
+      </test-scenario>
+      <test-scenario name="Frontend Table Interactions">
+        <description>Test search, filters, pagination, page size selector, and export functionality</description>
+        <steps>1. Load table, 2. Test search, 3. Test type/status filters, 4. Test pagination, 5. Test page size changes, 6. Test export</steps>
+      </test-scenario>
+      <test-scenario name="Form Validation">
+        <description>Test Zod validation on bank account form with duplicate account number error display</description>
+        <steps>1. Submit form with invalid data, 2. Verify validation errors, 3. Submit with duplicate account number, 4. Verify error message</steps>
+      </test-scenario>
+      <test-scenario name="Delete Dialog 409 Handling">
+        <description>Test that delete dialog shows 409 error message and suggests deactivation</description>
+        <steps>1. Attempt to delete referenced account, 2. Verify dialog shows 409 message, 3. Verify deactivation suggestion appears</steps>
+      </test-scenario>
+      <test-scenario name="Balance Tooltip">
+        <description>Test that account selector tooltip shows current and prior period balances</description>
+        <steps>1. Hover over account in selector, 2. Verify tooltip appears, 3. Verify balance data is displayed correctly</steps>
+      </test-scenario>
+    </ideas>
+  </tests>
+</story-context>
+

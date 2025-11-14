@@ -1,72 +1,162 @@
+import { fetchWithAuth } from '@/utils/axios'
 import type {
   ChartOfAccount,
-  ChartOfAccountHierarchy,
+  ChartOfAccountCreateRequest,
+  ChartOfAccountUpdateRequest,
   ChartOfAccountsResponse,
-  ChartOfAccountFilters,
-} from '../types/chartOfAccount'
-import { getAccessToken, getCompanyId } from '../utils/axios'
+  ChartOfAccountQueryParams,
+} from '@/types/chartOfAccount'
 
-const API_BASE = '/api/v1'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
-async function handleJsonResponse<T>(res: Response): Promise<T> {
-  const text = await res.text()
-  const data = text ? JSON.parse(text) : undefined
-  if (!res.ok) {
-    throw data?.error || { code: 'UNKNOWN', message: 'Request failed' }
+async function handleJsonResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }))
+    throw { status: response.status, error }
   }
-  return data as T
+  return response.json()
 }
 
-async function getAuthHeaders(): Promise<HeadersInit> {
-  const token = getAccessToken()
-  const companyId = getCompanyId()
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  }
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
-  if (companyId !== null && companyId !== undefined) {
-    headers['X-Company-Id'] = String(companyId)
-  }
-  return headers
-}
-
+/**
+ * Get Chart of Accounts with optional filters
+ */
 export async function getChartOfAccounts(
-  filters?: ChartOfAccountFilters,
+  params?: ChartOfAccountQueryParams,
 ): Promise<ChartOfAccountsResponse> {
   const queryParams = new URLSearchParams()
-  if (filters?.postable !== undefined) queryParams.append('postable', String(filters.postable))
-  if (filters?.codePrefix) queryParams.append('codePrefix', filters.codePrefix)
-  if (filters?.parentId !== undefined) queryParams.append('parentId', String(filters.parentId))
-  if (filters?.type) queryParams.append('type', filters.type)
-  if (filters?.search) queryParams.append('search', filters.search)
+  if (params?.postable !== undefined) {
+    queryParams.append('postable', String(params.postable))
+  }
+  if (params?.codePrefix) {
+    queryParams.append('codePrefix', params.codePrefix)
+  }
+  if (params?.parentId !== undefined) {
+    queryParams.append('parentId', String(params.parentId))
+  }
+  if (params?.type) {
+    queryParams.append('type', params.type)
+  }
+  if (params?.search) {
+    queryParams.append('search', params.search)
+  }
+  if (params?.active !== undefined) {
+    queryParams.append('active', String(params.active))
+  }
 
   const url = `${API_BASE}/chart-of-accounts${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: await getAuthHeaders(),
-    credentials: 'include',
+  const res = await fetchWithAuth(url, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
   })
   return await handleJsonResponse<ChartOfAccountsResponse>(res)
 }
 
-export async function getAccountById(id: number): Promise<ChartOfAccount> {
-  const res = await fetch(`${API_BASE}/chart-of-accounts/${id}`, {
-    method: 'GET',
-    headers: await getAuthHeaders(),
-    credentials: 'include',
+/**
+ * Get single account by ID
+ */
+export async function getChartOfAccountById(id: number): Promise<ChartOfAccount> {
+  const res = await fetchWithAuth(`${API_BASE}/chart-of-accounts/${id}`, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
   })
-  const payload = await handleJsonResponse<{ data: ChartOfAccount }>(res)
-  return payload.data
+  const data = await handleJsonResponse<{ data: ChartOfAccount }>(res)
+  return data.data
 }
 
+/**
+ * Get postable leaf accounts (for voucher picker)
+ */
 export async function getPostableAccounts(): Promise<ChartOfAccount[]> {
-  const res = await fetch(`${API_BASE}/chart-of-accounts/postable`, {
-    method: 'GET',
-    headers: await getAuthHeaders(),
-    credentials: 'include',
+  const res = await fetchWithAuth(`${API_BASE}/chart-of-accounts/postable`, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
   })
-  const payload = await handleJsonResponse<{ data: ChartOfAccount[]; total: number }>(res)
-  return payload.data
+  const data = await handleJsonResponse<ChartOfAccountsResponse>(res)
+  return Array.isArray(data.data) ? data.data : []
+}
+
+/**
+ * Create a new account
+ */
+export async function createChartOfAccount(
+  request: ChartOfAccountCreateRequest,
+): Promise<ChartOfAccount> {
+  const res = await fetchWithAuth(`${API_BASE}/chart-of-accounts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  })
+  const data = await handleJsonResponse<{ data: ChartOfAccount }>(res)
+  return data.data
+}
+
+/**
+ * Update an existing account
+ */
+export async function updateChartOfAccount(
+  id: number,
+  request: ChartOfAccountUpdateRequest,
+): Promise<ChartOfAccount> {
+  const res = await fetchWithAuth(`${API_BASE}/chart-of-accounts/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  })
+  const data = await handleJsonResponse<{ data: ChartOfAccount }>(res)
+  return data.data
+}
+
+/**
+ * Soft delete an account (set active=false)
+ */
+export async function deleteChartOfAccount(id: number): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/chart-of-accounts/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: res.statusText }))
+    throw { status: res.status, error }
+  }
+}
+
+/**
+ * Activate an account (set active=true)
+ */
+export async function activateChartOfAccount(id: number): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/chart-of-accounts/${id}/activate`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: res.statusText }))
+    throw { status: res.status, error }
+  }
+}
+
+/**
+ * Deactivate an account (set active=false)
+ */
+export async function deactivateChartOfAccount(id: number): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/chart-of-accounts/${id}/deactivate`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: res.statusText }))
+    throw { status: res.status, error }
+  }
 }

@@ -2,7 +2,7 @@ package com.accounting.service.impl;
 
 import com.accounting.entity.Company;
 import com.accounting.entity.User;
-import com.accounting.dto.UpdateCompanySettingsRequest;
+import com.accounting.dto.UpdateBasicCompanySettingsRequest;
 import com.accounting.repository.CompanyRepository;
 import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
@@ -142,7 +142,7 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public Company updateCurrentCompanySettings(UpdateCompanySettingsRequest request, MultipartFile logoFile) {
+    public Company updateCurrentCompanySettings(UpdateBasicCompanySettingsRequest request, MultipartFile logoFile) {
         Long companyId = CompanyContext.getCompanyId();
         if (companyId == null) {
             throw new ValidationException("Missing company context");

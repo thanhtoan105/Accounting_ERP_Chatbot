@@ -1,0 +1,170 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>3</storyId>
+    <title>Supplier Master Data Management (CRUD)</title>
+    <status>drafted</status>
+    <generatedAt>2025-02-10</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-3-supplier-master-data-management-crud.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>accountant</asA>
+    <iWant>robust CRUD for all suppliers with import/export</iWant>
+    <soThat>AP tracking, validations, and integration to bills/payments is seamless</soThat>
+    <tasks>
+      - Backend: Create Supplier entity and migration (AC: #1, #2, #3, #4, #10)
+      - Backend: Supplier code generation service (AC: #3)
+      - Backend: Supplier service and repository (AC: #1, #4, #5, #6, #10)
+      - Backend: Supplier controller and API (AC: #1, #4, #9, #10)
+      - Backend: Supplier import/export service (AC: #9, #11)
+      - Backend: Supplier AP summary integration (AC: #8)
+      - Backend: Audit logging for supplier operations (AC: #11)
+      - Frontend: Supplier list page component (AC: #1, #5, #7)
+      - Frontend: Supplier form Dialog component (AC: #2, #3, #4, #6)
+      - Frontend: Supplier details panel with AP summary (AC: #8)
+      - Frontend: Supplier export functionality (AC: #9)
+      - Frontend: Supplier delete confirmation with referential check (AC: #10)
+      - Frontend: Supplier import wizard (AC: #11)
+      - Testing: Backend unit tests, integration tests, frontend component tests
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. List view: Supports pagination (20 per page), sorting by name or code, filter on status (active/inactive), and typeahead search.
+    2. Add form: All required except for optional fields; real-time validation (e.g., phone number, email format, tax code checksum).
+    3. Autogenerates Supplier Code (SUP-YYYY-NNNN) and ensures globally unique per company; number increments even if prior code deleted/deactivated.
+    4. Detect and reject duplicate suppliers by tax code (and optionally email/cell), displaying exactly where conflict occurred.
+    5. Inactive suppliers appear grayed-out and are moved to bottom or separate tab.
+    6. Users can deactivate/reactivate, with tooltip explaining that linked AP data will not be deleted.
+    7. CRUD actions update real-time (websockets or polling), so multiple users see live changes.
+    8. Show supplier AP summary (open bills, total owed, average payment days) in details panel.
+    9. Can export supplier list to CSV/Excel.
+    10. Attempt to delete supplier with existing bills/payments blocked, with explanatory modal.
+    11. All field edits, activations/deactivations, and import actions logged to the audit trail with before/after data and responsible user.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/PRD.md" title="Product Requirements Document" section="FR17: Supplier Master Data Management, FR18: Create Purchase Bills, FR19: Record Payments for Purchase Bills, FR20: AP Aging Report, NFR23: i18n Support" snippet="The system must support CRUD operations for suppliers with fields for code (auto-gen), name, tax code, address, etc., linked to account 331. Suppliers are used in purchase bills and AP tracking." />
+      <doc path="docs/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.3: Supplier Master Data Management (CRUD), Supplier Entity, Supplier API, Supplier CRUD Workflow" snippet="Epic 2: Master Data Management establishes foundational data governance. Supplier Master Data: Full CRUD operations for supplier records with auto-generated codes (SUP-YYYY-NNNN), duplicate detection by tax code, status management (active/inactive), AP summary integration, and import/export functionality. Supplier entity includes: id, company_id, code, name, tax_code, address, email, phone, active, createdAt, updatedAt." />
+      <doc path="docs/epics.md" title="Epic Breakdowns" section="Epic 2: Master Data Management - Story 2.3" snippet="As an accountant, I want robust CRUD for all suppliers with import/export, so that AP tracking, validations, and integration to bills/payments is seamless. List view supports pagination, sorting, filtering. Auto-generates Supplier Code (SUP-YYYY-NNNN). Detect and reject duplicate suppliers by tax code." />
+      <doc path="docs/architecture.md" title="Decision Architecture" section="Data Architecture, Multi-Tenancy Strategy, Technology Stack Details" snippet="Enterprise accounting ERP system using Spring Boot 3.5.7 backend with React TypeScript frontend, PostgreSQL via Supabase. Multi-tenancy: Row-level filtering via company_id on all tables. Search: PostgreSQL FTS + unaccent for native Vietnamese unaccented search support. Database schema: snake_case table names (suppliers), UUID primary keys." />
+      <doc path="docs/stories/2-3-supplier-master-data-management-crud.md" title="Story 2.3" section="Dev Notes, Acceptance Criteria, Tasks, Learnings from Previous Story" snippet="Multi-tenancy: All supplier records must be company-scoped. Use CompanyScopedEntity interface pattern from Epic 1. Supplier code format: SUP-YYYY-NNNN. Tax code validation: 10-digit Vietnamese tax codes. Duplicate detection by tax code (required) and optionally email/phone. Referential integrity: Suppliers cannot be deleted if linked to bills/payments. Vietnamese search using PostgreSQL unaccent extension. Learnings from Story 2.2 (Customer): REUSE patterns for SupplierService, SupplierCodeGenerator, SupplierImportExportService, and frontend components." />
+      <doc path="docs/stories/2-2-customer-master-data-management-crud.md" title="Story 2.2" section="Dev Notes, Learnings, Files Created" snippet="Reference for supplier implementation patterns. Customer story provides reusable patterns: CustomerService/CustomerServiceImpl, CustomerCodeGenerator (change format to SUP-YYYY-NNNN), CustomerImportExportService, AuditService. Frontend patterns: Customers.tsx, CustomerFormSheet.tsx (use Dialog instead of Sheet), CustomerDetailsPanel.tsx (change AR to AP summary), DeleteCustomerDialog.tsx, CustomerImportWizard.tsx. Database patterns: unique constraint, company scoping, audit logging, code sequence table/function." />
+    </docs>
+    <code>
+      <artifact path="backend/src/main/java/com/accounting/entity/Customer.java" kind="entity" symbol="Customer" reason="Reference for Supplier entity structure. REUSE pattern: change entity name to Supplier, change code format from CUST-YYYY-NNNN to SUP-YYYY-NNNN, change AR references to AP references. Fields: id, companyId, code, name, taxCode, address, email, phone, active, createdAt, updatedAt. Implements CompanyScopedEntity." />
+      <artifact path="backend/src/main/java/com/accounting/repository/CustomerRepository.java" kind="repository" symbol="CustomerRepository" reason="Reference for SupplierRepository structure. REUSE pattern: change entity type to Supplier, extend CompanyScopedRepository pattern, add custom queries for search/filter with unaccented Vietnamese support." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/CustomerServiceImpl.java" kind="service" symbol="CustomerServiceImpl" reason="Reference for SupplierServiceImpl implementation. REUSE pattern: change entity type to Supplier, change code format to SUP-YYYY-NNNN, change AR summary to AP summary, change duplicate detection messages. Implement findAll() with pagination/sorting/filtering, findById(), create() with code generation, update() with audit, delete() with referential check, activate/deactivate(), checkDuplicate()." />
+      <artifact path="backend/src/main/java/com/accounting/service/util/CustomerCodeGenerator.java" kind="utility" symbol="CustomerCodeGenerator" reason="Reference for SupplierCodeGenerator. REUSE pattern: change format from CUST-YYYY-NNNN to SUP-YYYY-NNNN, change table/sequence names to supplier-specific. Implement generateCode(companyId) with thread-safe uniqueness, year rollover handling." />
+      <artifact path="backend/src/main/java/com/accounting/controller/CustomerController.java" kind="controller" symbol="CustomerController" reason="Reference for SupplierController structure. REUSE pattern: change entity type to Supplier, change AR references to AP references. Implement REST endpoints: GET /api/v1/suppliers (pagination, sorting, filters, search), GET /api/v1/suppliers/{id}, POST /api/v1/suppliers, PUT /api/v1/suppliers/{id}, DELETE /api/v1/suppliers/{id}, PATCH /api/v1/suppliers/{id}/activate, PATCH /api/v1/suppliers/{id}/deactivate, GET /api/v1/suppliers/export, POST /api/v1/suppliers/import." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/CustomerImportExportServiceImpl.java" kind="service" symbol="CustomerImportExportServiceImpl" reason="Reference for SupplierImportExportService. REUSE pattern: change entity type to Supplier, change import/export field mappings. Implement importSuppliers(file) with Excel/CSV parsing, validation, atomic transaction, error reporting. Implement exportSuppliers(filters) with CSV/Excel generation." />
+      <artifact path="backend/src/main/java/com/accounting/service/AuditService.java" kind="service" symbol="AuditService" reason="Service for audit logging. Use for logging all supplier CRUD operations: CREATE, UPDATE, DELETE, ACTIVATE, DEACTIVATE with before/after values in JSONB format. Log import operations: one audit entry per imported row. Log blocked delete attempts with reason." />
+      <artifact path="backend/src/main/java/com/accounting/dto/CustomerDTO.java" kind="dto" symbol="CustomerDTO" reason="Reference for SupplierDTO structure. REUSE pattern: change entity type to Supplier, change AR summary to AP summary. Create SupplierDTO, SupplierCreateRequest, SupplierUpdateRequest, SupplierAPSummaryDTO." />
+      <artifact path="frontend/src/features/customers/pages/Customers.tsx" kind="page" symbol="Customers" reason="Reference for Suppliers.tsx page component. REUSE pattern: change entity type to Supplier, change labels from Customer to Supplier, change AR references to AP references. Use TanStack Table (data-table-09 pattern) with pagination, sorting, filters, search, refresh button, record count display." />
+      <artifact path="frontend/src/features/customers/components/CustomerFormSheet.tsx" kind="component" symbol="CustomerFormSheet" reason="Reference for SupplierFormSheet.tsx. REUSE pattern: change to Dialog component (not Sheet), change entity type to Supplier, change code format to SUP-YYYY-NNNN, change AR references to AP references. Use React Hook Form + Zod validation, three sections (Primary Information, Contact Details, Status &amp; Settings), real-time validation, duplicate error display." />
+      <artifact path="frontend/src/features/customers/components/CustomerDetailsPanel.tsx" kind="component" symbol="CustomerDetailsPanel" reason="Reference for SupplierDetailsPanel.tsx. REUSE pattern: change entity type to Supplier, change AR summary to AP summary (open bills, total owed, average payment days). Show placeholder message if AP data not available (Epic 4 pending)." />
+      <artifact path="frontend/src/features/customers/components/DeleteCustomerDialog.tsx" kind="component" symbol="DeleteCustomerDialog" reason="Reference for DeleteSupplierDialog.tsx. REUSE pattern: change entity type to Supplier, change AR references to AP references (bills/payments). Check references before deletion, show modal with explanatory message, block deletion if has bills/payments, option to deactivate instead." />
+      <artifact path="frontend/src/features/customers/components/CustomerImportWizard.tsx" kind="component" symbol="CustomerImportWizard" reason="Reference for SupplierImportWizard.tsx. REUSE pattern: change entity type to Supplier, change import field mappings. File upload (Excel/CSV), template download, validation preview, error display, commit button, progress indicator, success/error summary." />
+      <artifact path="frontend/src/features/customers/services/customer.ts" kind="service" symbol="customerService" reason="Reference for supplier.ts service. REUSE pattern: change entity type to Supplier, change API endpoints to /api/v1/suppliers. Create supplier service with CRUD operations, import/export, AP summary methods." />
+      <artifact path="backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java" kind="interface" symbol="CompanyScopedEntity" reason="Interface for multi-tenancy pattern requiring companyId field. Supplier entity must implement this." />
+      <artifact path="backend/src/main/java/com/accounting/repository/CompanyScopedRepository.java" kind="interface" symbol="CompanyScopedRepository" reason="Repository interface extending JpaRepository with company scoping methods. SupplierRepository should extend this pattern." />
+    </code>
+    <dependencies>
+      <backend>
+        <framework>Spring Boot 3.5.7</framework>
+        <database>PostgreSQL 15+ (via Supabase)</database>
+        <orm>Spring Data JPA + Hibernate 6.x</orm>
+        <migration>Flyway 11.10.0</migration>
+        <security>Spring Security 6.x</security>
+        <validation>Spring Boot Starter Validation</validation>
+        <excel-processing>Apache POI 5.3.0</excel-processing>
+        <api-docs>SpringDoc OpenAPI 2.8.13</api-docs>
+        <testing>JUnit 5, TestContainers 1.21.3, Mockito</testing>
+      </backend>
+      <frontend>
+        <framework>React 19.1.1 with TypeScript 5.9.3</framework>
+        <build-tool>Vite 7.1.7</build-tool>
+        <ui-library>shadcn/ui (Radix UI primitives)</ui-library>
+        <styling>Tailwind CSS 4.1.16</styling>
+        <icons>Lucide React 0.552.0</icons>
+        <data-tables>@tanstack/react-table 8.21.3</data-tables>
+        <http-client>Axios 1.7.9</http-client>
+        <forms>React Hook Form 7.66.0 with Zod 4.1.12</forms>
+        <routing>React Router DOM 7.9.5</routing>
+        <toasts>sonner (via shadcn/ui)</toasts>
+        <testing>Vitest 2.1.4, Testing Library 16.1, jsdom 25.1</testing>
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Multi-tenancy: All supplier records must be company-scoped. Use CompanyScopedEntity interface pattern from Epic 1. All queries automatically filtered by company_id via CompanyContext.</constraint>
+    <constraint>Database schema: Follow PostgreSQL conventions: snake_case table names (suppliers), UUID primary keys (or BIGSERIAL), foreign keys with proper constraints. Unique constraint: UNIQUE(company_id, tax_code) at database level.</constraint>
+    <constraint>Supplier code format: Auto-generated codes follow pattern SUP-YYYY-NNNN where YYYY is current year and NNNN is sequential number (e.g., SUP-2025-0001). Code generation must be thread-safe to prevent duplicates under concurrency. Use database sequence or atomic counter. Handle year rollover (reset sequence on new year).</constraint>
+    <constraint>Tax code validation: Vietnamese tax codes are 10-digit numeric strings. Validate format and enforce uniqueness per company via UNIQUE(company_id, tax_code) constraint. Use @Pattern annotation for format validation.</constraint>
+    <constraint>Duplicate detection: Check for duplicates by tax code (required), and optionally by email and phone number. When duplicate found, return 409 Conflict with details showing conflicting supplier (code, name, tax code). Display exactly where conflict occurred in error message.</constraint>
+    <constraint>Referential integrity: Suppliers cannot be deleted if they have linked bills or payments (Epic 4 data). Check references before deletion, return 409 Conflict with explanatory message listing count of linked records. Option to deactivate instead of delete. For MVP, stub referential check until Epic 4 implemented.</constraint>
+    <constraint>Vietnamese search: Use PostgreSQL unaccent extension for unaccented search support (NFR23). Create custom function unaccent_search(text) in Flyway migration for use in search queries. Search must match accented field reliably (e.g., "nha" matches "nhà").</constraint>
+    <constraint>Audit logging: All supplier CRUD operations must be logged to audit_logs table with before/after values in JSONB format. Include user ID, company ID, timestamp, IP address, user agent. Import operations create one audit entry per imported row. Log blocked delete attempts with reason. Address unresolved review items from Customer story: User ID retrieval in audit logging (connect SecurityContext), referential integrity check for delete, import audit logging verification, export audit logging.</constraint>
+    <constraint>Import/export: Use Apache POI for Excel parsing. Import must be atomic (all valid rows or none). Validate all rows before saving, collect errors, return error report with row numbers. Export supports CSV and Excel formats with applied filters. Log export action in audit trail.</constraint>
+    <constraint>Real-time updates: For MVP, use polling every 5 minutes to refresh supplier list. WebSocket support can be added post-MVP. CRUD actions update real-time so multiple users see live changes.</constraint>
+    <constraint>AP summary integration: Supplier AP summary (open bills, total owed, average payment days) requires Epic 4 (AP Module) data. For MVP, stub the summary or return placeholder values. Show placeholder message if AP data not available.</constraint>
+    <constraint>Frontend: Use shadcn/ui components (not MUI) - architecture uses shadcn/ui. Follow feature-first structure: pages in features/suppliers/pages/, components in features/suppliers/components/. Use TanStack Table (data-table-09 pattern) for supplier list. Use Dialog component (not Sheet) for supplier add/edit form following Customer story pattern.</constraint>
+    <constraint>RBAC: All authenticated users can view suppliers; edit requires admin/accountant roles. Use @PreAuthorize annotations for API security. Frontend UI hiding is not a security boundary - API must enforce permissions.</constraint>
+    <constraint>Form validation: Use React Hook Form with Zod schema validation. Real-time validation: show inline errors on field blur. Validate phone number format, email format, tax code format (10-digit Vietnamese tax code). Form organized into three sections: Primary Information, Contact Details, Status &amp; Settings.</constraint>
+    <constraint>Inactive supplier display: Inactive suppliers appear grayed-out (reduced opacity) and are moved to bottom or separate tab (user preference). Deactivate/reactivate with tooltip explaining that linked AP data will not be deleted.</constraint>
+    <constraint>Learnings from Customer story: REUSE patterns from CustomerService, CustomerCodeGenerator, CustomerImportExportService, and frontend components. Address unresolved review items: User ID retrieval in audit logging (HIGH), referential integrity check for delete (HIGH), import audit logging verification (MEDIUM), export audit logging (MEDIUM), search pagination limitation (MEDIUM), inactive supplier sorting verification (LOW).</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="GET /api/v1/suppliers" kind="REST endpoint" signature="GET /api/v1/suppliers?page=0&amp;size=20&amp;sort=name,asc&amp;status=active&amp;search=term" path="backend/src/main/java/com/accounting/controller/supplier/SupplierController.java" />
+    <interface name="GET /api/v1/suppliers/{id}" kind="REST endpoint" signature="GET /api/v1/suppliers/{id}" path="backend/src/main/java/com/accounting/controller/supplier/SupplierController.java" />
+    <interface name="POST /api/v1/suppliers" kind="REST endpoint" signature="POST /api/v1/suppliers" path="backend/src/main/java/com/accounting/controller/supplier/SupplierController.java" />
+    <interface name="PUT /api/v1/suppliers/{id}" kind="REST endpoint" signature="PUT /api/v1/suppliers/{id}" path="backend/src/main/java/com/accounting/controller/supplier/SupplierController.java" />
+    <interface name="DELETE /api/v1/suppliers/{id}" kind="REST endpoint" signature="DELETE /api/v1/suppliers/{id}" path="backend/src/main/java/com/accounting/controller/supplier/SupplierController.java" />
+    <interface name="PATCH /api/v1/suppliers/{id}/activate" kind="REST endpoint" signature="PATCH /api/v1/suppliers/{id}/activate" path="backend/src/main/java/com/accounting/controller/supplier/SupplierController.java" />
+    <interface name="PATCH /api/v1/suppliers/{id}/deactivate" kind="REST endpoint" signature="PATCH /api/v1/suppliers/{id}/deactivate" path="backend/src/main/java/com/accounting/controller/supplier/SupplierController.java" />
+    <interface name="GET /api/v1/suppliers/export" kind="REST endpoint" signature="GET /api/v1/suppliers/export?format=xlsx&amp;status=active" path="backend/src/main/java/com/accounting/controller/supplier/SupplierController.java" />
+    <interface name="POST /api/v1/suppliers/import" kind="REST endpoint" signature="POST /api/v1/suppliers/import (multipart file)" path="backend/src/main/java/com/accounting/controller/supplier/SupplierController.java" />
+    <interface name="SupplierService.findAll()" kind="method" signature="Page&lt;SupplierDTO&gt; findAll(int page, int size, String sort, String status, String search)" path="backend/src/main/java/com/accounting/service/SupplierService.java" />
+    <interface name="SupplierService.create()" kind="method" signature="SupplierDTO create(SupplierCreateRequest request)" path="backend/src/main/java/com/accounting/service/SupplierService.java" />
+    <interface name="SupplierService.checkDuplicate()" kind="method" signature="Optional&lt;Supplier&gt; checkDuplicate(String taxCode, String email, String phone)" path="backend/src/main/java/com/accounting/service/SupplierService.java" />
+    <interface name="SupplierCodeGenerator.generateCode()" kind="method" signature="String generateCode(Long companyId)" path="backend/src/main/java/com/accounting/service/util/SupplierCodeGenerator.java" />
+    <interface name="SupplierService.getSupplierAPSummary()" kind="method" signature="SupplierAPSummaryDTO getSupplierAPSummary(Long supplierId)" path="backend/src/main/java/com/accounting/service/SupplierService.java" />
+    <interface name="CompanyScopedEntity" kind="interface" signature="interface CompanyScopedEntity { Long getCompanyId(); }" path="backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java" />
+  </interfaces>
+
+  <tests>
+    <standards>Backend: JUnit 5 + Spring Boot Test with TestContainers for integration tests. Mockito for service unit tests (code generation, validation, duplicate detection). Frontend: Vitest + Testing Library + jsdom for component tests. Integration: Test full supplier flow: create → edit → deactivate → view AP summary → export → import. Performance: Measure supplier list load time (&lt; 2s target per NFR1) for 1000+ suppliers. Accessibility: Test keyboard navigation, screen reader support (WCAG AA compliance).</standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/impl/SupplierServiceImplTest.java</location>
+      <location>backend/src/test/java/com/accounting/service/util/SupplierCodeGeneratorTest.java</location>
+      <location>backend/src/test/java/com/accounting/controller/supplier/SupplierControllerIntegrationTest.java</location>
+      <location>backend/src/test/java/com/accounting/service/impl/SupplierImportExportServiceImplTest.java</location>
+      <location>frontend/src/features/suppliers/**/*.test.tsx</location>
+      <location>frontend/src/features/suppliers/**/*.spec.tsx</location>
+    </locations>
+    <ideas>
+      <test ac="AC#1">Integration test: Verify supplier list supports pagination (20 per page), sorting by name/code, filter on status (active/inactive), and typeahead search</test>
+      <test ac="AC#2">Frontend test: Verify form validation - phone number format, email format, tax code format (10-digit), required fields</test>
+      <test ac="AC#3">Unit test: Verify SupplierCodeGenerator generates SUP-YYYY-NNNN format, ensures uniqueness per company, increments correctly, handles year rollover, thread-safe</test>
+      <test ac="AC#4">Integration test: Verify duplicate detection by tax code (required) and optionally email/phone - returns 409 Conflict with conflicting supplier details</test>
+      <test ac="AC#5">Frontend test: Verify inactive suppliers appear grayed-out (reduced opacity) and moved to bottom or separate tab</test>
+      <test ac="AC#6">Frontend test: Verify deactivate/reactivate functionality with tooltip explaining linked AP data preserved</test>
+      <test ac="AC#7">Integration test: Verify real-time updates via polling (5-minute intervals) - multiple users see live changes</test>
+      <test ac="AC#8">Integration test: Verify supplier AP summary (stubbed for MVP) - returns placeholder values until Epic 4 implemented</test>
+      <test ac="AC#9">Integration test: Verify export functionality - generates CSV/Excel with applied filters, includes all supplier fields, logs export action</test>
+      <test ac="AC#10">Integration test: Verify delete blocked if supplier has linked bills/payments - returns 409 Conflict with explanatory message, option to deactivate (stubbed for MVP until Epic 4)</test>
+      <test ac="AC#11">Integration test: Verify audit logging - all CRUD operations logged with before/after values, import operations create one audit entry per row, blocked delete attempts logged. Verify User ID retrieval from SecurityContext (addresses unresolved review item from Customer story).</test>
+      <test ac="Multi-tenancy">Integration test: Verify company scoping - suppliers from different companies are isolated, queries filtered by company_id</test>
+      <test ac="Import/Export">Integration test: Verify import atomicity - all valid rows or none, error report with row numbers, export with filters</test>
+      <test ac="Performance">Performance test: Verify supplier list load time &lt; 2s for 1000+ suppliers, search with unaccented Vietnamese &lt; 500ms</test>
+      <test ac="Accessibility">Frontend test: Verify keyboard navigation, screen reader support, ARIA labels on all interactive elements</test>
+      <test ac="Review Items">Integration test: Verify unresolved review items from Customer story are addressed - User ID retrieval in audit logging (HIGH), referential integrity check for delete (HIGH), import audit logging verification (MEDIUM), export audit logging (MEDIUM)</test>
+    </ideas>
+  </tests>
+</story-context>
+

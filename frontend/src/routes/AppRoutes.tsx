@@ -4,10 +4,20 @@ import { CompanySettings } from '@/features/company'
 import { Login, ForgotPassword, ResetPassword } from '@/features/auth'
 import { UserManagement } from '@/features/users'
 import UserProfile from '@/pages/UserProfile'
-import { ChartOfAccounts, VoucherTypeList } from '@/features/accounting'
+import {
+  VoucherTypeList,
+  ChartOfAccounts,
+  DefaultAccounts,
+  ImportWizard,
+  VoucherList,
+} from '@/features/accounting'
+import { Customers } from '@/features/customers'
+import { Suppliers } from '@/features/suppliers'
+import { BankAccounts } from '@/features/bankaccounts'
+import { AuditLogs } from '@/features/audit'
 import AcceptInvitation from '@/pages/AcceptInvitation'
 import ProtectedLayout from '@/layouts/ProtectedLayout'
-import { RoleGuard, CompanyGuard } from '@/components'
+import { RoleGuard, CompanyGuard, ErrorBoundary } from '@/components'
 
 export default function AppRoutes() {
   return (
@@ -58,19 +68,89 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/chart-of-accounts"
-        element={
-          <ProtectedLayout>
-            <ChartOfAccounts />
-          </ProtectedLayout>
-        }
-      />
-      <Route
         path="/voucher-types"
         element={
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
               <VoucherTypeList />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/vouchers"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <VoucherList />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/chart-of-accounts"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <ChartOfAccounts />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/default-accounts"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <DefaultAccounts />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/imports"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <ImportWizard />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/customers"
+        element={
+          <ProtectedLayout>
+            <Customers />
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/suppliers"
+        element={
+          <ProtectedLayout>
+            <ErrorBoundary>
+              <Suppliers />
+            </ErrorBoundary>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/bank-accounts"
+        element={
+          <ProtectedLayout>
+            <ErrorBoundary>
+              <BankAccounts />
+            </ErrorBoundary>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/admin/audit-logs"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <AuditLogs />
             </RoleGuard>
           </ProtectedLayout>
         }

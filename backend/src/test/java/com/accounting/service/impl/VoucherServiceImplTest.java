@@ -17,6 +17,8 @@ import com.accounting.dto.VoucherValidationResult;
 import com.accounting.entity.User;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.repository.SupplierRepository;
 import com.accounting.repository.UserRepository;
 import com.accounting.repository.VoucherLineRepository;
 import com.accounting.repository.VoucherRepository;
@@ -63,6 +65,10 @@ class VoucherServiceImplTest {
 
   @Mock private UserRepository userRepository;
 
+  @Mock private CustomerRepository customerRepository;
+
+  @Mock private SupplierRepository supplierRepository;
+
   @Mock private AuditService auditService;
 
   @Mock private JwtTokenProvider jwtTokenProvider;
@@ -82,6 +88,8 @@ class VoucherServiceImplTest {
             voucherRepository,
             voucherLineRepository,
             userRepository,
+            customerRepository,
+            supplierRepository,
             auditService,
             jwtTokenProvider,
             voucherValidationService);
@@ -118,7 +126,7 @@ class VoucherServiceImplTest {
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
     Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), null, null, null, null);
+        voucherService.findAll(PageRequest.of(0, 20), null, null, null, null, null);
 
     assertNotNull(result);
     assertEquals(2, result.getTotalElements());
@@ -137,7 +145,7 @@ class VoucherServiceImplTest {
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
     Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), "draft", null, null, null);
+        voucherService.findAll(PageRequest.of(0, 20), "draft", null, null, null, null);
 
     assertEquals(1, result.getContent().size());
     assertEquals("draft", result.getContent().get(0).getStatus());
@@ -158,7 +166,7 @@ class VoucherServiceImplTest {
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
     Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), null, fromDate, toDate, null);
+        voucherService.findAll(PageRequest.of(0, 20), null, fromDate, toDate, null, null);
 
     assertEquals(1, result.getContent().size());
   }
@@ -177,7 +185,7 @@ class VoucherServiceImplTest {
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
     Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), null, null, null, "VC2025");
+        voucherService.findAll(PageRequest.of(0, 20), null, null, null, "VC2025", null);
 
     assertEquals(1, result.getContent().size());
   }
@@ -189,7 +197,7 @@ class VoucherServiceImplTest {
     ResponseStatusException exception =
         assertThrows(
             ResponseStatusException.class,
-            () -> voucherService.findAll(PageRequest.of(0, 20), null, null, null, null));
+            () -> voucherService.findAll(PageRequest.of(0, 20), null, null, null, null, null));
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Missing company context"));

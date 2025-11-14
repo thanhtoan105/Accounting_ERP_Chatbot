@@ -36,6 +36,10 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.4</version>
@@ -179,6 +183,22 @@
                     <locations>
                         <location>classpath:db/migration</location>
                     </locations>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                        <!-- Tăng forkCount để tận dụng 4 CPU cores -->
+                        <!-- Công thức: forkCount = CPU cores - 1 (để lại 1 core cho OS) -->
+                        <forkCount>3</forkCount>
+                        <reuseForks>true</reuseForks>
+                        <parallel>classes</parallel>
+                        <threadCountClasses>3</threadCountClasses>
+                        <!-- Tối ưu JVM cho test -->
+                        <argLine>-Xmx1024m -XX:MaxMetaspaceSize=512m -XX:+UseG1GC</argLine>
+                        <!-- Shutdown timeout để tránh hang -->
+                        <shutdown>kill</shutdown>
                 </configuration>
             </plugin>
         </plugins>

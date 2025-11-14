@@ -1,0 +1,78 @@
+@startwbs Functional Decomposition — Overall
+* Accounting Platform
+** Foundation & Authentication
+*** Secure Login (JWT, Refresh)
+*** RBAC & Permissions
+*** Company Management
+*** Accounting Periods (Open/Close)
+*** Audit Trail (Immutable)
+*** Health Check & Observability
+** Master Data
+*** Chart of Accounts (TT200)
+*** Customers (AR)
+*** Suppliers (AP)
+*** Bank/Cash Accounts
+*** Company Settings
+*** Import/Export Templates
+** General Ledger & Vouchers
+*** Voucher Entry (Draft)
+*** Posting / Unposting / Reversal
+*** Double-Entry Validation (Dr = Cr)
+*** Leaf-Only Posting
+*** Required Dimensions (131/331/621/154, etc.)
+*** Period Selector & Controls
+*** Attachments & History
+** Accounts Payable (AP)
+*** Supplier Bills (Entry/Edit/Post)
+*** Payments (Linked & Standalone)
+*** Maker–Checker Approvals
+*** AP Aging Report
+*** Supplier Statement & Reconciliation
+*** VAT Handling & Reporting
+*** Audit Trail for AP
+** Accounts Receivable (AR)
+*** Sales Invoices (Entry/Edit/Post)
+*** Receipts (Allocations, Partial)
+*** Maker–Checker Approvals
+*** AR Aging Report
+*** Customer Statement & Reconciliation
+*** Revenue & VAT Handling
+*** Audit Trail for AR
+** Cash & Bank
+*** Cash Receipts
+*** Cash Payments
+*** Cash/Bank Books (Running Balances)
+*** Bank Reconciliation (Manual)
+*** Cash & Bank Audit/Compliance
+** Reporting (TT200)
+*** Trial Balance (S06-DN)
+*** Balance Sheet (B01-DN)
+*** Income Statement (B02-DN)
+*** Cash Flow (B03-DN, Direct)
+*** F01 Detailed Ledger
+*** Drill-down to Vouchers
+*** Scheduling & Distribution
+*** Variance Analysis
+*** Reporting Audit & Integrity
+** BI Dashboard & Analytics
+*** Core Widgets (Revenue/Expense, AR/AP, Cash)
+*** ETL/Data Pipeline & Freshness
+*** Personalization & Layout
+*** Drill-down & Interactive Exploration
+*** Trends & Forecasts
+*** Data Quality & BI Security
+** AI RAG Chatbot
+*** In-app Chat Widget
+*** Contextual Q&A (VN/EN) with Citations
+*** Guided Workflows & Journeys
+*** Feedback & Guardrail Monitoring
+*** Usage Analytics
+** Admin & Utilities
+*** User & Access Management
+*** Global Settings & Feature Flags
+*** Import/Export Utilities (COA, Balances, Master)
+*** Audit Log Explorer & Legal Holds
+*** Backup/Restore & DR
+*** Scheduler & Jobs Center
+@endwbs
+

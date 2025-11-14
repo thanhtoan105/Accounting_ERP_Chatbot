@@ -96,9 +96,7 @@ describe('Responsive Design - Breakpoints (AC#5)', () => {
     const companyNames = screen.getAllByText('Test Company')
     expect(companyNames.length).toBeGreaterThan(0)
     // Verify at least one is in the header
-    const headerCompanyName = companyNames.find((el) => 
-      el.closest('header') !== null
-    )
+    const headerCompanyName = companyNames.find((el) => el.closest('header') !== null)
     expect(headerCompanyName).toBeInTheDocument()
     expect(screen.getByText(/Period:/i)).toBeInTheDocument()
   })
@@ -129,9 +127,7 @@ describe('Responsive Design - Breakpoints (AC#5)', () => {
     const companyNames = screen.getAllByText('Test Company')
     expect(companyNames.length).toBeGreaterThan(0)
     // Verify at least one is in the header
-    const headerCompanyName = companyNames.find((el) => 
-      el.closest('header') !== null
-    )
+    const headerCompanyName = companyNames.find((el) => el.closest('header') !== null)
     expect(headerCompanyName).toBeInTheDocument()
   })
 
@@ -179,9 +175,7 @@ describe('Responsive Design - Breakpoints (AC#5)', () => {
     const sidebarTriggers = screen.getAllByRole('button', { name: /toggle sidebar/i })
     expect(sidebarTriggers.length).toBeGreaterThan(0)
     // Check that at least one trigger is in the header
-    const headerTrigger = sidebarTriggers.find((btn) => 
-      btn.closest('header') !== null
-    )
+    const headerTrigger = sidebarTriggers.find((btn) => btn.closest('header') !== null)
     expect(headerTrigger).toBeInTheDocument()
   })
 
@@ -199,4 +193,3 @@ describe('Responsive Design - Breakpoints (AC#5)', () => {
     expect(roleBadge).toBeInTheDocument()
   })
 })
-

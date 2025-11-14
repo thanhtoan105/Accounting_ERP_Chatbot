@@ -15,6 +15,7 @@ public class ChartOfAccountHierarchyDTO {
   private String type;
   private String normalSide;
   private Boolean postable;
+  private Boolean active;
   private Long parentId;
   private Integer orderingPosition;
   private List<ChartOfAccountHierarchyDTO> children;
@@ -30,6 +31,7 @@ public class ChartOfAccountHierarchyDTO {
       String type,
       String normalSide,
       Boolean postable,
+      Boolean active,
       Long parentId,
       Integer orderingPosition) {
     this.id = id;
@@ -38,6 +40,7 @@ public class ChartOfAccountHierarchyDTO {
     this.type = type;
     this.normalSide = normalSide;
     this.postable = postable;
+    this.active = active;
     this.parentId = parentId;
     this.orderingPosition = orderingPosition;
     this.children = new ArrayList<>();
@@ -117,5 +120,13 @@ public class ChartOfAccountHierarchyDTO {
 
   public void addChild(ChartOfAccountHierarchyDTO child) {
     this.children.add(child);
+  }
+
+  public Boolean getActive() {
+    return active;
+  }
+
+  public void setActive(Boolean active) {
+    this.active = active;
   }
 }

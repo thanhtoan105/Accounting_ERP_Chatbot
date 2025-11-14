@@ -15,24 +15,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import { X } from 'lucide-react'
 import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import { createVoucherType, updateVoucherType, getVoucherTypeById } from '@/services/voucherType'
 import type { VoucherTypeCreateRequest, VoucherTypeUpdateRequest } from '@/types/voucherType'
-import { getChartOfAccounts } from '@/services/chartOfAccounts'
-import { filterLevel3Accounts } from '@/utils/accountUtils'
-import type { ChartOfAccount } from '@/types/chartOfAccount'
+import AccountCombobox from '@/components/account/AccountCombobox'
 
 interface VoucherTypeDialogProps {
   open: boolean
@@ -44,8 +32,8 @@ interface VoucherTypeDialogProps {
 const voucherTypeSchema = z.object({
   typeCode: z.string().min(1, 'Type code is required'),
   typeName: z.string().min(1, 'Type name is required'),
-  debitAccountId: z.number().optional().or(z.undefined()),
-  creditAccountId: z.number().optional().or(z.undefined()),
+  debitAccountId: z.number().nullable().optional(),
+  creditAccountId: z.number().nullable().optional(),
   description: z.string().optional(),
 })
 
@@ -59,18 +47,14 @@ export default function VoucherTypeDialog({
 }: VoucherTypeDialogProps) {
   const isEditMode = !!voucherTypeId
   const [formError, setFormError] = useState<string | null>(null)
-  const [accounts, setAccounts] = useState<ChartOfAccount[]>([])
-  const [loadingAccounts, setLoadingAccounts] = useState(false)
-  const [debitOpen, setDebitOpen] = useState(false)
-  const [creditOpen, setCreditOpen] = useState(false)
 
   const form = useForm<VoucherTypeFormValues>({
     resolver: zodResolver(voucherTypeSchema),
     defaultValues: {
       typeCode: '',
       typeName: '',
-      debitAccountId: undefined,
-      creditAccountId: undefined,
+      debitAccountId: null,
+      creditAccountId: null,
       description: '',
     },
     mode: 'onSubmit',
@@ -80,27 +64,14 @@ export default function VoucherTypeDialog({
   const {
     handleSubmit,
     register,
+    reset,
     setValue,
     watch,
-    reset,
     formState: { errors, isSubmitting },
   } = form
 
   const debitAccountId = watch('debitAccountId')
   const creditAccountId = watch('creditAccountId')
-
-  const getAccountLabel = (id?: number) => {
-    if (!id) return undefined
-    const a = accounts.find((x) => x.id === id)
-    return a ? `${a.code} - ${a.name}` : undefined
-  }
-
-  // Load accounts on mount
-  useEffect(() => {
-    if (open) {
-      loadAccounts()
-    }
-  }, [open])
 
   // Load voucher type data for edit mode
   useEffect(() => {
@@ -110,28 +81,13 @@ export default function VoucherTypeDialog({
       reset({
         typeCode: '',
         typeName: '',
-        debitAccountId: undefined,
-        creditAccountId: undefined,
+        debitAccountId: null,
+        creditAccountId: null,
         description: '',
       })
       setFormError(null)
     }
   }, [open, isEditMode, voucherTypeId])
-
-  const loadAccounts = async () => {
-    try {
-      setLoadingAccounts(true)
-      const response = await getChartOfAccounts()
-      const level3Accounts = filterLevel3Accounts(response.data)
-      setAccounts(level3Accounts)
-    } catch (err: any) {
-      toast.error('Failed to load accounts', {
-        description: err?.error?.message || err?.message || 'Unknown error',
-      })
-    } finally {
-      setLoadingAccounts(false)
-    }
-  }
 
   const loadVoucherType = async () => {
     if (!voucherTypeId) return
@@ -140,8 +96,8 @@ export default function VoucherTypeDialog({
       reset({
         typeCode: voucherType.typeCode,
         typeName: voucherType.typeName,
-        debitAccountId: voucherType.debitAccountId || undefined,
-        creditAccountId: voucherType.creditAccountId || undefined,
+        debitAccountId: voucherType.debitAccountId ?? null,
+        creditAccountId: voucherType.creditAccountId ?? null,
         description: voucherType.description || '',
       })
       setFormError(null)
@@ -159,8 +115,8 @@ export default function VoucherTypeDialog({
         const request: VoucherTypeUpdateRequest = {
           typeCode: values.typeCode.trim(),
           typeName: values.typeName.trim(),
-          debitAccountId: values.debitAccountId || undefined,
-          creditAccountId: values.creditAccountId || undefined,
+          debitAccountId: values.debitAccountId ?? null,
+          creditAccountId: values.creditAccountId ?? null,
           description: values.description?.trim() || undefined,
         }
         await updateVoucherType(voucherTypeId, request)
@@ -169,8 +125,8 @@ export default function VoucherTypeDialog({
         const request: VoucherTypeCreateRequest = {
           typeCode: values.typeCode.trim(),
           typeName: values.typeName.trim(),
-          debitAccountId: values.debitAccountId || undefined,
-          creditAccountId: values.creditAccountId || undefined,
+          debitAccountId: values.debitAccountId ?? null,
+          creditAccountId: values.creditAccountId ?? null,
           description: values.description?.trim() || undefined,
         }
         await createVoucherType(request)
@@ -197,9 +153,7 @@ export default function VoucherTypeDialog({
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Voucher Type' : 'Create Voucher Type'}</DialogTitle>
             <DialogDescription>
-              {isEditMode
-                ? 'Update the voucher type details below.'
-                : 'Create a new voucher type with associated debit and credit accounts.'}
+              {isEditMode ? 'Update the voucher type details below.' : 'Create a new voucher type.'}
             </DialogDescription>
           </DialogHeader>
           <FieldGroup className="space-y-4 py-4">
@@ -244,144 +198,28 @@ export default function VoucherTypeDialog({
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <Field className="gap-2 min-w-0">
+            <div className="grid grid-cols-2 gap-4">
+              <Field className="gap-2">
                 <FieldLabel htmlFor="debitAccountId">Debit Account</FieldLabel>
                 <FieldContent>
-                  <Popover open={debitOpen} onOpenChange={setDebitOpen}>
-                    <div className="relative w-full">
-                      <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          id="debitAccountId"
-                          className={cn('w-full justify-between truncate pr-8')}
-                          aria-invalid={!!errors.debitAccountId}
-                          disabled={isSubmitting || loadingAccounts}
-                        >
-                          {getAccountLabel(debitAccountId) || 'Select debit account (optional)'}
-                        </Button>
-                      </PopoverTrigger>
-                      {debitAccountId ? (
-                        <button
-                          type="button"
-                          aria-label="Clear debit account"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition h-5 w-5 rounded-md inline-flex items-center justify-center"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            setValue('debitAccountId', undefined, { shouldValidate: true })
-                          }}
-                        >
-                          <X className="size-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                    <PopoverContent
-                      side="bottom"
-                      align="start"
-                      sideOffset={4}
-                      avoidCollisions={false}
-                      className="p-0 w-[--radix-popover-trigger-width]"
-                    >
-                      <Command>
-                        <CommandInput placeholder="Search account..." className="h-9" />
-                        <CommandList
-                          className="max-h-80 overflow-auto"
-                          onWheelCapture={(e) => e.stopPropagation()}
-                        >
-                          <CommandEmpty>No account found.</CommandEmpty>
-                          <CommandGroup>
-                            {accounts.map((a) => (
-                              <CommandItem
-                                key={a.id}
-                                value={`${a.code} - ${a.name}`}
-                                onSelect={() => {
-                                  setValue('debitAccountId', a.id, { shouldValidate: true })
-                                  setDebitOpen(false)
-                                }}
-                              >
-                                {a.code} - {a.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {errors.debitAccountId?.message && (
-                    <FieldError>{errors.debitAccountId.message}</FieldError>
-                  )}
+                  <AccountCombobox
+                    value={debitAccountId ?? null}
+                    onValueChange={(value) => setValue('debitAccountId', value)}
+                    disabled={isSubmitting}
+                    placeholder="Select debit account..."
+                  />
                 </FieldContent>
               </Field>
 
-              <Field className="gap-2 min-w-0">
+              <Field className="gap-2">
                 <FieldLabel htmlFor="creditAccountId">Credit Account</FieldLabel>
                 <FieldContent>
-                  <Popover open={creditOpen} onOpenChange={setCreditOpen}>
-                    <div className="relative w-full">
-                      <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          id="creditAccountId"
-                          className={cn('w-full justify-between truncate pr-8')}
-                          aria-invalid={!!errors.creditAccountId}
-                          disabled={isSubmitting || loadingAccounts}
-                        >
-                          {getAccountLabel(creditAccountId) || 'Select credit account (optional)'}
-                        </Button>
-                      </PopoverTrigger>
-                      {creditAccountId ? (
-                        <button
-                          type="button"
-                          aria-label="Clear credit account"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition h-5 w-5 rounded-md inline-flex items-center justify-center"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            setValue('creditAccountId', undefined, { shouldValidate: true })
-                          }}
-                        >
-                          <X className="size-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                    <PopoverContent
-                      side="bottom"
-                      align="start"
-                      sideOffset={4}
-                      avoidCollisions={false}
-                      className="p-0 w-[--radix-popover-trigger-width]"
-                    >
-                      <Command>
-                        <CommandInput placeholder="Search account..." className="h-9" />
-                        <CommandList
-                          className="max-h-80 overflow-auto"
-                          onWheelCapture={(e) => e.stopPropagation()}
-                        >
-                          <CommandEmpty>No account found.</CommandEmpty>
-                          <CommandGroup>
-                            {accounts.map((a) => (
-                              <CommandItem
-                                key={a.id}
-                                value={`${a.code} - ${a.name}`}
-                                onSelect={() => {
-                                  setValue('creditAccountId', a.id, { shouldValidate: true })
-                                  setCreditOpen(false)
-                                }}
-                              >
-                                {a.code} - {a.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {errors.creditAccountId?.message && (
-                    <FieldError>{errors.creditAccountId.message}</FieldError>
-                  )}
+                  <AccountCombobox
+                    value={creditAccountId ?? null}
+                    onValueChange={(value) => setValue('creditAccountId', value)}
+                    disabled={isSubmitting}
+                    placeholder="Select credit account..."
+                  />
                 </FieldContent>
               </Field>
             </div>
@@ -403,7 +241,7 @@ export default function VoucherTypeDialog({
             <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || loadingAccounts}>
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

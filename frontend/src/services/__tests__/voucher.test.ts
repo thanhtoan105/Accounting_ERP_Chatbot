@@ -62,7 +62,7 @@ describe('voucher service', () => {
           method: 'GET',
         }),
       )
-      
+
       // Verify headers were added by checking the actual fetch call
       expect(global.fetch).toHaveBeenCalled()
       const fetchCall = (global.fetch as any).mock.calls[0]
@@ -129,7 +129,7 @@ describe('voucher service', () => {
           method: 'DELETE',
         }),
       )
-      
+
       // Verify headers were added by checking the actual fetch call
       expect(global.fetch).toHaveBeenCalled()
       const fetchCall = (global.fetch as any).mock.calls[0]

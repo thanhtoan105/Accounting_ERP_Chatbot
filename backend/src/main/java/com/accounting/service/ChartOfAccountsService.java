@@ -1,7 +1,9 @@
 package com.accounting.service;
 
+import com.accounting.dto.ChartOfAccountCreateRequest;
 import com.accounting.dto.ChartOfAccountDTO;
 import com.accounting.dto.ChartOfAccountHierarchyDTO;
+import com.accounting.dto.ChartOfAccountUpdateRequest;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,9 +29,48 @@ public interface ChartOfAccountsService {
    * @param parentId filter by parent ID (optional, null for root accounts)
    * @param type filter by account type (optional, null to ignore)
    * @param search search term for code or name (optional, null to ignore)
+   * @param active filter by active status (optional, null to ignore)
    * @return list of accounts matching filters
    */
-  List<ChartOfAccountDTO> findAll(Boolean postable, String codePrefix, Long parentId, String type, String search);
+  List<ChartOfAccountDTO> findAll(Boolean postable, String codePrefix, Long parentId, String type, String search, Boolean active);
+
+  /**
+   * Create a new account.
+   *
+   * @param request create request with account details
+   * @return created account DTO
+   */
+  ChartOfAccountDTO createAccount(ChartOfAccountCreateRequest request);
+
+  /**
+   * Update an existing account.
+   *
+   * @param id account ID
+   * @param request update request with account details
+   * @return updated account DTO
+   */
+  ChartOfAccountDTO updateAccount(Long id, ChartOfAccountUpdateRequest request);
+
+  /**
+   * Soft delete an account (set active=false).
+   *
+   * @param id account ID
+   */
+  void softDeleteAccount(Long id);
+
+  /**
+   * Activate an account (set active=true).
+   *
+   * @param id account ID
+   */
+  void activateAccount(Long id);
+
+  /**
+   * Deactivate an account (set active=false).
+   *
+   * @param id account ID
+   */
+  void deactivateAccount(Long id);
 
   /**
    * Find only postable leaf accounts (accounts with postable=true and no children).

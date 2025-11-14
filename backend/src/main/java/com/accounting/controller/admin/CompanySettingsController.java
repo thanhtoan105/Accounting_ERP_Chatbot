@@ -1,6 +1,6 @@
 package com.accounting.controller.admin;
 
-import com.accounting.dto.UpdateCompanySettingsRequest;
+import com.accounting.dto.UpdateBasicCompanySettingsRequest;
 import com.accounting.entity.Company;
 import com.accounting.service.CompanyService;
 import jakarta.validation.Valid;
@@ -39,7 +39,7 @@ public class CompanySettingsController {
   @PutMapping(value = "/settings", consumes = { MediaType.APPLICATION_JSON_VALUE })
   @PreAuthorize("hasAnyRole('ADMIN','CHIEF_ACCOUNTANT')")
   public ResponseEntity<Map<String, Object>> updateSettingsJson(
-      @Valid @RequestBody UpdateCompanySettingsRequest request) {
+      @Valid @RequestBody UpdateBasicCompanySettingsRequest request) {
     Company updated = companyService.updateCurrentCompanySettings(request, null);
     Map<String, Object> body = new HashMap<>();
     body.put("data", updated);
@@ -49,7 +49,7 @@ public class CompanySettingsController {
   @PutMapping(value = "/settings", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
   @PreAuthorize("hasAnyRole('ADMIN','CHIEF_ACCOUNTANT')")
   public ResponseEntity<Map<String, Object>> updateSettingsMultipart(
-      @RequestPart("payload") @Valid UpdateCompanySettingsRequest request,
+      @RequestPart("payload") @Valid UpdateBasicCompanySettingsRequest request,
       @RequestPart(value = "logo", required = false) MultipartFile logo) {
     Company updated = companyService.updateCurrentCompanySettings(request, logo);
     Map<String, Object> body = new HashMap<>();

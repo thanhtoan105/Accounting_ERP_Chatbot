@@ -49,4 +49,3 @@ describe('useTheme', () => {
     expect(localStorage.getItem('theme')).toBe('dark')
   })
 })
-

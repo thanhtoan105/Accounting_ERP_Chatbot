@@ -1,0 +1,208 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>6</storyId>
+    <title>Data Import &amp; Migration</title>
+    <status>approved</status>
+    <generatedAt>2025-11-12</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/2-6-data-import-migration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As an administrator</asA>
+    <iWant>I want to import master data (customers, suppliers, bank accounts, opening balances) from standardized Excel/CSV templates with validations and audit trail</iWant>
+    <soThat>so that onboarding and cut-over can be executed safely, efficiently, and with full data integrity</soThat>
+    <tasks>
+      <task id="T1" title="Templates (AC: #1, #2, #8)">
+        <subtask>Provide sample Excel/CSV templates in docs/assets/import-templates/</subtask>
+        <subtask>Document required headers and data types</subtask>
+        <subtask>Produce seeded demo import dataset with mapping notes for the demo company</subtask>
+      </task>
+      <task id="T2" title="Backend (AC: #1, #2, #3, #4, #5, #6, #7, #8)">
+        <subtask>Expose POST /api/v1/import/{type} endpoints for customers, suppliers, bank-accounts, and opening-balances</subtask>
+        <subtask>Implement Apache POI and CSV parsing with strict header and type checks</subtask>
+        <subtask>Apply DTO + Bean Validation, aggregate row errors, and ensure single-transaction rollback on failure</subtask>
+        <subtask>Enforce opening balance rules (Dr = Cr, blocked when first period is closed)</subtask>
+        <subtask>Guard endpoints with @PreAuthorize hasAnyRole('ADMIN','CHIEF_ACCOUNTANT')</subtask>
+        <subtask>Ensure CompanyContext scoping across repositories and services</subtask>
+        <subtask>Write audit summaries and per-row audit entries</subtask>
+        <subtask>Create unit and integration tests for validators, transactions, RBAC, scoping, and audit logging</subtask>
+      </task>
+      <task id="T3" title="Frontend (AC: #1, #2, #6, #7, #8)">
+        <subtask>Build import wizard UI in @/features/accounting/pages/ImportWizard.tsx</subtask>
+        <subtask>Add file picker, template type selector, and header preview</subtask>
+        <subtask>Define Zod schemas for client-side row validation per entity</subtask>
+        <subtask>Render row-level error table with downloadable CSV report</subtask>
+        <subtask>Provide progress indicator and localized English/Vietnamese messages</subtask>
+        <subtask>Create tests covering validation, error mapping, progress feedback, and accessibility</subtask>
+      </task>
+      <task id="T4" title="Operations &amp; Documentation (AC: #1, #2, #8)">
+        <subtask>Write usage guide in docs/ops/imports.md</subtask>
+        <subtask>Document demo import procedure and data relationships</subtask>
+      </task>
+      <testing>
+        <item>AC1: Reject non-conforming templates; header/type mismatch returns 400 with details</item>
+        <item>AC2: Aggregate row errors; downloadable CSV includes row, field, and message</item>
+        <item>AC3: Verify transactional rollback and opening balance Dr = Cr enforcement</item>
+        <item>AC4: Confirm RBAC role matrix and company isolation</item>
+        <item>AC5: Validate audit counts and per-row audit entries</item>
+        <item>AC6: Demonstrate 1k-row import within 30s and progress UI rendering</item>
+        <item>AC7: Ensure DTO validation and Zod client validation are present</item>
+        <item>AC8: Validate demo import dataset end-to-end against seeded company</item>
+      </testing>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" title="Templates &amp; Upload">
+      <detail>Only sanctioned Excel/CSV templates are accepted with file type and header validation.</detail>
+      <detail>Invalid templates or headers are rejected with actionable error messaging.</detail>
+    </criterion>
+    <criterion id="AC2" title="Pre-Validation &amp; Preview">
+      <detail>Client- and server-side validation runs before commit, showing row-level errors and counts for inserted, skipped, and error rows.</detail>
+      <detail>Users can download an error report (CSV) listing row number, field, and message.</detail>
+    </criterion>
+    <criterion id="AC3" title="Transactional Integrity">
+      <detail>Each import operation commits atomically; any error results in no partial writes.</detail>
+      <detail>Opening balance import enforces Dr = Cr and blocks posting when the first period is already closed.</detail>
+    </criterion>
+    <criterion id="AC4" title="Multi-Tenancy &amp; Security">
+      <detail>All writes are company-scoped via CompanyContext with no cross-company leakage.</detail>
+      <detail>RBAC restricts imports to ADMIN or CHIEF_ACCOUNTANT roles.</detail>
+    </criterion>
+    <criterion id="AC5" title="Audit Trail">
+      <detail>Import attempts log inserted, skipped, and error counts plus per-row audit entries capturing payload changes.</detail>
+    </criterion>
+    <criterion id="AC6" title="Performance &amp; UX">
+      <detail>Validate and import up to 1,000 rows within 30 seconds, noting strategy for larger sets.</detail>
+      <detail>Progress feedback is shown during long-running operations with localized messages supporting English and Vietnamese.</detail>
+    </criterion>
+    <criterion id="AC7" title="Architecture &amp; Tech Alignment">
+      <detail>Backend follows Spring Boot layering with company scoping and Apache POI for spreadsheets.</detail>
+      <detail>Frontend uses feature-first structure under @/features/accounting with shadcn UI and Zod validation.</detail>
+    </criterion>
+    <criterion id="AC8" title="Demo Data Compatibility">
+      <detail>Provide import-ready demo datasets aligned with the seeded demo company.</detail>
+      <detail>Demo templates validate without manual editing and document required relationships.</detail>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact path="docs/epics/epic-2-master-data-management.md" title="Epic 2 – Master Data Management" section="Story 2.6: Data Import &amp; Migration">
+        <snippet>Summarizes import wizard requirements: accept sanctioned Excel/CSV templates, run full validation before commit, rollback on error, enforce opening balance rules, provide downloadable error reports, and seed demo-friendly datasets.</snippet>
+      </artifact>
+      <artifact path="docs/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.6: Data Import &amp; Migration">
+        <snippet>Specifies pre-commit validation, atomic transaction handling, admin-only opening balance imports, audit logging expectations, and mandates demo import compatibility for Story 2.6.</snippet>
+      </artifact>
+      <artifact path="docs/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Dependencies and Integrations">
+        <snippet>Lists backend and frontend dependencies: Spring Boot + Validation, Apache POI 5.3.0 for spreadsheets, TestContainers for integration tests, and React stack with Zod and TanStack Table for import UI.</snippet>
+      </artifact>
+      <artifact path="docs/rbac-testing-guide.md" title="RBAC Testing Guide" section="Test 3: Chief Accountant User - Management Access">
+        <snippet>Confirms only Administrator and Chief Accountant roles can reach management routes, reinforcing 403 expectations for other roles and verifying protected navigation.</snippet>
+      </artifact>
+      <artifact path="docs/stories/2-5-company-settings-expansion-advanced-fields.md" title="Story 2.5 Dev Notes" section="Dev Notes">
+        <snippet>Highlights reusable patterns: enforce CompanyContext multi-tenancy and before/after audit logging, reuse advanced settings slice for transactional integrity and validation.</snippet>
+      </artifact>
+      <artifact path="docs/stories/validation-report-2025-11-12.md" title="Validation Report 2025-11-12" section="Story 2.6: Data Import &amp; Migration">
+        <snippet>Audit review calls out missing demo import coverage and AC traceability, ensuring the story context addresses spec item #7 and maintains continuity with previous stories.</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <file path="backend/src/main/java/com/accounting/security/CompanyContext.java" kind="security" symbol="CompanyContext" lineHints="1-19" reason="ThreadLocal company scope used by import transactions to enforce tenant isolation"/>
+      <file path="backend/src/main/java/com/accounting/security/CompanyContextFilter.java" kind="security" symbol="CompanyContextFilter" lineHints="34-66" reason="Extracts X-Company-Id header and falls back to authenticated user before clearing context"/>
+      <file path="backend/src/main/java/com/accounting/security/CompanyScopeAspect.java" kind="security" symbol="CompanyScopeAspect" lineHints="14-31" reason="Applies CompanyScopeEnforcer on repository saves to prevent cross-company writes"/>
+      <file path="backend/src/main/java/com/accounting/security/CompanyScopeEnforcer.java" kind="security" symbol="CompanyScopeEnforcer" lineHints="10-28" reason="Validates entity companyId against active context, raising violations when mismatched"/>
+      <file path="backend/src/main/java/com/accounting/controller/CustomerController.java" kind="controller" symbol="importCustomers" lineHints="319-348" reason="Existing import endpoint wiring audit logging and success/error reporting"/>
+      <file path="backend/src/main/java/com/accounting/service/impl/CustomerImportExportServiceImpl.java" kind="service" symbol="importCustomers" lineHints="55-127" reason="Apache POI/CSV parsing with pre-commit validation and atomic save pattern"/>
+      <file path="backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java" kind="service" symbol="logCustomerImport" lineHints="534-552" reason="Captures import summary into AuditLog with user context and IP metadata"/>
+      <file path="backend/src/main/java/com/accounting/entity/AuditLog.java" kind="entity" symbol="AuditLog" lineHints="11-38" reason="Persistent model storing action, reason, and telemetry for import attempts"/>
+      <file path="frontend/src/features/customers/components/CustomerFormSheet.tsx" kind="component" symbol="createCustomerFormSchema" lineHints="39-106" reason="Zod schema + resolver pattern reused for import row validation feedback"/>
+      <file path="frontend/src/features/customers/pages/Customers.tsx" kind="page" symbol="Customers" lineHints="404-620" reason="TanStack Table UI with search, refresh, record count, and pagination baseline for import wizard module"/>
+    </code>
+    <dependencies>
+      <backend>
+        <dep>Spring Boot 3.5.x (Web, Data JPA, Security, Validation)</dep>
+        <dep>Apache POI 5.3.0 + Commons CSV parsing utilities</dep>
+        <dep>Spring Transaction Management for atomic imports</dep>
+        <dep>Hibernate + PostgreSQL with Flyway migrations</dep>
+        <dep>Testcontainers + JUnit 5 for integration coverage</dep>
+      </backend>
+      <frontend>
+        <dep>React 18 + TypeScript 5 with Vite</dep>
+        <dep>shadcn/ui + Radix primitives for dialogs, tables, toasts</dep>
+        <dep>@tanstack/react-table 8.x for import preview grid</dep>
+        <dep>React Hook Form + Zod + @hookform/resolvers for client validation</dep>
+        <dep>Axios + React Query for upload progress and polling</dep>
+      </frontend>
+      <tooling>
+        <dep>Vitest + Testing Library for UI tests</dep>
+        <dep>Sonner toast + Lucide icons for feedback</dep>
+        <dep>Docker Compose stack (PostgreSQL, Redis) for end-to-end testing</dep>
+      </tooling>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <item>Multi-tenancy: all imports must set and respect CompanyContext; reject requests without X-Company-Id</item>
+    <item>RBAC: restrict import endpoints to ADMIN and CHIEF_ACCOUNTANT roles; enforce via @PreAuthorize and integration tests</item>
+    <item>Transactional integrity: imports execute within a single transaction with rollback on first failure; no partial data writes</item>
+    <item>Opening balances: enforce Dr = Cr, explicitly block imports if first period is closed, and surface actionable error messages</item>
+    <item>Validation: server ensures template type, headers, and data types match sanctioned schemas; return row-level error payloads plus downloadable CSV report</item>
+    <item>Audit trail: log attempt metadata (success/error counts, user id, IP, user agent) and per-row audit entries for traceability</item>
+    <item>Performance: baseline 1,000-row import in ≤30s; provide progress indicator and guidance for background strategy on larger files</item>
+    <item>Localization: all UI copy and error messaging must support English and Vietnamese with existing i18n bundle</item>
+    <item>Demo data: maintain validated sample templates aligned with seeded demo company and document dependencies</item>
+  </constraints>
+  <interfaces>
+    <endpoint method="POST" path="/api/v1/import/{type}" auth="JWT" scope="company">
+      <request dto="Multipart import request" headers="X-Company-Id, Content-Type: multipart/form-data">
+        <param name="type" values="customers|suppliers|bank-accounts|opening-balances" />
+        <body>Part `file`: Excel/CSV upload adhering to sanctioned template</body>
+      </request>
+      <response dto="ImportResultDto">Returns successCount, errorCount, and row-level errors (row, field, message)</response>
+      <errors>
+        <error code="400">Template invalid or validation failures</error>
+        <error code="401">Unauthenticated request</error>
+        <error code="403">Forbidden role (non admin/chief accountant)</error>
+        <error code="409">Opening balance period closed; import blocked</error>
+        <error code="422">Row-level domain constraint violation (e.g., Dr ≠ Cr)</error>
+      </errors>
+    </endpoint>
+    <endpoint method="GET" path="/api/v1/import/templates/{type}" auth="JWT" scope="company">
+      <response dto="Blob">Downloads latest sanctioned template (Excel/CSV) for selected type</response>
+    </endpoint>
+    <endpoint method="GET" path="/api/v1/import/error-reports/{id}" auth="JWT" scope="company">
+      <response dto="Blob">Returns generated CSV error report referenced in import response</response>
+    </endpoint>
+    <frontend-component name="ImportWizard" route="/accounting/imports">
+      <request>Initial GET fetches template metadata, validation rules, and localized strings</request>
+      <response>Wizard posts uploads via Axios, polls for completion, renders preview table through TanStack Table</response>
+    </frontend-component>
+  </interfaces>
+  <tests>
+    <standards>
+      <backend>JUnit 5 with Spring Boot Test + Testcontainers PostgreSQL for transactional and RBAC coverage</backend>
+      <frontend>Vitest + Testing Library + MSW for API mocking and localization assertions</frontend>
+      <ops>Manual dry-run checklist for demo template validation prior to release</ops>
+    </standards>
+    <locations>
+      <backend>backend/src/test/java/com/accounting/controller/imports/*</backend>
+      <backend>backend/src/test/java/com/accounting/service/imports/*</backend>
+      <frontend>frontend/src/features/accounting/pages/__tests__/ImportWizard.test.tsx</frontend>
+      <frontend>frontend/src/features/accounting/pages/__tests__/ImportPreviewTable.test.tsx</frontend>
+      <docs>docs/ops/imports.md (procedural test steps)</docs>
+    </locations>
+    <ideas>
+      <item>AC1/AC2: Upload template with header mismatch and invalid rows, assert 400 response + downloadable error CSV contents</item>
+      <item>AC3: Simulate failure in row N to verify transaction rollback and zero persisted entities</item>
+      <item>AC4: Exercise RBAC matrix (ADMIN, CHIEF_ACCOUNTANT pass; ACCOUNTANT, CFO, ACCOUNTANT readonly fail with 403)</item>
+      <item>AC5: Verify AuditService log entries persisted with correct action and reason metadata</item>
+      <item>AC6: Performance test with 1,000-row dataset measuring ≤30s completion and progress updates surfaced to UI</item>
+      <item>AC7: Frontend unit tests ensuring Zod schema rejects malformed rows and displays localized copy</item>
+      <item>AC8: Validate demo datasets import end-to-end, ensuring seeded relationships remain consistent</item>
+    </ideas>
+  </tests>
+</story-context>
+

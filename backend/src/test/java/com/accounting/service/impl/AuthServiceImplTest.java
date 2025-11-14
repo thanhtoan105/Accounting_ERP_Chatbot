@@ -8,11 +8,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.accounting.dto.LoginRequest;
 import com.accounting.entity.User;
 import com.accounting.repository.AuditLogRepository;
+import com.accounting.repository.ImportAuditEntryRepository;
 import com.accounting.repository.UserRepository;
 import com.accounting.security.JwtTokenProvider;
 import com.accounting.security.PasswordEncoder;
 import com.accounting.service.AuditService;
 import com.accounting.service.EmailService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +35,9 @@ class AuthServiceImplTest {
   private AuditLogRepository auditLogRepository;
 
   @Mock
+  private ImportAuditEntryRepository importAuditEntryRepository;
+
+  @Mock
   private HttpServletRequest httpRequest;
 
   @Mock
@@ -48,7 +53,8 @@ class AuthServiceImplTest {
     passwordEncoder = new PasswordEncoder();
     jwtTokenProvider = new JwtTokenProvider(
         "test-secret-key-minimum-256-bits-for-security-12345678901234567890123456789012345678901234567890", 30, 7);
-    auditService = new AuditServiceImpl(auditLogRepository, userRepository);
+    auditService = new AuditServiceImpl(
+        auditLogRepository, userRepository, importAuditEntryRepository, new ObjectMapper());
     authService = new AuthServiceImpl(userRepository, passwordEncoder, jwtTokenProvider, auditService, emailService);
   }
 

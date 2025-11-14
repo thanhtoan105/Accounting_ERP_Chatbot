@@ -6,198 +6,735 @@
     <title>UX Color Theme Visualizer</title>
     <style>
       :root {
-        --radius: 10px;
-        --gap: 16px;
-        --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        --primary: #0040ff;
+        --primary-600: #0036d6;
+        --primary-700: #002db3;
+        --secondary-50: #cce9ff;
+        --secondary-300: #76c3fc;
+        --accent: #fd6f00;
+        --accent-700: #c55200;
+        --neutral-50: #f9f4f1;
+        --info-300: #76c3fc;
+        --error: #dc2626;
+        --error-700: #b91c1c;
+        --error-surface: #fee2e2;
+        --error-text: #7f1d1d;
+        --success: #16a34a;
+        --success-700: #15803d;
+        --success-surface: #ecfdf5;
+        --success-text: #065f46;
+        --info-surface: #e0f2fe;
+        --info-text: #075985;
+        --bg: #ffffff;
+        --card: #ffffff;
+        --border: #e5e7eb;
+        --text: #111827;
+        --muted-text: #374151;
       }
-
-      body { font-family: var(--font); margin: 0; background: #0b1220; color: #e6eefc; }
-      header { padding: 20px 24px; border-bottom: 1px solid #1f2a44; position: sticky; top: 0; background: #0b1220; z-index: 1; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--gap); padding: 24px; }
-      .card { border: 1px solid #1f2a44; border-radius: var(--radius); overflow: hidden; background: #0f172a; }
-      .card header { padding: 12px 16px; font-weight: 700; border-bottom: 1px solid #1f2a44; }
-      .card section { padding: 16px; }
-      .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-      .swatch { border-radius: 8px; height: 48px; position: relative; border: 1px solid rgba(255,255,255,.1); }
-      .swatch span { position: absolute; bottom: 6px; left: 8px; font-size: 12px; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
-      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-      .btn { padding: 10px 14px; border-radius: 8px; border: 0; font-weight: 600; cursor: pointer; }
-      .btn.secondary { opacity: .9; }
-      .btn:disabled { opacity: .5; cursor: not-allowed; }
-      .input { padding: 10px 12px; border-radius: 8px; border: 1px solid; background: transparent; color: inherit; }
-      .alert { padding: 10px 12px; border-radius: 8px; font-weight: 600; }
-      .kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-      .kpi .box { border: 1px solid #1f2a44; border-radius: 8px; padding: 12px; }
-      .kpi .label { font-size: 12px; opacity: .8; }
-      .kpi .value { font-size: 20px; font-weight: 800; }
-
-      /* Theme shells */
-      .theme { --bg: #0f172a; --text: #e6eefc; --muted: #93a4c4; --primary: #3b82f6; --secondary: #22d3ee; --accent: #a78bfa; --success: #22c55e; --warning: #f59e0b; --error: #ef4444; --surface: #0b1220; }
-      .theme.trust { --primary: #2b6cb0; --secondary: #38b2ac; --accent: #805ad5; }
-      .theme.professional { --primary: #0ea5e9; --secondary: #14b8a6; --accent: #6366f1; }
-      .theme.calm { --primary: #16a34a; --secondary: #0ea5e9; --accent: #84cc16; }
-      .theme.bold { --primary: #7c3aed; --secondary: #06b6d4; --accent: #ef4444; }
-
-      .theme .card { background: var(--surface); border-color: rgba(255,255,255,.1); }
-      .theme a { color: var(--primary); }
-      .theme .btn.primary { background: var(--primary); color: #0b1220; }
-      .theme .btn.secondary { background: var(--secondary); color: #0b1220; }
-      .theme .btn.ghost { background: transparent; color: var(--text); border: 1px solid rgba(255,255,255,.16); }
-      .theme .input { border-color: rgba(255,255,255,.2); }
-      .theme .input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
-      .theme .alert.success { background: color-mix(in oklab, var(--success) 18%, transparent); border: 1px solid color-mix(in oklab, var(--success) 40%, #000); }
-      .theme .alert.error { background: color-mix(in oklab, var(--error) 18%, transparent); border: 1px solid color-mix(in oklab, var(--error) 40%, #000); }
-      .theme .alert.warning { background: color-mix(in oklab, var(--warning) 18%, transparent); border: 1px solid color-mix(in oklab, var(--warning) 40%, #000); }
-
-      .legend { display: grid; grid-template-columns: repeat(6, max-content); gap: 10px; align-items: center; font-size: 12px; opacity: .85; }
-      .dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
-
-      footer { padding: 24px; text-align: center; opacity: .7; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      header {
+        position: sticky; top: 0;
+        background: #fff;
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .container { padding: 24px; max-width: 1200px; margin: 0 auto; }
+      .grid { display: grid; gap: 16px; }
+      .grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+      }
+      h1 { font-size: 20px; margin: 0; }
+      h2 { font-size: 18px; margin: 0 0 12px; }
+      h3 { font-size: 16px; margin: 12px 0; }
+      .swatch {
+        border-radius: 8px; height: 56px; display: flex; align-items: center; justify-content: center; color: #000; font-weight: 600;
+        border: 1px solid var(--border);
+      }
+      .row { display: flex; gap: 12px; align-items: center; }
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        height: 36px; padding: 0 14px; border-radius: 8px;
+        border: 1px solid transparent; background: var(--neutral-50); color: var(--text);
+        cursor: pointer; transition: filter .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+      }
+      .btn.primary { background: var(--primary); color: #fff; }
+      .btn.primary:hover { filter: brightness(0.95); }
+      .btn.secondary { background: var(--secondary-50); color: var(--text); }
+      .btn.accent { background: var(--accent); color: #fff; }
+      .btn.ghost { background: transparent; border-color: var(--border); color: var(--muted-text); }
+      .input {
+        height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); width: 100%;
+      }
+      .label { font-size: 12px; color: var(--muted-text); margin-bottom: 6px; display: inline-block; }
+      .row.gap { gap: 8px; }
+      .stack { display: grid; gap: 10px; }
+      .alert {
+        border-radius: 8px; padding: 12px; border: 1px solid var(--border);
+      }
+      .alert.error { background: var(--error-surface); color: var(--error-text); border-color: #fecaca; }
+      .alert.success { background: var(--success-surface); color: var(--success-text); border-color: #bbf7d0; }
+      .alert.info { background: var(--info-surface); color: var(--info-text); border-color: #bae6fd; }
+      code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .kbd { border: 1px solid var(--border); border-bottom-width: 3px; border-radius: 6px; padding: 2px 6px; background: #fff; font-size: 12px; }
+      footer { padding: 24px; color: var(--muted-text); text-align: center; }
+      .palette { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+      @media (max-width: 900px) { .grid.cols-3 { grid-template-columns: 1fr; } .grid.cols-2 { grid-template-columns: 1fr; } .palette { grid-template-columns: repeat(3, 1fr);} }
     </style>
   </head>
   <body>
     <header>
-      <h1 style="margin:0">🎨 UX Color Theme Visualizer</h1>
-      <div class="legend" style="margin-top:8px">
-        <span><span class="dot" style="background:#22c55e"></span> Success</span>
-        <span><span class="dot" style="background:#f59e0b"></span> Warning</span>
-        <span><span class="dot" style="background:#ef4444"></span> Error</span>
-        <span><span class="dot" style="background:#3b82f6"></span> Primary</span>
-        <span><span class="dot" style="background:#22d3ee"></span> Secondary</span>
-        <span><span class="dot" style="background:#a78bfa"></span> Accent</span>
+      <h1>UX Color Theme Visualizer</h1>
+      <div class="row gap">
+        <button class="btn ghost" id="copyVars">Copy CSS Variables</button>
+        <button class="btn secondary" id="toggleBorders">Toggle Borders</button>
       </div>
     </header>
-
-    <main class="grid">
-      <!-- Theme 1: Trust Blue (enterprise, compliance-first) -->
-      <article class="theme trust card">
-        <header>Theme 1 · Trust Blue (Professional, Compliance-first)</header>
-        <section>
-          <div class="swatches" aria-label="Color Palette">
-            <div class="swatch" style="background:var(--primary)"><span>Primary</span></div>
-            <div class="swatch" style="background:var(--secondary)"><span>Secondary</span></div>
-            <div class="swatch" style="background:var(--accent)"><span>Accent</span></div>
-            <div class="swatch" style="background:var(--success)"><span>Success</span></div>
-            <div class="swatch" style="background:var(--warning)"><span>Warning</span></div>
-            <div class="swatch" style="background:var(--error)"><span>Error</span></div>
+    <main class="container">
+      <section class="card">
+        <h2>Palette</h2>
+        <div class="palette">
+          <div class="stack">
+            <div class="swatch" style="background: var(--primary); color:#fff">#0040FF</div>
+            <div class="label">Primary</div>
           </div>
-        </section>
-        <section class="row">
-          <button class="btn primary">Primary Action</button>
-          <button class="btn secondary">Secondary</button>
-          <button class="btn ghost">Ghost</button>
-          <button class="btn primary" disabled>Disabled</button>
-          <input class="input" placeholder="Form input" />
-        </section>
-        <section class="row">
-          <div class="alert success">Compliant · All checks passed</div>
-          <div class="alert warning">Warning · Needs review</div>
-          <div class="alert error">Exception · Fix required</div>
-        </section>
-        <section class="kpi">
-          <div class="box"><div class="label">Month-End Close</div><div class="value">92%</div></div>
-          <div class="box"><div class="label">Open Exceptions</div><div class="value" style="color:var(--error)">3</div></div>
-        </section>
-      </article>
-
-      <!-- Theme 2: Professional Teal (efficient, modern) -->
-      <article class="theme professional card">
-        <header>Theme 2 · Professional Teal (Efficient, Modern)</header>
-        <section>
-          <div class="swatches">
-            <div class="swatch" style="background:var(--primary)"><span>Primary</span></div>
-            <div class="swatch" style="background:var(--secondary)"><span>Secondary</span></div>
-            <div class="swatch" style="background:var(--accent)"><span>Accent</span></div>
-            <div class="swatch" style="background:var(--success)"><span>Success</span></div>
-            <div class="swatch" style="background:var(--warning)"><span>Warning</span></div>
-            <div class="swatch" style="background:var(--error)"><span>Error</span></div>
+          <div class="stack">
+            <div class="swatch" style="background: var(--secondary-50);">#CCE9FF</div>
+            <div class="label">Sky Light</div>
           </div>
-        </section>
-        <section class="row">
-          <button class="btn primary">Primary Action</button>
-          <button class="btn secondary">Secondary</button>
-          <button class="btn ghost">Ghost</button>
-          <button class="btn primary" disabled>Disabled</button>
-          <input class="input" placeholder="Form input" />
-        </section>
-        <section class="row">
-          <div class="alert success">Compliant · All checks passed</div>
-          <div class="alert warning">Warning · Needs review</div>
-          <div class="alert error">Exception · Fix required</div>
-        </section>
-        <section class="kpi">
-          <div class="box"><div class="label">AP Aging &lt;30d</div><div class="value">82%</div></div>
-          <div class="box"><div class="label">AR Overdue</div><div class="value" style="color:var(--warning)">18%</div></div>
-        </section>
-      </article>
-
-      <!-- Theme 3: Calm Green (focused, low-stress) -->
-      <article class="theme calm card">
-        <header>Theme 3 · Calm Green (Focused, Low‑Stress)</header>
-        <section>
-          <div class="swatches">
-            <div class="swatch" style="background:var(--primary)"><span>Primary</span></div>
-            <div class="swatch" style="background:var(--secondary)"><span>Secondary</span></div>
-            <div class="swatch" style="background:var(--accent)"><span>Accent</span></div>
-            <div class="swatch" style="background:var(--success)"><span>Success</span></div>
-            <div class="swatch" style="background:var(--warning)"><span>Warning</span></div>
-            <div class="swatch" style="background:var(--error)"><span>Error</span></div>
+          <div class="stack">
+            <div class="swatch" style="background: var(--neutral-50);">#F9F4F1</div>
+            <div class="label">Off‑white</div>
           </div>
-        </section>
-        <section class="row">
-          <button class="btn primary">Primary Action</button>
-          <button class="btn secondary">Secondary</button>
-          <button class="btn ghost">Ghost</button>
-          <button class="btn primary" disabled>Disabled</button>
-          <input class="input" placeholder="Form input" />
-        </section>
-        <section class="row">
-          <div class="alert success">Compliant · All checks passed</div>
-          <div class="alert warning">Warning · Needs review</div>
-          <div class="alert error">Exception · Fix required</div>
-        </section>
-        <section class="kpi">
-          <div class="box"><div class="label">Drafts Remaining</div><div class="value">4</div></div>
-          <div class="box"><div class="label">Exceptions Closed</div><div class="value" style="color:var(--success)">+12</div></div>
-        </section>
-      </article>
-
-      <!-- Theme 4: Bold Purple (high contrast, expressive) -->
-      <article class="theme bold card">
-        <header>Theme 4 · Bold Purple (High Contrast, Expressive)</header>
-        <section>
-          <div class="swatches">
-            <div class="swatch" style="background:var(--primary)"><span>Primary</span></div>
-            <div class="swatch" style="background:var(--secondary)"><span>Secondary</span></div>
-            <div class="swatch" style="background:var(--accent)"><span>Accent</span></div>
-            <div class="swatch" style="background:var(--success)"><span>Success</span></div>
-            <div class="swatch" style="background:var(--warning)"><span>Warning</span></div>
-            <div class="swatch" style="background:var(--error)"><span>Error</span></div>
+          <div class="stack">
+            <div class="swatch" style="background: var(--secondary-300);">#76C3FC</div>
+            <div class="label">Sky</div>
           </div>
-        </section>
-        <section class="row">
-          <button class="btn primary">Primary Action</button>
-          <button class="btn secondary">Secondary</button>
-          <button class="btn ghost">Ghost</button>
-          <button class="btn primary" disabled>Disabled</button>
-          <input class="input" placeholder="Form input" />
-        </section>
-        <section class="row">
-          <div class="alert success">Compliant · All checks passed</div>
-          <div class="alert warning">Warning · Needs review</div>
-          <div class="alert error">Exception · Fix required</div>
-        </section>
-        <section class="kpi">
-          <div class="box"><div class="label">Close ETA</div><div class="value">2d</div></div>
-          <div class="box"><div class="label">Issues Today</div><div class="value" style="color:var(--error)">1</div></div>
-        </section>
-      </article>
+          <div class="stack">
+            <div class="swatch" style="background: var(--accent); color:#fff">#FD6F00</div>
+            <div class="label">Accent</div>
+          </div>
+          <div class="stack">
+            <div class="swatch" style="background: #E8AAFF;">#E8AAFF</div>
+            <div class="label">Accent 2</div>
+          </div>
+          <div class="stack">
+            <div class="swatch" style="background: var(--success); color:#fff">#16A34A</div>
+            <div class="label">Success</div>
+          </div>
+          <div class="stack">
+            <div class="swatch" style="background: var(--error); color:#fff">#DC2626</div>
+            <div class="label">Error</div>
+          </div>
+          <div class="stack">
+            <div class="swatch" style="background: var(--info-300);">#76C3FC</div>
+            <div class="label">Info</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid cols-3" style="margin-top:16px">
+        <div class="card">
+          <h2>Buttons</h2>
+          <div class="row gap" style="flex-wrap:wrap">
+            <button class="btn primary">Primary</button>
+            <button class="btn primary" style="background: var(--primary-700)">Primary • Hover</button>
+            <button class="btn secondary">Secondary</button>
+            <button class="btn accent">Accent</button>
+            <button class="btn ghost">Ghost</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Inputs & Forms</h2>
+          <div class="stack">
+            <label class="label" for="email">Email</label>
+            <input id="email" class="input" placeholder="example@company.com" />
+            <div class="row gap">
+              <button class="btn primary">Submit</button>
+              <button class="btn ghost">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Toasts & Alerts</h2>
+          <div class="stack">
+            <div class="alert success">Success: Voucher posted successfully.</div>
+            <div class="alert error">Error: Debit and Credit must balance.</div>
+            <div class="alert info">Info: Press <span class="kbd">Ctrl</span> + <span class="kbd">S</span> to save.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid cols-2" style="margin-top:16px">
+        <div class="card">
+          <h2>Cards & Tables</h2>
+          <div class="stack">
+            <div class="card" style="background: var(--neutral-50)">
+              <h3 style="margin-top:0">Revenue vs Expense</h3>
+              <div class="row" style="justify-content: space-between">
+                <span class="label">This Month</span>
+                <button class="btn secondary">Refresh</button>
+              </div>
+              <div style="height: 90px; background: #fff; border: 1px dashed var(--border); border-radius: 8px; margin-top: 10px; display:flex;align-items:center;justify-content:center;color:var(--muted-text)">Chart placeholder</div>
+            </div>
+            <div class="card">
+              <h3 style="margin-top:0">Recent Vouchers</h3>
+              <table style="width:100%; border-collapse: collapse">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); color:var(--muted-text); font-size:12px">
+                    <th style="padding:8px">No.</th>
+                    <th style="padding:8px">Date</th>
+                    <th style="padding:8px">Description</th>
+                    <th style="padding:8px; text-align:right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:8px">VC2025-001</td>
+                    <td style="padding:8px">10/11/2025</td>
+                    <td style="padding:8px">Sales Invoice</td>
+                    <td style="padding:8px; text-align:right">12,500,000</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border); background: #fafafa">
+                    <td style="padding:8px">VC2025-002</td>
+                    <td style="padding:8px">10/11/2025</td>
+                    <td style="padding:8px">Cash Receipt</td>
+                    <td style="padding:8px; text-align:right">8,200,000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Typography & Links</h2>
+          <p>Primary link style uses <code>--primary</code>. <a href="#" style="color: var(--primary)">See details</a></p>
+          <p class="label">Muted caption text using <code>--muted-text</code>.</p>
+          <div class="row gap">
+            <button class="btn primary">Action</button>
+            <button class="btn accent">Warn</button>
+            <button class="btn ghost">Dismiss</button>
+          </div>
+        </div>
+      </section>
     </main>
-
     <footer>
-      <p>Tip: Compare palettes and component states across themes. Pick the one that matches your desired feeling and compliance clarity.</p>
+      Generated for design exploration. Update CSS variables in <span class="kbd">:root</span> to iterate.
     </footer>
+    <script>
+      document.getElementById('toggleBorders').addEventListener('click', () => {
+        const cur = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+        document.documentElement.style.setProperty('--border', cur === 'transparent' ? '#e5e7eb' : 'transparent');
+      });
+      document.getElementById('copyVars').addEventListener('click', async () => {
+        const styles = getComputedStyle(document.documentElement);
+        const vars = Array.from(styles)
+          .filter(n => n.startsWith('--'))
+          .map(n => `${n}: ${styles.getPropertyValue(n).trim()};`)
+          .join('\n');
+        await navigator.clipboard.writeText(`:root{\n${vars}\n}`);
+        alert('CSS variables copied to clipboard');
+      });
+    </script>
   </body>
   </html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UX Color Themes — Accounting</title>
+    <style>
+      :root {
+        --radius: 10px;
+        --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.06);
+        --border: 1px solid var(--color-border);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: #0b0c10;
+        color: #f6f7f9;
+      }
+      header {
+        position: sticky; top: 0; z-index: 10;
+        background: rgba(12,13,17,.8); backdrop-filter: blur(8px);
+        border-bottom: 1px solid rgba(255,255,255,.06);
+        padding: 14px 20px;
+      }
+      header h1 { margin: 0; font-size: 16px; letter-spacing: .2px; }
+      .wrap { padding: 24px; max-width: 1400px; margin: 0 auto; }
+      .grid { display: grid; gap: 24px; grid-template-columns: repeat(1, minmax(0, 1fr)); }
+      @media (min-width: 960px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      .theme {
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,.08);
+        box-shadow: var(--shadow);
+      }
+      .theme header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 16px;
+      }
+      .badge { font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 1px solid currentColor; opacity: .8; }
+      .panel { display: grid; grid-template-columns: 260px 1fr; }
+      @media (max-width: 960px) { .panel { grid-template-columns: 1fr; } }
+      .sidebar { padding: 16px; border-right: 1px solid var(--color-border); background: var(--color-muted); }
+      .content { padding: 16px; background: var(--color-bg); }
+      .swatches { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+      .swatch { border-radius: 8px; height: 56px; border: 1px solid rgba(0,0,0,.08); position: relative; overflow: hidden; }
+      .swatch span {
+        position: absolute; bottom: 6px; left: 8px; right: 8px;
+        font-size: 11px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
+      }
+      .section { margin-top: 16px; }
+      h2 { margin: 0 0 6px 0; font-size: 14px; letter-spacing: .2px; }
+      p, li { color: var(--color-fg-dim); font-size: 13px; line-height: 1.5; margin: 0; }
+      ul { margin: 8px 0 0 18px; padding: 0; }
+      /* Components */
+      .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+      button, .btn {
+        appearance: none; border: 0; outline: 0;
+        padding: 8px 12px; border-radius: 10px;
+        font-size: 13px; font-weight: 600; letter-spacing: .2px;
+        transition: transform .05s ease, box-shadow .15s ease, background .2s ease, color .2s ease;
+        cursor: pointer;
+      }
+      .btn-primary { background: var(--color-primary); color: var(--color-on-primary); box-shadow: 0 2px 10px var(--color-primary-25); }
+      .btn-primary:hover { filter: brightness(1.05); }
+      .btn-secondary { background: var(--color-secondary); color: var(--color-on-secondary); }
+      .btn-ghost { background: transparent; color: var(--color-primary); border: 1px solid var(--color-border); }
+      .btn-destructive { background: var(--color-danger); color: white; }
+      .input { background: var(--color-surface); color: var(--color-fg); border: 1px solid var(--color-border); padding: 8px 10px; border-radius: 10px; }
+      .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 14px; }
+      .nav { display:flex; gap:8px; align-items:center; }
+      .nav a { color: var(--color-fg-dim); font-size: 12px; padding: 6px 8px; border-radius: 8px; text-decoration: none; }
+      .nav a.active, .nav a:hover { color: var(--color-fg); background: var(--color-muted); }
+      .alert { background: var(--color-info-bg); color: var(--color-info-fg); border: 1px solid var(--color-info-border); padding: 10px 12px; border-radius: 10px; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--color-border); }
+      th { color: var(--color-fg-dim); font-weight: 600; }
+      .footer { margin-top: 12px; display: flex; gap: 10px; align-items: center; color: var(--color-fg-dim); font-size: 12px; }
+      .chip { padding: 4px 8px; border-radius: 999px; background: var(--color-muted); border: 1px solid var(--color-border); }
+      /* Theme tokens */
+      .theme[data-theme="enterprise-blue"] {
+        --color-bg: #0f1217;
+        --color-surface: #131922;
+        --color-muted: #0f1a26;
+        --color-fg: #eaf2ff;
+        --color-fg-dim: #b8c4d9;
+        --color-border: rgba(133, 155, 188, .24);
+        --color-primary: #2f6feb;
+        --color-on-primary: #ffffff;
+        --color-primary-25: rgba(47, 111, 235, .25);
+        --color-secondary: #0ea5e9;
+        --color-on-secondary: #001018;
+        --color-success: #22c55e;
+        --color-warning: #f59e0b;
+        --color-danger: #ef4444;
+        --color-info-bg: rgba(46, 170, 220, .12);
+        --color-info-fg: #9fdcff;
+        --color-info-border: rgba(159, 220, 255, .25);
+      }
+      .theme[data-theme="friendly-teal"] {
+        --color-bg: #0e1514;
+        --color-surface: #101d1b;
+        --color-muted: #0c201c;
+        --color-fg: #e8fffb;
+        --color-fg-dim: #b2e7df;
+        --color-border: rgba(152, 225, 213, .22);
+        --color-primary: #14b8a6;
+        --color-on-primary: #00110e;
+        --color-primary-25: rgba(20, 184, 166, .25);
+        --color-secondary: #22d3ee;
+        --color-on-secondary: #001015;
+        --color-success: #34d399;
+        --color-warning: #fbbf24;
+        --color-danger: #fb7185;
+        --color-info-bg: rgba(34, 211, 238, .12);
+        --color-info-fg: #a5f3fc;
+        --color-info-border: rgba(165, 243, 252, .25);
+      }
+      .theme[data-theme="data-slate"] {
+        --color-bg: #0e1113;
+        --color-surface: #121518;
+        --color-muted: #161a1f;
+        --color-fg: #eef2f6;
+        --color-fg-dim: #c7ced7;
+        --color-border: rgba(139, 148, 158, .22);
+        --color-primary: #64748b;
+        --color-on-primary: #0b0e12;
+        --color-primary-25: rgba(100, 116, 139, .25);
+        --color-secondary: #94a3b8;
+        --color-on-secondary: #0b0e12;
+        --color-success: #22c55e;
+        --color-warning: #eab308;
+        --color-danger: #f43f5e;
+        --color-info-bg: rgba(148, 163, 184, .12);
+        --color-info-fg: #cbd5e1;
+        --color-info-border: rgba(148, 163, 184, .25);
+      }
+      .theme[data-theme="minimal-neutral"] {
+        --color-bg: #0b0c10;
+        --color-surface: #0f1016;
+        --color-muted: #12131a;
+        --color-fg: #f5f7fb;
+        --color-fg-dim: #cfd6e3;
+        --color-border: rgba(186, 195, 212, .18);
+        --color-primary: #8b5cf6; /* accent only; can swap later */
+        --color-on-primary: #0e0a1a;
+        --color-primary-25: rgba(139, 92, 246, .25);
+        --color-secondary: #a5b4fc;
+        --color-on-secondary: #0c0f1a;
+        --color-success: #10b981;
+        --color-warning: #f59e0b;
+        --color-danger: #ef4444;
+        --color-info-bg: rgba(165, 180, 252, .12);
+        --color-info-fg: #c7d2fe;
+        --color-info-border: rgba(165, 180, 252, .25);
+      }
+      /* Brand Custom (User-confirmed palette) */
+      .theme[data-theme="brand-custom"] {
+        /* Semantic tokens mapped from provided HEX palette */
+        --color-bg: #F9F4F1;              /* background */
+        --color-surface: #ffffff;         /* cards, surfaces */
+        --color-muted: #CCE9FF;           /* subtle surfaces */
+        --color-fg: #0A0A0A;              /* foreground text */
+        --color-fg-dim: #334155;          /* dimmed text */
+        --color-border: #DFE7F1;          /* borders */
+        --color-primary: #0040FF;         /* primary */
+        --color-on-primary: #ffffff;      /* primary-foreground */
+        --color-primary-25: rgba(0, 64, 255, .25);
+        --color-secondary: #76C3FC;       /* secondary accent */
+        --color-on-secondary: #07253A;    /* secondary-foreground */
+        --color-success: #16a34a;         /* keep standard green */
+        --color-warning: #FD6F00;         /* warning/attention */
+        --color-danger: #ef4444;
+        --color-info-bg: rgba(118, 195, 252, .12);
+        --color-info-fg: #0b3a63;
+        --color-info-border: rgba(118, 195, 252, .25);
+        --ring: #0040FF;
+        --input: #E9EEF6;
+      }
+      .title { font-weight: 700; font-size: 18px; letter-spacing: .2px; }
+      .subtitle { font-size: 12px; opacity: .8; }
+    </style>
+  </head>
+  <body>
+    <header><h1>UX Color Themes — Accounting (Preview)</h1></header>
+    <main class="wrap">
+      <div class="grid">
+        <!-- THEME 1: Enterprise Blue -->
+        <section class="theme" data-theme="enterprise-blue">
+          <header>
+            <div class="title">Enterprise Blue</div>
+            <div class="badge">Professional • Trust • Focus</div>
+          </header>
+          <div class="panel">
+            <aside class="sidebar">
+              <div class="section">
+                <h2>Palette</h2>
+                <div class="swatches">
+                  <div class="swatch" style="background:#2f6feb"><span>#2f6feb (Primary)</span></div>
+                  <div class="swatch" style="background:#0ea5e9"><span>#0ea5e9</span></div>
+                  <div class="swatch" style="background:#22c55e"><span>#22c55e</span></div>
+                  <div class="swatch" style="background:#f59e0b"><span>#f59e0b</span></div>
+                  <div class="swatch" style="background:#ef4444"><span>#ef4444</span></div>
+                  <div class="swatch" style="background:#131922"><span>#131922 (Surface)</span></div>
+                </div>
+              </div>
+              <div class="section">
+                <h2>Best for</h2>
+                <ul>
+                  <li>Enterprise dashboards</li>
+                  <li>Compliance-focused flows</li>
+                  <li>Financial tables</li>
+                </ul>
+              </div>
+            </aside>
+            <section class="content">
+              <nav class="nav">
+                <a class="active" href="#">Dashboard</a>
+                <a href="#">Vouchers</a>
+                <a href="#">AR/AP</a>
+                <a href="#">Reports</a>
+                <a href="#">Settings</a>
+              </nav>
+              <div class="section row">
+                <button class="btn btn-primary">Primary</button>
+                <button class="btn btn-secondary">Secondary</button>
+                <button class="btn btn-ghost">Ghost</button>
+                <button class="btn btn-destructive">Delete</button>
+                <input class="input" placeholder="Search vouchers…" />
+              </div>
+              <div class="section card">
+                <div class="row" style="justify-content:space-between">
+                  <strong>Recent Vouchers</strong>
+                  <div class="row">
+                    <span class="chip">Records: 1,240</span>
+                    <span class="chip">Page size: 20</span>
+                  </div>
+                </div>
+                <table>
+                  <thead><tr><th>No.</th><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr><td>VC2025-1042</td><td>2025-11-10</td><td>Purchase raw materials</td><td>₫12.300.000</td><td>Posted</td></tr>
+                    <tr><td>VC2025-1043</td><td>2025-11-10</td><td>Cash receipt</td><td>₫8.700.000</td><td>Draft</td></tr>
+                  </tbody>
+                </table>
+                <div class="footer">
+                  <span>Showing 1–20</span>
+                  <span class="chip">Prev</span><span class="chip">1</span><span class="chip">2</span><span class="chip">3</span><span class="chip">Next</span>
+                </div>
+              </div>
+              <div class="section alert">Info: Trial Balance is up to date.</div>
+            </section>
+          </div>
+        </section>
+        <!-- THEME 2: Friendly Teal -->
+        <section class="theme" data-theme="friendly-teal">
+          <header>
+            <div class="title">Friendly Teal</div>
+            <div class="badge">Approachable • Calm • Clear</div>
+          </header>
+          <div class="panel">
+            <aside class="sidebar">
+              <div class="section">
+                <h2>Palette</h2>
+                <div class="swatches">
+                  <div class="swatch" style="background:#14b8a6"><span>#14b8a6 (Primary)</span></div>
+                  <div class="swatch" style="background:#22d3ee"><span>#22d3ee</span></div>
+                  <div class="swatch" style="background:#34d399"><span>#34d399</span></div>
+                  <div class="swatch" style="background:#fbbf24"><span>#fbbf24</span></div>
+                  <div class="swatch" style="background:#fb7185"><span>#fb7185</span></div>
+                  <div class="swatch" style="background:#101d1b"><span>#101d1b (Surface)</span></div>
+                </div>
+              </div>
+              <div class="section">
+                <h2>Best for</h2>
+                <ul>
+                  <li>SME onboarding</li>
+                  <li>Guided flows</li>
+                  <li>Forms-heavy screens</li>
+                </ul>
+              </div>
+            </aside>
+            <section class="content">
+              <nav class="nav">
+                <a class="active" href="#">Dashboard</a>
+                <a href="#">Vouchers</a>
+                <a href="#">AR/AP</a>
+                <a href="#">Reports</a>
+                <a href="#">Settings</a>
+              </nav>
+              <div class="section row">
+                <button class="btn btn-primary">Primary</button>
+                <button class="btn btn-secondary">Secondary</button>
+                <button class="btn btn-ghost">Ghost</button>
+                <button class="btn btn-destructive">Delete</button>
+                <input class="input" placeholder="Search vouchers…" />
+              </div>
+              <div class="section card">
+                <strong>Voucher Form</strong>
+                <div class="row" style="margin-top:10px">
+                  <input class="input" placeholder="Description" />
+                  <input class="input" placeholder="Debit Account (e.g., 621)" />
+                  <input class="input" placeholder="Credit auto-filled (based on rules)" />
+                </div>
+                <div class="footer">
+                  <button class="btn btn-primary">Save & Post</button>
+                  <button class="btn btn-ghost">Save Draft</button>
+                </div>
+              </div>
+              <div class="section alert">Tip: Select Debit and the Credit account will auto-fill.</div>
+            </section>
+          </div>
+        </section>
+        <!-- THEME 3: Data-Dense Slate -->
+        <section class="theme" data-theme="data-slate">
+          <header>
+            <div class="title">Data‑Dense Slate</div>
+            <div class="badge">Focused • Analytical • Compact</div>
+          </header>
+          <div class="panel">
+            <aside class="sidebar">
+              <div class="section">
+                <h2>Palette</h2>
+                <div class="swatches">
+                  <div class="swatch" style="background:#64748b"><span>#64748b (Primary)</span></div>
+                  <div class="swatch" style="background:#94a3b8"><span>#94a3b8</span></div>
+                  <div class="swatch" style="background:#22c55e"><span>#22c55e</span></div>
+                  <div class="swatch" style="background:#eab308"><span>#eab308</span></div>
+                  <div class="swatch" style="background:#f43f5e"><span>#f43f5e</span></div>
+                  <div class="swatch" style="background:#121518"><span>#121518 (Surface)</span></div>
+                </div>
+              </div>
+              <div class="section">
+                <h2>Best for</h2>
+                <ul>
+                  <li>Reports & aging tables</li>
+                  <li>Power user grids</li>
+                  <li>Compact information</li>
+                </ul>
+              </div>
+            </aside>
+            <section class="content">
+              <nav class="nav">
+                <a class="active" href="#">Dashboard</a>
+                <a href="#">Vouchers</a>
+                <a href="#">AR/AP</a>
+                <a href="#">Reports</a>
+                <a href="#">Settings</a>
+              </nav>
+              <div class="section card">
+                <strong>AP Aging (Preview)</strong>
+                <table>
+                  <thead>
+                    <tr><th>Supplier</th><th>Current</th><th>1–30</th><th>31–60</th><th>61–90</th><th>&gt;90</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>ABC Co.</td><td>₫12.0m</td><td>₫3.1m</td><td>₫0</td><td>₫0.6m</td><td>₫0</td></tr>
+                    <tr><td>XYZ Ltd.</td><td>₫5.2m</td><td>₫0</td><td>₫0</td><td>₫0</td><td>₫1.4m</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+        <!-- THEME 4: Minimal Neutral -->
+        <section class="theme" data-theme="minimal-neutral">
+          <header>
+            <div class="title">Minimal Neutral</div>
+            <div class="badge">Calm • Minimal • Versatile</div>
+          </header>
+          <div class="panel">
+            <aside class="sidebar">
+              <div class="section">
+                <h2>Palette</h2>
+                <div class="swatches">
+                  <div class="swatch" style="background:#8b5cf6"><span>#8b5cf6 (Primary)</span></div>
+                  <div class="swatch" style="background:#a5b4fc"><span>#a5b4fc</span></div>
+                  <div class="swatch" style="background:#10b981"><span>#10b981</span></div>
+                  <div class="swatch" style="background:#f59e0b"><span>#f59e0b</span></div>
+                  <div class="swatch" style="background:#ef4444"><span>#ef4444</span></div>
+                  <div class="swatch" style="background:#0f1016"><span>#0f1016 (Surface)</span></div>
+                </div>
+              </div>
+              <div class="section">
+                <h2>Best for</h2>
+                <ul>
+                  <li>General purpose</li>
+                  <li>Brand overlays</li>
+                  <li>Calm workspaces</li>
+                </ul>
+              </div>
+            </aside>
+            <section class="content">
+              <nav class="nav">
+                <a class="active" href="#">Dashboard</a>
+                <a href="#">Vouchers</a>
+                <a href="#">AR/AP</a>
+                <a href="#">Reports</a>
+                <a href="#">Settings</a>
+              </nav>
+              <div class="section row">
+                <button class="btn btn-primary">Primary</button>
+                <button class="btn btn-secondary">Secondary</button>
+                <button class="btn btn-ghost">Ghost</button>
+                <input class="input" placeholder="Find customer…" />
+              </div>
+              <div class="section card">
+                <strong>Card Example</strong>
+                <p style="margin-top:8px">A calm, neutral base that adapts to different brands with minimal tweaks.</p>
+              </div>
+            </section>
+          </div>
+        </section>
+        <!-- THEME 5: Brand Custom (User) -->
+        <section class="theme" data-theme="brand-custom">
+          <header>
+            <div class="title">Brand Custom (Confirmed)</div>
+            <div class="badge">#0040FF • #CCE9FF • #F9F4F1 • #76C3FC • #FD6F00 • #E8AAFF</div>
+          </header>
+          <div class="panel">
+            <aside class="sidebar">
+              <div class="section">
+                <h2>Palette</h2>
+                <div class="swatches">
+                  <div class="swatch" style="background:#0040FF"><span>#0040FF (Primary)</span></div>
+                  <div class="swatch" style="background:#CCE9FF"><span>#CCE9FF (Muted)</span></div>
+                  <div class="swatch" style="background:#F9F4F1"><span>#F9F4F1 (Background)</span></div>
+                  <div class="swatch" style="background:#76C3FC"><span>#76C3FC (Secondary)</span></div>
+                  <div class="swatch" style="background:#FD6F00"><span>#FD6F00 (Warning)</span></div>
+                  <div class="swatch" style="background:#E8AAFF"><span>#E8AAFF (Accent)</span></div>
+                </div>
+              </div>
+              <div class="section">
+                <h2>Usage</h2>
+                <ul>
+                  <li>Primary actions and focus ring use #0040FF</li>
+                  <li>Tables/chips headers use #CCE9FF</li>
+                  <li>App background uses #F9F4F1</li>
+                  <li>Warnings and attention use #FD6F00</li>
+                </ul>
+              </div>
+            </aside>
+            <section class="content">
+              <nav class="nav">
+                <a class="active" href="#">Dashboard</a>
+                <a href="#">Vouchers</a>
+                <a href="#">AR/AP</a>
+                <a href="#">Reports</a>
+                <a href="#">Settings</a>
+              </nav>
+              <div class="section row">
+                <button class="btn btn-primary">Primary</button>
+                <button class="btn btn-secondary">Secondary</button>
+                <button class="btn btn-ghost">Ghost</button>
+                <button class="btn btn-destructive">Delete</button>
+                <input class="input" placeholder="Search…" />
+              </div>
+              <div class="section card">
+                <div class="row" style="justify-content:space-between">
+                  <strong>Trial Balance (Preview)</strong>
+                  <div class="row">
+                    <span class="chip">Records: 480</span>
+                    <span class="chip">Page size: 20</span>
+                  </div>
+                </div>
+                <table>
+                  <thead><tr><th>Account</th><th>Name</th><th>Debit</th><th>Credit</th><th>Balance</th></tr></thead>
+                  <tbody>
+                    <tr><td>111</td><td>Cash</td><td>₫2.350.000</td><td>₫0</td><td>₫2.350.000</td></tr>
+                    <tr><td>331</td><td>Accounts Payable</td><td>₫0</td><td>₫6.800.000</td><td>-₫6.800.000</td></tr>
+                  </tbody>
+                </table>
+                <div class="footer">
+                  <span>Showing 1–20</span>
+                  <span class="chip">Prev</span><span class="chip">1</span><span class="chip">2</span><span class="chip">3</span><span class="chip">Next</span>
+                </div>
+              </div>
+              <div class="section alert">Focus ring and primary actions reflect your brand blue (#0040FF).</div>
+            </section>
+          </div>
+        </section>
+      </div>
+      <p style="margin-top:24px; color:#9aa6ba; font-size:12px">Tip: Compare on a large screen to judge hierarchy, contrast, and legibility.</p>
+    </main>
+  </body>
+</html>
 
 
