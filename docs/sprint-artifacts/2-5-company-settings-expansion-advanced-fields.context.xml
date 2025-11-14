@@ -1,0 +1,176 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>5</storyId>
+    <title>Company Settings Expansion (Advanced Fields)</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-11</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-5-company-settings-expansion-advanced-fields.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As a company administrator,</asA>
+    <iWant>I want to configure advanced company settings (tax, currency, localization, numbering, and compliance),</iWant>
+    <soThat>so that system behavior, reporting, and validations correctly reflect my organization's policies across all modules.</soThat>
+    <tasks>
+      <!-- <CHANGE> structured tasks with owners, file paths, and AC mapping -->
+      <task owner="backend" ac="1,2,3,4,7,8">
+        <title>[ ] Extend CompanySettings entity and Flyway migration</title>
+        <files>
+          <file>backend/src/main/java/com/accounting/entity/CompanySettings.java (new)</file>
+          <file>backend/src/main/resources/db/migration/V2xx__company_settings_advanced_fields.sql (new)</file>
+        </files>
+      </task>
+      <task owner="backend" ac="9">
+        <title>[ ] Repository, service, controller (GET/PUT)</title>
+        <files>
+          <file>backend/src/main/java/com/accounting/repository/CompanySettingsRepository.java (new)</file>
+          <file>backend/src/main/java/com/accounting/service/CompanySettingsService.java (new)</file>
+          <file>backend/src/main/java/com/accounting/controller/CompanySettingsController.java (new)</file>
+          <file>backend/src/main/java/com/accounting/dto/CompanySettingsDto.java (new)</file>
+          <file>backend/src/main/java/com/accounting/dto/UpdateCompanySettingsRequest.java (new)</file>
+        </files>
+      </task>
+      <task owner="backend" ac="7,9">
+        <title>[ ] Validation and audit (bean validators, audit logs)</title>
+        <files>
+          <file>backend/src/main/java/com/accounting/entity/AuditLog.java</file>
+        </files>
+      </task>
+      <task owner="frontend" ac="1,2,3,4,5,6,10">
+        <title>[ ] Settings page UI (tabs, forms, guard, toasts)</title>
+        <files>
+          <file>frontend/src/features/company/pages/CompanySettings.tsx</file>
+          <file>frontend/src/features/company/pages/__tests__/CompanySettings.test.tsx</file>
+        </files>
+      </task>
+      <task owner="frontend" ac="5,10">
+        <title>[ ] Numbering preview and validation</title>
+        <files>
+          <file>frontend/src/features/company/pages/CompanySettings.tsx</file>
+        </files>
+      </task>
+      <task owner="frontend" ac="9">
+        <title>[ ] Services and shared types</title>
+        <files>
+          <file>frontend/src/features/company/services/companySettings.ts (new)</file>
+          <file>frontend/src/types/companySettings.ts (new)</file>
+        </files>
+      </task>
+      <task owner="qa" ac="1,2,3,4,5,6,7,8,9,10">
+        <title>[ ] Backend + Frontend coverage for ACs</title>
+        <files>
+          <file>backend/src/test/java/com/accounting/controller/CompanySettingsControllerTest.java (new)</file>
+          <file>backend/src/test/java/com/accounting/service/CompanySettingsServiceTest.java (new)</file>
+          <file>frontend/src/features/company/pages/__tests__/CompanySettings.test.tsx</file>
+        </files>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Company settings expose advanced sections: General, Localization, Tax &amp; Compliance, Numbering, Integrations.
+    2. General includes: Company legal name, short name, registration number, default fiscal year start month, timezone.
+    3. Localization includes: Default currency, currency format, thousand/decimal separators, date format (ISO/VN), and language.
+    4. Tax &amp; Compliance includes: VAT registration number, VAT rate presets, invoice/tax rounding mode, e-invoice toggle (placeholder), audit retention period.
+    5. Numbering includes: Per-document prefix/sequence settings for Vouchers, Bills, Invoices; preview example (read-only) updates as user edits.
+    6. Integrations includes: Bank reconciliation toggle (placeholder), external export format (Excel/CSV) defaults.
+    7. Validation rules: required fields enforced; formats validated; changes audited with before/after values and user context.
+    8. Multi-tenancy: settings are company-scoped; no leakage across companies.
+    9. API: GET/PUT endpoints implemented with DTOs; optimistic locking via updatedAt; return 409 on stale updates.
+    10. UI: Settings page with tabbed sections; Save disabled until dirty and valid; success and error toasts; unsaved change guard when navigating away.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- <CHANGE> add relevant docs with paths and brief snippets -->
+      <doc path="docs/stories/2-5-company-settings-expansion-advanced-fields.md">Acceptance Criteria and tasks for advanced settings</doc>
+      <doc path="docs/permission-matrix.md">RBAC and admin-only access constraints for settings</doc>
+      <doc path="docs/architecture/data-architecture.md">Company scoping and data model patterns</doc>
+      <doc path="docs/architecture/development-environment.md">Local dev services and environment details</doc>
+      <doc path="docs/architecture/deployment-architecture.md">Runtime components and services</doc>
+      <doc path="docs/implementation-readiness-report-2025-10-31.md">Readiness checkpoints impacting this story</doc>
+      <doc path="docs/stories/validation-report-2025-11-10.md">Previous validation learnings relevant to context completeness</doc>
+    </docs>
+    <code>
+      <!-- <CHANGE> backend code references with rationale + line hints -->
+      <file path="backend/src/main/java/com/accounting/security/CompanyContext.java" reason="Company scoping for settings read/write" lineHints="9-15"/>
+      <file path="backend/src/main/java/com/accounting/security/CompanyContextFilter.java" reason="Extract company from JWT for scoping; fallback from auth" lineHints="34-45;48-66"/>
+      <file path="backend/src/main/java/com/accounting/security/CompanyScopeAspect.java" reason="Auto-apply company filters to repositories" lineHints="14-31"/>
+      <file path="backend/src/main/java/com/accounting/security/CompanyScopeEnforcer.java" reason="Programmatic enforcement of company scope" lineHints="10-31"/>
+      <file path="backend/src/main/java/com/accounting/controller/CompanyController.java" reason="Existing company endpoints pattern" lineHints="49-55"/>
+      <file path="backend/src/main/java/com/accounting/entity/AuditLog.java" reason="Audit trail for settings updates" lineHints="37-46;96-103"/>
+      <!-- <CHANGE> frontend code references with rationale + line hints -->
+      <file path="frontend/src/features/company/pages/CompanySettings.tsx" reason="Tab UI and forms for advanced settings" lineHints="29-47;82-88;89-131;260-638"/>
+      <file path="frontend/src/features/company/index.ts" reason="Feature exports and route integration" lineHints="1-200"/>
+    </code>
+    <dependencies>
+      <!-- <CHANGE> enumerate key dependencies relevant to this story -->
+      <backend>
+        <dep>Java 21</dep>
+        <dep>Spring Boot 3.5.x</dep>
+        <dep>Spring Security</dep>
+        <dep>Hibernate/JPA</dep>
+        <dep>Flyway</dep>
+        <dep>PostgreSQL</dep>
+      </backend>
+      <frontend>
+        <dep>React + TypeScript</dep>
+        <dep>Vite</dep>
+        <dep>Axios</dep>
+        <dep>shadcn/ui + Radix</dep>
+        <dep>Zod</dep>
+      </frontend>
+      <tooling>
+        <dep>JUnit 5 + Testcontainers</dep>
+        <dep>Vitest + Testing Library</dep>
+      </tooling>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <!-- <CHANGE> capture explicit constraints for developers -->
+    <item>Company-scoped data access enforced via CompanyContext and repository filters</item>
+    <item>RBAC: Only admin role can view/update advanced company settings</item>
+    <item>Audit logging required: before/after payloads and acting user recorded</item>
+    <item>Optimistic locking: 409 on stale updates (updatedAt/If-Match)</item>
+    <item>Validation: required fields, format rules (VAT, currency formats, separators)</item>
+    <item>Numbering rules apply prospectively; no retroactive renumbering</item>
+  </constraints>
+  <interfaces>
+    <!-- <CHANGE> extract API contracts and DTOs -->
+    <endpoint method="GET" path="/api/v1/company-settings" auth="JWT" scope="company">
+      <response dto="CompanySettingsDto">Returns current company settings for the scoped company</response>
+    </endpoint>
+    <endpoint method="PUT" path="/api/v1/company-settings" auth="JWT" scope="company">
+      <request dto="UpdateCompanySettingsRequest" headers="If-Match or updatedAt" />
+      <response dto="CompanySettingsDto" />
+      <errors>
+        <error code="400">Validation errors with field messages</error>
+        <error code="401">Unauthorized</error>
+        <error code="403">Forbidden (non-admin)</error>
+        <error code="409">Conflict on stale update</error>
+      </errors>
+    </endpoint>
+  </interfaces>
+  <tests>
+    <standards>
+      <backend>JUnit 5, Testcontainers for PostgreSQL</backend>
+      <frontend>Vitest + Testing Library + jsdom</frontend>
+    </standards>
+    <locations>
+      <backend>backend/src/test/java/com/accounting/controller/*</backend>
+      <backend>backend/src/test/java/com/accounting/service/*</backend>
+      <frontend>frontend/src/features/company/pages/__tests__/CompanySettings.test.tsx</frontend>
+    </locations>
+    <ideas>
+      <item>409 conflict test on stale PUT with outdated updatedAt</item>
+      <item>RBAC: non-admin forbidden to update settings</item>
+      <item>Validation: VAT format, required fields, numbering prefix constraints</item>
+      <item>UI: Save disabled until dirty and valid; unsaved change guard</item>
+      <item>Numbering preview updates as user edits</item>
+    </ideas>
+  </tests>
+</story-context>
+

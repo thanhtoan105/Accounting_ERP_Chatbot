@@ -33,6 +33,7 @@ export async function getVouchers(
   if (params?.dateFrom) queryParams.append('dateFrom', params.dateFrom)
   if (params?.dateTo) queryParams.append('dateTo', params.dateTo)
   if (params?.search) queryParams.append('search', params.search)
+  if (params?.accountId !== undefined) queryParams.append('accountId', String(params.accountId))
   if (params?.sort && params.sort.length > 0) {
     params.sort.forEach((sortParam) => {
       queryParams.append('sort', sortParam)

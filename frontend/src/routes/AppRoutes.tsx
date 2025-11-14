@@ -4,10 +4,11 @@ import { CompanySettings } from '@/features/company'
 import { Login, ForgotPassword, ResetPassword } from '@/features/auth'
 import { UserManagement } from '@/features/users'
 import UserProfile from '@/pages/UserProfile'
-import { VoucherTypeList, ChartOfAccounts, DefaultAccounts } from '@/features/accounting'
+import { VoucherTypeList, ChartOfAccounts, DefaultAccounts, ImportWizard, VoucherList } from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
 import { BankAccounts } from '@/features/bankaccounts'
+import { AuditLogs } from '@/features/audit'
 import AcceptInvitation from '@/pages/AcceptInvitation'
 import ProtectedLayout from '@/layouts/ProtectedLayout'
 import { RoleGuard, CompanyGuard, ErrorBoundary } from '@/components'
@@ -71,6 +72,16 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/vouchers"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <VoucherList />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
         path="/chart-of-accounts"
         element={
           <ProtectedLayout>
@@ -86,6 +97,16 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
               <DefaultAccounts />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/imports"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <ImportWizard />
             </RoleGuard>
           </ProtectedLayout>
         }
@@ -115,6 +136,16 @@ export default function AppRoutes() {
             <ErrorBoundary>
               <BankAccounts />
             </ErrorBoundary>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/admin/audit-logs"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <AuditLogs />
+            </RoleGuard>
           </ProtectedLayout>
         }
       />

@@ -172,8 +172,16 @@ public class BankAccountServiceImpl implements BankAccountService {
 
     BankAccount saved = bankAccountRepository.save(bankAccount);
     
-    // Audit log
-    auditService.logBankAccountCreated(saved.getId(), saved.getAccountNumber(), getCurrentUserId(), getCurrentRequest());
+    Map<String, String> newValues = new HashMap<>();
+    newValues.put("accountNumber", saved.getAccountNumber());
+    newValues.put("bankName", saved.getBankName());
+    newValues.put("branch", saved.getBranch() != null ? saved.getBranch() : "");
+    newValues.put("type", saved.getType().name());
+    newValues.put("openingBalance", saved.getOpeningBalance().toPlainString());
+    newValues.put("active", String.valueOf(saved.getActive()));
+
+    auditService.logBankAccountCreated(
+        saved.getId(), saved.getAccountNumber(), getCurrentUserId(), newValues, getCurrentRequest());
     
     return toDTO(saved);
   }

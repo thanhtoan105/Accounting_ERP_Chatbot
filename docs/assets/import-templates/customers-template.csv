@@ -1,0 +1,3 @@
+customer_code,name,tax_code,email,phone,address,active
+CUST-001,Sunrise Trading Co.,0101234567,hoa.nguyen@sunrise.vn,+84-24-3939-2222,"45 Ly Thuong Kiet, Hoan Kiem, Hanoi, VN",TRUE
+CUST-002,Emerald Retail Ltd.,0309876543,duc.tran@emerald-retail.com,+84-28-3822-8899,"12 Nguyen Hue, District 1, Ho Chi Minh City, VN",TRUE

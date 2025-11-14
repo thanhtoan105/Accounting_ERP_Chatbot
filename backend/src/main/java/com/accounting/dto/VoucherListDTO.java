@@ -18,6 +18,7 @@ public class VoucherListDTO {
   private String status;
   private String enteredByName;
   private String postedByName;
+  private String arApEntity; // Customer/Supplier name if applicable
   private Boolean hasReversal; // Reversal badge indicator
   private Integer attachmentCount;
   private String currency;
@@ -34,6 +35,7 @@ public class VoucherListDTO {
       String status,
       String enteredByName,
       String postedByName,
+      String arApEntity,
       Boolean hasReversal,
       Integer attachmentCount,
       String currency) {
@@ -46,6 +48,7 @@ public class VoucherListDTO {
     this.status = status;
     this.enteredByName = enteredByName;
     this.postedByName = postedByName;
+    this.arApEntity = arApEntity;
     this.hasReversal = hasReversal;
     this.attachmentCount = attachmentCount;
     this.currency = currency;
@@ -122,6 +125,14 @@ public class VoucherListDTO {
 
   public void setPostedByName(String postedByName) {
     this.postedByName = postedByName;
+  }
+
+  public String getArApEntity() {
+    return arApEntity;
+  }
+
+  public void setArApEntity(String arApEntity) {
+    this.arApEntity = arApEntity;
   }
 
   public Boolean getHasReversal() {

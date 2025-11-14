@@ -1,0 +1,3 @@
+supplier_code,name,tax_code,email,phone,address,active
+SUP-001,Lotus Manufacturing JSC,0101122233,mai.le@lotus-mfg.vn,+84-24-3773-4455,"168 Tran Duy Hung, Cau Giay, Hanoi, VN",TRUE
+SUP-002,Pacific Raw Materials,0309988776,huy.pham@pacificraw.com,+84-28-3620-7788,"55 Le Lai, District 1, Ho Chi Minh City, VN",TRUE

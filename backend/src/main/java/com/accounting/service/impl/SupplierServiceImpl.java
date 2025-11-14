@@ -177,8 +177,17 @@ public class SupplierServiceImpl implements SupplierService {
 
     Supplier saved = supplierRepository.save(supplier);
     
-    // Audit log
-    auditService.logSupplierCreated(saved.getId(), saved.getCode(), getCurrentUserId(), getCurrentRequest());
+    Map<String, String> newValues = new HashMap<>();
+    newValues.put("code", saved.getCode());
+    newValues.put("name", saved.getName());
+    newValues.put("taxCode", saved.getTaxCode() != null ? saved.getTaxCode() : "");
+    newValues.put("email", saved.getEmail() != null ? saved.getEmail() : "");
+    newValues.put("phone", saved.getPhone() != null ? saved.getPhone() : "");
+    newValues.put("address", saved.getAddress() != null ? saved.getAddress() : "");
+    newValues.put("active", String.valueOf(saved.getActive()));
+
+    auditService.logSupplierCreated(
+        saved.getId(), saved.getCode(), getCurrentUserId(), newValues, getCurrentRequest());
     
     return toDTO(saved);
   }

@@ -1,9 +1,12 @@
 package com.accounting.controller;
 
+import com.accounting.dto.ImportResultDTO;
 import com.accounting.dto.SupplierAPSummaryDTO;
 import com.accounting.dto.SupplierCreateRequest;
 import com.accounting.dto.SupplierDTO;
 import com.accounting.dto.SupplierUpdateRequest;
+import com.accounting.imports.ImportType;
+import com.accounting.imports.service.MasterDataImportFacade;
 import com.accounting.service.AuditService;
 import com.accounting.service.SupplierImportExportService;
 import com.accounting.service.SupplierService;
@@ -16,8 +19,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -35,7 +36,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -49,14 +52,17 @@ public class SupplierController {
   private final SupplierService supplierService;
   private final SupplierImportExportService importExportService;
   private final AuditService auditService;
+  private final MasterDataImportFacade importFacade;
 
   public SupplierController(
-      SupplierService supplierService, 
+      SupplierService supplierService,
       SupplierImportExportService importExportService,
-      AuditService auditService) {
+      AuditService auditService,
+      MasterDataImportFacade importFacade) {
     this.supplierService = supplierService;
     this.importExportService = importExportService;
     this.auditService = auditService;
+    this.importFacade = importFacade;
   }
 
   /**
@@ -294,6 +300,39 @@ public class SupplierController {
   }
 
   /**
+   * Legacy import endpoint retained for compatibility; delegates to centralized facade.
+   */
+  @PostMapping("/import")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT')")
+  public ResponseEntity<Map<String, Object>> importSuppliersLegacy(
+      @RequestPart("file") MultipartFile file, HttpServletRequest request) {
+    ImportResultDTO result = importFacade.process(ImportType.SUPPLIERS, file, "en", request);
+    return ResponseEntity.ok(toLegacyResponse(result));
+  }
+
+  private Map<String, Object> toLegacyResponse(ImportResultDTO result) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("successCount", result.successCount());
+    body.put("errorCount", result.errorCount());
+    body.put(
+        "errors",
+        result.errors().stream()
+            .map(
+                error -> {
+                  Map<String, Object> row = new HashMap<>();
+                  row.put("rowNumber", error.rowNumber());
+                  row.put("field", error.field());
+                  row.put("message", error.message());
+                  return row;
+                })
+            .toList());
+    if (result.errorReportId() != null) {
+      body.put("errorReportId", result.errorReportId());
+    }
+    return body;
+  }
+
+  /**
    * Get current user ID from security context.
    * Returns null if authentication is not available.
    */
@@ -309,44 +348,5 @@ public class SupplierController {
     }
   }
 
-  /**
-   * Import suppliers from Excel or CSV file.
-   * Requires admin or accountant role.
-   *
-   * @param file uploaded file
-   * @return import result with success/error counts and error details
-   */
-  @PostMapping("/import")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT')")
-  public ResponseEntity<Map<String, Object>> importSuppliers(
-      @RequestPart("file") MultipartFile file,
-      HttpServletRequest request) {
-    try {
-      SupplierImportExportService.ImportResult result =
-          importExportService.importSuppliers(file.getInputStream(), file.getOriginalFilename());
-
-      // Get current user ID for audit logging
-      Long currentUserId = getCurrentUserId();
-      
-      // Log import summary (individual rows are logged by supplierService.create())
-      auditService.logSupplierImport(
-          result.getSuccessCount(), 
-          result.getErrorCount(), 
-          currentUserId, 
-          request);
-
-      Map<String, Object> body = new HashMap<>();
-      body.put("successCount", result.getSuccessCount());
-      body.put("errorCount", result.getErrorCount());
-      body.put("errors", result.getErrors());
-
-      return ResponseEntity.ok(body);
-    } catch (Exception e) {
-      Map<String, Object> body = new HashMap<>();
-      body.put("error", "Failed to import suppliers: " + e.getMessage());
-      return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(body);
-    }
-  }
 }
 

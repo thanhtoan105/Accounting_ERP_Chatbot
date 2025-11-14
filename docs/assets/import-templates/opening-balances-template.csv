@@ -1,0 +1,5 @@
+journal_code,account_code,account_name,currency,debit,credit,period_start,period_end,note
+OB-2025-01,1311,Trade Receivables,VND,350000000,0,2025-01-01,2025-01-31,Cut-over balance for customers
+OB-2025-01,3311,Trade Payables,VND,0,280000000,2025-01-01,2025-01-31,Cut-over balance for suppliers
+OB-2025-01,1121,Cash at Bank,VND,280000000,0,2025-01-01,2025-01-31,Balancing entry
+OB-2025-01,4111,Owner Equity - Opening,VND,0,350000000,2025-01-01,2025-01-31,Opening retained earnings

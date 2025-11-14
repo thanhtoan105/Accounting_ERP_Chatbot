@@ -74,6 +74,7 @@ public class VoucherController {
       @RequestParam(required = false) LocalDate dateFrom,
       @RequestParam(required = false) LocalDate dateTo,
       @RequestParam(required = false) String search,
+      @RequestParam(required = false) Long accountId,
       @RequestParam(required = false) String[] sort) {
 
     // Validate page size (max 50)
@@ -104,15 +105,23 @@ public class VoucherController {
 
     // Call service
     Page<VoucherListDTO> vouchers =
-        voucherService.findAll(pageable, status, dateFrom, dateTo, search);
+        voucherService.findAll(pageable, status, dateFrom, dateTo, search, accountId);
 
-    // Build response
+    // Build response matching spec format: { data: { content: VoucherDTO[], totalElements: number, totalPages: number }, meta: {...} }
+    Map<String, Object> data = new HashMap<>();
+    data.put("content", vouchers.getContent());
+    data.put("totalElements", vouchers.getTotalElements());
+    data.put("totalPages", vouchers.getTotalPages());
+    
+    Map<String, Object> meta = new HashMap<>();
+    meta.put("page", vouchers.getNumber());
+    meta.put("size", vouchers.getSize());
+    meta.put("totalElements", vouchers.getTotalElements());
+    meta.put("totalPages", vouchers.getTotalPages());
+    
     Map<String, Object> body = new HashMap<>();
-    body.put("data", vouchers.getContent());
-    body.put("total", vouchers.getTotalElements());
-    body.put("page", vouchers.getNumber());
-    body.put("size", vouchers.getSize());
-    body.put("totalPages", vouchers.getTotalPages());
+    body.put("data", data);
+    body.put("meta", meta);
 
     return ResponseEntity.ok(body);
   }
@@ -221,6 +230,18 @@ public class VoucherController {
     body.put("data", counts);
 
     return ResponseEntity.ok(body);
+  }
+
+  /**
+   * Get voucher counts by status (for badges) - alias endpoint matching spec.
+   * Requires authenticated user with Accountant+ role.
+   *
+   * @return voucher counts
+   */
+  @GetMapping("/count")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Map<String, Object>> getVoucherCount() {
+    return getVoucherCounts();
   }
 
   /**

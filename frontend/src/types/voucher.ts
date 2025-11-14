@@ -8,6 +8,7 @@ export interface VoucherListDTO {
   status: 'draft' | 'posted' | 'unposted'
   enteredByName: string
   postedByName: string | null
+  arApEntity: string | null
   hasReversal: boolean
   attachmentCount: number
   currency: string
@@ -50,15 +51,22 @@ export interface VoucherQueryParams {
   dateFrom?: string
   dateTo?: string
   search?: string
+  accountId?: number
   sort?: string[]
 }
 
 export interface PaginatedResponse<T> {
-  data: T[]
-  total: number
+  data: {
+    content: T[]
+    totalElements: number
+    totalPages: number
+  }
+  meta: {
   page: number
   size: number
+    totalElements: number
   totalPages: number
+  }
 }
 
 export interface VoucherCountResponse {

@@ -85,6 +85,11 @@ const navItems: NavItem[] = [
     label: 'Bank Accounts',
     requiredRoles: ['admin', 'accountant', 'chief_accountant'],
   },
+  {
+    path: '/admin/audit-logs',
+    label: 'Audit Logs / Nhật ký kiểm toán',
+    requiredRoles: ['admin', 'chief_accountant'],
+  },
 ]
 
 interface ProtectedLayoutProps {
