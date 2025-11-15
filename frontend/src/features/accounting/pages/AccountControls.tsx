@@ -395,18 +395,10 @@ export default function AccountControls() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(control)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(control)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDeleteDialog(control)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(control)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -425,12 +417,7 @@ export default function AccountControls() {
             Hiển thị {paginatedControls.length} / {filteredControls.length} cấu hình
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(1)}
-              disabled={page === 1}
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1}>
               Đầu
             </Button>
             <Button
@@ -486,9 +473,7 @@ export default function AccountControls() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {editingControl ? 'Chỉnh sửa cấu hình' : 'Tạo cấu hình mới'}
-            </DialogTitle>
+            <DialogTitle>{editingControl ? 'Chỉnh sửa cấu hình' : 'Tạo cấu hình mới'}</DialogTitle>
             <DialogDescription>
               Cấu hình các yêu cầu về dimensions cho tài khoản được chọn
             </DialogDescription>
@@ -543,8 +528,7 @@ export default function AccountControls() {
                   {selectedAccount.parentId && (
                     <p className="text-xs text-muted-foreground">
                       Tài khoản cha:{' '}
-                      {accounts.find((acc) => acc.id === selectedAccount.parentId)?.code) ||
-                        'N/A'}
+                      {accounts.find((acc) => acc.id === selectedAccount.parentId)?.code || 'N/A'}
                     </p>
                   )}
                   <div className="flex gap-2">
@@ -613,10 +597,7 @@ export default function AccountControls() {
                     checked={requiresItem}
                     onCheckedChange={(checked) => setRequiresItem(checked === true)}
                   />
-                  <Label
-                    htmlFor="requiresItem"
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
+                  <Label htmlFor="requiresItem" className="flex items-center gap-2 cursor-pointer">
                     <Package className="h-4 w-4" />
                     Yêu cầu chọn Hàng hóa
                   </Label>
@@ -650,7 +631,10 @@ export default function AccountControls() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -659,4 +643,3 @@ export default function AccountControls() {
     </div>
   )
 }
-

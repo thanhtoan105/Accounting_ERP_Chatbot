@@ -28,4 +28,3 @@ export interface AccountControlListResponse {
   data: AccountControl[]
   total: number
 }
-

@@ -92,4 +92,3 @@ export async function deleteAccountControl(id: string): Promise<void> {
     throw { status: res.status, error }
   }
 }
-

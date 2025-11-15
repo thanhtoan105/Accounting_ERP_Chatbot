@@ -67,8 +67,12 @@ describe('AccountPicker', () => {
       })
 
       // Find non-leaf accounts (parent accounts)
-      const parentAccount111 = screen.getByText(/111.*Cash - Parent Account/i).closest('[role="option"]')
-      const parentAccount411 = screen.getByText(/411.*Revenue - Parent Account/i).closest('[role="option"]')
+      const parentAccount111 = screen
+        .getByText(/111.*Cash - Parent Account/i)
+        .closest('[role="option"]')
+      const parentAccount411 = screen
+        .getByText(/411.*Revenue - Parent Account/i)
+        .closest('[role="option"]')
 
       // Verify they are disabled
       expect(parentAccount111).toHaveAttribute('aria-disabled', 'true')
@@ -88,8 +92,12 @@ describe('AccountPicker', () => {
       })
 
       // Check for "Không hạch toán" badge on non-leaf accounts
-      const parentAccount111 = screen.getByText(/111.*Cash - Parent Account/i).closest('[role="option"]')
-      const parentAccount411 = screen.getByText(/411.*Revenue - Parent Account/i).closest('[role="option"]')
+      const parentAccount111 = screen
+        .getByText(/111.*Cash - Parent Account/i)
+        .closest('[role="option"]')
+      const parentAccount411 = screen
+        .getByText(/411.*Revenue - Parent Account/i)
+        .closest('[role="option"]')
 
       expect(within(parentAccount111!).getByText(/không hạch toán/i)).toBeInTheDocument()
       expect(within(parentAccount411!).getByText(/không hạch toán/i)).toBeInTheDocument()
@@ -109,12 +117,14 @@ describe('AccountPicker', () => {
       })
 
       // Try to click on a non-leaf account
-      const parentAccount111 = screen.getByText(/111.*Cash - Parent Account/i).closest('[role="option"]')
-      
+      const parentAccount111 = screen
+        .getByText(/111.*Cash - Parent Account/i)
+        .closest('[role="option"]')
+
       // Verify it's disabled and clicking doesn't trigger onChange
       expect(parentAccount111).toHaveAttribute('aria-disabled', 'true')
       await user.click(parentAccount111!)
-      
+
       // onChange should not be called
       expect(onChange).not.toHaveBeenCalled()
     })
@@ -135,9 +145,9 @@ describe('AccountPicker', () => {
       // Click on a leaf account
       const leafAccount = screen.getByText(/1111.*Cash - Leaf Account/i).closest('[role="option"]')
       expect(leafAccount).not.toHaveAttribute('aria-disabled', 'true')
-      
+
       await user.click(leafAccount!)
-      
+
       // onChange should be called with the selected account
       await waitFor(() => {
         expect(onChange).toHaveBeenCalledWith(
@@ -146,7 +156,7 @@ describe('AccountPicker', () => {
             code: '1111',
             name: 'Cash - Leaf Account',
             isLeaf: true,
-          })
+          }),
         )
       })
     })
@@ -166,8 +176,10 @@ describe('AccountPicker', () => {
       })
 
       // Find account with disabledReason
-      const disabledAccount = screen.getByText(/1311.*Accounts Receivable - Disabled/i).closest('[role="option"]')
-      
+      const disabledAccount = screen
+        .getByText(/1311.*Accounts Receivable - Disabled/i)
+        .closest('[role="option"]')
+
       // Verify it's disabled
       expect(disabledAccount).toHaveAttribute('aria-disabled', 'true')
     })
@@ -185,22 +197,24 @@ describe('AccountPicker', () => {
       })
 
       // Find disabled account
-      const disabledAccount = screen.getByText(/1311.*Accounts Receivable - Disabled/i).closest('[role="option"]')
-      
+      const disabledAccount = screen
+        .getByText(/1311.*Accounts Receivable - Disabled/i)
+        .closest('[role="option"]')
+
       // Verify the account has disabledReason (tooltip may not appear in test environment due to Radix UI portal timing)
       // The important part is that disabledReason is set and the account is disabled
       expect(disabledAccount).toHaveAttribute('aria-disabled', 'true')
-      
+
       // Try to find tooltip, but don't fail if it doesn't appear (Radix UI tooltips can be flaky in tests)
       await user.hover(disabledAccount!)
-      
+
       // Wait for tooltip with longer timeout and more lenient check
       try {
         await waitFor(
           () => {
             expect(screen.getByText(/account is inactive/i)).toBeInTheDocument()
           },
-          { timeout: 2000 }
+          { timeout: 2000 },
         )
       } catch {
         // Tooltip may not appear in test environment - this is acceptable
@@ -226,4 +240,3 @@ describe('AccountPicker', () => {
     })
   })
 })
-
