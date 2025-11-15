@@ -15,7 +15,7 @@ public class JournalEntryDTO {
   private Long accountId;
   private String accountCode;
   private String accountName;
-  private Long periodId;
+  private UUID periodId;
   private BigDecimal debitAmount;
   private BigDecimal creditAmount;
   private Long customerId;
@@ -36,7 +36,7 @@ public class JournalEntryDTO {
       Long accountId,
       String accountCode,
       String accountName,
-      Long periodId,
+      UUID periodId,
       BigDecimal debitAmount,
       BigDecimal creditAmount,
       Long customerId,
@@ -108,11 +108,11 @@ public class JournalEntryDTO {
     this.accountName = accountName;
   }
 
-  public Long getPeriodId() {
+  public UUID getPeriodId() {
     return periodId;
   }
 
-  public void setPeriodId(Long periodId) {
+  public void setPeriodId(UUID periodId) {
     this.periodId = periodId;
   }
 

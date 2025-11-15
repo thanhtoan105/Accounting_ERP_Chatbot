@@ -5,13 +5,21 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { Document, Page, pdfjs } from 'react-pdf'
+import 'react-pdf/dist/Page/AnnotationLayer.css'
+import 'react-pdf/dist/Page/TextLayer.css'
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
 
 export interface AttachmentFile {
   id: string
   file: File
   preview?: string
+  previewType?: 'image' | 'pdf'
   status: 'pending' | 'uploading' | 'success' | 'error'
   error?: string
+  progress?: number
 }
 
 interface VoucherAttachmentDropzoneProps {
@@ -64,18 +72,29 @@ export function VoucherAttachmentDropzone({
     [acceptedTypes, maxSize],
   )
 
-  const createPreview = useCallback((file: File): Promise<string | undefined> => {
-    return new Promise((resolve) => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onload = (e) => resolve(e.target?.result as string)
-        reader.onerror = () => resolve(undefined)
-        reader.readAsDataURL(file)
-      } else {
-        resolve(undefined)
-      }
-    })
-  }, [])
+  const createPreview = useCallback(
+    (file: File): Promise<{ preview?: string; previewType?: 'image' | 'pdf' }> => {
+      return new Promise((resolve) => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader()
+          reader.onload = (e) =>
+            resolve({ preview: e.target?.result as string, previewType: 'image' })
+          reader.onerror = () => resolve({})
+          reader.readAsDataURL(file)
+        } else if (file.type === 'application/pdf') {
+          // For PDFs, we'll use the file object directly for react-pdf
+          const reader = new FileReader()
+          reader.onload = (e) =>
+            resolve({ preview: e.target?.result as string, previewType: 'pdf' })
+          reader.onerror = () => resolve({})
+          reader.readAsDataURL(file)
+        } else {
+          resolve({})
+        }
+      })
+    },
+    [],
+  )
 
   const handleFiles = useCallback(
     async (fileList: FileList | File[]) => {
@@ -89,11 +108,12 @@ export function VoucherAttachmentDropzone({
           continue
         }
 
-        const preview = await createPreview(file)
+        const previewResult = await createPreview(file)
         const attachmentFile: AttachmentFile = {
           id: `${Date.now()}-${Math.random()}`,
           file,
-          preview,
+          preview: previewResult.preview,
+          previewType: previewResult.previewType,
           status: 'pending',
         }
         newFiles.push(attachmentFile)
@@ -113,7 +133,7 @@ export function VoucherAttachmentDropzone({
   )
 
   const uploadFile = useCallback(
-    async (attachmentFile: AttachmentFile) => {
+    async (attachmentFile: AttachmentFile, retryCount = 0) => {
       if (!voucherId) {
         attachmentFile.status = 'error'
         attachmentFile.error = 'Voucher ID is required'
@@ -123,22 +143,38 @@ export function VoucherAttachmentDropzone({
       }
 
       attachmentFile.status = 'uploading'
+      attachmentFile.progress = 0
       setFiles((prev) => prev.map((f) => (f.id === attachmentFile.id ? attachmentFile : f)))
 
       try {
         const voucherService = await import('@/services/voucher')
-        await voucherService.uploadVoucherAttachment(voucherId, attachmentFile.file)
+        await voucherService.uploadVoucherAttachment(voucherId, attachmentFile.file, (progress) => {
+          attachmentFile.progress = progress
+          setFiles((prev) => prev.map((f) => (f.id === attachmentFile.id ? attachmentFile : f)))
+        })
 
         attachmentFile.status = 'success'
+        attachmentFile.progress = 100
         setFiles((prev) => prev.map((f) => (f.id === attachmentFile.id ? attachmentFile : f)))
         onUploadSuccess?.(attachmentFile)
       } catch (error: any) {
         const errorMessage =
           error?.error?.message || error?.message || 'Upload failed. Please try again.'
-        attachmentFile.status = 'error'
-        attachmentFile.error = errorMessage
-        setFiles((prev) => prev.map((f) => (f.id === attachmentFile.id ? attachmentFile : f)))
-        onUploadError?.(attachmentFile, errorMessage)
+
+        // Retry logic: 3 retries with exponential backoff
+        const maxRetries = 3
+        if (retryCount < maxRetries) {
+          const delay = Math.pow(2, retryCount) * 1000 // Exponential backoff: 1s, 2s, 4s
+          setTimeout(() => {
+            uploadFile(attachmentFile, retryCount + 1)
+          }, delay)
+        } else {
+          attachmentFile.status = 'error'
+          attachmentFile.error = errorMessage
+          attachmentFile.progress = 0
+          setFiles((prev) => prev.map((f) => (f.id === attachmentFile.id ? attachmentFile : f)))
+          onUploadError?.(attachmentFile, errorMessage)
+        }
       }
     },
     [voucherId, onUploadSuccess, onUploadError],
@@ -290,12 +326,35 @@ export function VoucherAttachmentDropzone({
               <div className="flex items-start gap-3">
                 {/* Preview or Icon */}
                 <div className="flex-shrink-0">
-                  {attachmentFile.preview ? (
+                  {attachmentFile.previewType === 'image' && attachmentFile.preview ? (
                     <img
                       src={attachmentFile.preview}
                       alt={attachmentFile.file.name}
                       className="size-12 rounded object-cover"
                     />
+                  ) : attachmentFile.previewType === 'pdf' && attachmentFile.preview ? (
+                    <div className="size-12 rounded overflow-hidden bg-muted border">
+                      <Document
+                        file={attachmentFile.preview}
+                        loading={
+                          <div className="flex items-center justify-center h-full text-xs">
+                            Loading PDF...
+                          </div>
+                        }
+                        error={
+                          <div className="flex items-center justify-center h-full text-xs text-destructive">
+                            PDF Error
+                          </div>
+                        }
+                      >
+                        <Page
+                          pageNumber={1}
+                          width={48}
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
+                        />
+                      </Document>
+                    </div>
                   ) : (
                     <div className="flex size-12 items-center justify-center rounded bg-muted">
                       {getFileIcon(attachmentFile.file)}
@@ -313,6 +372,21 @@ export function VoucherAttachmentDropzone({
                     <p className="text-xs text-destructive mt-1">{attachmentFile.error}</p>
                   )}
                 </div>
+
+                {/* Progress Bar */}
+                {attachmentFile.status === 'uploading' && attachmentFile.progress !== undefined && (
+                  <div className="w-full mt-2">
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${attachmentFile.progress}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {Math.round(attachmentFile.progress)}%
+                    </p>
+                  </div>
+                )}
 
                 {/* Status Badge */}
                 <div className="flex items-center gap-2">
@@ -335,15 +409,17 @@ export function VoucherAttachmentDropzone({
                       Retry
                     </Button>
                   )}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-6"
-                    onClick={() => removeFile(attachmentFile.id)}
-                  >
-                    <X className="size-3" />
-                  </Button>
+                  {attachmentFile.status !== 'uploading' && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-6"
+                      onClick={() => removeFile(attachmentFile.id)}
+                    >
+                      <X className="size-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>

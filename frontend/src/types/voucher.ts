@@ -235,3 +235,32 @@ export interface VoucherDimensionOption {
   code?: string
   name: string
 }
+
+export interface VoucherHistoryFieldDiff {
+  beforeValue: any
+  afterValue: any
+  changeType: 'ADDED' | 'REMOVED' | 'CHANGED'
+}
+
+export interface VoucherHistoryEntryDTO {
+  id: number
+  action: string
+  timestamp: string
+  userId: number | null
+  userEmail: string | null
+  userRole: string | null
+  ipAddress: string | null
+  userAgent: string | null
+  success: boolean | null
+  failureReason: string | null
+  summary: string
+  diff: Record<string, VoucherHistoryFieldDiff> | null
+  diffHash: string | null
+  changes: any
+}
+
+export interface VoucherHistoryResponse {
+  voucherId: string
+  history: VoucherHistoryEntryDTO[]
+  count: number
+}

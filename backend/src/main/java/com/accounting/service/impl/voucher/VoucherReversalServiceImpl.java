@@ -9,6 +9,7 @@ import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.service.AuditService;
 import com.accounting.service.VoucherService;
+import com.accounting.service.util.VoucherAuditHelper;
 import com.accounting.service.voucher.VoucherPostingService;
 import com.accounting.service.voucher.VoucherReversalService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,18 +41,21 @@ public class VoucherReversalServiceImpl implements VoucherReversalService {
   private final VoucherService voucherService;
   private final VoucherPostingService voucherPostingService;
   private final AuditService auditService;
+  private final VoucherAuditHelper voucherAuditHelper;
 
   public VoucherReversalServiceImpl(
       VoucherRepository voucherRepository,
       VoucherLineRepository voucherLineRepository,
       VoucherService voucherService,
       VoucherPostingService voucherPostingService,
-      AuditService auditService) {
+      AuditService auditService,
+      VoucherAuditHelper voucherAuditHelper) {
     this.voucherRepository = voucherRepository;
     this.voucherLineRepository = voucherLineRepository;
     this.voucherService = voucherService;
     this.voucherPostingService = voucherPostingService;
     this.auditService = auditService;
+    this.voucherAuditHelper = voucherAuditHelper;
   }
 
   @Override
@@ -74,6 +78,9 @@ public class VoucherReversalServiceImpl implements VoucherReversalService {
         .findByCompanyIdAndId(companyId, voucherId)
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
+
+    // Capture before snapshot for audit logging (original posted state)
+    com.fasterxml.jackson.databind.JsonNode originalBeforeSnapshot = voucherAuditHelper.serializeVoucherToJson(originalVoucher);
 
     // Validate voucher status is POSTED
     if (!"posted".equals(originalVoucher.getStatus())) {
@@ -182,22 +189,35 @@ public class VoucherReversalServiceImpl implements VoucherReversalService {
         reversalVoucher.getVoucherNumber(),
         reason);
 
-    // Audit logging for reversal operation
-    if (request != null) {
+    // Enhanced audit logging for reversal operation with JSON snapshots and diff hash
       try {
-        auditService.logVoucherReversed(
+      // Log original voucher reversal event
+      com.fasterxml.jackson.databind.JsonNode originalAfterSnapshot = voucherAuditHelper.serializeVoucherToJson(originalVoucher);
+      String originalDiffHash = voucherAuditHelper.calculateDiffHash(originalBeforeSnapshot, originalAfterSnapshot);
+      auditService.logVoucherEvent(
             originalVoucher.getId(),
             originalVoucher.getVoucherNumber(),
+          "VOUCHER_REVERSED",
+          originalBeforeSnapshot,
+          originalAfterSnapshot,
+          originalDiffHash,
+          request);
+      
+      // Log reversal voucher creation event
+      com.fasterxml.jackson.databind.JsonNode reversalAfterSnapshot = voucherAuditHelper.serializeVoucherToJson(reversalVoucher);
+      String reversalDiffHash = voucherAuditHelper.calculateDiffHash(null, reversalAfterSnapshot);
+      auditService.logVoucherEvent(
             reversalVoucher.getId(),
             reversalVoucher.getVoucherNumber(),
-            reason,
-            currentUserId,
+          "VOUCHER_REVERSAL_CREATED",
+          null, // before snapshot (null for create)
+          reversalAfterSnapshot,
+          reversalDiffHash,
             request);
       } catch (Exception e) {
-        // Audit logging failure should not block the operation, but log the error
+      // Non-blocking: log error but don't break main flow
         logger.error("Failed to log voucher reversal to audit trail. Original Voucher ID: {}, Reversal Voucher ID: {}",
             originalVoucher.getId(), reversalVoucher.getId(), e);
-      }
     }
 
     return new ReversalResult(originalDTO, reversalDTO);

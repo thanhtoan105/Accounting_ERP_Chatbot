@@ -109,8 +109,9 @@ class JournalEntryServiceImplTest {
     @Test
     void generateJournalEntries_setsPeriodIdFromVoucher() {
         // Arrange
+        UUID testPeriodId = UUID.randomUUID();
         Voucher voucher = createVoucher();
-        voucher.setPeriodId(5L);
+        voucher.setPeriodId(testPeriodId);
         VoucherLine line = createVoucherLine(1L, BigDecimal.valueOf(1000), BigDecimal.ZERO);
         List<VoucherLine> lines = List.of(line);
 
@@ -124,7 +125,7 @@ class JournalEntryServiceImplTest {
         // Assert
         assertEquals(1, journalEntries.size());
         JournalEntry entry = journalEntries.get(0);
-        assertEquals(5L, entry.getPeriodId());
+        assertEquals(testPeriodId, entry.getPeriodId());
     }
 
     @Test
@@ -148,7 +149,7 @@ class JournalEntryServiceImplTest {
         voucher.setId(testVoucherId);
         voucher.setCompanyId(testCompanyId);
         voucher.setVoucherDate(LocalDate.now());
-        voucher.setPeriodId(1L);
+        voucher.setPeriodId(UUID.randomUUID());
         return voucher;
     }
 

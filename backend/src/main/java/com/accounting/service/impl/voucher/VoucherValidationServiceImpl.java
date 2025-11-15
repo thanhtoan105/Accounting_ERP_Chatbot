@@ -11,6 +11,7 @@ import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.service.AccountControlService;
 import com.accounting.service.AuditService;
+import com.accounting.service.PeriodManagementService;
 import com.accounting.service.VoucherValidationService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -61,14 +62,17 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
   private final ChartOfAccountsRepository chartOfAccountsRepository;
   private final AccountControlService accountControlService;
   private final AuditService auditService;
+  private final PeriodManagementService periodManagementService;
 
   public VoucherValidationServiceImpl(
       ChartOfAccountsRepository chartOfAccountsRepository,
       AccountControlService accountControlService,
-      AuditService auditService) {
+      AuditService auditService,
+      PeriodManagementService periodManagementService) {
     this.chartOfAccountsRepository = chartOfAccountsRepository;
     this.accountControlService = accountControlService;
     this.auditService = auditService;
+    this.periodManagementService = periodManagementService;
   }
 
   /**
@@ -92,6 +96,33 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
     if (request == null) {
       result.addError(0, "general", "Request payload is required");
       return result;
+    }
+
+    // Validate period status (OPEN/CLOSED) - check if period is open for voucher operations
+    if (request.getDate() != null) {
+      try {
+        java.util.Optional<com.accounting.dto.AccountingPeriodDTO> periodOpt =
+            periodManagementService.findPeriodByDate(request.getDate());
+        if (periodOpt.isPresent()) {
+          com.accounting.dto.AccountingPeriodDTO period = periodOpt.get();
+          if (!periodManagementService.isPeriodOpen(period.getId())) {
+            result.addError(0, "period", "Cannot create voucher in closed period: " + period.getPeriodName());
+            result.setValid(false);
+            // Log blocked attempt in audit trail
+            auditService.logPeriodValidationBlocked(
+                period.getId(),
+                "voucher_creation",
+                "Period is closed: " + period.getPeriodName());
+          }
+        } else {
+          result.addError(0, "period", "No period found for date: " + request.getDate());
+          result.setValid(false);
+        }
+      } catch (Exception e) {
+        logger.warn("Failed to validate period for voucher date {}: {}", request.getDate(), e.getMessage());
+        result.addError(0, "period", "Failed to validate period: " + e.getMessage());
+        result.setValid(false);
+      }
     }
 
     List<VoucherEntryLineRequest> entryLines = request.getEntryLines();

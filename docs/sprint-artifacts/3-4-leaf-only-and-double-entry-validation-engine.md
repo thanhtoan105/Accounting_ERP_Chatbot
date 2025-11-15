@@ -216,7 +216,7 @@ so that input errors are prevented and compliance is assured.
 
 ### Context Reference
 
-- docs/stories/3-4-leaf-only-and-double-entry-validation-engine.context.xml
+- docs/sprint-artifacts/3-4-leaf-only-and-double-entry-validation-engine.context.xml
 
 ### Agent Model Used
 

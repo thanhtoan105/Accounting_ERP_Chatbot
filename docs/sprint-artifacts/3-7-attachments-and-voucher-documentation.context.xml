@@ -1,0 +1,508 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>7</storyId>
+    <title>Attachments and Voucher Documentation</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-27T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-7-attachments-and-voucher-documentation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As an accountant</asA>
+    <iWant>I want to upload and manage voucher attachments for compliance</iWant>
+    <soThat>so that all supporting documentation is always available, secure, and auditable</soThat>
+    <tasks>
+- [ ] Build AttachmentDropzone component for voucher attachments (AC: #1, #7, #8)
+  - [ ] Create `frontend/src/components/voucher/AttachmentDropzone.tsx` component with drag-and-drop support
+  - [ ] Implement inline image/PDF preview using react-pdf or similar library
+  - [ ] Add download button for all file types (images, PDFs, documents)
+  - [ ] Display file type validation errors (unsupported types blocked)
+  - [ ] Show file size validation errors (10MB max per file)
+  - [ ] Implement multi-part upload for large files with progress indicator
+  - [ ] Add retry logic for network errors (3 retries with exponential backoff)
+  - [ ] Integrate AttachmentDropzone into VoucherForm page (before and after draft save)
+  - [ ] Add attachment count badge/icon to VoucherList and VoucherForm (always visible)
+  - [ ] Create attachment management modal (click badge opens modal with list of attachments)
+- [ ] Implement VoucherAttachmentService for file storage and metadata (AC: #2, #5)
+  - [ ] Create VoucherAttachmentService interface and implementation
+  - [ ] Integrate Supabase Storage client for file upload/download
+  - [ ] Implement randomized file path generation (UUID-based paths: `vouchers/{voucherId}/{uuid}-{filename}`)
+  - [ ] Store attachment metadata in VoucherAttachment entity (filename, mimeType, fileSize, storagePath, companyId)
+  - [ ] Implement signed URL generation with 10-minute expiry via Supabase Storage API
+  - [ ] Add file type whitelist validation (PDF, images: JPG, PNG, GIF, WEBP)
+  - [ ] Add file size validation (10MB max per file, configurable)
+  - [ ] Enforce company scoping via CompanyScopeAspect (all queries filtered by companyId)
+- [ ] Create backend API endpoints for attachment management (AC: #1, #2, #4, #5)
+  - [ ] Create POST /api/v1/vouchers/{voucherId}/attachments endpoint (multipart form data)
+  - [ ] Create GET /api/v1/vouchers/{voucherId}/attachments endpoint (list attachments)
+  - [ ] Create GET /api/v1/vouchers/{voucherId}/attachments/{attachmentId}/download endpoint (signed URL redirect)
+  - [ ] Create DELETE /api/v1/vouchers/{voucherId}/attachments/{attachmentId} endpoint (with reason field)
+  - [ ] All endpoints enforce company scoping via CompanyScopeAspect
+  - [ ] All endpoints require RBAC: `@PreAuthorize("hasAnyRole('ACCOUNTANT','CHIEF_ACCOUNTANT','ADMIN','CFO')")` for upload/view
+  - [ ] DELETE endpoint requires creator or admin role, validates voucher status=DRAFT
+  - [ ] Return 400 Bad Request for unsupported file types or size violations
+  - [ ] Return 403 Forbidden for delete attempts on posted vouchers or by non-creator/non-admin
+  - [ ] Return 404 Not Found for non-existent attachments or cross-company access
+- [ ] Implement virus scan simulation (AC: #6)
+  - [ ] Create VirusScanService interface with mock implementation
+  - [ ] Simulate virus scan on file upload (mock validation: check file extension and size)
+  - [ ] Block file if scan fails (return 400 with clear error message)
+  - [ ] Log scan failures in audit trail with file metadata
+  - [ ] Return detailed error message: "File failed virus scan: {filename}"
+- [ ] Implement audit logging for attachment operations (AC: #3)
+  - [ ] Extend AuditLogService to log attachment download events
+  - [ ] Extend AuditLogService to log attachment view events (preview)
+  - [ ] Extend AuditLogService to log attachment delete events (with reason)
+  - [ ] Include user ID, timestamp, IP address (if available) in audit logs
+  - [ ] Include file metadata (filename, size, type) in audit logs
+  - [ ] Create audit log entry format: `{ action: 'ATTACHMENT_DOWNLOAD', attachmentId, voucherId, userId, timestamp, ipAddress, fileMetadata }`
+- [ ] Add database migration for voucher_attachments table (AC: #2)
+  - [ ] Create migration `V2025XXXXXX__create_voucher_attachments_table.sql`
+  - [ ] Define VoucherAttachment entity with fields: id, voucherId, fileName, storagePath, mimeType, fileSize, companyId, uploadedAt, uploadedBy
+  - [ ] Add foreign key constraint to vouchers table
+  - [ ] Add composite index on (voucher_id, company_id) for efficient queries
+  - [ ] Add index on (company_id) for company-scoped queries
+- [ ] Add testing subtasks (AC: #1-#8)
+  - [ ] Unit tests for AttachmentDropzone component (drag-drop, preview, error handling)
+  - [ ] Unit tests for VoucherAttachmentService (upload, download, delete, signed URL generation)
+  - [ ] Unit tests for VirusScanService (mock scan, failure handling)
+  - [ ] Integration tests for POST /api/v1/vouchers/{id}/attachments (file upload, validation, storage)
+  - [ ] Integration tests for GET /api/v1/vouchers/{id}/attachments/{aid}/download (signed URL, expiry)
+  - [ ] Integration tests for DELETE /api/v1/vouchers/{id}/attachments/{aid} (RBAC, status validation, audit logging)
+  - [ ] Integration tests for audit logging (download/view/delete events captured)
+  - [ ] Negative tests for blocked operations (delete on posted voucher, unsupported file type, size violation, virus scan failure)
+  - [ ] E2E tests for attachment workflow (upload → preview → download → delete)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Drag-and-drop file uploader with inline image/PDF preview, download button for all file types; unsupported file types blocked and attempt logged.
+2. Attachments stored in Supabase Storage with randomized file names (UUID-based paths), metadata (filename, mimeType, fileSize) stored in database; access limited by company_id.
+3. Each download/view/delete action logged in audit with: user ID, timestamp, IP address (if available).
+4. Delete allowed only for vouchers with status=DRAFT and by creator or admin role; requires confirmation modal with mandatory reason field.
+5. Download links are signed URLs with 10-minute expiry; URLs generated on-demand via Supabase Storage API.
+6. Simulated virus scan triggered on upload (mock validation); blocks file type if scan fails, logs failure.
+7. Voucher icon/badge always displays current attachment count; click opens attachment management modal.
+8. File upload handles large files via multi-part upload, robust to network errors (retry logic, progress indicator).
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Voucher Engine & General Ledger Core</title>
+        <section>Story 3.7: Attachments and Voucher Documentation</section>
+        <snippet>VoucherAttachmentService responsibilities: File upload to Supabase Storage, attachment metadata management, signed URL generation for downloads, file type/size validation, virus scan simulation, access logging. VoucherAttachment entity with fields: id, voucherId, fileName, storagePath, mimeType, fileSize, companyId, uploadedAt, uploadedBy.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-3-voucher-engine-general-ledger-core.md</path>
+        <title>Epic 3: Voucher Engine & General Ledger Core</title>
+        <section>Story 3.7: Attachments and Voucher Documentation</section>
+        <snippet>As an accountant, I want to upload and manage voucher attachments for compliance, so that all supporting documentation is always available, secure, and auditable. Acceptance criteria include drag-and-drop uploader, Supabase Storage with randomized paths, audit logging, delete restrictions, signed URLs, virus scan simulation, attachment count badge, and robust file upload handling.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/3-5-audit-trail-for-voucher-lifecycle.md</path>
+        <title>Story 3.5: Audit Trail for Voucher Lifecycle</title>
+        <section>Completion Notes</section>
+        <snippet>Comprehensive audit logging infrastructure available for reuse. AuditLogService patterns for attachment events. VoucherAuditHelper for JSON serialization and SHA-256 hash calculation. VoucherHistoryService for history retrieval with field-by-field diff generation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/3-3-posting-unposting-reversal-workflows.md</path>
+        <title>Story 3.3: Posting, Unposting & Reversal Workflows</title>
+        <section>Completion Notes</section>
+        <snippet>Atomic transaction management using @Transactional annotation. Error handling patterns with detailed error messages. RBAC enforcement patterns: @PreAuthorize("hasAnyRole('ACCOUNTANT','CHIEF_ACCOUNTANT','ADMIN','CFO')") for upload/view endpoints.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/3-4-leaf-only-and-double-entry-validation-engine.md</path>
+        <title>Story 3.4: Leaf-Only and Double-Entry Validation Engine</title>
+        <section>Validation Error Maps</section>
+        <snippet>Return detailed field-level error maps for validation failures, not generic 400 errors. Follow ValidationErrorMap pattern from VoucherValidationService for file type, size, virus scan validation errors.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/3-6-period-selector-voucher-period-mapping.md</path>
+        <title>Story 3.6: Period Selector & Voucher-Period Mapping</title>
+        <section>Service Layer Design</section>
+        <snippet>Follow clean separation of concerns pattern from PeriodManagementService. Create VoucherAttachmentService interface with clear responsibilities: file upload, download, delete, signed URL generation. Company scoping enforced via CompanyContext.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/data-architecture.md</path>
+        <title>Data Architecture</title>
+        <section>Multi-Tenancy Strategy</section>
+        <snippet>Row-level filtering via company_id on all tables. Spring Data JPA filter at repository level. API-level enforcement via security filter. Supabase RLS policies as additional layer.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/security-architecture.md</path>
+        <title>Security Architecture</title>
+        <section>Authorization</section>
+        <snippet>Role-Based Access Control (RBAC): Admin, Accountant, Chief Accountant, CFO. Spring Security method-level security. API-level permission checks. Company-level data isolation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/project-structure.md</path>
+        <title>Project Structure</title>
+        <section>Frontend Structure</section>
+        <snippet>Create attachment components under frontend/src/components/voucher/ for shared AttachmentDropzone component. Integrate attachment management into VoucherForm and VoucherList pages under frontend/src/features/accounting/pages/Vouchers/.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Voucher Engine & General Ledger Core</title>
+        <section>APIs and Interfaces</section>
+        <snippet>POST /api/v1/vouchers/{voucherId}/attachments: Multipart form data with file(s), returns VoucherAttachmentDTO[]. GET /api/v1/vouchers/{voucherId}/attachments/{attachmentId}/download: Signed URL (302 redirect) with 10-minute expiry. DELETE /api/v1/vouchers/{voucherId}/attachments/{attachmentId}: Requires reason field, RBAC validation.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>frontend/src/components/voucher/VoucherAttachmentDropzone.tsx</path>
+        <kind>component</kind>
+        <symbol>VoucherAttachmentDropzone</symbol>
+        <lines>1-356</lines>
+        <reason>Existing attachment dropzone component with drag-and-drop support, file validation, and preview functionality. Can be extended for multi-part upload, retry logic, and integration with attachment management modal.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/voucher/VoucherController.java</path>
+        <kind>controller</kind>
+        <symbol>VoucherController</symbol>
+        <lines>568</lines>
+        <reason>Existing POST /api/v1/vouchers/{voucherId}/attachments endpoint stub. Need to implement full attachment CRUD endpoints following established REST patterns and RBAC enforcement.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>AuditServiceImpl</symbol>
+        <lines>1-1368</lines>
+        <reason>Comprehensive audit logging service with methods for logging various events. Extend with attachment-specific logging methods: logAttachmentDownload, logAttachmentView, logAttachmentDelete. Follow existing patterns for user ID, timestamp, IP address capture.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/voucher/VoucherPostingServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>VoucherPostingServiceImpl</symbol>
+        <lines>1-200</lines>
+        <reason>Atomic transaction management pattern using @Transactional. Follow this pattern for attachment operations that involve multiple steps (upload + metadata save, delete + storage cleanup). Error handling patterns for blocked operations.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/voucher/VoucherValidationServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>VoucherValidationServiceImpl</symbol>
+        <lines>1-200</lines>
+        <reason>Validation error map generation pattern. Return detailed field-level error maps for validation failures (file type, size, virus scan), not generic 400 errors. Follow ValidationErrorMap pattern for attachment validation errors.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/security/CompanyScopeAspect.java</path>
+        <kind>aspect</kind>
+        <symbol>CompanyScopeAspect</symbol>
+        <lines>1-50</lines>
+        <reason>Automatic company scoping enforcement for all repository queries. All attachment operations must enforce company scoping via CompanyScopeAspect. No cross-company data leakage possible.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java</path>
+        <kind>interface</kind>
+        <symbol>CompanyScopedEntity</symbol>
+        <lines>1-10</lines>
+        <reason>Interface for entities that require company-level isolation. VoucherAttachment entity must implement CompanyScopedEntity to enable automatic company filtering.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx</path>
+        <kind>page</kind>
+        <symbol>VoucherForm</symbol>
+        <lines>1-500</lines>
+        <reason>Voucher form page where AttachmentDropzone should be integrated. Add attachment count badge and attachment management modal. Follow existing component integration patterns.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/Vouchers/VoucherList.tsx</path>
+        <kind>page</kind>
+        <symbol>VoucherList</symbol>
+        <lines>1-500</lines>
+        <reason>Voucher list page where attachment count badge should be displayed. Add click handler to open attachment management modal. Follow existing badge/icon patterns from other columns.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/voucher/VoucherController.java</path>
+        <kind>controller</kind>
+        <symbol>VoucherController</symbol>
+        <lines>112-569</lines>
+        <reason>Existing voucher controller with RBAC patterns using @PreAuthorize annotations. Follow established patterns: @PreAuthorize("hasAnyRole('ACCOUNTANT','CHIEF_ACCOUNTANT','ADMIN','CFO')") for upload/view, additional check for delete operations.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/Voucher.java</path>
+        <kind>entity</kind>
+        <symbol>Voucher</symbol>
+        <lines>1-100</lines>
+        <reason>Voucher entity implements CompanyScopedEntity. VoucherAttachment entity should have ManyToOne relationship to Voucher. Follow existing entity patterns for company scoping and audit fields.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/voucher/VoucherReversalServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>VoucherReversalServiceImpl</symbol>
+        <lines>1-150</lines>
+        <reason>Service layer design pattern with clean separation of concerns. Create VoucherAttachmentService interface and implementation following similar structure. Clear responsibilities: file upload, download, delete, signed URL generation.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>react</package>
+        <version>^19.1.1</version>
+        <reason>Frontend framework for React components</reason>
+      </package>
+        <package>react-dom</package>
+        <version>^19.1.1</version>
+        <reason>React DOM rendering</reason>
+      </package>
+        <package>@tanstack/react-query</package>
+        <version>^5.62.0</version>
+        <reason>Data fetching and caching for API calls</reason>
+      </package>
+        <package>axios</package>
+        <version>^1.7.9</version>
+        <reason>HTTP client for API requests, supports multipart form data for file uploads</reason>
+      </package>
+        <package>lucide-react</package>
+        <version>^0.552.0</version>
+        <reason>Icon library for UI components (upload, download, file icons)</reason>
+      </package>
+        <package>@radix-ui/react-dialog</package>
+        <version>^1.1.15</version>
+        <reason>Dialog component for attachment management modal</reason>
+      </package>
+        <package>react-pdf</package>
+        <version>latest</version>
+        <reason>PDF preview library for inline PDF viewing (optional, may need to add)</reason>
+      </package>
+      </node>
+      <java>
+        <package>org.springframework.boot:spring-boot-starter-web</package>
+        <version>3.5.7</version>
+        <reason>Spring Boot web framework for REST API endpoints</reason>
+      </package>
+        <package>org.springframework.boot:spring-boot-starter-data-jpa</package>
+        <version>3.5.7</version>
+        <reason>JPA for database operations and entity management</reason>
+      </package>
+        <package>org.springframework.boot:spring-boot-starter-security</package>
+        <version>3.5.7</version>
+        <reason>Spring Security for RBAC enforcement via @PreAuthorize</reason>
+      </package>
+        <package>org.postgresql:postgresql</package>
+        <version>42.7.4</version>
+        <reason>PostgreSQL driver for database connectivity</reason>
+      </package>
+        <package>org.flywaydb:flyway-core</package>
+        <version>11.10.0</version>
+        <reason>Database migration tool for voucher_attachments table creation</reason>
+      </package>
+        <package>com.supabase:supabase-java</package>
+        <version>latest</version>
+        <reason>Supabase Storage client for file upload/download and signed URL generation (may need to add)</reason>
+      </package>
+      </java>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <type>Architecture</type>
+      <description>Follow feature-first structure: Place AttachmentDropzone component under frontend/src/components/voucher/ for shared use across voucher screens. Backend API endpoints follow REST convention /api/v1/vouchers/{voucherId}/attachments with standard response format { data: VoucherAttachmentDTO[], meta: {...} }.</description>
+    </constraint>
+    <constraint>
+      <type>Security</type>
+      <description>All attachment operations enforce company-level isolation via company_id filtering. RBAC: Accountant+ can upload/view attachments, only creator or admin can delete. Use @PreAuthorize("hasAnyRole('ACCOUNTANT','CHIEF_ACCOUNTANT','ADMIN','CFO')") for upload/view endpoints, additional check for delete.</description>
+    </constraint>
+    <constraint>
+      <type>Transaction Management</type>
+      <description>Use @Transactional annotation for attachment operations that involve multiple steps (upload + metadata save, delete + storage cleanup) to ensure all-or-nothing execution. Follow pattern from VoucherPostingService.postVoucher() for atomic operations.</description>
+    </constraint>
+    <constraint>
+      <type>Error Handling</type>
+      <description>Return detailed error messages for blocked operations (e.g., "Cannot delete attachment: voucher is posted", "File type not supported: .exe"). Return detailed field-level error maps for validation failures (file type, size, virus scan), not generic 400 errors. Follow error response format from VoucherPostingService and ValidationErrorMap pattern from VoucherValidationService.</description>
+    </constraint>
+    <constraint>
+      <type>Testing</type>
+      <description>Follow comprehensive testing approach from Story 3.3: integration tests with @SpringBootTest, unit tests for service layer, negative test scenarios for blocked operations, RBAC testing with different role combinations. Test organization by acceptance criteria with clear mapping between ACs and test classes.</description>
+    </constraint>
+    <constraint>
+      <type>File Storage</type>
+      <description>Attachments stored in Supabase Storage with randomized UUID-based file paths (vouchers/{voucherId}/{uuid}-{filename}) to prevent enumeration. Metadata (filename, mimeType, fileSize) stored in database for efficient querying. Signed URLs with 10-minute expiry generated on-demand via Supabase Storage API.</description>
+    </constraint>
+    <constraint>
+      <type>File Validation</type>
+      <description>File type whitelist: PDF, images (JPG, PNG, GIF, WEBP). File size limit: 10MB max per file (configurable). Virus scan simulation: mock validation on upload, blocks file if scan fails, logs failure. All validation errors shown at once (bulk validation).</description>
+    </constraint>
+    <constraint>
+      <type>Audit Logging</type>
+      <description>All attachment operations (download, view, delete) logged in audit trail with user ID, timestamp, IP address, and file metadata. Follow AuditLogService patterns from Story 3.5. Include action type (DOWNLOAD/VIEW/DELETE), user/role, device/IP, timestamp, file metadata in audit logs.</description>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /api/v1/vouchers/{voucherId}/attachments</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/vouchers/{voucherId}/attachments
+Request: Multipart form data with file(s)
+Response: { data: VoucherAttachmentDTO[], meta: {...} }
+Auth: JWT required, company-scoped
+RBAC: @PreAuthorize("hasAnyRole('ACCOUNTANT','CHIEF_ACCOUNTANT','ADMIN','CFO')")
+Validation: File type, size limits, virus scan simulation</signature>
+      <path>backend/src/main/java/com/accounting/controller/voucher/VoucherController.java</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/vouchers/{voucherId}/attachments</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/vouchers/{voucherId}/attachments
+Response: { data: VoucherAttachmentDTO[], meta: {...} }
+Auth: JWT required, company-scoped
+RBAC: @PreAuthorize("hasAnyRole('ACCOUNTANT','CHIEF_ACCOUNTANT','ADMIN','CFO')")</signature>
+      <path>backend/src/main/java/com/accounting/controller/voucher/VoucherController.java</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/vouchers/{voucherId}/attachments/{attachmentId}/download</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/vouchers/{voucherId}/attachments/{attachmentId}/download
+Response: Signed URL (302 redirect) or file stream
+Auth: JWT required, company-scoped, signed URL expires in 10 minutes
+RBAC: @PreAuthorize("hasAnyRole('ACCOUNTANT','CHIEF_ACCOUNTANT','ADMIN','CFO')")
+Audit: Logs download event</signature>
+      <path>backend/src/main/java/com/accounting/controller/voucher/VoucherController.java</path>
+    </interface>
+    <interface>
+      <name>DELETE /api/v1/vouchers/{voucherId}/attachments/{attachmentId}</name>
+      <kind>REST endpoint</kind>
+      <signature>DELETE /api/v1/vouchers/{voucherId}/attachments/{attachmentId}
+Request Body: { reason: string } (required for audit)
+Response: 204 No Content
+Auth: JWT required, company-scoped
+RBAC: Creator or admin role only, validates voucher status=DRAFT
+Validation: Blocks deletion of attachments for posted vouchers or by non-creator/non-admin</signature>
+      <path>backend/src/main/java/com/accounting/controller/voucher/VoucherController.java</path>
+    </interface>
+    <interface>
+      <name>VoucherAttachmentService</name>
+      <kind>Service interface</kind>
+      <signature>public interface VoucherAttachmentService {
+  VoucherAttachmentDTO uploadAttachment(UUID voucherId, MultipartFile file) throws IOException;
+  List&lt;VoucherAttachmentDTO&gt; listAttachments(UUID voucherId);
+  String generateSignedUrl(UUID voucherId, UUID attachmentId) throws IOException;
+  void deleteAttachment(UUID voucherId, UUID attachmentId, String reason);
+  void validateFile(MultipartFile file) throws ValidationException;
+}</signature>
+      <path>backend/src/main/java/com/accounting/service/voucher/VoucherAttachmentService.java</path>
+    </interface>
+    <interface>
+      <name>VirusScanService</name>
+      <kind>Service interface</kind>
+      <signature>public interface VirusScanService {
+  ScanResult scanFile(MultipartFile file) throws ScanException;
+}
+
+public class ScanResult {
+  boolean passed;
+  String errorMessage;
+}</signature>
+      <path>backend/src/main/java/com/accounting/service/VirusScanService.java</path>
+    </interface>
+    <interface>
+      <name>VoucherAttachmentDTO</name>
+      <kind>DTO</kind>
+      <signature>public class VoucherAttachmentDTO {
+  UUID id;
+  UUID voucherId;
+  String fileName;
+  String mimeType;
+  Long fileSize;
+  LocalDateTime uploadedAt;
+  UUID uploadedBy;
+  String uploadedByName;
+}</signature>
+      <path>backend/src/main/java/com/accounting/dto/VoucherAttachmentDTO.java</path>
+    </interface>
+    <interface>
+      <name>VoucherAttachment Entity</name>
+      <kind>JPA Entity</kind>
+      <signature>@Entity
+@Table(name = "voucher_attachments")
+public class VoucherAttachment implements CompanyScopedEntity {
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  private UUID id;
+  
+  @ManyToOne
+  @JoinColumn(name = "voucher_id", nullable = false)
+  private Voucher voucher;
+  
+  @Column(nullable = false)
+  private String fileName;
+  
+  @Column(nullable = false)
+  private String storagePath;
+  
+  @Column(nullable = false)
+  private String mimeType;
+  
+  @Column(nullable = false)
+  private Long fileSize;
+  
+  @Column(nullable = false)
+  private UUID companyId;
+  
+  private LocalDateTime uploadedAt;
+  private UUID uploadedBy;
+}</signature>
+      <path>backend/src/main/java/com/accounting/entity/VoucherAttachment.java</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Testing patterns derived from established practices in previous Epic 3 stories (Stories 3.3-3.6). Use @SpringBootTest with IntegrationTest base class for API endpoint tests, covering RBAC enforcement, company scoping, file upload/download, signed URL generation, and audit logging. Create unit tests for service layer file handling logic, following patterns from VoucherValidationService tests for validation and error map generation. Include negative test scenarios for blocked operations (e.g., delete on posted voucher, unsupported file type, size violation, virus scan failure), following the pattern from VoucherPostingService tests. Organize tests by acceptance criteria, with clear mapping between ACs and test classes. Frontend testing follows component testing patterns from Story 3.6's PeriodSelector component tests, demonstrating proper TypeScript typing, error handling, and user interaction testing.
+    </standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/controller/voucher/VoucherAttachmentControllerIntegrationTest.java</location>
+      <location>backend/src/test/java/com/accounting/service/impl/voucher/VoucherAttachmentServiceImplTest.java</location>
+      <location>backend/src/test/java/com/accounting/service/VirusScanServiceTest.java</location>
+      <location>frontend/src/components/voucher/__tests__/VoucherAttachmentDropzone.test.tsx</location>
+      <location>frontend/src/features/accounting/pages/Vouchers/__tests__/VoucherForm.attachments.test.tsx</location>
+    </locations>
+    <ideas>
+      <idea>
+        <acId>AC1</acId>
+        <description>Test drag-and-drop file upload: simulate drag events, verify file validation (type, size), test preview for images and PDFs, test download button functionality, test error display for unsupported file types, verify unsupported file type attempts are logged in audit.</description>
+      </idea>
+      <idea>
+        <acId>AC2</acId>
+        <description>Test Supabase Storage integration: verify randomized UUID-based file paths (vouchers/{voucherId}/{uuid}-{filename}), test metadata storage in database (filename, mimeType, fileSize), verify company_id filtering, test cross-company access blocked (404 Not Found).</description>
+      </idea>
+      <idea>
+        <acId>AC3</acId>
+        <description>Test audit logging: verify download events logged with user ID, timestamp, IP address, file metadata; verify view events (preview) logged; verify delete events logged with reason; test audit log entry format matches specification.</description>
+      </idea>
+      <idea>
+        <acId>AC4</acId>
+        <description>Test delete restrictions: verify delete blocked for posted vouchers (403 Forbidden), verify delete blocked for non-creator/non-admin users (403 Forbidden), verify delete allowed for draft vouchers by creator, verify delete allowed for draft vouchers by admin, test confirmation modal with mandatory reason field, verify reason captured in audit log.</description>
+      </idea>
+      <idea>
+        <acId>AC5</acId>
+        <description>Test signed URL generation: verify signed URLs generated on-demand, test 10-minute expiry (wait 11 minutes, verify URL expired), test URL regeneration for new download requests, verify signed URLs are unique per request.</description>
+      </idea>
+      <idea>
+        <acId>AC6</acId>
+        <description>Test virus scan simulation: verify mock scan triggered on upload, test file type blocking (e.g., .exe files blocked), verify scan failure logged in audit trail with file metadata, test error message format: "File failed virus scan: {filename}".</description>
+      </idea>
+      <idea>
+        <acId>AC7</acId>
+        <description>Test attachment count badge: verify badge displays current attachment count on VoucherList and VoucherForm, test badge click opens attachment management modal, verify badge updates after upload/delete operations, test badge visibility (always visible).</description>
+      </idea>
+      <idea>
+        <acId>AC8</acId>
+        <description>Test multi-part upload and network error handling: test large file upload (>10MB) with multi-part support, verify progress indicator displays during upload, test retry logic (3 retries with exponential backoff), test network error recovery (simulate network failure, verify retry), test browser crash/network interruption handling.</description>
+      </idea>
+      <idea>
+        <acId>Negative</acId>
+        <description>Negative test scenarios: delete on posted voucher (403 Forbidden), unsupported file type upload (400 Bad Request with error message), file size violation (400 Bad Request), virus scan failure (400 Bad Request), cross-company access (404 Not Found), non-creator/non-admin delete attempt (403 Forbidden), missing reason field on delete (400 Bad Request).</description>
+      </idea>
+      <idea>
+        <acId>E2E</acId>
+        <description>End-to-end workflow test: upload attachment → preview attachment → download attachment → delete attachment (with reason). Verify all steps work together, audit logs captured for each step, UI updates correctly after each operation.</description>
+      </idea>
+    </ideas>
+  </tests>
+</story-context>
+

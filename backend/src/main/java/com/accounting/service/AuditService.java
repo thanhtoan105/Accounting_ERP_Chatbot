@@ -692,4 +692,175 @@ public interface AuditService {
                         String reason,
                         String attemptType,
                         HttpServletRequest request);
+
+        /**
+         * Log voucher lifecycle event with JSON snapshots and SHA-256 diff hash.
+         * Records before/after snapshots, cryptographic hash, user ID/role, device/IP.
+         *
+         * @param voucherId       voucher ID
+         * @param voucherNumber   voucher number for reference
+         * @param action          action type (e.g., VOUCHER_CREATED, VOUCHER_UPDATED, VOUCHER_POSTED)
+         * @param beforeSnapshot  JSON snapshot of voucher before the change (null for create)
+         * @param afterSnapshot   JSON snapshot of voucher after the change
+         * @param diffHash        SHA-256 hash of the JSON diff between before/after snapshots
+         * @param request        HTTP request for IP address and user agent
+         */
+        void logVoucherEvent(
+                        UUID voucherId,
+                        String voucherNumber,
+                        String action,
+                        com.fasterxml.jackson.databind.JsonNode beforeSnapshot,
+                        com.fasterxml.jackson.databind.JsonNode afterSnapshot,
+                        String diffHash,
+                        HttpServletRequest request);
+
+        /**
+         * Log batch/mass voucher action with aggregated entry.
+         * Records voucher IDs list, action stats (success/failure counts), start/end timestamp, summary.
+         *
+         * <p><b>Note:</b> This method is implemented and ready for use, but batch voucher operations
+         * (e.g., bulk posting, bulk import, bulk delete) are deferred to post-MVP. When batch
+         * operations are implemented, they should call this method to log aggregated audit entries
+         * as required by AC2 (Story 3.5).
+         *
+         * @param voucherIds  list of voucher IDs involved in the batch action
+         * @param action      action type (e.g., BATCH_POST, BATCH_DELETE, BATCH_IMPORT)
+         * @param stats       batch action statistics (success/failure counts)
+         * @param startTime   start timestamp of the batch operation
+         * @param endTime     end timestamp of the batch operation
+         * @param summary     summary description of the batch action
+         * @param request     HTTP request for IP address and user agent
+         */
+        void logBatchVoucherAction(
+                        java.util.List<UUID> voucherIds,
+                        String action,
+                        BatchActionStats stats,
+                        java.time.Instant startTime,
+                        java.time.Instant endTime,
+                        String summary,
+                        HttpServletRequest request);
+
+        /**
+         * Log period close event with JSON snapshot and SHA-256 hash.
+         * Records period details, close reason, user metadata, hash digest.
+         *
+         * @param periodId   period ID that was closed
+         * @param reason     close reason provided by user
+         * @param hashDigest SHA-256 hash of the period snapshot for integrity verification
+         */
+        void logPeriodClosed(UUID periodId, String reason, String hashDigest);
+
+        /**
+         * Log period reopen event with approval metadata and SHA-256 hash.
+         * Records period details, reopen reason, approval metadata, hash digest.
+         * Logs all reopen attempts (approved and rejected) for compliance.
+         *
+         * @param periodId         period ID that was reopened
+         * @param reason           reopen reason provided by user
+         * @param approvalMetadata approval metadata (approver, approval reference, etc.)
+         * @param hashDigest       SHA-256 hash of the period snapshot for integrity verification
+         */
+        void logPeriodReopened(UUID periodId, String reason, String approvalMetadata, String hashDigest);
+
+        /**
+         * Log period validation blocked attempt.
+         * Records user, period, operation, reason, timestamp for audit trail.
+         *
+         * @param periodId period ID where operation was blocked
+         * @param operation operation that was blocked (e.g., VOUCHER_CREATE, VOUCHER_POST)
+         * @param reason   reason for blocking (e.g., PERIOD_CLOSED, PERIOD_FUTURE)
+         */
+        void logPeriodValidationBlocked(UUID periodId, String operation, String reason);
+
+        /**
+         * Log attachment download event. Records attachment ID, voucher ID, file metadata,
+         * user ID, timestamp, and IP address.
+         *
+         * @param attachmentId attachment ID that was downloaded
+         * @param voucherId voucher ID that the attachment belongs to
+         * @param fileName file name of the attachment
+         * @param fileSize file size in bytes
+         * @param mimeType MIME type of the file
+         * @param downloadedByUserId ID of user who downloaded the attachment
+         * @param request HTTP request for IP address and user agent
+         */
+        void logAttachmentDownload(
+                        UUID attachmentId,
+                        UUID voucherId,
+                        String fileName,
+                        Long fileSize,
+                        String mimeType,
+                        Long downloadedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log attachment view/preview event. Records attachment ID, voucher ID, file metadata,
+         * user ID, timestamp, and IP address.
+         *
+         * @param attachmentId attachment ID that was viewed
+         * @param voucherId voucher ID that the attachment belongs to
+         * @param fileName file name of the attachment
+         * @param fileSize file size in bytes
+         * @param mimeType MIME type of the file
+         * @param viewedByUserId ID of user who viewed the attachment
+         * @param request HTTP request for IP address and user agent
+         */
+        void logAttachmentView(
+                        UUID attachmentId,
+                        UUID voucherId,
+                        String fileName,
+                        Long fileSize,
+                        String mimeType,
+                        Long viewedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log attachment delete event. Records attachment ID, voucher ID, file metadata,
+         * deletion reason, user ID, timestamp, and IP address.
+         *
+         * @param attachmentId attachment ID that was deleted
+         * @param voucherId voucher ID that the attachment belongs to
+         * @param fileName file name of the attachment
+         * @param fileSize file size in bytes
+         * @param mimeType MIME type of the file
+         * @param reason deletion reason (required for audit)
+         * @param deletedByUserId ID of user who deleted the attachment
+         * @param request HTTP request for IP address and user agent
+         */
+        void logAttachmentDelete(
+                        UUID attachmentId,
+                        UUID voucherId,
+                        String fileName,
+                        Long fileSize,
+                        String mimeType,
+                        String reason,
+                        Long deletedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * DTO for batch action statistics.
+         */
+        class BatchActionStats {
+                private final int successCount;
+                private final int failureCount;
+                private final int totalCount;
+
+                public BatchActionStats(int successCount, int failureCount) {
+                        this.successCount = successCount;
+                        this.failureCount = failureCount;
+                        this.totalCount = successCount + failureCount;
+                }
+
+                public int getSuccessCount() {
+                        return successCount;
+                }
+
+                public int getFailureCount() {
+                        return failureCount;
+                }
+
+                public int getTotalCount() {
+                        return totalCount;
+                }
+        }
 }

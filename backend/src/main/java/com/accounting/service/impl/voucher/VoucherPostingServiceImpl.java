@@ -15,8 +15,10 @@ import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.exception.VoucherPostingException;
 import com.accounting.service.AuditService;
+import com.accounting.service.PeriodManagementService;
 import com.accounting.service.VoucherService;
 import com.accounting.service.VoucherValidationService;
+import com.accounting.service.util.VoucherAuditHelper;
 import com.accounting.service.gl.JournalEntryService;
 import com.accounting.service.voucher.VoucherPostingService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,6 +52,8 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
   private final JournalEntryService journalEntryService;
   private final VoucherService voucherService;
   private final AuditService auditService;
+  private final VoucherAuditHelper voucherAuditHelper;
+  private final PeriodManagementService periodManagementService;
 
   public VoucherPostingServiceImpl(
       VoucherRepository voucherRepository,
@@ -57,13 +61,17 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
       VoucherValidationService voucherValidationService,
       JournalEntryService journalEntryService,
       VoucherService voucherService,
-      AuditService auditService) {
+      AuditService auditService,
+      VoucherAuditHelper voucherAuditHelper,
+      PeriodManagementService periodManagementService) {
     this.voucherRepository = voucherRepository;
     this.voucherLineRepository = voucherLineRepository;
     this.voucherValidationService = voucherValidationService;
     this.journalEntryService = journalEntryService;
     this.voucherService = voucherService;
     this.auditService = auditService;
+    this.voucherAuditHelper = voucherAuditHelper;
+    this.periodManagementService = periodManagementService;
   }
 
   @Override
@@ -81,12 +89,18 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
 
+    // Capture before snapshot for audit logging (draft state)
+    com.fasterxml.jackson.databind.JsonNode beforeSnapshot = voucherAuditHelper.serializeVoucherToJson(voucher);
+
     // Validate voucher status is DRAFT
     if (!"draft".equals(voucher.getStatus())) {
       throw new ResponseStatusException(
           HttpStatus.CONFLICT,
           "Cannot post voucher: voucher must be in DRAFT status. Current status: " + voucher.getStatus());
     }
+
+    // Validate period is open for voucher posting
+    validatePeriodForVoucherPosting(voucher);
 
     // Build VoucherCreateRequest from existing voucher for validation
     VoucherCreateRequest validationRequest = buildValidationRequest(voucher);
@@ -129,14 +143,21 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
         voucher.getVoucherNumber(),
         journalEntries.size());
 
-    // Audit logging for posting operation
-    if (request != null) {
-      try {
-        auditService.logVoucherPosted(voucherId, voucher.getVoucherNumber(), currentUserId, request);
+    // Enhanced audit logging for posting operation with JSON snapshots and diff hash
+    try {
+      com.fasterxml.jackson.databind.JsonNode afterSnapshot = voucherAuditHelper.serializeVoucherToJson(voucher);
+      String diffHash = voucherAuditHelper.calculateDiffHash(beforeSnapshot, afterSnapshot);
+      auditService.logVoucherEvent(
+          voucherId,
+          voucher.getVoucherNumber(),
+          "VOUCHER_POSTED",
+          beforeSnapshot,
+          afterSnapshot,
+          diffHash,
+          request);
       } catch (Exception e) {
-        // Audit logging failure should not block the operation, but log the error
+      // Non-blocking: log error but don't break main flow
         logger.error("Failed to log voucher posting to audit trail. Voucher ID: {}", voucherId, e);
-      }
     }
 
     return new PostVoucherResponse(voucherDTO, journalEntryDTOs);
@@ -209,6 +230,79 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
     dto.setPostedAt(entry.getPostedAt());
     dto.setCreatedAt(entry.getCreatedAt());
     return dto;
+  }
+
+  /**
+   * Validate that voucher period is open for posting.
+   * Logs blocked attempts in audit trail.
+   *
+   * @param voucher voucher to validate
+   * @throws ResponseStatusException if period is closed
+   */
+  private void validatePeriodForVoucherPosting(Voucher voucher) {
+    try {
+      // Validate that voucher date is in an open period
+      if (!periodManagementService.isDateInOpenPeriod(voucher.getVoucherDate())) {
+        // Find the period for this date to get period details for error message
+        java.util.Optional<com.accounting.dto.AccountingPeriodDTO> periodOpt = periodManagementService.findPeriodByDate(voucher.getVoucherDate());
+
+        String periodName = periodOpt
+            .map(com.accounting.dto.AccountingPeriodDTO::getPeriodName)
+            .orElse("Unknown Period");
+
+        // Log the blocked attempt in audit trail
+        try {
+          auditService.logPeriodValidationBlocked(
+              periodOpt.map(com.accounting.dto.AccountingPeriodDTO::getId).orElse(null),
+              "VOUCHER_POSTING",
+              "Cannot post voucher in closed or future period: " + periodName
+          );
+        } catch (Exception e) {
+          logger.error("Failed to log period validation block to audit trail", e);
+        }
+
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Cannot post voucher in closed or future period: " + periodName
+        );
+      }
+
+      // If voucher has a specific period ID, also validate it's open
+      if (voucher.getPeriodId() != null) {
+        if (!periodManagementService.isPeriodOpen(voucher.getPeriodId())) {
+          java.util.Optional<com.accounting.dto.AccountingPeriodDTO> periodOpt = periodManagementService.getPeriodById(voucher.getPeriodId());
+
+          String periodName = periodOpt
+              .map(com.accounting.dto.AccountingPeriodDTO::getPeriodName)
+              .orElse("Unknown Period");
+
+          // Log the blocked attempt in audit trail
+          try {
+            auditService.logPeriodValidationBlocked(
+                voucher.getPeriodId(),
+                "VOUCHER_POSTING",
+                "Cannot post voucher in closed period: " + periodName
+            );
+          } catch (Exception e) {
+            logger.error("Failed to log period validation block to audit trail", e);
+          }
+
+          throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST,
+              "Cannot post voucher in closed period: " + periodName
+          );
+        }
+      }
+    } catch (ResponseStatusException e) {
+      // Re-throw ResponseStatusException (period closed)
+      throw e;
+    } catch (Exception e) {
+      logger.error("Failed to validate period for voucher posting", e);
+      throw new ResponseStatusException(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "Failed to validate period for voucher posting"
+      );
+    }
   }
 }
 

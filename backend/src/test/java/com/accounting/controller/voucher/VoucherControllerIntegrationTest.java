@@ -91,6 +91,9 @@ class VoucherControllerIntegrationTest extends com.accounting.test.IntegrationTe
         @Autowired(required = false)
         private com.accounting.repository.AccountControlRepository accountControlRepository;
 
+        @Autowired
+        private com.accounting.repository.VoucherAttachmentRepository voucherAttachmentRepository;
+
         private Company testCompany;
         private Company otherCompany;
         private User testUser;
@@ -1111,9 +1114,10 @@ class VoucherControllerIntegrationTest extends com.accounting.test.IntegrationTe
                                                                 .header("X-Company-Id",
                                                                                 String.valueOf(testCompany.getId())))
                                 .andExpect(status().isCreated())
-                                .andExpect(jsonPath("$.message").value("Attachment uploaded successfully"))
-                                .andExpect(jsonPath("$.voucherId").value(draftVoucher.getId().toString()))
-                                .andExpect(jsonPath("$.fileName").value("test-image.jpg"));
+                                .andExpect(jsonPath("$.data").exists())
+                                .andExpect(jsonPath("$.data.fileName").value("test-image.jpg"))
+                                .andExpect(jsonPath("$.data.mimeType").value("image/jpeg"))
+                                .andExpect(jsonPath("$.message").value("Attachment uploaded successfully"));
         }
 
         @Test
@@ -2423,5 +2427,686 @@ class VoucherControllerIntegrationTest extends com.accounting.test.IntegrationTe
                                 .andExpect(jsonPath("$.validationErrors").exists())
                                 .andExpect(jsonPath("$.validationErrors.lines").exists())
                                 .andExpect(jsonPath("$.validationErrors.lines.1.customerId").exists());
+        }
+
+        @Test
+        void getVoucherHistory_returnsHistoryEntries() throws Exception {
+                // Create a voucher
+                Voucher voucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                voucher = voucherRepository.save(voucher);
+
+                // Create audit log entries for the voucher
+                AuditLog log1 = new AuditLog();
+                log1.setEntityType("VOUCHER");
+                log1.setEntityId(voucher.getId().toString());
+                log1.setCompanyId(testCompany.getId());
+                log1.setAction("VOUCHER_CREATED");
+                log1.setUserId(testUser.getId());
+                log1.setEmail(testUser.getEmail());
+                log1.setActorRole(testUser.getRole());
+                log1.setSuccess(true);
+                log1.setCreatedAt(Instant.now());
+                auditLogRepository.save(log1);
+
+                AuditLog log2 = new AuditLog();
+                log2.setEntityType("VOUCHER");
+                log2.setEntityId(voucher.getId().toString());
+                log2.setCompanyId(testCompany.getId());
+                log2.setAction("VOUCHER_POSTED");
+                log2.setUserId(chiefAccountantUser.getId());
+                log2.setEmail(chiefAccountantUser.getEmail());
+                log2.setActorRole(chiefAccountantUser.getRole());
+                log2.setSuccess(true);
+                log2.setCreatedAt(Instant.now().plusSeconds(3600));
+                auditLogRepository.save(log2);
+
+                // Get voucher history
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + voucher.getId() + "/history")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.voucherId").value(voucher.getId().toString()))
+                                .andExpect(jsonPath("$.history").isArray())
+                                .andExpect(jsonPath("$.history.length()").value(2))
+                                .andExpect(jsonPath("$.count").value(2))
+                                .andExpect(jsonPath("$.history[0].action").exists())
+                                .andExpect(jsonPath("$.history[0].summary").exists())
+                                .andExpect(jsonPath("$.history[0].timestamp").exists());
+        }
+
+        @Test
+        void getVoucherHistory_voucherNotFound_returns404() throws Exception {
+                UUID nonExistentId = UUID.randomUUID();
+
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + nonExistentId + "/history")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void getVoucherHistory_crossCompanyAccess_blocked() throws Exception {
+                // Create voucher in testCompany
+                Voucher voucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                voucher = voucherRepository.save(voucher);
+
+                // Try to access with otherCompany user
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + voucher.getId() + "/history")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(otherCompany.getId())))
+                                .andExpect(status().isNotFound()); // Voucher not found in other company
+        }
+
+        @Test
+        void exportVoucherHistory_json_returnsJsonFile() throws Exception {
+                // Create a voucher
+                Voucher voucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                voucher = voucherRepository.save(voucher);
+
+                // Create audit log entry
+                AuditLog log = new AuditLog();
+                log.setEntityType("VOUCHER");
+                log.setEntityId(voucher.getId().toString());
+                log.setCompanyId(testCompany.getId());
+                log.setAction("VOUCHER_CREATED");
+                log.setUserId(testUser.getId());
+                log.setEmail(testUser.getEmail());
+                log.setSuccess(true);
+                log.setCreatedAt(Instant.now());
+                auditLogRepository.save(log);
+
+                // Export as JSON
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + voucher.getId() + "/history/export")
+                                                                .param("format", "json")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isOk())
+                                .andExpect(
+                                                org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                                                                .header()
+                                                                .string("Content-Type", "application/json"))
+                                .andExpect(
+                                                org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                                                                .header()
+                                                                .exists("Content-Disposition"));
+        }
+
+        @Test
+        void exportVoucherHistory_pdf_returnsPdfFile() throws Exception {
+                // Create a voucher
+                Voucher voucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                voucher = voucherRepository.save(voucher);
+
+                // Create audit log entry
+                AuditLog log = new AuditLog();
+                log.setEntityType("VOUCHER");
+                log.setEntityId(voucher.getId().toString());
+                log.setCompanyId(testCompany.getId());
+                log.setAction("VOUCHER_CREATED");
+                log.setUserId(testUser.getId());
+                log.setEmail(testUser.getEmail());
+                log.setSuccess(true);
+                log.setCreatedAt(Instant.now());
+                auditLogRepository.save(log);
+
+                // Export as PDF
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + voucher.getId() + "/history/export")
+                                                                .param("format", "pdf")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isOk())
+                                .andExpect(
+                                                org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                                                                .header()
+                                                                .string("Content-Type", "application/pdf"))
+                                .andExpect(
+                                                org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                                                                .header()
+                                                                .exists("Content-Disposition"));
+        }
+
+        // ========== Attachment Management Tests ==========
+
+        @Test
+        void listAttachments_returnsAttachmentsList() throws Exception {
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Upload two attachments
+                byte[] fileContent1 = "pdf content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file1 = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "test1.pdf", "application/pdf", fileContent1);
+
+                byte[] fileContent2 = "image content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file2 = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "test2.jpg", "image/jpeg", fileContent2);
+
+                // Upload first attachment
+                String result1 = mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file1)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+
+                // Upload second attachment
+                mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file2)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isCreated());
+
+                // List attachments
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data").isArray())
+                                .andExpect(jsonPath("$.data.length()").value(2))
+                                .andExpect(jsonPath("$.count").value(2));
+        }
+
+        @Test
+        void downloadAttachment_returnsRedirectToSignedUrl() throws Exception {
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Upload attachment
+                byte[] fileContent = "pdf content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "test.pdf", "application/pdf", fileContent);
+
+                String uploadResponse = mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+
+                // Extract attachment ID from response
+                com.fasterxml.jackson.databind.JsonNode jsonNode = objectMapper.readTree(uploadResponse);
+                String attachmentId = jsonNode.get("data").get("id").asText();
+
+                // Download attachment
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments/"
+                                                                + attachmentId + "/download")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isFound())
+                                .andExpect(
+                                                org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                                                                .header()
+                                                                .exists("Location"));
+        }
+
+        @Test
+        void deleteAttachment_draftVoucher_deletesSuccessfully() throws Exception {
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Upload attachment
+                byte[] fileContent = "pdf content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "test.pdf", "application/pdf", fileContent);
+
+                String uploadResponse = mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+
+                // Extract attachment ID
+                com.fasterxml.jackson.databind.JsonNode jsonNode = objectMapper.readTree(uploadResponse);
+                String attachmentId = jsonNode.get("data").get("id").asText();
+
+                // Delete attachment
+                String deleteRequest = objectMapper.writeValueAsString(Map.of("reason", "Test deletion reason"));
+
+                mockMvc
+                                .perform(
+                                                delete("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments/"
+                                                                + attachmentId)
+                                                                .contentType(APPLICATION_JSON)
+                                                                .content(deleteRequest)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isNoContent());
+
+                // Verify attachment is deleted
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.length()").value(0));
+        }
+
+        @Test
+        void deleteAttachment_postedVoucher_returnsForbidden() throws Exception {
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Upload attachment
+                byte[] fileContent = "pdf content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "test.pdf", "application/pdf", fileContent);
+
+                String uploadResponse = mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file)
+                                                                .header("Authorization", "Bearer " + chiefAccountantToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+
+                // Extract attachment ID
+                com.fasterxml.jackson.databind.JsonNode jsonNode = objectMapper.readTree(uploadResponse);
+                String attachmentId = jsonNode.get("data").get("id").asText();
+
+                // Post the voucher
+                draftVoucher.setStatus("posted");
+                voucherRepository.save(draftVoucher);
+
+                // Try to delete attachment from posted voucher
+                String deleteRequest = objectMapper.writeValueAsString(Map.of("reason", "Test reason"));
+
+                mockMvc
+                                .perform(
+                                                delete("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments/"
+                                                                + attachmentId)
+                                                                .contentType(APPLICATION_JSON)
+                                                                .content(deleteRequest)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isForbidden())
+                                .andExpect(jsonPath("$.error.message")
+                                                .value(org.hamcrest.Matchers
+                                                                .containsStringIgnoringCase("DRAFT status")));
+        }
+
+        @Test
+        void deleteAttachment_missingReason_returnsBadRequest() throws Exception {
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Upload attachment
+                byte[] fileContent = "pdf content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "test.pdf", "application/pdf", fileContent);
+
+                String uploadResponse = mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+
+                // Extract attachment ID
+                com.fasterxml.jackson.databind.JsonNode jsonNode = objectMapper.readTree(uploadResponse);
+                String attachmentId = jsonNode.get("data").get("id").asText();
+
+                // Try to delete without reason
+                String deleteRequest = objectMapper.writeValueAsString(Map.of("reason", ""));
+
+                mockMvc
+                                .perform(
+                                                delete("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments/"
+                                                                + attachmentId)
+                                                                .contentType(APPLICATION_JSON)
+                                                                .content(deleteRequest)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.error.message")
+                                                .value(org.hamcrest.Matchers
+                                                                .containsStringIgnoringCase("reason is required")));
+        }
+
+        @Test
+        void uploadAttachment_virusScanFails_returnsBadRequest() throws Exception {
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Create a file that would fail virus scan (blocked extension)
+                byte[] fileContent = "malware content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "malware.exe", "application/x-msdownload", fileContent);
+
+                mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.error.message")
+                                                .value(org.hamcrest.Matchers
+                                                                .containsStringIgnoringCase("virus scan")));
+        }
+
+        @Test
+        void listAttachments_crossCompanyAccess_returnsNotFound() throws Exception {
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Try to access from other company
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(otherCompany.getId())))
+                                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void previewAttachment_logsViewEvent() throws Exception {
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Upload attachment
+                byte[] fileContent = "pdf content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "test.pdf", "application/pdf", fileContent);
+
+                String uploadResponse = mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+
+                // Extract attachment ID
+                com.fasterxml.jackson.databind.JsonNode jsonNode = objectMapper.readTree(uploadResponse);
+                String attachmentId = jsonNode.get("data").get("id").asText();
+
+                // Clear existing audit logs
+                auditLogRepository.deleteAll();
+
+                // Preview attachment
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments/"
+                                                                + attachmentId + "/preview")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isFound())
+                                .andExpect(
+                                                org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                                                                .header()
+                                                                .exists("Location"));
+
+                // Verify audit log entry for view event
+                List<AuditLog> auditLogs = auditLogRepository.findAll();
+                boolean foundViewLog = auditLogs.stream()
+                                .anyMatch(log -> {
+                                        String action = log.getAction();
+                                        String entityType = log.getEntityType();
+                                        String entityId = log.getEntityId();
+                                        return action != null && action.equals("ATTACHMENT_VIEW")
+                                                        && entityType != null && entityType.equals("VOUCHER_ATTACHMENT")
+                                                        && entityId != null && entityId.equals(attachmentId);
+                                });
+                assertTrue(foundViewLog, "Audit log should contain ATTACHMENT_VIEW action for preview");
+        }
+
+        @Test
+        void deleteAttachment_nonCreatorNonAdmin_returnsForbidden() throws Exception {
+                // Create voucher with testUser as creator
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Create another user (not creator, not admin)
+                User otherUser = new User();
+                otherUser.setEmail("other@test.com");
+                otherUser.setPasswordHash(passwordEncoder.encode("Password123!"));
+                otherUser.setFullName("Other User");
+                otherUser.setCompanyId(testCompany.getId());
+                otherUser.setRole("accountant");
+                otherUser.setStatus("ACTIVE");
+                otherUser.setCreatedAt(Instant.now());
+                otherUser.setUpdatedAt(Instant.now());
+                otherUser = userRepository.save(otherUser);
+                String otherUserToken = jwtTokenProvider.generateAccessToken(otherUser.getId(), otherUser.getEmail(),
+                                otherUser.getRole());
+
+                // Upload attachment as creator
+                byte[] fileContent = "pdf content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "test.pdf", "application/pdf", fileContent);
+
+                String uploadResponse = mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+
+                // Extract attachment ID
+                com.fasterxml.jackson.databind.JsonNode jsonNode = objectMapper.readTree(uploadResponse);
+                String attachmentId = jsonNode.get("data").get("id").asText();
+
+                // Try to delete as non-creator, non-admin user
+                String deleteRequest = objectMapper.writeValueAsString(Map.of("reason", "Test deletion reason"));
+
+                mockMvc
+                                .perform(
+                                                delete("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments/"
+                                                                + attachmentId)
+                                                                .contentType(APPLICATION_JSON)
+                                                                .content(deleteRequest)
+                                                                .header("Authorization", "Bearer " + otherUserToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isForbidden())
+                                .andExpect(jsonPath("$.error.message")
+                                                .value(org.hamcrest.Matchers
+                                                                .containsStringIgnoringCase("creator or admin")));
+        }
+
+        @Test
+        void deleteAttachment_creator_canDelete() throws Exception {
+                // Create voucher with testUser as creator
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Upload attachment
+                byte[] fileContent = "pdf content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "test.pdf", "application/pdf", fileContent);
+
+                String uploadResponse = mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+
+                // Extract attachment ID
+                com.fasterxml.jackson.databind.JsonNode jsonNode = objectMapper.readTree(uploadResponse);
+                String attachmentId = jsonNode.get("data").get("id").asText();
+
+                // Delete attachment as creator
+                String deleteRequest = objectMapper.writeValueAsString(Map.of("reason", "Test deletion reason"));
+
+                mockMvc
+                                .perform(
+                                                delete("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments/"
+                                                                + attachmentId)
+                                                                .contentType(APPLICATION_JSON)
+                                                                .content(deleteRequest)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isNoContent());
+
+                // Verify attachment is deleted
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data").isEmpty());
+        }
+
+        @Test
+        void deleteAttachment_admin_canDelete() throws Exception {
+                // Create voucher with testUser as creator
+                Voucher draftVoucher = createVoucher(testCompany.getId(), testUser.getId(), "VC2025-001", "draft");
+                draftVoucher = voucherRepository.save(draftVoucher);
+
+                // Create admin user
+                User adminUser = new User();
+                adminUser.setEmail("admin@test.com");
+                adminUser.setPasswordHash(passwordEncoder.encode("Password123!"));
+                adminUser.setFullName("Admin User");
+                adminUser.setCompanyId(testCompany.getId());
+                adminUser.setRole("admin");
+                adminUser.setStatus("ACTIVE");
+                adminUser.setCreatedAt(Instant.now());
+                adminUser.setUpdatedAt(Instant.now());
+                adminUser = userRepository.save(adminUser);
+                String adminToken = jwtTokenProvider.generateAccessToken(adminUser.getId(), adminUser.getEmail(),
+                                adminUser.getRole());
+
+                // Upload attachment as creator
+                byte[] fileContent = "pdf content".getBytes();
+                org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                                "file", "test.pdf", "application/pdf", fileContent);
+
+                String uploadResponse = mockMvc
+                                .perform(
+                                                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                                                .multipart("/api/v1/vouchers/" + draftVoucher.getId()
+                                                                                + "/attachments")
+                                                                .file(file)
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+
+                // Extract attachment ID
+                com.fasterxml.jackson.databind.JsonNode jsonNode = objectMapper.readTree(uploadResponse);
+                String attachmentId = jsonNode.get("data").get("id").asText();
+
+                // Delete attachment as admin
+                String deleteRequest = objectMapper.writeValueAsString(Map.of("reason", "Admin deletion reason"));
+
+                mockMvc
+                                .perform(
+                                                delete("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments/"
+                                                                + attachmentId)
+                                                                .contentType(APPLICATION_JSON)
+                                                                .content(deleteRequest)
+                                                                .header("Authorization", "Bearer " + adminToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isNoContent());
+
+                // Verify attachment is deleted
+                mockMvc
+                                .perform(
+                                                get("/api/v1/vouchers/" + draftVoucher.getId() + "/attachments")
+                                                                .header("Authorization", "Bearer " + testToken)
+                                                                .header("X-Company-Id",
+                                                                                String.valueOf(testCompany.getId())))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data").isEmpty());
         }
 }

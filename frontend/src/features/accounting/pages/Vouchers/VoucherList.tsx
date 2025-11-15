@@ -65,6 +65,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { getVouchers, getVoucherCounts, deleteVoucher } from '@/services/voucher'
 import type { VoucherListDTO, VoucherQueryParams, VoucherCountDTO } from '@/types/voucher'
+import { PeriodSelector } from '@/components/period'
+import type { AccountingPeriod } from '@/types/accountingPeriod'
+import { VoucherAttachmentManagementModal } from '@/components/voucher'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]
 const STATUS_OPTIONS = [
@@ -163,10 +166,21 @@ export default function VoucherList() {
   // Badge counts
   const [counts, setCounts] = useState<VoucherCountDTO>({ draft: 0, posted: 0, unposted: 0 })
 
+  // Period selection
+  const [selectedPeriod, setSelectedPeriod] = useState<AccountingPeriod | null>(() =>
+    loadFromStorage('selectedPeriod', null),
+  )
+
   // Delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [voucherToDelete, setVoucherToDelete] = useState<VoucherListDTO | null>(null)
   const [deleteReason, setDeleteReason] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  // Attachment modal
+  const [attachmentModalOpen, setAttachmentModalOpen] = useState(false)
+  const [selectedVoucherForAttachments, setSelectedVoucherForAttachments] = useState<string | null>(
+    null,
+  )
 
   // Save to localStorage whenever filters change
   useEffect(() => {
@@ -193,6 +207,16 @@ export default function VoucherList() {
   useEffect(() => {
     saveToStorage('pageSize', pageSize)
   }, [pageSize])
+  useEffect(() => {
+    saveToStorage('selectedPeriod', selectedPeriod)
+  }, [selectedPeriod])
+
+  // Handle period change
+  const handlePeriodChange = useCallback((period: AccountingPeriod) => {
+    setSelectedPeriod(period)
+    // Reset to first page when period changes
+    setPage(0)
+  }, [])
 
   // Convert sorting state to API sort parameters
   const sortParams = useMemo(() => {
@@ -383,7 +407,24 @@ export default function VoucherList() {
       {
         accessorKey: 'attachmentCount',
         header: 'Attachments',
-        cell: ({ row }) => row.original.attachmentCount || 0,
+        cell: ({ row }) => {
+          const count = row.original.attachmentCount || 0
+          const voucher = row.original
+          return (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto p-1"
+              onClick={() => {
+                setSelectedVoucherForAttachments(voucher.id)
+                setAttachmentModalOpen(true)
+              }}
+            >
+              <FileText className="mr-1 h-3 w-3" />
+              {count}
+            </Button>
+          )
+        },
       },
       {
         id: 'actions',
@@ -468,6 +509,21 @@ export default function VoucherList() {
           <Badge variant="secondary">Draft: {counts.draft}</Badge>
           <Badge variant="default">Posted: {counts.posted}</Badge>
           <Badge variant="outline">Unposted: {counts.unposted}</Badge>
+        </div>
+      </div>
+
+      {/* Period Selector */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1 max-w-md">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Period</label>
+            <PeriodSelector
+              selectedPeriod={selectedPeriod}
+              onPeriodChange={handlePeriodChange}
+              showSummary={true}
+              placeholder="Select period..."
+            />
+          </div>
         </div>
       </div>
 
@@ -780,6 +836,21 @@ export default function VoucherList() {
           </div>
         </div>
       </div>
+
+      {/* Attachment Management Modal */}
+      {selectedVoucherForAttachments && (
+        <VoucherAttachmentManagementModal
+          voucherId={selectedVoucherForAttachments}
+          open={attachmentModalOpen}
+          onOpenChange={(open) => {
+            setAttachmentModalOpen(open)
+            if (!open) {
+              setSelectedVoucherForAttachments(null)
+            }
+          }}
+          canDelete={false} // In list view, deletion should be done from detail view
+        />
+      )}
     </div>
   )
 }

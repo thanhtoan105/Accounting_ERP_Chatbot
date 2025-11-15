@@ -43,7 +43,7 @@ public class Voucher implements CompanyScopedEntity {
   private LocalDate voucherDate;
 
   @Column(name = "period_id")
-  private Long periodId; // Optional - Period entity from Epic 1 (may not exist yet)
+  private UUID periodId; // Foreign key to AccountingPeriod.id (auto-determined from voucher_date)
 
   @NotBlank
   @Column(name = "description", nullable = false, length = 500)
@@ -94,6 +94,9 @@ public class Voucher implements CompanyScopedEntity {
   @Column(name = "version", nullable = false)
   private Long version = 0L; // Optimistic locking version
 
+  @Column(name = "is_locked", nullable = false)
+  private Boolean isLocked = false; // Lock flag set when period is closed (prevents edits)
+
   // Relationships
   @ManyToOne
   @JoinColumn(name = "company_id", insertable = false, updatable = false)
@@ -110,6 +113,10 @@ public class Voucher implements CompanyScopedEntity {
   @ManyToOne
   @JoinColumn(name = "reversed_by", insertable = false, updatable = false)
   private User reversedByUser; // User ID who created the reversal (deprecated, use reversedByVoucherId)
+
+  @ManyToOne
+  @JoinColumn(name = "period_id", insertable = false, updatable = false)
+  private AccountingPeriod period; // Period relationship (read-only)
 
   // OneToOne: This voucher reverses another voucher (if this is a reversal)
   // Owning side: reversal voucher has FK to original
@@ -157,12 +164,20 @@ public class Voucher implements CompanyScopedEntity {
     this.voucherDate = voucherDate;
   }
 
-  public Long getPeriodId() {
+  public UUID getPeriodId() {
     return periodId;
   }
 
-  public void setPeriodId(Long periodId) {
+  public void setPeriodId(UUID periodId) {
     this.periodId = periodId;
+  }
+
+  public AccountingPeriod getPeriod() {
+    return period;
+  }
+
+  public void setPeriod(AccountingPeriod period) {
+    this.period = period;
   }
 
   public String getDescription() {
@@ -275,6 +290,14 @@ public class Voucher implements CompanyScopedEntity {
 
   public void setVersion(Long version) {
     this.version = version;
+  }
+
+  public Boolean getIsLocked() {
+    return isLocked;
+  }
+
+  public void setIsLocked(Boolean isLocked) {
+    this.isLocked = isLocked;
   }
 
   // Relationship getters (read-only)

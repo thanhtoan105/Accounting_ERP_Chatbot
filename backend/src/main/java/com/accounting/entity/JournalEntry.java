@@ -36,7 +36,7 @@ public class JournalEntry implements CompanyScopedEntity {
   private Long accountId;
 
   @Column(name = "period_id")
-  private Long periodId;
+  private UUID periodId;
 
   @NotNull
   @Column(name = "debit_amount", nullable = false, precision = 19, scale = 2)
@@ -107,11 +107,11 @@ public class JournalEntry implements CompanyScopedEntity {
     this.accountId = accountId;
   }
 
-  public Long getPeriodId() {
+  public UUID getPeriodId() {
     return periodId;
   }
 
-  public void setPeriodId(Long periodId) {
+  public void setPeriodId(UUID periodId) {
     this.periodId = periodId;
   }
 
