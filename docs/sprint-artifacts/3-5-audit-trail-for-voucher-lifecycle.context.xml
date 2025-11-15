@@ -1,0 +1,158 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>5</storyId>
+    <title>Audit Trail for Voucher Lifecycle</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-27T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-5-audit-trail-for-voucher-lifecycle.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>an auditor or admin</asA>
+    <iWant>a cryptographically hashed, tamper-proof log of every change to vouchers</iWant>
+    <soThat>all edits and actions are legally defensible and reviewable</soThat>
+    <tasks>
+      - Enhance AuditService for voucher lifecycle events (AC: #1, #2)
+      - Integrate audit logging into voucher lifecycle operations (AC: #1)
+      - Create VoucherHistoryService for history retrieval and diff generation (AC: #3)
+      - Create VoucherHistoryView frontend component (AC: #3)
+      - Implement audit log export functionality (AC: #4)
+      - Create Admin Audit Dashboard (AC: #5, deferred to post-MVP for alerts)
+      - Enhance AuditLog entity for voucher-specific metadata (AC: #1, #2)
+      - Create API endpoints for voucher history (AC: #3, #4)
+      - Add comprehensive tests for audit trail functionality (AC: #1, #2, #3, #4, #5)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Every voucher event (create/edit/post/reverse/unpost/import) generates audit log entry with: JSON snapshot (before/after), SHA-256 diff hash, user ID/role, device/IP (if available).
+    2. Mass/batch actions log aggregated entry with: voucher IDs list, action stats (success/failure counts), start/end timestamp, details summary.
+    3. "Voucher history" view displays colored field-by-field diff (green=added, red=removed, yellow=changed) and plain English summary (e.g., "Voucher posted by John Doe on 2025-11-13").
+    4. Full audit logs exportable as PDF (with hash watermark) or JSON; export includes all events for voucher with cryptographic hashes.
+    5. Admin/audit dashboard displays mass actions, blocked operations, suspicious patterns (e.g., multiple reversal attempts); alerts deferred to post-MVP (logged only).
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic Technical Specification: Voucher Engine & General Ledger Core" section="Story 3.5: Audit Trail for Voucher Lifecycle">
+        Story 3.5 acceptance criteria: Every voucher event generates JSON snapshot with SHA-256 diff hash, user/role, device/IP. Mass/batch actions log aggregated entry with voucher IDs, stats, timestamps. Voucher history view shows colored field-by-field diff and plain English summary. Full audit logs exportable as PDF (with hash watermark) or JSON. Admin/audit dashboard for mass/blocked/suspicious actions (alerts deferred to post-MVP).
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic Technical Specification: Voucher Engine & General Ledger Core" section="AuditLogService">
+        AuditLogService responsibilities: Voucher lifecycle event logging (create/edit/post/unpost/reverse), field-level change tracking with JSON snapshots, cryptographic hashing for integrity, exportable audit logs (PDF/JSON), mass action logging. Inputs: Voucher events, change diffs, user context, device/IP metadata. Outputs: Audit log entries, exportable audit reports.
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic Technical Specification: Voucher Engine & General Ledger Core" section="Security & Multi-Tenancy">
+        All voucher operations enforce company-level isolation via company_id filtering. RBAC: Accountant role can create/edit drafts; Chief Accountant can post/unpost; Admin has full access. Audit logs are company-scoped.
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic Technical Specification: Voucher Engine & General Ledger Core" section="Audit Trail Integrity">
+        Audit trail integrity requirements: Immutable append-only logs, cryptographic hashing for tamper-proof verification, field-level change tracking with before/after snapshots, exportable audit reports with hash watermarks.
+      </doc>
+      <doc path="docs/epics/epic-3-voucher-engine-general-ledger-core.md" title="Epic 3: Voucher Engine & General Ledger Core" section="Story 3.5: Audit Trail for Voucher Lifecycle">
+        Story definition: As an auditor or admin, I want a cryptographically hashed, tamper-proof log of every change to vouchers, so all edits and actions are legally defensible and reviewable. Acceptance criteria cover JSON snapshots, SHA-256 diff hashes, user/role/device/IP capture, mass action logging, colored field-by-field diff display, plain English summaries, PDF/JSON export with hash watermarks, and admin audit dashboard.
+      </doc>
+      <doc path="docs/sprint-artifacts/3-4-leaf-only-and-double-entry-validation-engine.md" title="Story 3.4: Leaf-Only and Double-Entry Validation Engine" section="Learnings from Previous Story">
+        Audit Service Enhanced: AuditService has logFraudDetection() and logBlockedAttempt() methods - extend this pattern for voucher lifecycle events. Audit Log Entity: AuditLog entity exists with changes (JSON) and metadata (JSON) fields - use these for storing before/after snapshots and batch action stats. Company Scoping Pattern: All operations use CompanyContext.getCompanyId() for company isolation - apply same pattern for audit log queries. Error Handling: Audit logging wrapped in try-catch blocks to not break main flow - follow same pattern for voucher lifecycle audit logging. JSON Handling: System uses JsonNode (Jackson) for JSON fields in entities - use ObjectMapper to serialize voucher entities to JSON snapshots.
+      </doc>
+      <doc path="docs/sprint-artifacts/3-3-posting-unposting-reversal-workflows.md" title="Story 3.3: Posting, Unposting & Reversal Workflows" section="Dev Notes">
+        Audit logging patterns established for posting, unposting, and reversal operations. VoucherPostingService logs posting events, VoucherUnpostingService logs unposting events, VoucherReversalService logs reversal events. All audit logging uses AuditService interface. Company scoping pattern via CompanyScopeAspect. RBAC enforcement using @PreAuthorize("hasAnyRole('CHIEF_ACCOUNTANT','ADMIN','CFO')").
+      </doc>
+      <doc path="docs/architecture/security-architecture.md" title="Security Architecture" section="Data Protection">
+        Audit trail: Immutable append-only logs. Cryptographic hashing for audit log integrity. Encryption in transit: HTTPS/TLS. Encryption at rest: Database-level encryption.
+      </doc>
+      <doc path="docs/architecture/data-architecture.md" title="Data Architecture" section="Core Entities">
+        Audit: audit_logs (id, entity_type, entity_id, action, user_id, timestamp, changes, ...). All audit logs are company-scoped via company_id filtering.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="backend/src/main/java/com/accounting/entity/AuditLog.java" kind="entity" symbol="AuditLog" lines="1-270" reason="AuditLog entity with changes (JsonNode) and metadata (JsonNode) fields for storing before/after snapshots and batch action stats. Story 3.5 will use these fields to store voucher JSON snapshots, SHA-256 diff hashes, and batch action metadata. Entity has companyId, entityType, entityId, action, userId, actorRole, ipAddress, userAgent, success, failureReason, traceId, createdAt fields." />
+      <artifact path="backend/src/main/java/com/accounting/service/AuditService.java" kind="interface" symbol="AuditService" lines="1-695" reason="AuditService interface with methods for logging various events. Story 3.5 will add methods: logVoucherEvent() for individual voucher events with before/after snapshots and diff hash, logBatchVoucherAction() for mass/batch actions with aggregated stats. Existing methods: logVoucherPosted(), logVoucherUnposted(), logVoucherReversed(), logVoucherDeleted() - Story 3.5 will enhance these with JSON snapshots and diff hashes." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java" kind="service" symbol="AuditServiceImpl" lines="1-1143" reason="AuditServiceImpl implementation. Story 3.5 will add implementations for logVoucherEvent() and logBatchVoucherAction() methods. Existing implementations: logVoucherPosted(), logVoucherUnposted(), logVoucherReversed(), logVoucherDeleted() - Story 3.5 will enhance these to capture before/after JSON snapshots and calculate SHA-256 diff hashes. Uses ObjectMapper for JSON serialization, CompanyContext for company scoping." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/voucher/VoucherPostingServiceImpl.java" kind="service" symbol="VoucherPostingServiceImpl" reason="Voucher posting service. Story 3.5 will enhance to capture before/after snapshots and log audit events with diff hashes when posting vouchers." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/voucher/VoucherUnpostingServiceImpl.java" kind="service" symbol="VoucherUnpostingServiceImpl" reason="Voucher unposting service. Story 3.5 will enhance to capture before/after snapshots and log audit events with diff hashes when unposting vouchers." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/voucher/VoucherReversalServiceImpl.java" kind="service" symbol="VoucherReversalServiceImpl" reason="Voucher reversal service. Story 3.5 will enhance to capture before/after snapshots and log audit events with diff hashes when reversing vouchers." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/voucher/VoucherServiceImpl.java" kind="service" symbol="VoucherServiceImpl" reason="Voucher service for CRUD operations. Story 3.5 will enhance create() and update() methods to capture before/after snapshots and log audit events with diff hashes." />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/AuditLogExportService.java" kind="service" symbol="AuditLogExportService" reason="Audit log export service. Story 3.5 will enhance to support voucher history export in PDF (with hash watermark) and JSON formats. Export should include all audit log entries for a voucher with cryptographic hashes." />
+      <artifact path="frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx" kind="page" symbol="VoucherFormPage" reason="Voucher form page component. Story 3.5 will add 'History' tab or button to view voucher history using VoucherHistoryView component." />
+      <artifact path="frontend/src/components/voucher/VoucherLineItemGrid.tsx" kind="component" symbol="VoucherLineGrid" reason="Voucher line item grid component. Story 3.5 will integrate with VoucherHistoryView to show field-level diffs when viewing voucher history." />
+      <artifact path="backend/src/main/java/com/accounting/controller/voucher/VoucherController.java" kind="controller" symbol="VoucherController" reason="REST API controller for voucher operations. Story 3.5 will add endpoints: GET /api/v1/vouchers/{id}/history (get voucher history), GET /api/v1/vouchers/{id}/history/export?format=json|pdf (export voucher history)." />
+      <artifact path="backend/src/main/java/com/accounting/security/CompanyContext.java" kind="utility" symbol="CompanyContext.getCompanyId()" reason="Utility class for company context management. Story 3.5 will use this for company-scoped audit log queries." />
+      <artifact path="backend/src/main/java/com/accounting/security/SecurityUtils.java" kind="utility" symbol="SecurityUtils.getCurrentUserId()" reason="Utility method for extracting current user ID. Story 3.5 will use this for capturing user ID in audit logs." />
+    </code>
+    <dependencies>
+      <java>
+        <package name="org.springframework.boot" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-web" />
+        <package name="org.springframework.boot:spring-boot-starter-data-jpa" />
+        <package name="org.springframework.boot:spring-boot-starter-validation" />
+        <package name="org.postgresql:postgresql" version="42.7.4" />
+        <package name="org.flywaydb:flyway-core" version="11.10.0" />
+        <package name="com.fasterxml.jackson.core:jackson-databind" />
+        <package name="java.security.MessageDigest" />
+        <package name="java.nio.charset.StandardCharsets" />
+        <package name="com.itextpdf:itext7-core" version="8.0.5" />
+      </java>
+      <node>
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="typescript" version="~5.9.3" />
+        <package name="@tanstack/react-table" version="^8.21.3" />
+        <package name="@radix-ui/react-dialog" version="^1.1.15" />
+        <package name="@radix-ui/react-tabs" version="^1.1.15" />
+        <package name="lucide-react" version="^0.552.0" />
+        <package name="date-fns" version="^3.6.0" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Audit log immutability: Audit logs must be immutable (append-only) and cryptographically hashed for tamper-proof verification. No updates or deletes allowed on audit log entries.
+    - SHA-256 diff hash: Calculate SHA-256 hash of JSON diff between before/after snapshots. Hash must be stored in AuditLog.metadata JSON field as "diffHash" key.
+    - JSON snapshot format: Before/after snapshots stored in AuditLog.changes JSON field with structure: { before: { ...voucher fields... }, after: { ...voucher fields... } }. Use ObjectMapper to serialize voucher entity to JSON.
+    - Company scoping: All audit log queries must be scoped to current company via CompanyContext.getCompanyId(). Only return audit logs for vouchers in current company.
+    - RBAC enforcement: Audit log access requires proper role-based permissions. Auditors and admins can view audit logs. Regular users cannot access audit logs.
+    - Non-blocking audit: Audit logging should not block main business logic. Wrap audit logging in try-catch blocks or use async execution to ensure main flow continues even if audit logging fails.
+    - Field-level diff generation: Compare JSON snapshots field-by-field to detect changes. Return diff structure: { field: { before: value, after: value, changeType: 'added'|'removed'|'changed' } }.
+    - Plain English summary: Generate human-readable summaries like "Voucher posted by {user} on {date}", "Voucher edited: {field} changed from {old} to {new}". Store in AuditLog.metadata as "summary" key.
+    - Batch action logging: For mass/batch actions, log single aggregated entry with voucher IDs list, success/failure counts, start/end timestamps, and summary in AuditLog.metadata JSON field.
+    - PDF export hash watermark: Embed SHA-256 hash of PDF content in footer/header of PDF export. Use iText or Apache PDFBox for PDF generation.
+    - JSON export format: Export all audit log entries as JSON array with cryptographic hashes included in each entry.
+    - Suspicious pattern detection: Log suspicious patterns (multiple reversal attempts, rapid-fire edits, bulk operations) in AuditLog.metadata with "suspiciousPattern" flag. Defer alert sending (email, notifications) to post-MVP.
+    - Database indexes: Add index on (entity_type, entity_id, company_id, created_at) for efficient history queries. Add index on (company_id, action, created_at) for audit dashboard queries.
+    - Device/IP capture: Extract IP address from HttpServletRequest.getRemoteAddr() and user agent from HttpServletRequest.getHeader("User-Agent"). Store in AuditLog.ipAddress and AuditLog.userAgent fields.
+    - User/role capture: Extract user ID from SecurityContext or CompanyContext, role from User entity. Store in AuditLog.userId and AuditLog.actorRole fields.
+  </constraints>
+
+  <interfaces>
+    <interface name="AuditService.logVoucherEvent()" kind="service method" signature="void logVoucherEvent(UUID voucherId, String voucherNumber, String action, JsonNode beforeSnapshot, JsonNode afterSnapshot, String diffHash, HttpServletRequest request)" path="backend/src/main/java/com/accounting/service/AuditService.java (to be added)" />
+    <interface name="AuditService.logBatchVoucherAction()" kind="service method" signature="void logBatchVoucherAction(List&lt;UUID&gt; voucherIds, String action, BatchActionStats stats, Instant startTime, Instant endTime, String summary, HttpServletRequest request)" path="backend/src/main/java/com/accounting/service/AuditService.java (to be added)" />
+    <interface name="VoucherHistoryService.getVoucherHistory()" kind="service method" signature="List&lt;VoucherHistoryEntry&gt; getVoucherHistory(UUID voucherId)" path="backend/src/main/java/com/accounting/service/VoucherHistoryService.java (to be created)" />
+    <interface name="VoucherHistoryService.generateFieldDiff()" kind="service method" signature="Map&lt;String, FieldDiff&gt; generateFieldDiff(JsonNode before, JsonNode after)" path="backend/src/main/java/com/accounting/service/VoucherHistoryService.java (to be created)" />
+    <interface name="VoucherHistoryService.generatePlainEnglishSummary()" kind="service method" signature="String generatePlainEnglishSummary(AuditLog auditLog, Map&lt;String, FieldDiff&gt; diff)" path="backend/src/main/java/com/accounting/service/VoucherHistoryService.java (to be created)" />
+    <interface name="GET /api/v1/vouchers/{id}/history" kind="REST endpoint" signature="GET /api/v1/vouchers/{id}/history - Returns List&lt;VoucherHistoryEntryDTO&gt; with pagination, filtering by action type, date range" path="backend/src/main/java/com/accounting/controller/VoucherHistoryController.java (to be created)" />
+    <interface name="GET /api/v1/vouchers/{id}/history/export" kind="REST endpoint" signature="GET /api/v1/vouchers/{id}/history/export?format=json|pdf - Returns PDF or JSON export of voucher history with cryptographic hashes" path="backend/src/main/java/com/accounting/controller/VoucherHistoryController.java (to be created)" />
+    <interface name="VoucherHistoryView component" kind="React component" signature="VoucherHistoryView({ voucherId, ... }) - Displays audit log entries with colored field-by-field diff, plain English summaries, filter/search by action type, user, date range" path="frontend/src/features/accounting/components/VoucherHistoryView.tsx (to be created)" />
+  </interfaces>
+
+  <tests>
+    <standards>
+      Unit tests use JUnit 5 and Mockito. Integration tests use @SpringBootTest with IntegrationTest base class and TestContainers for PostgreSQL. Frontend tests use Vitest, Testing Library, and jsdom. Coverage targets: 70% for backend business logic, 60% for frontend components. All audit logging must be tested with before/after snapshots, SHA-256 diff hash calculation, and company scoping.
+    </standards>
+    <locations>
+      Backend unit tests: backend/src/test/java/com/accounting/service/impl/VoucherHistoryServiceTest.java (to be created)
+      Backend integration tests: backend/src/test/java/com/accounting/controller/VoucherHistoryControllerIntegrationTest.java (to be created)
+      Frontend unit tests: frontend/src/features/accounting/components/__tests__/VoucherHistoryView.test.tsx (to be created)
+      QA test cases: docs/sprint-artifacts/qa-test-cases-3-5-audit-trail.md (to be created)
+    </locations>
+    <ideas>
+      <test ac="3.5.1" description="Test JSON snapshot generation: verify before/after snapshots are correctly serialized from voucher entity using ObjectMapper. Test SHA-256 diff hash calculation: verify hash is consistent and tamper-proof (same diff produces same hash, different diff produces different hash). Test user ID/role capture: verify userId and actorRole are correctly extracted from SecurityContext and User entity. Test device/IP capture: verify IP address and user agent are extracted from HttpServletRequest." />
+      <test ac="3.5.2" description="Test batch action logging: verify aggregated entry contains voucher IDs list, success/failure counts, start/end timestamps, and summary in AuditLog.metadata JSON field. Test batch action stats DTO: verify BatchActionStats contains successCount, failureCount, totalCount fields." />
+      <test ac="3.5.3" description="Test field-by-field diff generation: verify correct change detection (added/removed/changed fields). Test plain English summary generation: verify summaries are human-readable and accurate (e.g., 'Voucher posted by John Doe on 2025-11-13'). Test colored diff display: verify green highlight for added fields, red highlight for removed fields, yellow highlight for changed fields in VoucherHistoryView component. Test filter/search functionality: verify filtering by action type, user, date range works correctly." />
+      <test ac="3.5.4" description="Test JSON export: verify JSON export structure includes all audit log entries with cryptographic hashes. Test PDF export: verify PDF generation includes hash watermark in footer/header. Test PDF hash watermark: verify SHA-256 hash of PDF content is embedded correctly. Test export RBAC: verify only users with export permissions can export audit logs." />
+      <test ac="3.5.5" description="Test suspicious pattern detection: verify multiple reversal attempts, rapid-fire edits, bulk operations are logged with suspiciousPattern flag in AuditLog.metadata. Test admin audit dashboard: verify mass actions, blocked operations, suspicious patterns are displayed (deferred to post-MVP for UI, test logging only)." />
+      <test description="Integration test: GET /api/v1/vouchers/{id}/history returns paginated list of audit log entries with field-level diffs. GET /api/v1/vouchers/{id}/history/export?format=json returns JSON export with hashes. GET /api/v1/vouchers/{id}/history/export?format=pdf returns PDF export with hash watermark. Test company scoping: verify cross-company access blocked. Test RBAC: verify unauthorized users cannot access history." />
+      <test description="Frontend test: VoucherHistoryView displays audit log entries in chronological order. VoucherHistoryView shows colored field-by-field diff (green/red/yellow). VoucherHistoryView displays plain English summaries. VoucherHistoryView filter/search works correctly. VoucherHistoryView integrates into VoucherFormPage as History tab or button." />
+    </ideas>
+  </tests>
+</story-context>
+

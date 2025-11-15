@@ -19,8 +19,11 @@ import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.JwtTokenProvider;
 import com.accounting.service.AuditService;
+import com.accounting.service.PeriodManagementService;
+import com.accounting.dto.AccountingPeriodDTO;
 import com.accounting.service.VoucherService;
 import com.accounting.service.VoucherValidationService;
+import com.accounting.service.util.VoucherAuditHelper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -30,7 +33,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -63,6 +65,8 @@ public class VoucherServiceImpl implements VoucherService {
   private final AuditService auditService;
   private final JwtTokenProvider jwtTokenProvider;
   private final VoucherValidationService voucherValidationService;
+  private final VoucherAuditHelper voucherAuditHelper;
+  private final PeriodManagementService periodManagementService;
 
   @PersistenceContext
   private EntityManager entityManager;
@@ -75,7 +79,9 @@ public class VoucherServiceImpl implements VoucherService {
       SupplierRepository supplierRepository,
       AuditService auditService,
       JwtTokenProvider jwtTokenProvider,
-      VoucherValidationService voucherValidationService) {
+      VoucherValidationService voucherValidationService,
+      VoucherAuditHelper voucherAuditHelper,
+      PeriodManagementService periodManagementService) {
     this.voucherRepository = voucherRepository;
     this.voucherLineRepository = voucherLineRepository;
     this.userRepository = userRepository;
@@ -84,6 +90,8 @@ public class VoucherServiceImpl implements VoucherService {
     this.auditService = auditService;
     this.jwtTokenProvider = jwtTokenProvider;
     this.voucherValidationService = voucherValidationService;
+    this.voucherAuditHelper = voucherAuditHelper;
+    this.periodManagementService = periodManagementService;
   }
 
   @Override
@@ -226,9 +234,21 @@ public class VoucherServiceImpl implements VoucherService {
       throwValidationException(validationResult);
     }
 
-    // TODO: Validate period is open (PeriodService integration when available)
-    // For now, we skip period validation - it should be added when PeriodService is
-    // implemented
+    // Auto-determine period from voucher date if not provided
+    UUID periodId = request.getPeriodId();
+    if (periodId == null) {
+      Optional<AccountingPeriodDTO> periodOpt = periodManagementService.findPeriodByDate(request.getDate());
+      if (periodOpt.isPresent()) {
+        periodId = periodOpt.get().getId();
+      } else {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Cannot create voucher: No period found for date " + request.getDate());
+      }
+    }
+
+    // Validate period is open for voucher creation
+    validatePeriodForVoucher(request.getDate(), periodId);
 
     // Generate voucher number using database function
     int year = request.getDate().getYear();
@@ -239,7 +259,7 @@ public class VoucherServiceImpl implements VoucherService {
     voucher.setCompanyId(companyId);
     voucher.setVoucherNumber(voucherNumber);
     voucher.setVoucherDate(request.getDate());
-    voucher.setPeriodId(request.getPeriodId());
+    voucher.setPeriodId(periodId);
     voucher.setDescription(request.getDescription());
     voucher.setStatus("draft"); // Always create as draft
     voucher.setCurrency(
@@ -286,6 +306,23 @@ public class VoucherServiceImpl implements VoucherService {
     }
     voucherLineRepository.saveAll(lines);
 
+    // Log audit event for voucher creation
+    try {
+      com.fasterxml.jackson.databind.JsonNode afterSnapshot = voucherAuditHelper.serializeVoucherToJson(voucher);
+      String diffHash = voucherAuditHelper.calculateDiffHash(null, afterSnapshot);
+      auditService.logVoucherEvent(
+          voucher.getId(),
+          voucher.getVoucherNumber(),
+          "VOUCHER_CREATED",
+          null, // before snapshot (null for create)
+          afterSnapshot,
+          diffHash,
+          null); // HttpServletRequest not available in service layer
+    } catch (Exception e) {
+      // Non-blocking: log error but don't break main flow
+      logger.error("Failed to log audit event for voucher creation: {}", e.getMessage(), e);
+    }
+
     logger.info("Created voucher: {} with {} lines", voucherNumber, lines.size());
     return toDTO(voucher);
   }
@@ -304,6 +341,9 @@ public class VoucherServiceImpl implements VoucherService {
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
 
+    // Capture before snapshot for audit logging
+    com.fasterxml.jackson.databind.JsonNode beforeSnapshot = voucherAuditHelper.serializeVoucherToJson(voucher);
+
     // Validate voucher is in draft status
     if (!"draft".equals(voucher.getStatus())) {
       throw new ResponseStatusException(
@@ -321,11 +361,25 @@ public class VoucherServiceImpl implements VoucherService {
       throwValidationException(validationResult);
     }
 
-    // TODO: Validate period is open (PeriodService integration when available)
+    // Auto-determine period from voucher date if not provided
+    UUID periodId = request.getPeriodId();
+    if (periodId == null) {
+      Optional<AccountingPeriodDTO> periodOpt = periodManagementService.findPeriodByDate(request.getDate());
+      if (periodOpt.isPresent()) {
+        periodId = periodOpt.get().getId();
+      } else {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Cannot update voucher: No period found for date " + request.getDate());
+      }
+    }
+
+    // Validate period is open for voucher update
+    validatePeriodForVoucher(request.getDate(), periodId);
 
     // Update voucher fields (voucher number is not changed on update)
     voucher.setVoucherDate(request.getDate());
-    voucher.setPeriodId(request.getPeriodId());
+    voucher.setPeriodId(periodId);
     voucher.setDescription(request.getDescription());
     if (request.getCurrency() != null) {
       voucher.setCurrency(request.getCurrency());
@@ -373,6 +427,23 @@ public class VoucherServiceImpl implements VoucherService {
       lines.add(line);
     }
     voucherLineRepository.saveAll(lines);
+
+    // Log audit event for voucher update
+    try {
+      com.fasterxml.jackson.databind.JsonNode afterSnapshot = voucherAuditHelper.serializeVoucherToJson(voucher);
+      String diffHash = voucherAuditHelper.calculateDiffHash(beforeSnapshot, afterSnapshot);
+      auditService.logVoucherEvent(
+          voucher.getId(),
+          voucher.getVoucherNumber(),
+          "VOUCHER_UPDATED",
+          beforeSnapshot,
+          afterSnapshot,
+          diffHash,
+          null); // HttpServletRequest not available in service layer
+    } catch (Exception e) {
+      // Non-blocking: log error but don't break main flow
+      logger.error("Failed to log audit event for voucher update: {}", e.getMessage(), e);
+    }
 
     logger.info("Updated voucher: {} with {} lines", voucher.getVoucherNumber(), lines.size());
     return toDTO(voucher);
@@ -689,5 +760,79 @@ public class VoucherServiceImpl implements VoucherService {
         .findById(userId)
         .map(User::getFullName)
         .orElse("Unknown");
+  }
+
+  /**
+   * Validate that voucher date is in an open period.
+   * Logs blocked attempts in audit trail.
+   *
+   * @param voucherDate voucher date to validate
+   * @param periodId optional period ID (if provided, validates specific period)
+   * @return true if period is open, throws ResponseStatusException if closed
+   */
+  private boolean validatePeriodForVoucher(LocalDate voucherDate, UUID periodId) {
+    try {
+      // First validate that date is in an open period
+      if (!periodManagementService.isDateInOpenPeriod(voucherDate)) {
+        // Find the period for this date to get period details for error message
+        Optional<com.accounting.dto.AccountingPeriodDTO> periodOpt = periodManagementService.findPeriodByDate(voucherDate);
+
+        String periodName = periodOpt
+            .map(com.accounting.dto.AccountingPeriodDTO::getPeriodName)
+            .orElse("Unknown Period");
+
+        // Log the blocked attempt in audit trail
+        try {
+          auditService.logPeriodValidationBlocked(
+              periodOpt.map(com.accounting.dto.AccountingPeriodDTO::getId).orElse(null),
+              "VOUCHER_CREATION",
+              "Cannot create voucher in closed or future period: " + periodName
+          );
+        } catch (Exception e) {
+          logger.error("Failed to log period validation block to audit trail", e);
+        }
+
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Cannot create voucher in closed or future period: " + periodName
+        );
+      }
+
+      // Validate that the period is open
+      if (!periodManagementService.isPeriodOpen(periodId)) {
+        Optional<AccountingPeriodDTO> periodOpt = periodManagementService.getPeriodById(periodId);
+
+        String periodName = periodOpt
+            .map(AccountingPeriodDTO::getPeriodName)
+            .orElse("Unknown Period");
+
+        // Log the blocked attempt in audit trail
+        try {
+          auditService.logPeriodValidationBlocked(
+              periodId,
+              "VOUCHER_CREATION",
+              "Cannot create voucher in closed period: " + periodName
+          );
+        } catch (Exception e) {
+          logger.error("Failed to log period validation block to audit trail", e);
+        }
+
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Cannot create voucher in closed period: " + periodName
+        );
+      }
+
+      return true;
+    } catch (ResponseStatusException e) {
+      // Re-throw ResponseStatusException (period closed)
+      throw e;
+    } catch (Exception e) {
+      logger.error("Failed to validate period for voucher", e);
+      throw new ResponseStatusException(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "Failed to validate period for voucher creation"
+      );
+    }
   }
 }

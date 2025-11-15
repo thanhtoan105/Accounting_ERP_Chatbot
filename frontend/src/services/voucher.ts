@@ -15,7 +15,13 @@ import type {
   ApplyTemplateResponse,
   PostVoucherResponse,
   ReverseVoucherResponse,
+  VoucherHistoryResponse,
 } from '../types/voucher'
+import type {
+  AttachmentListResponse,
+  AttachmentUploadResponse,
+  VoucherAttachmentDTO,
+} from '../types/attachment'
 import { fetchWithAuth } from '../utils/axios'
 
 const API_BASE = '/api/v1'
@@ -214,23 +220,15 @@ export async function applyVoucherTemplate(
   return await handleJsonResponse<ApplyTemplateResponse>(res)
 }
 
-export interface UploadAttachmentResponse {
-  message: string
-  voucherId: string
-  fileName: string
-  fileSize: number
-  contentType: string
-}
-
 export async function uploadVoucherAttachment(
   voucherId: string,
   file: File,
-): Promise<UploadAttachmentResponse> {
+  onProgress?: (progress: number) => void,
+): Promise<VoucherAttachmentDTO> {
   const formData = new FormData()
   formData.append('file', file)
 
   // For FormData, we need to use fetch directly to avoid Content-Type header
-  // Import getAccessToken and getCompanyId from utils
   const { getAccessToken, getCompanyId } = await import('../utils/axios')
   const token = getAccessToken()
   const companyId = getCompanyId()
@@ -244,19 +242,190 @@ export async function uploadVoucherAttachment(
   }
   // Don't set Content-Type - browser will set it with boundary for FormData
 
-  const res = await fetch(`${API_BASE}/vouchers/${voucherId}/attachments`, {
-    method: 'POST',
-    body: formData,
+  // Use XMLHttpRequest for progress tracking
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) {
+        const progress = (e.loaded / e.total) * 100
+        onProgress(progress)
+      }
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText) as AttachmentUploadResponse
+          resolve(response.data)
+        } catch (error) {
+          reject(new Error('Failed to parse response'))
+        }
+      } else {
+        try {
+          const error = JSON.parse(xhr.responseText)
+          reject(error)
+        } catch {
+          reject(new Error(`Upload failed: ${xhr.statusText}`))
+        }
+      }
+    })
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Network error during upload'))
+    })
+
+    xhr.addEventListener('abort', () => {
+      reject(new Error('Upload aborted'))
+    })
+
+    xhr.open('POST', `${API_BASE}/vouchers/${voucherId}/attachments`)
+    Object.entries(headers).forEach(([key, value]) => {
+      xhr.setRequestHeader(key, value)
+    })
+    xhr.send(formData)
+  })
+}
+
+export async function getVoucherAttachments(voucherId: string): Promise<VoucherAttachmentDTO[]> {
+  const res = await fetchWithAuth(`${API_BASE}/vouchers/${voucherId}/attachments`, {
+    method: 'GET',
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Failed to load attachments' }))
+    throw error
+  }
+  const payload = await handleJsonResponse<AttachmentListResponse>(res)
+  return payload.data
+}
+
+export async function previewVoucherAttachment(
+  voucherId: string,
+  attachmentId: string,
+): Promise<void> {
+  // Use fetch directly to read Location header from redirect
+  const { getAccessToken, getCompanyId } = await import('../utils/axios')
+  const token = getAccessToken()
+  const companyId = getCompanyId()
+
+  const headers: HeadersInit = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  if (companyId !== null && companyId !== undefined) {
+    headers['X-Company-Id'] = String(companyId)
+  }
+
+  const res = await fetch(`${API_BASE}/vouchers/${voucherId}/attachments/${attachmentId}/preview`, {
+    method: 'GET',
     headers,
     credentials: 'include',
+    redirect: 'manual', // Don't follow redirects automatically so we can read Location header
   })
 
+  if (res.status === 302 || res.status === 307) {
+    const location = res.headers.get('Location')
+    if (location) {
+      window.open(location, '_blank')
+    } else {
+      throw new Error('No redirect location found')
+    }
+  } else if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Failed to preview attachment' }))
+    throw error
+  }
+}
+
+export async function downloadVoucherAttachment(
+  voucherId: string,
+  attachmentId: string,
+): Promise<void> {
+  // Use fetch directly to read Location header from redirect
+  const { getAccessToken, getCompanyId } = await import('../utils/axios')
+  const token = getAccessToken()
+  const companyId = getCompanyId()
+
+  const headers: HeadersInit = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  if (companyId !== null && companyId !== undefined) {
+    headers['X-Company-Id'] = String(companyId)
+  }
+
+  const res = await fetch(
+    `${API_BASE}/vouchers/${voucherId}/attachments/${attachmentId}/download`,
+    {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+      redirect: 'manual', // Don't follow redirects automatically so we can read Location header
+    },
+  )
+
+  // Handle redirect response (302)
+  if (res.status === 302 || res.status === 307 || res.status === 308) {
+    const location = res.headers.get('Location')
+    if (location) {
+      window.open(location, '_blank')
+      return
+    }
+  }
+
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Upload failed' }))
+    const error = await res.json().catch(() => ({ message: 'Download failed' }))
     throw error
   }
 
-  return await handleJsonResponse<UploadAttachmentResponse>(res)
+  // If not a redirect, try to download as blob
+  const blob = await res.blob()
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `attachment-${attachmentId}`
+  document.body.appendChild(a)
+  a.click()
+  window.URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+}
+
+export async function deleteVoucherAttachment(
+  voucherId: string,
+  attachmentId: string,
+  reason: string,
+): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/vouchers/${voucherId}/attachments/${attachmentId}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ reason }),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Delete failed' }))
+    throw error
+  }
+}
+
+export async function getVoucherHistory(voucherId: string): Promise<VoucherHistoryResponse> {
+  const res = await fetchWithAuth(`${API_BASE}/vouchers/${voucherId}/history`, {
+    method: 'GET',
+  })
+  return await handleJsonResponse<VoucherHistoryResponse>(res)
+}
+
+export async function exportVoucherHistory(
+  voucherId: string,
+  format: 'json' | 'pdf' = 'json',
+): Promise<Blob> {
+  const res = await fetchWithAuth(
+    `${API_BASE}/vouchers/${voucherId}/history/export?format=${format}`,
+    {
+      method: 'GET',
+    },
+  )
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Export failed' }))
+    throw error
+  }
+  return await res.blob()
 }
 
 export async function postVoucher(

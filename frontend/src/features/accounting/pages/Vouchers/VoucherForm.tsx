@@ -34,6 +34,8 @@ import {
   VoucherTemplateSelector,
   VoucherAttachmentDropzone,
   type AttachmentFile,
+  VoucherHistoryView,
+  VoucherAttachmentManagementModal,
 } from '@/components/voucher'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -63,6 +65,8 @@ import {
 import { toast } from 'sonner'
 
 import type { AccountSummary } from '@/components/account/AccountPicker'
+import { PeriodSelector, periodService } from '@/components/period'
+import type { AccountingPeriod } from '@/types/accountingPeriod'
 import useUndoRedo from '@/hooks/useUndoRedo'
 import { useAuth } from '@/hooks/useAuth'
 import { useRole } from '@/hooks/useRole'
@@ -336,6 +340,7 @@ export default function VoucherForm() {
   const [editingVoucher, setEditingVoucher] = useState<VoucherDTO | null>(null)
   const [autoSaveError, setAutoSaveError] = useState<string | null>(null)
   const [attachmentCount, setAttachmentCount] = useState(0)
+  const [attachmentModalOpen, setAttachmentModalOpen] = useState(false)
   const [applyingTemplate, setApplyingTemplate] = useState(false)
   const [posting, setPosting] = useState(false)
   const [unposting, setUnposting] = useState(false)
@@ -348,6 +353,9 @@ export default function VoucherForm() {
   const [reverseDescription, setReverseDescription] = useState('')
   const [reverseReason, setReverseReason] = useState('')
   const [validationSummaryOpen, setValidationSummaryOpen] = useState(false)
+  const [selectedPeriod, setSelectedPeriod] = useState<AccountingPeriod | null>(null)
+  const [periodValidationError, setPeriodValidationError] = useState<string | null>(null)
+  const [dateValidationCache, setDateValidationCache] = useState<Map<string, boolean>>(new Map())
   const today = useMemo(() => new Date(), [])
   const openPeriodRange = useMemo(() => {
     const fiscalStartBase = company?.fiscalYearStart
@@ -803,13 +811,75 @@ export default function VoucherForm() {
     return { errorCount, totalErrors }
   }, [validationMap])
   const isDateDisabled = useCallback(
+    async (date: Date): Promise<boolean> => {
+      // Allow currently selected date
+      if (selectedDate && isSameDay(date, selectedDate)) return false
+
+      // Basic range check (fallback)
+      if (isBefore(date, openPeriodRange.openStart)) return true
+      if (isAfter(date, openPeriodRange.openEnd)) return true
+
+      // Check period API validation (async check, cache results)
+      const dateStr = format(date, 'yyyy-MM-dd')
+      if (dateValidationCache.has(dateStr)) {
+        return !dateValidationCache.get(dateStr)!
+      }
+
+      try {
+        const isValid = await periodService.checkDateInOpenPeriod(dateStr)
+        setDateValidationCache((prev) => new Map(prev).set(dateStr, isValid))
+        if (!isValid) {
+          setPeriodValidationError(`Date ${dateStr} is not in an open period`)
+        } else {
+          setPeriodValidationError(null)
+        }
+        return !isValid
+      } catch (error) {
+        console.error('Failed to validate date with period API:', error)
+        // Fallback to basic range check
+        return false
+      }
+    },
+    [openPeriodRange.openEnd, openPeriodRange.openStart, selectedDate, dateValidationCache],
+  )
+
+  // Synchronous version for Calendar component (uses cached results)
+  const isDateDisabledSync = useCallback(
     (date: Date) => {
       if (selectedDate && isSameDay(date, selectedDate)) return false
       if (isBefore(date, openPeriodRange.openStart)) return true
       if (isAfter(date, openPeriodRange.openEnd)) return true
+
+      // Check cache for period validation
+      const dateStr = format(date, 'yyyy-MM-dd')
+      const cached = dateValidationCache.get(dateStr)
+      if (cached !== undefined) {
+        return !cached
+      }
+
+      // Default to enabled if not cached yet (will be validated on selection)
       return false
     },
-    [openPeriodRange.openEnd, openPeriodRange.openStart, selectedDate],
+    [openPeriodRange.openEnd, openPeriodRange.openStart, selectedDate, dateValidationCache],
+  )
+
+  // Handle period change
+  const handlePeriodChange = useCallback(
+    (period: AccountingPeriod) => {
+      setSelectedPeriod(period)
+      // Optionally update the voucher date to be within the selected period
+      if (period) {
+        const periodStartDate = new Date(period.startDate)
+        const periodEndDate = new Date(period.endDate)
+        const currentDate = new Date(watchedValues.voucherDate || Date.now())
+
+        // If current date is outside the selected period, set it to the period start date
+        if (currentDate < periodStartDate || currentDate > periodEndDate) {
+          form.setValue('voucherDate', period.startDate)
+        }
+      }
+    },
+    [form, watchedValues.voucherDate],
   )
 
   return (
@@ -868,8 +938,12 @@ export default function VoucherForm() {
                 Reversal of
               </Badge>
             ) : null}
-            {attachmentCount > 0 && (
-              <Badge variant="outline" className="gap-1">
+            {voucherId && (
+              <Badge
+                variant="outline"
+                className="gap-1 cursor-pointer hover:bg-accent"
+                onClick={() => setAttachmentModalOpen(true)}
+              >
                 <FileText className="size-3" />
                 {attachmentCount} đính kèm
               </Badge>
@@ -990,6 +1064,22 @@ export default function VoucherForm() {
         )}
       </div>
 
+      {/* Period Selector */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium">Kỳ kế toán</label>
+          <div className="flex-1 max-w-md">
+            <PeriodSelector
+              selectedPeriod={selectedPeriod}
+              onPeriodChange={handlePeriodChange}
+              showSummary={true}
+              placeholder="Select period..."
+              disabled={formDisabled}
+            />
+          </div>
+        </div>
+      </div>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card>
@@ -1022,12 +1112,42 @@ export default function VoucherForm() {
                         <Calendar
                           mode="single"
                           selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) =>
-                            field.onChange(date ? format(date, 'yyyy-MM-dd') : '')
-                          }
+                          onSelect={async (date) => {
+                            if (date) {
+                              const dateStr = format(date, 'yyyy-MM-dd')
+                              // Validate with period API before allowing selection
+                              try {
+                                const isValid = await periodService.checkDateInOpenPeriod(dateStr)
+                                if (isValid) {
+                                  field.onChange(dateStr)
+                                  setPeriodValidationError(null)
+                                  setDateValidationCache((prev) => new Map(prev).set(dateStr, true))
+                                } else {
+                                  const period = await periodService.findPeriodByDate(dateStr)
+                                  if (period) {
+                                    setPeriodValidationError(
+                                      `Cannot create voucher in closed period: ${period.periodName}`,
+                                    )
+                                  } else {
+                                    setPeriodValidationError(
+                                      `Date ${dateStr} is not in an open period`,
+                                    )
+                                  }
+                                }
+                              } catch (error) {
+                                console.error('Failed to validate date:', error)
+                                field.onChange(dateStr) // Allow selection but show warning
+                                setPeriodValidationError(
+                                  'Failed to validate period. Please verify the date is in an open period.',
+                                )
+                              }
+                            } else {
+                              field.onChange('')
+                            }
+                          }}
                           month={calendarMonth}
                           onMonthChange={setCalendarMonth}
-                          disabled={isDateDisabled}
+                          disabled={isDateDisabledSync}
                           initialFocus
                         />
                       </PopoverContent>
@@ -1037,6 +1157,12 @@ export default function VoucherForm() {
                       {format(openPeriodRange.openStart, 'dd/MM/yyyy')} –{' '}
                       {format(openPeriodRange.openEnd, 'dd/MM/yyyy')}.
                     </FormDescription>
+                    {periodValidationError && (
+                      <Alert variant="destructive" className="mt-2">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{periodValidationError}</AlertDescription>
+                      </Alert>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -1104,6 +1230,16 @@ export default function VoucherForm() {
                 onUploadSuccess={(attachmentFile) => {
                   setAttachmentCount((prev) => prev + 1)
                   toast.success(`Đã tải lên: ${attachmentFile.file.name}`)
+                  // Reload voucher to get updated attachment count
+                  if (voucherId) {
+                    getVoucherById(voucherId)
+                      .then((voucher) => {
+                        setAttachmentCount(voucher.attachmentCount || 0)
+                      })
+                      .catch(() => {
+                        // Ignore errors
+                      })
+                  }
                 }}
                 onUploadError={(attachmentFile, error) => {
                   toast.error(`Không thể tải lên ${attachmentFile.file.name}`, {
@@ -1113,6 +1249,9 @@ export default function VoucherForm() {
               />
             </CardContent>
           </Card>
+
+          {/* Voucher History - only show when editing existing voucher */}
+          {isEditing && voucherId && <VoucherHistoryView voucherId={voucherId} />}
         </form>
       </Form>
 
@@ -1321,6 +1460,28 @@ export default function VoucherForm() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Attachment Management Modal */}
+      {voucherId && (
+        <VoucherAttachmentManagementModal
+          voucherId={voucherId}
+          open={attachmentModalOpen}
+          onOpenChange={setAttachmentModalOpen}
+          canDelete={editingVoucher?.status === 'draft' && !formDisabled}
+          onAttachmentDeleted={() => {
+            // Reload attachment count
+            if (voucherId) {
+              getVoucherById(voucherId)
+                .then((voucher) => {
+                  setAttachmentCount(voucher.attachmentCount || 0)
+                })
+                .catch(() => {
+                  // Ignore errors
+                })
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -50,7 +50,7 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
    */
   @Query("SELECT je FROM JournalEntry je WHERE je.periodId = :periodId AND je.accountId = :accountId AND je.companyId = :companyId")
   List<JournalEntry> findByPeriodAndAccount(
-      @Param("periodId") Long periodId,
+      @Param("periodId") UUID periodId,
       @Param("accountId") Long accountId,
       @Param("companyId") Long companyId);
 }

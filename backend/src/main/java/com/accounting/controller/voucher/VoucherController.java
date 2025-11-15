@@ -19,7 +19,16 @@ import com.accounting.dto.ReverseVoucherRequest;
 import com.accounting.service.voucher.VoucherPostingService;
 import com.accounting.service.voucher.VoucherReversalService;
 import com.accounting.service.voucher.VoucherUnpostingService;
+import com.accounting.service.VoucherHistoryService;
+import com.accounting.service.VoucherHistoryExportService;
+import com.accounting.dto.VoucherHistoryEntryDTO;
+import com.accounting.dto.VoucherAttachmentDTO;
+import com.accounting.service.voucher.VoucherAttachmentService;
+import com.accounting.service.AuditService;
 import com.accounting.security.CompanyContext;
+import com.accounting.security.SecurityUtils;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -65,6 +74,10 @@ public class VoucherController {
   private final VoucherPostingService voucherPostingService;
   private final VoucherUnpostingService voucherUnpostingService;
   private final VoucherReversalService voucherReversalService;
+  private final VoucherHistoryService voucherHistoryService;
+  private final VoucherHistoryExportService voucherHistoryExportService;
+  private final VoucherAttachmentService voucherAttachmentService;
+  private final AuditService auditService;
 
   public VoucherController(
       VoucherService voucherService,
@@ -72,13 +85,21 @@ public class VoucherController {
       VoucherTemplateService voucherTemplateService,
       VoucherPostingService voucherPostingService,
       VoucherUnpostingService voucherUnpostingService,
-      VoucherReversalService voucherReversalService) {
+      VoucherReversalService voucherReversalService,
+      VoucherHistoryService voucherHistoryService,
+      VoucherHistoryExportService voucherHistoryExportService,
+      VoucherAttachmentService voucherAttachmentService,
+      AuditService auditService) {
     this.voucherService = voucherService;
     this.voucherValidationService = voucherValidationService;
     this.voucherTemplateService = voucherTemplateService;
     this.voucherPostingService = voucherPostingService;
     this.voucherUnpostingService = voucherUnpostingService;
     this.voucherReversalService = voucherReversalService;
+    this.voucherHistoryService = voucherHistoryService;
+    this.voucherHistoryExportService = voucherHistoryExportService;
+    this.voucherAttachmentService = voucherAttachmentService;
+    this.auditService = auditService;
   }
 
   /**
@@ -382,6 +403,75 @@ public class VoucherController {
   }
 
   /**
+   * Get voucher history (audit log entries).
+   * Requires authenticated user with Accountant+ role.
+   *
+   * @param voucherId voucher ID
+   * @return list of voucher history entries
+   */
+  @GetMapping("/{voucherId}/history")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Map<String, Object>> getVoucherHistory(@PathVariable UUID voucherId) {
+    // Verify voucher exists and user has access
+    voucherService.getVoucherById(voucherId)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
+
+    List<VoucherHistoryEntryDTO> history = voucherHistoryService.getVoucherHistory(voucherId);
+    Map<String, Object> body = new HashMap<>();
+    body.put("voucherId", voucherId);
+    body.put("history", history);
+    body.put("count", history.size());
+    return ResponseEntity.ok(body);
+  }
+
+  /**
+   * Export voucher history in JSON or PDF format.
+   * Requires authenticated user with Accountant+ role.
+   *
+   * @param voucherId voucher ID
+   * @param format    export format (json or pdf, default: json)
+   * @return exported voucher history
+   */
+  @GetMapping("/{voucherId}/history/export")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<?> exportVoucherHistory(
+      @PathVariable UUID voucherId,
+      @RequestParam(required = false, defaultValue = "json") String format) {
+    // Verify voucher exists and user has access
+    voucherService.getVoucherById(voucherId)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
+
+    List<VoucherHistoryEntryDTO> history = voucherHistoryService.getVoucherHistory(voucherId);
+
+    if ("pdf".equalsIgnoreCase(format)) {
+      try {
+        byte[] pdfBytes = voucherHistoryExportService.exportAsPdf(voucherId, history);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "voucher-history-" + voucherId + ".pdf");
+        headers.setContentLength(pdfBytes.length);
+        return ResponseEntity.ok()
+            .headers(headers)
+            .body(pdfBytes);
+      } catch (Exception e) {
+        throw new ResponseStatusException(
+            HttpStatus.INTERNAL_SERVER_ERROR, "Failed to generate PDF: " + e.getMessage());
+      }
+    } else {
+      // JSON export
+      String json = voucherHistoryExportService.exportAsJson(voucherId, history);
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      headers.setContentDispositionFormData("attachment", "voucher-history-" + voucherId + ".json");
+      return ResponseEntity.ok()
+          .headers(headers)
+          .body(json);
+    }
+  }
+
+  /**
    * Delete voucher with validation.
    * Only draft vouchers that are not referenced can be deleted.
    * Posted vouchers cannot be deleted (returns 409 Conflict).
@@ -477,61 +567,213 @@ public class VoucherController {
   }
 
   /**
-   * Upload attachment for a voucher (basic implementation).
-   * Full attachment management will be implemented in Story 3.7.
+   * Upload attachment for a voucher.
    * Requires authenticated user with Accountant+ role.
    *
    * @param voucherId voucher ID
    * @param file      file to upload
-   * @return success response
+   * @return attachment DTO
    */
   @PostMapping("/{voucherId}/attachments")
   @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
   public ResponseEntity<Map<String, Object>> uploadAttachment(
       @PathVariable UUID voucherId,
-      @RequestParam("file") MultipartFile file) {
+      @RequestParam("file") MultipartFile file,
+      HttpServletRequest request) {
 
-    // Verify voucher exists and belongs to company
-    Long companyId = CompanyContext.getCompanyId();
-    if (companyId == null) {
-      throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "Missing company context");
-    }
+    try {
+    VoucherAttachmentDTO attachment = voucherAttachmentService.uploadAttachment(voucherId, file);
 
-    voucherService.getVoucherById(voucherId)
-        .orElseThrow(() -> new ResponseStatusException(
-            HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
-
-    // Basic validation
-    if (file == null || file.isEmpty()) {
-      throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "File is required");
-    }
-
-    // Basic file type validation (PDF and images)
-    String contentType = file.getContentType();
-    if (contentType == null ||
-        (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
-      throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "Invalid file type. Only PDF and image files are allowed.");
-    }
-
-    // Basic file size validation (10MB max)
-    long maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.getSize() > maxSize) {
-      throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "File size exceeds maximum allowed size of 10MB.");
-    }
-
-    // TODO: Full implementation in Story 3.7
-    // For now, return success response
     Map<String, Object> body = new HashMap<>();
+    body.put("data", attachment);
     body.put("message", "Attachment uploaded successfully");
-    body.put("voucherId", voucherId);
-    body.put("fileName", file.getOriginalFilename());
-    body.put("fileSize", file.getSize());
-    body.put("contentType", contentType);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(body);
+    } catch (ResponseStatusException e) {
+      // Log unsupported file type, size violation, or virus scan failure attempts
+      if (e.getStatusCode() == HttpStatus.BAD_REQUEST && file != null) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        String fileName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "unknown";
+        String contentType = file.getContentType() != null ? file.getContentType() : "unknown";
+        Long fileSize = file.getSize();
+        
+        // Build detailed reason with file metadata
+        String reason = e.getReason() != null ? e.getReason() : "File upload blocked";
+        String detailedReason = String.format("%s (file: %s, type: %s, size: %d bytes)", 
+            reason, fileName, contentType, fileSize);
+        
+        // Determine attempt type based on error message
+        String attemptType = "UNSUPPORTED_FILE_TYPE_OR_SIZE";
+        if (reason != null && reason.toLowerCase().contains("virus scan")) {
+          attemptType = "VIRUS_SCAN_FAILED";
+        }
+        
+        // Log blocked upload attempt
+        auditService.logBlockedAttempt(
+            userId,
+            null, // accountId - not applicable for file uploads
+            null, // accountCode - not applicable
+            0, // lineNumber - not applicable
+            "file", // fieldName
+            detailedReason,
+            attemptType,
+            request);
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * List all attachments for a voucher.
+   * Requires authenticated user with Accountant+ role.
+   *
+   * @param voucherId voucher ID
+   * @return list of attachment DTOs
+   */
+  @GetMapping("/{voucherId}/attachments")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Map<String, Object>> listAttachments(
+      @PathVariable UUID voucherId) {
+
+    List<VoucherAttachmentDTO> attachments = voucherAttachmentService.listAttachments(voucherId);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("data", attachments);
+    body.put("count", attachments.size());
+
+    return ResponseEntity.ok(body);
+  }
+
+  /**
+   * Generate signed URL for downloading an attachment.
+   * Requires authenticated user with Accountant+ role.
+   *
+   * @param voucherId voucher ID
+   * @param attachmentId attachment ID
+   * @return redirect to signed URL
+   */
+  @GetMapping("/{voucherId}/attachments/{attachmentId}/download")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Void> downloadAttachment(
+      @PathVariable UUID voucherId,
+      @PathVariable UUID attachmentId,
+      HttpServletRequest request) {
+
+    String signedUrl = voucherAttachmentService.generateSignedUrl(voucherId, attachmentId);
+
+    // Load attachment for audit logging
+    List<VoucherAttachmentDTO> attachments = voucherAttachmentService.listAttachments(voucherId);
+    VoucherAttachmentDTO attachment = attachments.stream()
+        .filter(a -> a.getId().equals(attachmentId))
+        .findFirst()
+        .orElse(null);
+
+    if (attachment != null) {
+      Long userId = SecurityUtils.getCurrentUserId();
+      auditService.logAttachmentDownload(
+          attachmentId,
+          voucherId,
+          attachment.getFileName(),
+          attachment.getFileSize(),
+          attachment.getMimeType(),
+          userId,
+          request);
+    }
+
+    return ResponseEntity.status(HttpStatus.FOUND)
+        .header(HttpHeaders.LOCATION, signedUrl)
+        .build();
+    }
+
+  /**
+   * Preview an attachment (logs view event).
+   * Requires authenticated user with Accountant+ role.
+   *
+   * @param voucherId voucher ID
+   * @param attachmentId attachment ID
+   * @param request HTTP request for IP address
+   * @return redirect to signed URL
+   */
+  @GetMapping("/{voucherId}/attachments/{attachmentId}/preview")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Void> previewAttachment(
+      @PathVariable UUID voucherId,
+      @PathVariable UUID attachmentId,
+      HttpServletRequest request) {
+
+    String signedUrl = voucherAttachmentService.generateSignedUrl(voucherId, attachmentId);
+
+    // Load attachment for audit logging
+    List<VoucherAttachmentDTO> attachments = voucherAttachmentService.listAttachments(voucherId);
+    VoucherAttachmentDTO attachment = attachments.stream()
+        .filter(a -> a.getId().equals(attachmentId))
+        .findFirst()
+        .orElse(null);
+
+    if (attachment != null) {
+      Long userId = SecurityUtils.getCurrentUserId();
+      auditService.logAttachmentView(
+          attachmentId,
+          voucherId,
+          attachment.getFileName(),
+          attachment.getFileSize(),
+          attachment.getMimeType(),
+          userId,
+          request);
+    }
+
+    return ResponseEntity.status(HttpStatus.FOUND)
+        .header(HttpHeaders.LOCATION, signedUrl)
+        .build();
+    }
+
+  /**
+   * Delete an attachment.
+   * Requires authenticated user with Accountant+ role.
+   * Only allowed for DRAFT vouchers by creator or admin.
+   *
+   * @param voucherId voucher ID
+   * @param attachmentId attachment ID
+   * @param request request body containing deletion reason
+   * @return 204 No Content
+   */
+  @DeleteMapping("/{voucherId}/attachments/{attachmentId}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Void> deleteAttachment(
+      @PathVariable UUID voucherId,
+      @PathVariable UUID attachmentId,
+      @RequestBody(required = false) Map<String, String> request,
+      HttpServletRequest httpRequest) {
+
+    String reason = request != null ? request.get("reason") : null;
+    if (reason == null || reason.trim().isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Deletion reason is required");
+    }
+
+    // Load attachment before deletion for audit logging
+    List<VoucherAttachmentDTO> attachments = voucherAttachmentService.listAttachments(voucherId);
+    VoucherAttachmentDTO attachment = attachments.stream()
+        .filter(a -> a.getId().equals(attachmentId))
+        .findFirst()
+        .orElse(null);
+
+    voucherAttachmentService.deleteAttachment(voucherId, attachmentId, reason);
+
+    // Log delete event in audit trail
+    if (attachment != null) {
+      Long userId = SecurityUtils.getCurrentUserId();
+      auditService.logAttachmentDelete(
+          attachmentId,
+          voucherId,
+          attachment.getFileName(),
+          attachment.getFileSize(),
+          attachment.getMimeType(),
+          reason,
+          userId,
+          httpRequest);
+    }
+
+    return ResponseEntity.noContent().build();
   }
 }

@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.UUID;
+
 @TestConfiguration
 public class TestStorageConfig {
 
@@ -16,6 +18,23 @@ public class TestStorageConfig {
       @Override
       public String uploadCompanyLogo(Long companyId, MultipartFile file) {
         return "https://example.test/storage/company-" + companyId + ".png";
+      }
+
+      @Override
+      public String uploadVoucherAttachment(java.util.UUID voucherId, MultipartFile file) {
+        String uuid = UUID.randomUUID().toString();
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+        return "vouchers/" + voucherId + "/" + uuid + "-" + filename;
+      }
+
+      @Override
+      public void deleteVoucherAttachment(String storagePath) {
+        // Mock implementation - no-op
+      }
+
+      @Override
+      public String generateSignedUrl(String storagePath, int expiresInSeconds) {
+        return "https://example.test/storage/signed/" + storagePath + "?expires=" + expiresInSeconds;
       }
     };
   }

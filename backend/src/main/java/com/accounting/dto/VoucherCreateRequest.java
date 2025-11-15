@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * DTO for creating or updating a voucher with its line items.
@@ -19,7 +20,7 @@ public class VoucherCreateRequest {
   @Size(max = 500, message = "Description must not exceed 500 characters")
   private String description;
 
-  private Long periodId; // Optional - Period ID
+  private UUID periodId; // Optional - Period ID (auto-determined from date if not provided)
 
   private String currency = "VND";
 
@@ -38,7 +39,7 @@ public class VoucherCreateRequest {
   public VoucherCreateRequest(
       LocalDate date,
       String description,
-      Long periodId,
+      UUID periodId,
       String currency,
       List<VoucherEntryLineRequest> entryLines,
       List<VoucherLineDTO> lines) {
@@ -67,11 +68,11 @@ public class VoucherCreateRequest {
     this.description = description;
   }
 
-  public Long getPeriodId() {
+  public UUID getPeriodId() {
     return periodId;
   }
 
-  public void setPeriodId(Long periodId) {
+  public void setPeriodId(UUID periodId) {
     this.periodId = periodId;
   }
 

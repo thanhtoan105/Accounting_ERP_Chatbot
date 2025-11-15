@@ -15,7 +15,7 @@ public class VoucherDTO {
   private Long companyId;
   private String voucherNumber;
   private LocalDate voucherDate;
-  private Long periodId;
+  private UUID periodId;
   private String description;
   private String status;
   private String currency;
@@ -43,7 +43,7 @@ public class VoucherDTO {
       Long companyId,
       String voucherNumber,
       LocalDate voucherDate,
-      Long periodId,
+      UUID periodId,
       String description,
       String status,
       String currency,
@@ -120,11 +120,11 @@ public class VoucherDTO {
     this.voucherDate = voucherDate;
   }
 
-  public Long getPeriodId() {
+  public UUID getPeriodId() {
     return periodId;
   }
 
-  public void setPeriodId(Long periodId) {
+  public void setPeriodId(UUID periodId) {
     this.periodId = periodId;
   }
 

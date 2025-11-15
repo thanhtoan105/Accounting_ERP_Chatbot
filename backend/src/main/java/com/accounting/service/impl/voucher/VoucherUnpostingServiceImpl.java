@@ -5,9 +5,9 @@ import com.accounting.entity.Voucher;
 import com.accounting.repository.JournalEntryRepository;
 import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
-import com.accounting.security.SecurityUtils;
 import com.accounting.service.AuditService;
 import com.accounting.service.VoucherService;
+import com.accounting.service.util.VoucherAuditHelper;
 import com.accounting.service.voucher.VoucherUnpostingService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
@@ -33,16 +33,19 @@ public class VoucherUnpostingServiceImpl implements VoucherUnpostingService {
   private final JournalEntryRepository journalEntryRepository;
   private final VoucherService voucherService;
   private final AuditService auditService;
+  private final VoucherAuditHelper voucherAuditHelper;
 
   public VoucherUnpostingServiceImpl(
       VoucherRepository voucherRepository,
       JournalEntryRepository journalEntryRepository,
       VoucherService voucherService,
-      AuditService auditService) {
+      AuditService auditService,
+      VoucherAuditHelper voucherAuditHelper) {
     this.voucherRepository = voucherRepository;
     this.journalEntryRepository = journalEntryRepository;
     this.voucherService = voucherService;
     this.auditService = auditService;
+    this.voucherAuditHelper = voucherAuditHelper;
   }
 
   @Override
@@ -74,6 +77,9 @@ public class VoucherUnpostingServiceImpl implements VoucherUnpostingService {
         .findByCompanyIdAndId(companyId, voucherId)
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
+
+    // Capture before snapshot for audit logging (posted state)
+    com.fasterxml.jackson.databind.JsonNode beforeSnapshot = voucherAuditHelper.serializeVoucherToJson(voucher);
 
     // Validate voucher status is POSTED
     if (!"posted".equals(voucher.getStatus())) {
@@ -114,15 +120,21 @@ public class VoucherUnpostingServiceImpl implements VoucherUnpostingService {
         voucher.getVoucherNumber(),
         reason);
 
-    // Audit logging for unposting operation
-    if (request != null) {
-      try {
-        Long currentUserId = SecurityUtils.getCurrentUserId();
-        auditService.logVoucherUnposted(voucherId, voucher.getVoucherNumber(), reason, currentUserId, request);
+    // Enhanced audit logging for unposting operation with JSON snapshots and diff hash
+    try {
+      com.fasterxml.jackson.databind.JsonNode afterSnapshot = voucherAuditHelper.serializeVoucherToJson(voucher);
+      String diffHash = voucherAuditHelper.calculateDiffHash(beforeSnapshot, afterSnapshot);
+      auditService.logVoucherEvent(
+          voucherId,
+          voucher.getVoucherNumber(),
+          "VOUCHER_UNPOSTED",
+          beforeSnapshot,
+          afterSnapshot,
+          diffHash,
+          request);
       } catch (Exception e) {
-        // Audit logging failure should not block the operation, but log the error
+      // Non-blocking: log error but don't break main flow
         logger.error("Failed to log voucher unposting to audit trail. Voucher ID: {}", voucherId, e);
-      }
     }
 
     return voucherDTO;

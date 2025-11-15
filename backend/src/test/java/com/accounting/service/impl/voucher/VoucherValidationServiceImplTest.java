@@ -15,10 +15,14 @@ import com.accounting.repository.ChartOfAccountsRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AccountControlService;
 import com.accounting.service.AuditService;
+import com.accounting.service.PeriodManagementService;
+import com.accounting.dto.AccountingPeriodDTO;
+import com.accounting.entity.PeriodStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +45,9 @@ class VoucherValidationServiceImplTest {
   @Mock
   private AuditService auditService;
 
+  @Mock
+  private PeriodManagementService periodManagementService;
+
   private VoucherValidationServiceImpl validationService;
 
   @BeforeEach
@@ -48,7 +55,8 @@ class VoucherValidationServiceImplTest {
     validationService = new VoucherValidationServiceImpl(
         chartOfAccountsRepository,
         accountControlService,
-        auditService);
+        auditService,
+        periodManagementService);
     CompanyContext.setCompanyId(1L);
 
     // Mock hasChildren to return false by default (leaf accounts)
@@ -58,6 +66,16 @@ class VoucherValidationServiceImplTest {
     // default)
     when(accountControlService.getRequiredDimensions(any(Long.class), any(Long.class)))
         .thenReturn(Optional.empty());
+
+    // Mock PeriodManagementService to return a valid open period by default
+    AccountingPeriodDTO openPeriod = new AccountingPeriodDTO();
+    openPeriod.setId(UUID.randomUUID());
+    openPeriod.setStatus(PeriodStatus.OPEN);
+    openPeriod.setPeriodName("Test Period");
+    when(periodManagementService.findPeriodByDate(any(LocalDate.class)))
+        .thenReturn(Optional.of(openPeriod));
+    when(periodManagementService.isPeriodOpen(any(UUID.class)))
+        .thenReturn(true);
   }
 
   @AfterEach
