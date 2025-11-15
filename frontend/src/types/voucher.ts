@@ -10,6 +10,7 @@ export interface VoucherListDTO {
   postedByName: string | null
   arApEntity: string | null
   hasReversal: boolean
+  reversedByVoucherId: string | null // ID of reversal voucher (for navigation)
   attachmentCount: number
   currency: string
 }
@@ -174,6 +175,7 @@ export interface VoucherDTO {
   postedByName: string | null
   postedAt: string | null
   reversalOf: string | null
+  reversedByVoucherId: string | null // The reversal voucher that reverses this voucher
   reversedBy: number | null
   reversedByName: string | null
   createdAt: string
@@ -181,6 +183,51 @@ export interface VoucherDTO {
   attachmentCount: number
   entryLines?: VoucherEntryLineRequest[]
   lines?: VoucherLedgerLineDTO[]
+}
+
+export interface JournalEntryDTO {
+  id: string
+  voucherId: string
+  accountId: number
+  accountCode?: string
+  accountName?: string
+  periodId: number | null
+  debitAmount: number
+  creditAmount: number
+  customerId: number | null
+  customerName?: string | null
+  supplierId: number | null
+  supplierName?: string | null
+  costCenterId: number | null
+  costCenterName?: string | null
+  companyId: number
+  postedAt: string
+  createdAt: string
+}
+
+export interface PostVoucherRequest {
+  voucherId?: string
+  validateOnly?: boolean
+}
+
+export interface PostVoucherResponse {
+  voucher: VoucherDTO
+  journalEntries: JournalEntryDTO[]
+  validationErrors?: Record<string, any>
+}
+
+export interface UnpostVoucherRequest {
+  reason: string
+}
+
+export interface ReverseVoucherRequest {
+  description: string
+  reason: string
+}
+
+export interface ReverseVoucherResponse {
+  original: VoucherDTO
+  reversal: VoucherDTO
 }
 
 export interface VoucherDimensionOption {

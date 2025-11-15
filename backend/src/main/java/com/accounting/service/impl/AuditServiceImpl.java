@@ -499,6 +499,99 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    public void logVoucherPosted(
+            java.util.UUID voucherId,
+            String voucherNumber,
+            Long postedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(postedByUserId);
+        // Get user email if available
+        if (postedByUserId != null) {
+            userRepository
+                    .findById(postedByUserId)
+                    .ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("VOUCHER_POSTED");
+        String reasonText = String.format("voucher:%s,number:%s", voucherId, voucherNumber);
+        log.setReason(reasonText.length() > 50 ? reasonText.substring(0, 47) + "..." : reasonText);
+        log.setIpAddress(request.getRemoteAddr());
+        log.setUserAgent(request.getHeader("User-Agent"));
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logVoucherUnposted(
+            java.util.UUID voucherId,
+            String voucherNumber,
+            String reason,
+            Long unpostedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(unpostedByUserId);
+        // Get user email if available
+        if (unpostedByUserId != null) {
+            userRepository
+                    .findById(unpostedByUserId)
+                    .ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("VOUCHER_UNPOSTED");
+        // Store voucher ID, number, and reason (truncate to fit VARCHAR(50))
+        String reasonText = String.format("voucher:%s,number:%s", voucherId, voucherNumber);
+        if (reason != null && !reason.isBlank()) {
+            // Include reason, but truncate if too long
+            String fullReason = reasonText + ",reason:" + reason;
+            if (fullReason.length() > 50) {
+                reasonText = reasonText + ",reason:" + reason.substring(0, Math.min(reason.length(), 30)) + "...";
+            } else {
+                reasonText = fullReason;
+            }
+        }
+        log.setReason(reasonText.length() > 50 ? reasonText.substring(0, 47) + "..." : reasonText);
+        log.setIpAddress(request.getRemoteAddr());
+        log.setUserAgent(request.getHeader("User-Agent"));
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logVoucherReversed(
+            java.util.UUID originalVoucherId,
+            String originalVoucherNumber,
+            java.util.UUID reversalVoucherId,
+            String reversalVoucherNumber,
+            String reason,
+            Long reversedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(reversedByUserId);
+        // Get user email if available
+        if (reversedByUserId != null) {
+            userRepository
+                    .findById(reversedByUserId)
+                    .ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("VOUCHER_REVERSED");
+        // Store original and reversal voucher IDs/numbers, and reason (truncate to fit VARCHAR(50))
+        String reasonText = String.format("original:%s,reversal:%s", originalVoucherId, reversalVoucherId);
+        if (reason != null && !reason.isBlank()) {
+            // Include reason, but truncate if too long
+            String fullReason = reasonText + ",reason:" + reason;
+            if (fullReason.length() > 50) {
+                reasonText = reasonText + ",reason:" + reason.substring(0, Math.min(reason.length(), 20)) + "...";
+            } else {
+                reasonText = fullReason;
+            }
+        }
+        log.setReason(reasonText.length() > 50 ? reasonText.substring(0, 47) + "..." : reasonText);
+        log.setIpAddress(request.getRemoteAddr());
+        log.setUserAgent(request.getHeader("User-Agent"));
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
     public void logCompanySettingsUpdated(
             Long companyId,
             Long updatedByUserId,
@@ -952,5 +1045,99 @@ public class AuditServiceImpl implements AuditService {
       log.setFailureReason("FINDINGS_REPORTED");
     }
     persist(log);
+    }
+
+    @Override
+    public void logFraudDetection(
+            Long userId,
+            Long accountId,
+            String accountCode,
+            int lineNumber,
+            java.math.BigDecimal attemptedAmount,
+            String fraudType,
+            HttpServletRequest request) {
+        AuditLog log = startLog("FRAUD_DETECTION", request);
+        log.setEventType("SECURITY");
+        assignActor(log, userId, null);
+        assignEntity(log, "ACCOUNT", accountId, accountCode);
+        log.setSuccess(Boolean.FALSE);
+        log.setFailureReason("POSSIBLE_FRAUD");
+        
+        // Build reason field (truncate to fit VARCHAR(50))
+        String reason = String.format("type:%s,line:%d,amt:%s", 
+            fraudType, lineNumber, attemptedAmount != null ? attemptedAmount.toString() : "N/A");
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        
+        // Build metadata with full details
+        ObjectNode metadata = buildMetadata();
+        metadata.put("fraudType", fraudType);
+        metadata.put("lineNumber", lineNumber);
+        if (attemptedAmount != null) {
+            metadata.put("attemptedAmount", attemptedAmount.toString());
+        }
+        if (accountId != null) {
+            metadata.put("accountId", accountId);
+        }
+        if (accountCode != null) {
+            metadata.put("accountCode", accountCode);
+        }
+        log.setMetadata(metadata);
+        
+        persist(log);
+    }
+
+    @Override
+    public void logBlockedAttempt(
+            Long userId,
+            Long accountId,
+            String accountCode,
+            int lineNumber,
+            String fieldName,
+            String reason,
+            String attemptType,
+            HttpServletRequest request) {
+        AuditLog log = startLog("VALIDATION_BLOCKED", request);
+        log.setEventType("VALIDATION");
+        assignActor(log, userId, null);
+        assignEntity(log, "ACCOUNT", accountId, accountCode);
+        log.setSuccess(Boolean.FALSE);
+        log.setFailureReason(attemptType);
+        
+        // Build reason field (truncate to fit VARCHAR(50))
+        String reasonText = String.format("type:%s,line:%d,field:%s", 
+            attemptType, lineNumber, fieldName != null ? fieldName : "N/A");
+        if (reason != null && !reason.isBlank()) {
+            String fullReason = reasonText + ",msg:" + reason;
+            if (fullReason.length() > 50) {
+                fullReason = fullReason.substring(0, 47) + "...";
+            }
+            reasonText = fullReason;
+        } else if (reasonText.length() > 50) {
+            reasonText = reasonText.substring(0, 47) + "...";
+        }
+        log.setReason(reasonText);
+        
+        // Build metadata with full details
+        ObjectNode metadata = buildMetadata();
+        metadata.put("attemptType", attemptType);
+        metadata.put("lineNumber", lineNumber);
+        if (fieldName != null) {
+            metadata.put("fieldName", fieldName);
+        }
+        if (reason != null) {
+            metadata.put("reason", reason);
+        }
+        if (accountId != null) {
+            metadata.put("accountId", accountId);
+        }
+        if (accountCode != null) {
+            metadata.put("accountCode", accountCode);
+        }
+        log.setMetadata(metadata);
+        
+        persist(log);
     }
 }

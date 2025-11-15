@@ -362,8 +362,23 @@ export default function VoucherList() {
       {
         id: 'reversal',
         header: 'Reversal',
-        cell: ({ row }) =>
-          row.original.hasReversal ? <Badge variant="outline">Reversed</Badge> : '-',
+        cell: ({ row }) => {
+          if (row.original.hasReversal && row.original.reversedByVoucherId) {
+            return (
+              <Badge
+                variant="outline"
+                className="cursor-pointer hover:bg-orange-100"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigate(`/vouchers/${row.original.reversedByVoucherId}`)
+                }}
+              >
+                Reversed by
+              </Badge>
+            )
+          }
+          return '-'
+        },
       },
       {
         accessorKey: 'attachmentCount',

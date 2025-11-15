@@ -96,58 +96,59 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     // Build specification with company scope and optional filters
-    Specification<Voucher> spec =
-        (root, query, criteriaBuilder) -> {
-          List<Predicate> predicates = new ArrayList<>();
+    Specification<Voucher> spec = (root, query, criteriaBuilder) -> {
+      List<Predicate> predicates = new ArrayList<>();
 
-          // Always filter by company
-          predicates.add(criteriaBuilder.equal(root.get("companyId"), companyId));
+      // Always filter by company
+      predicates.add(criteriaBuilder.equal(root.get("companyId"), companyId));
 
-          // Filter by status
-          if (status != null && !status.isBlank()) {
-            predicates.add(criteriaBuilder.equal(root.get("status"), status));
-          }
+      // Filter by status
+      if (status != null && !status.isBlank()) {
+        predicates.add(criteriaBuilder.equal(root.get("status"), status));
+      }
 
-          // Filter by date range
-          if (dateFrom != null) {
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("voucherDate"), dateFrom));
-          }
-          if (dateTo != null) {
-            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("voucherDate"), dateTo));
-          }
+      // Filter by date range
+      if (dateFrom != null) {
+        predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("voucherDate"), dateFrom));
+      }
+      if (dateTo != null) {
+        predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("voucherDate"), dateTo));
+      }
 
-          // Search by voucher number or description (unaccented Vietnamese support)
-          if (search != null && !search.isBlank()) {
-            // Use native PostgreSQL unaccent_search function for accurate Vietnamese matching
-            List<UUID> matchingIds = voucherRepository.findIdsByCompanyIdAndSearchTerm(
-                companyId, search.trim());
-            if (matchingIds.isEmpty()) {
-              // No matches found, return empty result by adding impossible condition
-              predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
-            } else {
-              // Filter to only matching IDs
-              predicates.add(root.get("id").in(matchingIds));
-            }
-          }
+      // Search by voucher number or description (unaccented Vietnamese support)
+      if (search != null && !search.isBlank()) {
+        // Use native PostgreSQL unaccent_search function for accurate Vietnamese
+        // matching
+        List<UUID> matchingIds = voucherRepository.findIdsByCompanyIdAndSearchTerm(
+            companyId, search.trim());
+        if (matchingIds.isEmpty()) {
+          // No matches found, return empty result by adding impossible condition
+          predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
+        } else {
+          // Filter to only matching IDs
+          predicates.add(root.get("id").in(matchingIds));
+        }
+      }
 
-          // Filter by account ID (if provided, filter vouchers that have lines with this account)
-          if (accountId != null) {
-            List<UUID> voucherIdsWithAccount = voucherLineRepository
-                .findByCompanyIdAndAccountId(companyId, accountId)
-                .stream()
-                .map(VoucherLine::getVoucherId)
-                .distinct()
-                .collect(Collectors.toList());
-            if (voucherIdsWithAccount.isEmpty()) {
-              // No vouchers with this account, return empty result
-              predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
-            } else {
-              predicates.add(root.get("id").in(voucherIdsWithAccount));
-            }
-          }
+      // Filter by account ID (if provided, filter vouchers that have lines with this
+      // account)
+      if (accountId != null) {
+        List<UUID> voucherIdsWithAccount = voucherLineRepository
+            .findByCompanyIdAndAccountId(companyId, accountId)
+            .stream()
+            .map(VoucherLine::getVoucherId)
+            .distinct()
+            .collect(Collectors.toList());
+        if (voucherIdsWithAccount.isEmpty()) {
+          // No vouchers with this account, return empty result
+          predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
+        } else {
+          predicates.add(root.get("id").in(voucherIdsWithAccount));
+        }
+      }
 
-          return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+      return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+    };
 
     Page<Voucher> vouchers = voucherRepository.findAll(spec, pageable);
     return vouchers.map(this::toListDTO);
@@ -162,24 +163,21 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     // Use findAll with search filter (no pagination for search)
-    Page<VoucherListDTO> results =
-        findAll(
-            Pageable.unpaged(),
-            null, // status
-            null, // dateFrom
-            null, // dateTo
-            searchTerm,
-            null); // accountId
+    Page<VoucherListDTO> results = findAll(
+        Pageable.unpaged(),
+        null, // status
+        null, // dateFrom
+        null, // dateTo
+        searchTerm,
+        null); // accountId
 
     // Convert ListDTO to full DTO
     return results.getContent().stream()
         .map(
-            listDto ->
-                getVoucherById(listDto.getId())
-                    .orElseThrow(
-                        () ->
-                            new ResponseStatusException(
-                                HttpStatus.NOT_FOUND, "Voucher not found: " + listDto.getId())))
+            listDto -> getVoucherById(listDto.getId())
+                .orElseThrow(
+                    () -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Voucher not found: " + listDto.getId())))
         .collect(Collectors.toList());
   }
 
@@ -229,7 +227,8 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     // TODO: Validate period is open (PeriodService integration when available)
-    // For now, we skip period validation - it should be added when PeriodService is implemented
+    // For now, we skip period validation - it should be added when PeriodService is
+    // implemented
 
     // Generate voucher number using database function
     int year = request.getDate().getYear();
@@ -259,8 +258,7 @@ public class VoucherServiceImpl implements VoucherService {
     BigDecimal totalCredit = BigDecimal.ZERO;
     for (VoucherLineDTO lineDto : ledgerLines) {
       totalDebit = totalDebit.add(lineDto.getDebit() != null ? lineDto.getDebit() : BigDecimal.ZERO);
-      totalCredit =
-          totalCredit.add(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
+      totalCredit = totalCredit.add(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
     }
     voucher.setTotalDebit(totalDebit);
     voucher.setTotalCredit(totalCredit);
@@ -344,8 +342,7 @@ public class VoucherServiceImpl implements VoucherService {
     BigDecimal totalCredit = BigDecimal.ZERO;
     for (VoucherLineDTO lineDto : ledgerLines) {
       totalDebit = totalDebit.add(lineDto.getDebit() != null ? lineDto.getDebit() : BigDecimal.ZERO);
-      totalCredit =
-          totalCredit.add(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
+      totalCredit = totalCredit.add(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
     }
     voucher.setTotalDebit(totalDebit);
     voucher.setTotalCredit(totalCredit);
@@ -437,8 +434,7 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     for (VoucherEntryLineRequest entry : entryLines) {
-      BigDecimal amount =
-          entry.getAmount() != null ? entry.getAmount() : BigDecimal.ZERO;
+      BigDecimal amount = entry.getAmount() != null ? entry.getAmount() : BigDecimal.ZERO;
 
       VoucherLineDTO debitLine = new VoucherLineDTO();
       debitLine.setAccountId(entry.getDebitAccountId());
@@ -481,15 +477,41 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     // Find voucher
-    Voucher voucher =
-        voucherRepository
-            .findByCompanyIdAndId(companyId, voucherId)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
+    Voucher voucher = voucherRepository
+        .findByCompanyIdAndId(companyId, voucherId)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
 
-    // Validate voucher is in draft status
+    // Validate voucher is in draft status - posted vouchers cannot be deleted (AC
+    // #7)
+    if ("posted".equals(voucher.getStatus())) {
+      // Log blocked deletion attempt in audit trail
+      Long deletedByUserId = null;
+      String authHeader = request.getHeader("Authorization");
+      if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        String token = authHeader.substring(7);
+        try {
+          deletedByUserId = jwtTokenProvider.getUserIdFromToken(token);
+        } catch (Exception e) {
+          logger.warn("Failed to extract user ID from JWT token for blocked deletion audit log", e);
+        }
+      }
+      if (deletedByUserId != null) {
+        try {
+          auditService.logVoucherDeleted(
+              voucherId, voucher.getVoucherNumber(), "Blocked: Posted voucher cannot be deleted", deletedByUserId,
+              request);
+        } catch (Exception e) {
+          logger.error("Failed to log blocked deletion to audit trail", e);
+        }
+      }
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT,
+          "Cannot delete posted voucher. Only draft vouchers can be deleted.");
+    }
+
+    // Also block unposted vouchers that are not draft
     if (!"draft".equals(voucher.getStatus())) {
       throw new ResponseStatusException(
           HttpStatus.CONFLICT,
@@ -521,8 +543,10 @@ public class VoucherServiceImpl implements VoucherService {
             voucherId,
             voucher.getVoucherNumber(),
             e.getMessage());
-        // Continue with deletion but audit log will be missing - this is a compliance risk
-        // Consider failing deletion if audit is critical for your compliance requirements
+        // Continue with deletion but audit log will be missing - this is a compliance
+        // risk
+        // Consider failing deletion if audit is critical for your compliance
+        // requirements
       }
     } else {
       logger.warn(
@@ -541,7 +565,8 @@ public class VoucherServiceImpl implements VoucherService {
             voucher.getVoucherNumber(),
             e.getMessage(),
             e);
-        // Audit logging failure is critical for compliance - consider failing deletion here
+        // Audit logging failure is critical for compliance - consider failing deletion
+        // here
         // For now, we log the error and allow deletion to proceed
       }
     }
@@ -558,7 +583,7 @@ public class VoucherServiceImpl implements VoucherService {
     String arApEntity = null;
     Long companyId = voucher.getCompanyId();
     List<VoucherLine> lines = voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(voucher.getId());
-    
+
     // Find first line with customer or vendor ID
     for (VoucherLine line : lines) {
       if (line.getCustomerId() != null) {
@@ -588,6 +613,7 @@ public class VoucherServiceImpl implements VoucherService {
         postedByName,
         arApEntity,
         voucher.getReversalOf() != null, // Has reversal badge
+        voucher.getReversedByVoucherId(), // Reversal voucher ID for navigation
         0, // Attachment count - placeholder (deferred to Epic 4/5)
         voucher.getCurrency());
   }
@@ -598,8 +624,7 @@ public class VoucherServiceImpl implements VoucherService {
   private VoucherDTO toDTO(Voucher voucher) {
     String enteredByName = getUserName(voucher.getEnteredBy());
     String postedByName = voucher.getPostedBy() != null ? getUserName(voucher.getPostedBy()) : null;
-    String reversedByName =
-        voucher.getReversedBy() != null ? getUserName(voucher.getReversedBy()) : null;
+    String reversedByName = voucher.getReversedBy() != null ? getUserName(voucher.getReversedBy()) : null;
 
     // Load voucher lines
     List<VoucherLine> lines = voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(voucher.getId());
@@ -624,6 +649,7 @@ public class VoucherServiceImpl implements VoucherService {
         postedByName,
         voucher.getPostedAt(),
         voucher.getReversalOf(),
+        voucher.getReversedByVoucherId(),
         voucher.getReversedBy(),
         reversedByName,
         voucher.getCreatedAt(),

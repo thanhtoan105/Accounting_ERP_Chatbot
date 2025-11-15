@@ -27,7 +27,8 @@ public class VoucherDTO {
   private String postedByName;
   private Instant postedAt;
   private UUID reversalOf;
-  private Long reversedBy;
+  private UUID reversedByVoucherId; // The reversal voucher that reverses this voucher
+  private Long reversedBy; // Deprecated: User ID who created the reversal
   private String reversedByName;
   private Instant createdAt;
   private Instant updatedAt;
@@ -54,6 +55,7 @@ public class VoucherDTO {
       String postedByName,
       Instant postedAt,
       UUID reversalOf,
+      UUID reversedByVoucherId,
       Long reversedBy,
       String reversedByName,
       Instant createdAt,
@@ -76,6 +78,7 @@ public class VoucherDTO {
     this.postedByName = postedByName;
     this.postedAt = postedAt;
     this.reversalOf = reversalOf;
+    this.reversedByVoucherId = reversedByVoucherId;
     this.reversedBy = reversedBy;
     this.reversedByName = reversedByName;
     this.createdAt = createdAt;
@@ -211,6 +214,14 @@ public class VoucherDTO {
 
   public void setReversalOf(UUID reversalOf) {
     this.reversalOf = reversalOf;
+  }
+
+  public UUID getReversedByVoucherId() {
+    return reversedByVoucherId;
+  }
+
+  public void setReversedByVoucherId(UUID reversedByVoucherId) {
+    this.reversedByVoucherId = reversedByVoucherId;
   }
 
   public Long getReversedBy() {

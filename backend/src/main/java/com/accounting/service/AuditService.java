@@ -198,6 +198,59 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
+         * Log voucher posting. Records voucher ID, voucher number, user who posted,
+         * timestamp, and IP address.
+         *
+         * @param voucherId       voucher ID that was posted
+         * @param voucherNumber   voucher number for reference
+         * @param postedByUserId ID of user who posted the voucher
+         * @param request         HTTP request for IP address and user agent
+         */
+        void logVoucherPosted(
+                        java.util.UUID voucherId,
+                        String voucherNumber,
+                        Long postedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log voucher unposting. Records voucher ID, voucher number, reason, user who unposted,
+         * timestamp, and IP address.
+         *
+         * @param voucherId         voucher ID that was unposted
+         * @param voucherNumber     voucher number for reference
+         * @param reason            unposting reason (required)
+         * @param unpostedByUserId  ID of user who unposted the voucher
+         * @param request           HTTP request for IP address and user agent
+         */
+        void logVoucherUnposted(
+                        java.util.UUID voucherId,
+                        String voucherNumber,
+                        String reason,
+                        Long unpostedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log voucher reversal. Records original voucher ID, reversal voucher ID,
+         * voucher numbers, reason, user who reversed, timestamp, and IP address.
+         *
+         * @param originalVoucherId  original voucher ID that was reversed
+         * @param originalVoucherNumber original voucher number
+         * @param reversalVoucherId  reversal voucher ID
+         * @param reversalVoucherNumber reversal voucher number
+         * @param reason             reversal reason (required)
+         * @param reversedByUserId   ID of user who reversed the voucher
+         * @param request            HTTP request for IP address and user agent
+         */
+        void logVoucherReversed(
+                        java.util.UUID originalVoucherId,
+                        String originalVoucherNumber,
+                        java.util.UUID reversalVoucherId,
+                        String reversalVoucherNumber,
+                        String reason,
+                        Long reversedByUserId,
+                        HttpServletRequest request);
+
+        /**
          * Log company settings update with old/new values.
          *
          * @param companyId       target company id
@@ -594,5 +647,49 @@ public interface AuditService {
                         Long userId,
                         int findingsCount,
                         boolean throttled,
+                        HttpServletRequest request);
+
+        /**
+         * Log fraud detection event. Records user, account, line number, attempted amount,
+         * fraud type, timestamp, and IP address.
+         *
+         * @param userId         ID of user who attempted the fraudulent action
+         * @param accountId      account ID involved in the fraud attempt
+         * @param accountCode    account code for reference
+         * @param lineNumber     line number in voucher where fraud was detected
+         * @param attemptedAmount attempted amount (negative value)
+         * @param fraudType      type of fraud (e.g., NEGATIVE_AMOUNT, NEGATIVE_DEBIT, NEGATIVE_CREDIT)
+         * @param request        HTTP request for IP address and user agent
+         */
+        void logFraudDetection(
+                        Long userId,
+                        Long accountId,
+                        String accountCode,
+                        int lineNumber,
+                        java.math.BigDecimal attemptedAmount,
+                        String fraudType,
+                        HttpServletRequest request);
+
+        /**
+         * Log blocked validation attempt. Records user, account, line number, field name,
+         * reason, attempt type, timestamp, and IP address.
+         *
+         * @param userId      ID of user who attempted the blocked action
+         * @param accountId   account ID involved in the blocked attempt
+         * @param accountCode account code for reference
+         * @param lineNumber  line number in voucher where attempt was blocked
+         * @param fieldName   field name where the attempt occurred (e.g., debitAccount, creditAccount)
+         * @param reason      reason for blocking (error message)
+         * @param attemptType type of blocked attempt (e.g., NON_POSTABLE_ACCOUNT, NON_LEAF_ACCOUNT)
+         * @param request     HTTP request for IP address and user agent
+         */
+        void logBlockedAttempt(
+                        Long userId,
+                        Long accountId,
+                        String accountCode,
+                        int lineNumber,
+                        String fieldName,
+                        String reason,
+                        String attemptType,
                         HttpServletRequest request);
 }
