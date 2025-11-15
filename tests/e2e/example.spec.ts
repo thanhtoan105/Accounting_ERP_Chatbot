@@ -53,14 +53,15 @@ test.describe('Example Test Suite', () => {
     // Then: Fill login form and submit
     await page.fill('[data-testid="email-input"]', user.email);
     await page.fill('[data-testid="password-input"]', user.password || '');
-    await page.click('[data-testid="login-button"]');
-
-    // Assert: Login success - check URL change or success message
-    // Note: In CI without backend, we check for successful form submission
-    // The actual redirect depends on backend response, so we wait for navigation
-    await page.waitForTimeout(1000); // Wait for redirect after successful login
     
-    // Check if we're redirected away from login page
+    // Wait for navigation after clicking login button
+    // LoginForm redirects after 1.5s (setTimeout), so we wait for URL change
+    await Promise.all([
+      page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 5000 }),
+      page.click('[data-testid="login-button"]'),
+    ]);
+    
+    // Assert: Login success - we should be redirected away from login page
     const currentUrl = page.url();
     expect(currentUrl).not.toContain('/login');
   });
