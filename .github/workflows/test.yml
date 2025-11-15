@@ -103,7 +103,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run tests (shard ${{ matrix.shard }}/4)
-        run: npx playwright test --shard=${{ matrix.shard }}/4
+        run: npx playwright test --project=chromium --shard=${{ matrix.shard }}/4
         env:
           CI: true
 
@@ -116,6 +116,7 @@ jobs:
             test-results/
             playwright-report/
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload JUnit report
         if: always()
@@ -179,7 +180,7 @@ jobs:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "🔥 Burn-in iteration $i/10"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            npx playwright test || exit 1
+            npx playwright test --project=chromium || exit 1
           done
           echo "✅ Burn-in complete - no flaky tests detected"
 
