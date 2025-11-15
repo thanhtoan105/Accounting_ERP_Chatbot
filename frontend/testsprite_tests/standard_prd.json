@@ -85,9 +85,7 @@
       {
         "name": "Dashboard",
         "description": "Main dashboard page showing overview and statistics",
-        "files": [
-          "src/features/dashboard/pages/Dashboard.tsx"
-        ]
+        "files": ["src/features/dashboard/pages/Dashboard.tsx"]
       },
       {
         "name": "Company Management",
@@ -191,23 +189,17 @@
       {
         "name": "Import Wizard",
         "description": "Data import wizard for bulk data import",
-        "files": [
-          "src/features/accounting/pages/ImportWizard.tsx"
-        ]
+        "files": ["src/features/accounting/pages/ImportWizard.tsx"]
       },
       {
         "name": "Audit Logs",
         "description": "Audit log viewing and filtering",
-        "files": [
-          "src/features/audit/pages/AuditLogPage.tsx"
-        ]
+        "files": ["src/features/audit/pages/AuditLogPage.tsx"]
       },
       {
         "name": "Routing",
         "description": "Application routing configuration with protected routes",
-        "files": [
-          "src/routes/AppRoutes.tsx"
-        ]
+        "files": ["src/routes/AppRoutes.tsx"]
       },
       {
         "name": "Protected Layout",
@@ -221,10 +213,7 @@
       {
         "name": "Role Guards",
         "description": "Role-based access control guards and components",
-        "files": [
-          "src/components/guards/RoleGuard.tsx",
-          "src/components/guards/CompanyGuard.tsx"
-        ]
+        "files": ["src/components/guards/RoleGuard.tsx", "src/components/guards/CompanyGuard.tsx"]
       },
       {
         "name": "Custom Hooks",
@@ -272,11 +261,7 @@
       {
         "name": "Utilities",
         "description": "Utility functions and helpers",
-        "files": [
-          "src/utils/date.ts",
-          "src/utils/roles.ts",
-          "src/utils/accountFilter.ts"
-        ]
+        "files": ["src/utils/date.ts", "src/utils/roles.ts", "src/utils/accountFilter.ts"]
       }
     ]
   }

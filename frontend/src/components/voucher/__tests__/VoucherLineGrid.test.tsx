@@ -89,12 +89,7 @@ describe('VoucherLineGrid', () => {
         },
       }
 
-      render(
-        <VoucherLineGrid
-          {...defaultProps}
-          validationMap={validationMap}
-        />
-      )
+      render(<VoucherLineGrid {...defaultProps} validationMap={validationMap} />)
 
       // Check for error messages on line 1
       expect(screen.getByText(/account is required/i)).toBeInTheDocument()
@@ -112,41 +107,30 @@ describe('VoucherLineGrid', () => {
       }
 
       const { container } = render(
-        <VoucherLineGrid
-          {...defaultProps}
-          validationMap={validationMap}
-        />
+        <VoucherLineGrid {...defaultProps} validationMap={validationMap} />,
       )
 
       // Find rows with errors - check for destructive class or error styling
       // The class might be transformed by Tailwind, so check for any destructive-related class
-      const errorRows = container.querySelectorAll('tr[class*="destructive"], tr[class*="bg-destructive"]')
+      const errorRows = container.querySelectorAll(
+        'tr[class*="destructive"], tr[class*="bg-destructive"]',
+      )
       // Alternative: check if error messages are present (which indicates error row exists)
       const errorMessages = screen.queryAllByText(/account is required/i)
-      
+
       // Either we find rows with destructive class OR error messages are present
       // Since Tailwind classes might be transformed, we primarily check for error messages
       expect(errorMessages.length).toBeGreaterThan(0)
     })
 
     it('should show loading indicator when loading prop is true', () => {
-      render(
-        <VoucherLineGrid
-          {...defaultProps}
-          loading={true}
-        />
-      )
+      render(<VoucherLineGrid {...defaultProps} loading={true} />)
 
       expect(screen.getByText(/đang tải/i)).toBeInTheDocument()
     })
 
     it('should disable inputs when loading prop is true', () => {
-      render(
-        <VoucherLineGrid
-          {...defaultProps}
-          loading={true}
-        />
-      )
+      render(<VoucherLineGrid {...defaultProps} loading={true} />)
 
       // AccountPicker should be disabled
       const accountPickers = screen.getAllByRole('combobox', { name: /chọn tài khoản/i })
@@ -164,12 +148,7 @@ describe('VoucherLineGrid', () => {
 
   describe('Negative amount blocking', () => {
     it('should allow negative amounts when allowNegative is true', () => {
-      render(
-        <VoucherLineGrid
-          {...defaultProps}
-          allowNegative={true}
-        />
-      )
+      render(<VoucherLineGrid {...defaultProps} allowNegative={true} />)
 
       const moneyInputs = screen.getAllByTestId('money-input')
       moneyInputs.forEach((input) => {
@@ -178,12 +157,7 @@ describe('VoucherLineGrid', () => {
     })
 
     it('should block negative amounts when allowNegative is false', () => {
-      render(
-        <VoucherLineGrid
-          {...defaultProps}
-          allowNegative={false}
-        />
-      )
+      render(<VoucherLineGrid {...defaultProps} allowNegative={false} />)
 
       const moneyInputs = screen.getAllByTestId('money-input')
       moneyInputs.forEach((input) => {
@@ -199,11 +173,7 @@ describe('VoucherLineGrid', () => {
       }
 
       render(
-        <VoucherLineGrid
-          {...defaultProps}
-          validationMap={validationMap}
-          allowNegative={false}
-        />
+        <VoucherLineGrid {...defaultProps} validationMap={validationMap} allowNegative={false} />,
       )
 
       expect(screen.getByText(/amount must be non-negative/i)).toBeInTheDocument()
@@ -220,12 +190,7 @@ describe('VoucherLineGrid', () => {
     })
 
     it('should disable AccountPicker when loading', () => {
-      render(
-        <VoucherLineGrid
-          {...defaultProps}
-          loading={true}
-        />
-      )
+      render(<VoucherLineGrid {...defaultProps} loading={true} />)
 
       const accountPickers = screen.getAllByRole('combobox', { name: /chọn tài khoản/i })
       accountPickers.forEach((picker) => {
@@ -245,33 +210,28 @@ describe('VoucherLineGrid', () => {
         },
       }
 
-      render(
-        <VoucherLineGrid
-          {...defaultProps}
-          validationMap={validationMap}
-        />
-      )
+      render(<VoucherLineGrid {...defaultProps} validationMap={validationMap} />)
 
       // All errors should be displayed - verify each error type is shown
       // Debit account error
       const debitErrors = screen.getAllByText(/debit account is required/i)
       expect(debitErrors.length).toBeGreaterThan(0)
-      
+
       // Credit account error
       const creditErrors = screen.getAllByText(/credit account is required/i)
       expect(creditErrors.length).toBeGreaterThan(0)
-      
+
       // Amount error
       const amountErrors = screen.queryAllByText(/amount must be positive/i)
       expect(amountErrors.length).toBeGreaterThan(0)
-      
+
       // Customer error - may be displayed in dimension picker (which is mocked)
       // The key test is that debit, credit, and amount errors are all displayed
       // Customer error validation is tested in integration tests
       // Verify we have at least the 3 main errors (debit, credit, amount)
       const allRequiredTexts = screen.getAllByText(/required/i)
       expect(allRequiredTexts.length).toBeGreaterThanOrEqual(2) // At least debit and credit
-      
+
       // Verify amount error is also present
       const amountErrorTexts = screen.getAllByText(/amount/i)
       expect(amountErrorTexts.length).toBeGreaterThan(0)
@@ -302,11 +262,7 @@ describe('VoucherLineGrid', () => {
       ]
 
       render(
-        <VoucherLineGrid
-          {...defaultProps}
-          lines={linesWithThree}
-          validationMap={validationMap}
-        />
+        <VoucherLineGrid {...defaultProps} lines={linesWithThree} validationMap={validationMap} />,
       )
 
       // Errors from all lines should be displayed
@@ -316,4 +272,3 @@ describe('VoucherLineGrid', () => {
     })
   })
 })
-
