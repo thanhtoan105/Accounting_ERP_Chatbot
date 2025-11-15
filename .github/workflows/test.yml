@@ -88,7 +88,12 @@ jobs:
             ${{ runner.os }}-playwright-
 
       - name: Install root dependencies
-        run: npm ci || echo "⚠️ No root package-lock.json, skipping..."
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -98,7 +103,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run tests (shard ${{ matrix.shard }}/4)
-        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4
+        run: npx playwright test --shard=${{ matrix.shard }}/4
         env:
           CI: true
 
@@ -153,7 +158,12 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json', '**/pnpm-lock.yaml') }}
 
       - name: Install root dependencies
-        run: npm ci || echo "⚠️ No root package-lock.json, skipping..."
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -169,7 +179,7 @@ jobs:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "🔥 Burn-in iteration $i/10"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            npm run test:e2e || exit 1
+            npx playwright test || exit 1
           done
           echo "✅ Burn-in complete - no flaky tests detected"
 
