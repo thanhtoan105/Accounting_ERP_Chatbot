@@ -26,19 +26,22 @@ test.describe('Example Test Suite', () => {
     });
 
     // Mock login API response (since backend may not be available in CI)
+    // Note: The actual API wraps response in { data: {...} } structure
     await page.route('**/api/v1/auth/login', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          accessToken: 'mock-access-token',
-          refreshToken: 'mock-refresh-token',
-          user: {
-            id: 1,
-            email: user.email,
-            fullName: 'Test User',
-            role: 'USER',
-            companyId: 1,
+          data: {
+            accessToken: 'mock-access-token',
+            refreshToken: 'mock-refresh-token',
+            user: {
+              id: 1,
+              email: user.email,
+              fullName: 'Test User',
+              role: 'USER',
+              companyId: 1,
+            },
           },
         }),
       });
@@ -65,17 +68,21 @@ test.describe('Example Test Suite', () => {
     // Verify API response
     expect(response.status()).toBe(200);
     const responseBody = await response.json();
-    expect(responseBody).toHaveProperty('accessToken');
-    expect(responseBody).toHaveProperty('user');
+    expect(responseBody).toHaveProperty('data');
+    expect(responseBody.data).toHaveProperty('accessToken');
+    expect(responseBody.data).toHaveProperty('user');
     
     // LoginForm redirects after 1.5s (setTimeout), so we wait for URL change
-    // Use waitForFunction to poll for URL change since React Router may not trigger navigation event
-    await page.waitForFunction(
-      () => !window.location.pathname.includes('/login'),
-      { timeout: 5000 }
+    // Use waitForURL which is more reliable for React Router navigation
+    // Wait for navigation to either '/' or '/company' (depending on companyId)
+    // Increased timeout to account for setTimeout(1500ms) + network delays
+    await page.waitForURL(
+      (url) => !url.pathname.includes('/login'),
+      { timeout: 10000 }
     );
     
     // Assert: Login success - we should be redirected away from login page
+    // waitForURL above already ensures we're not on /login anymore
     const currentUrl = page.url();
     expect(currentUrl).not.toContain('/login');
   });
