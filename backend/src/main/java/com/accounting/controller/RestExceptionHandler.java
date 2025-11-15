@@ -1,9 +1,11 @@
 package com.accounting.controller;
 
 import com.accounting.exception.CompanyScopeViolationException;
+import com.accounting.exception.VoucherValidationException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -20,11 +22,98 @@ public class RestExceptionHandler {
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Map<String, Object>> handleBeanValidation(MethodArgumentNotValidException ex) {
+    // Check if this is a voucher entryLines validation error
+    // Field paths like "entryLines[0].creditAccountId" should be formatted as lines.1.creditAccount
+    boolean hasEntryLines = ex.getBindingResult().getFieldErrors().stream()
+        .anyMatch(err -> err.getField() != null && err.getField().startsWith("entryLines"));
+    
+    if (hasEntryLines) {
+      // Format as voucher validation error with lines structure
+      Map<String, Object> body = new HashMap<>();
+      Map<String, Object> error = new HashMap<>();
+      error.put("code", "VALIDATION_ERROR");
+      error.put("message", "Voucher validation failed");
+      
+      Map<String, Map<String, List<String>>> linesMap = new HashMap<>();
+      
+      ex.getBindingResult().getFieldErrors().forEach(err -> {
+        String fieldPath = err.getField();
+        if (fieldPath != null && fieldPath.startsWith("entryLines")) {
+          // Extract line number from path like "entryLines[0].creditAccountId" -> line 1
+          int lineIndex = extractLineNumber(fieldPath);
+          String fieldName = extractFieldName(fieldPath);
+          
+          if (lineIndex > 0 && fieldName != null) {
+            linesMap.computeIfAbsent(String.valueOf(lineIndex), k -> new HashMap<>())
+                .computeIfAbsent(fieldName, k -> new java.util.ArrayList<>())
+                .add(err.getDefaultMessage());
+          }
+        }
+      });
+      
+      Map<String, Object> details = new HashMap<>();
+      details.put("lines", linesMap);
+      error.put("details", details);
+      body.put("error", error);
+      
+      Map<String, Object> meta = new HashMap<>();
+      body.put("meta", meta);
+      
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+    
+    // For non-entryLines validation errors, use simple format
     Map<String, Object> details = new HashMap<>();
     ex.getBindingResult()
         .getFieldErrors()
         .forEach(err -> details.put(err.getField(), err.getDefaultMessage()));
     return build(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Validation failed", details);
+  }
+  
+  /**
+   * Extract line number from field path like "entryLines[0].creditAccountId" -> 1 (1-based)
+   */
+  private int extractLineNumber(String fieldPath) {
+    if (fieldPath == null || !fieldPath.startsWith("entryLines")) {
+      return 0;
+    }
+    try {
+      int startIndex = fieldPath.indexOf('[');
+      int endIndex = fieldPath.indexOf(']');
+      if (startIndex > 0 && endIndex > startIndex) {
+        String indexStr = fieldPath.substring(startIndex + 1, endIndex);
+        int zeroBasedIndex = Integer.parseInt(indexStr);
+        return zeroBasedIndex + 1; // Convert to 1-based line number
+      }
+    } catch (NumberFormatException e) {
+      // Ignore
+    }
+    return 0;
+  }
+  
+  /**
+   * Extract field name from path like "entryLines[0].creditAccountId" -> "creditAccount"
+   * or "entryLines[0].amount" -> "amount"
+   */
+  private String extractFieldName(String fieldPath) {
+    if (fieldPath == null) {
+      return null;
+    }
+    int lastDot = fieldPath.lastIndexOf('.');
+    if (lastDot > 0 && lastDot < fieldPath.length() - 1) {
+      String fieldName = fieldPath.substring(lastDot + 1);
+      // Remove "Id" suffix for consistency with validation service field names
+      // e.g., "creditAccountId" -> "creditAccount", "debitAccountId" -> "debitAccount"
+      if (fieldName.endsWith("Id") && fieldName.length() > 2) {
+        fieldName = fieldName.substring(0, fieldName.length() - 2);
+      }
+      // Ensure first letter is lowercase (fieldName should already be camelCase)
+      if (fieldName.length() > 0 && Character.isUpperCase(fieldName.charAt(0))) {
+        fieldName = Character.toLowerCase(fieldName.charAt(0)) + fieldName.substring(1);
+      }
+      return fieldName;
+    }
+    return null;
   }
 
   @ExceptionHandler(ValidationException.class)
@@ -63,6 +152,36 @@ public class RestExceptionHandler {
   public ResponseEntity<Map<String, Object>> handleCompanyScope(CompanyScopeViolationException ex) {
     Map<String, Object> details = new HashMap<>();
     return build(HttpStatus.FORBIDDEN, "RBAC_COMPANY_SCOPE_VIOLATION", ex.getMessage(), details);
+  }
+
+  @ExceptionHandler(VoucherValidationException.class)
+  public ResponseEntity<Map<String, Object>> handleVoucherValidation(VoucherValidationException ex) {
+    // Format validation errors according to story requirements:
+    // { error: { code, message, details: { lines: { [lineNumber]: { [field]: [errors] } } } }, meta: {...} }
+    Map<String, Object> body = new HashMap<>();
+    Map<String, Object> error = new HashMap<>();
+    error.put("code", "VALIDATION_ERROR");
+    error.put("message", ex.getMessage() != null ? ex.getMessage() : "Voucher validation failed");
+    
+    // Convert validation result errors to the required format
+    Map<Integer, Map<String, List<String>>> validationErrors = ex.getValidationResult().getErrors();
+    Map<String, Map<String, List<String>>> linesMap = new HashMap<>();
+    
+    validationErrors.forEach((lineNumber, lineErrors) -> {
+      linesMap.put(String.valueOf(lineNumber), lineErrors);
+    });
+    
+    Map<String, Object> details = new HashMap<>();
+    details.put("lines", linesMap);
+    error.put("details", details);
+    
+    body.put("error", error);
+    
+    // Add meta if needed (empty for now)
+    Map<String, Object> meta = new HashMap<>();
+    body.put("meta", meta);
+    
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
   }
 
   @ExceptionHandler(EntityNotFoundException.class)

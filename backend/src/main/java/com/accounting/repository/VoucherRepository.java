@@ -51,6 +51,15 @@ public interface VoucherRepository
       Long companyId, LocalDate dateFrom, LocalDate dateTo);
 
   /**
+   * Find vouchers by company and period ID.
+   *
+   * @param companyId company ID
+   * @param periodId period ID
+   * @return list of vouchers in the period
+   */
+  List<Voucher> findByCompanyIdAndPeriodId(Long companyId, UUID periodId);
+
+  /**
    * Count vouchers by company and status.
    *
    * @param companyId company ID

@@ -20,6 +20,7 @@ public class VoucherListDTO {
   private String postedByName;
   private String arApEntity; // Customer/Supplier name if applicable
   private Boolean hasReversal; // Reversal badge indicator
+  private UUID reversedByVoucherId; // ID of reversal voucher (for navigation)
   private Integer attachmentCount;
   private String currency;
 
@@ -37,6 +38,7 @@ public class VoucherListDTO {
       String postedByName,
       String arApEntity,
       Boolean hasReversal,
+      UUID reversedByVoucherId,
       Integer attachmentCount,
       String currency) {
     this.id = id;
@@ -50,6 +52,7 @@ public class VoucherListDTO {
     this.postedByName = postedByName;
     this.arApEntity = arApEntity;
     this.hasReversal = hasReversal;
+    this.reversedByVoucherId = reversedByVoucherId;
     this.attachmentCount = attachmentCount;
     this.currency = currency;
   }
@@ -141,6 +144,14 @@ public class VoucherListDTO {
 
   public void setHasReversal(Boolean hasReversal) {
     this.hasReversal = hasReversal;
+  }
+
+  public UUID getReversedByVoucherId() {
+    return reversedByVoucherId;
+  }
+
+  public void setReversedByVoucherId(UUID reversedByVoucherId) {
+    this.reversedByVoucherId = reversedByVoucherId;
   }
 
   public Integer getAttachmentCount() {

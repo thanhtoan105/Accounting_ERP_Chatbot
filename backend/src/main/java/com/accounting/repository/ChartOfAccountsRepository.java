@@ -85,6 +85,15 @@ public interface ChartOfAccountsRepository
         java.util.Optional<ChartOfAccount> findByCompanyIdAndCode(Long companyId, String code);
 
         /**
+         * Find account by ID scoped to company.
+         *
+         * @param id account ID
+         * @param companyId company ID
+         * @return account if present
+         */
+        java.util.Optional<ChartOfAccount> findByIdAndCompanyId(Long id, Long companyId);
+
+        /**
          * Search accounts by code or name using native PostgreSQL unaccent function.
          * Supports unaccented Vietnamese search (e.g., "nha" matches "nhà").
          *

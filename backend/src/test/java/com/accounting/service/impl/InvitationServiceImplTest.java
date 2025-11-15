@@ -23,7 +23,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -35,19 +34,26 @@ import org.springframework.web.server.ResponseStatusException;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class InvitationServiceImplTest {
 
-  @Mock private InvitationRepository invitationRepository;
+  @Mock
+  private InvitationRepository invitationRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private CompanyRepository companyRepository;
+  @Mock
+  private CompanyRepository companyRepository;
 
-  @Mock private RoleService roleService;
+  @Mock
+  private RoleService roleService;
 
-  @Mock private EmailService emailService;
+  @Mock
+  private EmailService emailService;
 
-  @Mock private AuditService auditService;
+  @Mock
+  private AuditService auditService;
 
-  @Mock private HttpServletRequest httpRequest;
+  @Mock
+  private HttpServletRequest httpRequest;
 
   private PasswordEncoder passwordEncoder;
   private InvitationServiceImpl invitationService;
@@ -55,15 +61,14 @@ class InvitationServiceImplTest {
   @BeforeEach
   void setUp() {
     passwordEncoder = new PasswordEncoder();
-    invitationService =
-        new InvitationServiceImpl(
-            invitationRepository,
-            userRepository,
-            companyRepository,
-            roleService,
-            emailService,
-            auditService,
-            passwordEncoder);
+    invitationService = new InvitationServiceImpl(
+        invitationRepository,
+        userRepository,
+        companyRepository,
+        roleService,
+        emailService,
+        auditService,
+        passwordEncoder);
     CompanyContext.setCompanyId(1L);
   }
 
@@ -97,8 +102,7 @@ class InvitationServiceImplTest {
               return inv;
             });
 
-    Invitation invitation =
-        invitationService.createInvitation(email, role, 1L, httpRequest);
+    Invitation invitation = invitationService.createInvitation(email, role, 1L, httpRequest);
 
     assertNotNull(invitation);
     assertNotNull(invitation.getToken());
@@ -112,10 +116,9 @@ class InvitationServiceImplTest {
     String email = "existing@example.com";
     org.mockito.Mockito.when(userRepository.existsByEmail(email)).thenReturn(true);
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> invitationService.createInvitation(email, "accountant", 1L, httpRequest));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> invitationService.createInvitation(email, "accountant", 1L, httpRequest));
 
     assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     assertEquals("User with this email already exists", exception.getReason());
@@ -151,9 +154,8 @@ class InvitationServiceImplTest {
     org.mockito.Mockito.when(invitationRepository.save(org.mockito.ArgumentMatchers.any(Invitation.class)))
         .thenReturn(invitation);
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class, () -> invitationService.validateInvitation(token));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class, () -> invitationService.validateInvitation(token));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertEquals("Invitation has expired", exception.getReason());
@@ -169,9 +171,8 @@ class InvitationServiceImplTest {
     org.mockito.Mockito.when(invitationRepository.findByToken(token))
         .thenReturn(Optional.of(invitation));
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class, () -> invitationService.validateInvitation(token));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class, () -> invitationService.validateInvitation(token));
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertEquals("Invitation is no longer valid", exception.getReason());
@@ -186,4 +187,3 @@ class InvitationServiceImplTest {
     return user;
   }
 }
-

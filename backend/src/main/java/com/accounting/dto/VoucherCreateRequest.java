@@ -20,20 +20,34 @@ public class VoucherCreateRequest {
   @Size(max = 500, message = "Description must not exceed 500 characters")
   private String description;
 
-  private Long periodId; // Optional - Period ID
+  private UUID periodId; // Optional - Period ID (auto-determined from date if not provided)
 
-  @NotNull(message = "At least one line item is required")
-  @Size(min = 1, message = "At least one line item is required")
+  private String currency = "VND";
+
+  @Valid
+  private List<VoucherEntryLineRequest> entryLines;
+
+  /**
+   * Legacy payload support – direct ledger lines (each line represents a single debit or credit).
+   * Prefer {@link #entryLines} for new functionality.
+   */
   @Valid
   private List<VoucherLineDTO> lines;
 
   public VoucherCreateRequest() {}
 
-  public VoucherCreateRequest(LocalDate date, String description, Long periodId,
+  public VoucherCreateRequest(
+      LocalDate date,
+      String description,
+      UUID periodId,
+      String currency,
+      List<VoucherEntryLineRequest> entryLines,
       List<VoucherLineDTO> lines) {
     this.date = date;
     this.description = description;
     this.periodId = periodId;
+    this.currency = currency;
+    this.entryLines = entryLines;
     this.lines = lines;
   }
 
@@ -54,12 +68,28 @@ public class VoucherCreateRequest {
     this.description = description;
   }
 
-  public Long getPeriodId() {
+  public UUID getPeriodId() {
     return periodId;
   }
 
-  public void setPeriodId(Long periodId) {
+  public void setPeriodId(UUID periodId) {
     this.periodId = periodId;
+  }
+
+  public String getCurrency() {
+    return currency;
+  }
+
+  public void setCurrency(String currency) {
+    this.currency = currency;
+  }
+
+  public List<VoucherEntryLineRequest> getEntryLines() {
+    return entryLines;
+  }
+
+  public void setEntryLines(List<VoucherEntryLineRequest> entryLines) {
+    this.entryLines = entryLines;
   }
 
   public List<VoucherLineDTO> getLines() {

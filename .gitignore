@@ -74,3 +74,10 @@ jacoco.exec
 .gemini/
 .opencode/
 .windsurf/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

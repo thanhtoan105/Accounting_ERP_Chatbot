@@ -171,7 +171,7 @@ export default function CustomerFormSheet({
       if (isEditMode && customer) {
         // Only send changed fields
         const request: CustomerUpdateRequest = {}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         const dirty: any = form.formState.dirtyFields
         if (dirty?.code && values.code) request.code = values.code.trim()
         if (dirty?.name) request.name = values.name.trim()

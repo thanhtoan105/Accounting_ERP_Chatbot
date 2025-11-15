@@ -43,7 +43,7 @@ public class Voucher implements CompanyScopedEntity {
   private LocalDate voucherDate;
 
   @Column(name = "period_id")
-  private Long periodId; // Optional - Period entity from Epic 1 (may not exist yet)
+  private UUID periodId; // Foreign key to AccountingPeriod.id (auto-determined from voucher_date)
 
   @NotBlank
   @Column(name = "description", nullable = false, length = 500)
@@ -79,7 +79,10 @@ public class Voucher implements CompanyScopedEntity {
   private UUID reversalOf; // Reference to original voucher if this is a reversal
 
   @Column(name = "reversed_by")
-  private Long reversedBy; // User ID who created the reversal
+  private Long reversedBy; // User ID who created the reversal (deprecated, use reversedByVoucherId for voucher reference)
+
+  @Column(name = "reversed_by_voucher_id")
+  private UUID reversedByVoucherId; // Reference to reversal voucher if this voucher has been reversed
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
@@ -90,6 +93,9 @@ public class Voucher implements CompanyScopedEntity {
   @Version
   @Column(name = "version", nullable = false)
   private Long version = 0L; // Optimistic locking version
+
+  @Column(name = "is_locked", nullable = false)
+  private Boolean isLocked = false; // Lock flag set when period is closed (prevents edits)
 
   // Relationships
   @ManyToOne
@@ -106,11 +112,23 @@ public class Voucher implements CompanyScopedEntity {
 
   @ManyToOne
   @JoinColumn(name = "reversed_by", insertable = false, updatable = false)
-  private User reversedByUser;
+  private User reversedByUser; // User ID who created the reversal (deprecated, use reversedByVoucherId)
 
   @ManyToOne
+  @JoinColumn(name = "period_id", insertable = false, updatable = false)
+  private AccountingPeriod period; // Period relationship (read-only)
+
+  // OneToOne: This voucher reverses another voucher (if this is a reversal)
+  // Owning side: reversal voucher has FK to original
+  @jakarta.persistence.OneToOne
   @JoinColumn(name = "reversal_of", insertable = false, updatable = false)
-  private Voucher reversalOfVoucher;
+  private Voucher reversalVoucher; // The original voucher that this voucher reverses
+
+  // OneToOne: The voucher that reverses this voucher (if this voucher has been reversed)
+  // Inverse side: original voucher has FK to reversal
+  @jakarta.persistence.OneToOne
+  @JoinColumn(name = "reversed_by_voucher_id", insertable = false, updatable = false)
+  private Voucher reversedByVoucher; // The reversal voucher that reverses this voucher
 
   // Getters and setters
   public UUID getId() {
@@ -146,12 +164,20 @@ public class Voucher implements CompanyScopedEntity {
     this.voucherDate = voucherDate;
   }
 
-  public Long getPeriodId() {
+  public UUID getPeriodId() {
     return periodId;
   }
 
-  public void setPeriodId(Long periodId) {
+  public void setPeriodId(UUID periodId) {
     this.periodId = periodId;
+  }
+
+  public AccountingPeriod getPeriod() {
+    return period;
+  }
+
+  public void setPeriod(AccountingPeriod period) {
+    this.period = period;
   }
 
   public String getDescription() {
@@ -234,6 +260,14 @@ public class Voucher implements CompanyScopedEntity {
     this.reversedBy = reversedBy;
   }
 
+  public UUID getReversedByVoucherId() {
+    return reversedByVoucherId;
+  }
+
+  public void setReversedByVoucherId(UUID reversedByVoucherId) {
+    this.reversedByVoucherId = reversedByVoucherId;
+  }
+
   public Instant getCreatedAt() {
     return createdAt;
   }
@@ -256,6 +290,14 @@ public class Voucher implements CompanyScopedEntity {
 
   public void setVersion(Long version) {
     this.version = version;
+  }
+
+  public Boolean getIsLocked() {
+    return isLocked;
+  }
+
+  public void setIsLocked(Boolean isLocked) {
+    this.isLocked = isLocked;
   }
 
   // Relationship getters (read-only)
@@ -291,11 +333,19 @@ public class Voucher implements CompanyScopedEntity {
     this.reversedByUser = reversedByUser;
   }
 
-  public Voucher getReversalOfVoucher() {
-    return reversalOfVoucher;
+  public Voucher getReversalVoucher() {
+    return reversalVoucher;
   }
 
-  public void setReversalOfVoucher(Voucher reversalOfVoucher) {
-    this.reversalOfVoucher = reversalOfVoucher;
+  public void setReversalVoucher(Voucher reversalVoucher) {
+    this.reversalVoucher = reversalVoucher;
+  }
+
+  public Voucher getReversedByVoucher() {
+    return reversedByVoucher;
+  }
+
+  public void setReversedByVoucher(Voucher reversedByVoucher) {
+    this.reversedByVoucher = reversedByVoucher;
   }
 }
