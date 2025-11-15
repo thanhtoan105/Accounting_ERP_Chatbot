@@ -54,12 +54,26 @@ test.describe('Example Test Suite', () => {
     await page.fill('[data-testid="email-input"]', user.email);
     await page.fill('[data-testid="password-input"]', user.password || '');
     
-    // Wait for navigation after clicking login button
-    // LoginForm redirects after 1.5s (setTimeout), so we wait for URL change
-    await Promise.all([
-      page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 5000 }),
+    // Click login button and wait for API call to complete
+    const [response] = await Promise.all([
+      page.waitForResponse((response) => 
+        response.url().includes('/api/v1/auth/login') && response.status() === 200
+      ),
       page.click('[data-testid="login-button"]'),
     ]);
+    
+    // Verify API response
+    expect(response.status()).toBe(200);
+    const responseBody = await response.json();
+    expect(responseBody).toHaveProperty('accessToken');
+    expect(responseBody).toHaveProperty('user');
+    
+    // LoginForm redirects after 1.5s (setTimeout), so we wait for URL change
+    // Use waitForFunction to poll for URL change since React Router may not trigger navigation event
+    await page.waitForFunction(
+      () => !window.location.pathname.includes('/login'),
+      { timeout: 5000 }
+    );
     
     // Assert: Login success - we should be redirected away from login page
     const currentUrl = page.url();
