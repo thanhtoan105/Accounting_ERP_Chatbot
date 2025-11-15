@@ -1,0 +1,250 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>6</storyId>
+    <title>Period Selector & Voucher-Period Mapping</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-15T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-6-period-selector-voucher-period-mapping.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a user</asA>
+    <iWant>the period picker to control voucher scope and prevent posting in closed/future periods</iWant>
+    <soThat>reporting and closing flows are always consistent</soThat>
+    <tasks>- [ ] Build PeriodSelector component for voucher screens (AC: #1, #6)
+  - [ ] Create `frontend/src/components/period/PeriodSelector.tsx` component
+  - [ ] Display current period + 3 prior/next open periods in dropdown/select
+  - [ ] Show period status badges (OPEN/CLOSED) with visual indicators
+  - [ ] Add period summary badge showing: closing status, posting flow status, pending drafts count
+  - [ ] Integrate PeriodSelector into VoucherList and VoucherForm pages (header/toolbar)
+  - [ ] Wire to GET /api/v1/periods/current and GET /api/v1/periods/open endpoints
+  - [ ] Persist selected period in localStorage per company
+- [ ] Implement period validation in voucher creation/posting (AC: #2)
+  - [ ] Update VoucherForm to disable date picker for closed/future periods
+  - [ ] Add period validation in VoucherService.createVoucher() and VoucherService.updateVoucher()
+  - [ ] Add period validation in VoucherPostingService.postVoucher()
+  - [ ] Return 400 Bad Request with clear error message if period is closed/future
+  - [ ] Log blocked attempts in audit trail with period status and user info
+  - [ ] Display UI error message when period validation fails
+- [ ] Implement period close workflow (AC: #3)
+  - [ ] Create PeriodManagementService interface and implementation
+  - [ ] Implement closePeriod(UUID periodId, String reason) method
+  - [ ] Validate no DRAFT vouchers exist in period before closing
+  - [ ] Validate all posted vouchers are balanced (Dr=Cr per account)
+  - [ ] Start database transaction
+  - [ ] Update period: status=CLOSED, closedBy=currentUser, closedAt=now, closeReason
+  - [ ] Batch update all vouchers in period: add lock flag (prevent future edits)
+  - [ ] Create audit log entry: period close event with hash digest
+  - [ ] Commit transaction atomically
+  - [ ] Return updated period with closed status
+- [ ] Create POST /api/v1/periods/{periodId}/close endpoint (AC: #3)
+  - [ ] Add closePeriod() method to PeriodController.java
+  - [ ] Request body: `{ reason: string }` (required)
+  - [ ] Response: `{ data: AccountingPeriodDTO, meta: {...} }`
+  - [ ] RBAC: `@PreAuthorize("hasAnyRole('CHIEF_ACCOUNTANT','ADMIN','CFO')")` - Chief Accountant+ can close
+  - [ ] Company scoping via CompanyScopeAspect
+  - [ ] Return 400 Bad Request if validation fails (drafts exist, unbalanced entries)
+  - [ ] Return 409 Conflict if period already closed
+  - [ ] Return 200 OK with closed period if successful
+- [ ] Implement period reopen workflow (AC: #4)
+  - [ ] Implement reopenPeriod(UUID periodId, String reason, String approvalMetadata) method
+  - [ ] Validate period status is CLOSED before reopening
+  - [ ] Log reopen attempt in audit trail (even if not approved) with reason and approval metadata
+  - [ ] If approved, start database transaction
+  - [ ] Update period: status=OPEN, clear closedBy/closedAt/closeReason
+  - [ ] Remove lock flag from all vouchers in period (allow edits)
+  - [ ] Create audit log entry: period reopen event with hash digest
+  - [ ] Commit transaction atomically
+  - [ ] Return updated period with open status
+- [ ] Create POST /api/v1/periods/{periodId}/reopen endpoint (AC: #4)
+  - [ ] Add reopenPeriod() method to PeriodController.java
+  - [ ] Request body: `{ reason: string, approvalMetadata: string }` (both required)
+  - [ ] Response: `{ data: AccountingPeriodDTO, meta: {...} }`
+  - [ ] RBAC: `@PreAuthorize("hasAnyRole('CHIEF_ACCOUNTANT','ADMIN','CFO')")` - Chief Accountant+ can reopen
+  - [ ] Company scoping via CompanyScopeAspect
+  - [ ] Return 400 Bad Request if period is not closed
+  - [ ] Return 200 OK with reopened period if successful
+  - [ ] Log all reopen attempts (approved and rejected) in audit trail
+- [ ] Create backend API endpoints for period management (AC: #1, #6)
+  - [ ] Create PeriodController with GET /api/v1/periods/current (current period for company)
+  - [ ] Create GET /api/v1/periods/open (list open periods, current + 3 prior/next)
+  - [ ] Create GET /api/v1/periods/{periodId} (period details)
+  - [ ] Create GET /api/v1/periods/{periodId}/summary (period summary with badge data: closing status, posting flow, pending drafts count)
+  - [ ] All endpoints enforce company scoping via CompanyScopeAspect
+  - [ ] All endpoints require RBAC: `@PreAuthorize("hasAnyRole('ACCOUNTANT','CHIEF_ACCOUNTANT','ADMIN','CFO')")`
+- [ ] Implement period-voucher mapping and validation (AC: #2)
+  - [ ] Add periodId field to Voucher entity (ManyToOne relationship to AccountingPeriod)
+  - [ ] Auto-determine period from voucher date in VoucherService
+  - [ ] Update VoucherValidationService to check period status (OPEN/CLOSED)
+  - [ ] Block voucher creation if period is closed or future
+  - [ ] Block voucher posting if period is closed or future
+  - [ ] Add period validation to VoucherPostingService.postVoucher()
+  - [ ] Return detailed error message: "Cannot create/post voucher in closed period: {period_name}"
+- [ ] Add testing subtasks (AC: #1-#6)
+  - [ ] Unit tests for PeriodSelector component (period display, selection, badge updates)
+  - [ ] Integration tests for GET /api/v1/periods/* endpoints (current, open, summary)
+  - [ ] Integration tests for POST /api/v1/periods/{id}/close (validation, batch locking, audit logging)
+  - [ ] Integration tests for POST /api/v1/periods/{id}/reopen (validation, audit logging)
+  - [ ] Integration tests for period validation in voucher create/post (blocked attempts, error messages)
+  - [ ] Integration tests for period-voucher mapping (auto-determination, period status checks)
+  - [ ] Negative tests for blocked operations (close with drafts, reopen without approval, create in closed period)</tasks>
+  </story>
+
+  <acceptanceCriteria>1. Always-visible period selector on voucher screens (header/toolbar), shows current period + 3 prior/next open periods (if available).
+2. No create/post in closed/future period; API returns 400 with clear error message, attempt logged in audit.
+3. On period close, batch-lock all vouchers in period (adds lock flag), creates audit event with: closed_by (user), closed_at (timestamp), hash_digest, close_reason.
+4. Period reopen requires reason and approval metadata; all reopen attempts (even if not approved) logged in audit.
+5. System automates required reversal of prior-period adjustments by creating offsetting entry in next open period (deferred to post-MVP, manual reversal in MVP).
+6. Period summary dashboard badge displays: closing status, posting flow status, pending actions count (drafts in period).</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/prd/requirements.md" title="Functional Requirements" section="FR28-FR35: Voucher Management" snippet="Comprehensive voucher management requirements covering period controls, audit trails, and validation workflows for financial reporting compliance." />
+      <doc path="docs/prd/epic-list.md" title="Epic 3: Voucher Engine & General Ledger Core" section="Story 3.6: Period Selector & Voucher-Period Mapping" snippet="Period selector implementation for preventing posting in closed/future periods and ensuring consistent reporting flows." />
+      <doc path="docs/architecture/data-architecture.md" title="Multi-tenancy Data Architecture" section="Company-Scoped Entities & Row-Level Security" snippet="Multi-tenancy via company_id with ThreadLocal CompanyContext for automatic data isolation and security enforcement." />
+      <doc path="docs/architecture/security-architecture.md" title="Security Architecture" section="RBAC and JWT Authentication" snippet="Role-based access control with JWT tokens, company scoping, and comprehensive audit logging for compliance." />
+      <doc path="docs/architecture/project-structure.md" title="Project Structure" section="Feature-First Architecture Patterns" snippet="Backend controller/service/repository patterns and frontend feature-first structure for consistent development." />
+      <doc path="docs/epics/epic-3-voucher-engine-general-ledger-core.md" title="Epic 3 Detailed Specification" section="Story 3.6 Requirements" snippet="Detailed business requirements for period management, period close/reopen workflows, and audit trail requirements." />
+      <doc path="docs/ux-design-specification.md" title="UX Design Specification" section="Component Library & Design System" snippet="shadcn/ui component patterns, visual design guidelines, and user interaction patterns for period management interfaces." />
+    </docs>
+    <code>
+      <artifact path="backend/src/main/java/com/accounting/entity/Voucher.java" kind="entity" symbol="Voucher" lines="45-46" reason="Voucher entity already has periodId field for period-voucher mapping" />
+      <artifact path="backend/src/main/java/com/accounting/controller/voucher/VoucherController.java" kind="controller" symbol="VoucherController" lines="1-100" reason="API patterns to follow for period management endpoints, RBAC enforcement, and response formats" />
+      <artifact path="backend/src/main/java/com/accounting/service/VoucherValidationService.java" kind="service" symbol="VoucherValidationService" lines="1-50" reason="Validation patterns to extend with period status validation methods" />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/voucher/VoucherValidationServiceImpl.java" kind="service" symbol="VoucherValidationServiceImpl" lines="1-200" reason="Comprehensive validation implementation with bulk validation and error mapping patterns" />
+      <artifact path="backend/src/main/java/com/accounting/service/AuditService.java" kind="service" symbol="AuditService" lines="1-50" reason="Audit interface to extend with period close/reopen logging methods" />
+      <artifact path="backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java" kind="service" symbol="AuditServiceImpl" lines="1-200" reason="Audit implementation patterns for logging period events with hash digests and metadata" />
+      <artifact path="backend/src/main/java/com/accounting/service/util/VoucherAuditHelper.java" kind="utility" symbol="VoucherAuditHelper" lines="1-100" reason="JSON serialization and SHA-256 hash calculation utilities for period audit events" />
+      <artifact path="backend/src/main/java/com/accounting/ledger/LedgerPeriodService.java" kind="service" symbol="LedgerPeriodService" lines="1-20" reason="Existing period service interface to extend with comprehensive period management functionality" />
+      <artifact path="backend/src/main/java/com/accounting/ledger/impl/LedgerPeriodServiceImpl.java" kind="service" symbol="LedgerPeriodServiceImpl" lines="1-50" reason="Basic period implementation placeholder to be replaced with comprehensive period management" />
+      <artifact path="backend/src/main/resources/db/migration/V20251115001__add_audit_log_indexes_for_voucher_history.sql" kind="migration" symbol="V20251115001" lines="1-20" reason="Database indexing patterns for period audit log queries" />
+      <artifact path="frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx" kind="component" symbol="VoucherForm" lines="353-367, 806-814" reason="Existing date validation and period range calculation logic to integrate with PeriodSelector" />
+      <artifact path="frontend/src/components/voucher/VoucherLineGrid.tsx" kind="component" symbol="VoucherLineGrid" lines="1-100" reason="Component patterns to follow for PeriodSelector integration with voucher forms" />
+      <artifact path="frontend/src/types/voucher.ts" kind="types" symbol="VoucherCreateRequest" lines="77" reason="TypeScript interfaces showing existing periodId field in voucher creation requests" />
+    </code>
+    <dependencies>
+      <backend ecosystem="Spring Boot 3.5.7 + Java 21">
+        <package name="spring-boot-starter-web" version="3.5.7" />
+        <package name="spring-boot-starter-data-jpa" version="3.5.7" />
+        <package name="spring-boot-starter-security" version="3.5.7" />
+        <package name="spring-boot-starter-validation" version="3.5.7" />
+        <package name="jjwt-api" version="0.12.5" />
+        <package name="jjwt-impl" version="0.12.5" />
+        <package name="jjwt-jackson" version="0.12.5" />
+        <package name="postgresql" version="42.7.4" />
+        <package name="flyway-core" version="11.10.0" />
+        <package name="springdoc-openapi-starter-webmvc-ui" version="2.8.13" />
+      </backend>
+      <frontend ecosystem="React 19 + TypeScript + Vite">
+        <package name="react" version="19.1.1" />
+        <package name="typescript" version="5.9.3" />
+        <package name="vite" version="7.1.7" />
+        <package name="react-router-dom" version="7.9.5" />
+        <package name="@radix-ui/react-*" version="various" />
+        <package name="@hookform/resolvers" version="5.2.2" />
+        <package name="react-hook-form" version="7.66.0" />
+        <package name="zod" version="4.1.12" />
+        <package name="axios" version="1.7.9" />
+        <package name="date-fns" version="4.1.0" />
+        <package name="react-day-picker" version="9.11.1" />
+        <package name="@tanstack/react-query" version="5.62.0" />
+        <package name="@tanstack/react-table" version="8.21.3" />
+      </frontend>
+      <testing>
+        <backend>
+          <framework name="JUnit 5" version="5.10.0" />
+          <framework name="TestContainers" version="1.21.3" />
+          <framework name="Spring Security Test" version="6.3.4" />
+        </backend>
+        <frontend>
+          <framework name="Vitest" version="2.1.4" />
+          <framework name="Testing Library" version="16.0.1" />
+          <framework name="jsdom" version="25.0.1" />
+        </frontend>
+      </testing>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+  <constraint type="Architecture" rule="Company Scoping Required">All period management operations must enforce company scoping via CompanyScopeAspect and CompanyContext for multi-tenant data isolation." />
+  <constraint type="Security" rule="RBAC Enforcement">Period close/reopen operations require CHIEF_ACCOUNTANT, ADMIN, or CFO roles; period viewing requires ACCOUNTANT+ roles." />
+  <constraint type="Database" rule="Transaction Atomicity">Period close/reopen operations must use @Transactional for all-or-nothing execution across period status updates and voucher locking/unlocking." />
+  <constraint type="Validation" rule="Bulk Validation Pattern">Follow VoucherValidationService patterns for comprehensive period validation with detailed error maps and aggregated error reporting." />
+  <constraint type="Audit" rule="Comprehensive Audit Trail">All period operations (close, reopen, validation failures) must be logged with JSON snapshots, SHA-256 hash digests, user metadata, and timestamps." />
+  <constraint type="API" rule="REST Endpoint Standards">Follow VoucherController patterns: /api/v1/periods endpoints with { data: AccountingPeriodDTO, meta: {...} } response format and proper HTTP status codes." />
+  <constraint type="Frontend" rule="Feature-First Structure">Place PeriodSelector under components/period/ for shared use, period management pages under features/accounting/pages/Periods/." />
+  <constraint type="Frontend" rule="shadcn/ui Design System">All period management components must use shadcn/ui components with consistent styling and accessibility features." />
+  <constraint type="Testing" rule="Comprehensive Coverage">Unit tests for service logic, integration tests for API endpoints, and negative tests for blocked operations following patterns from stories 3-3, 3-4, 3-5." />
+  <constraint type="Performance" rule="Database Indexing">Add appropriate indexes for period queries and audit log retrieval following V20251115001 migration patterns." />
+</constraints>
+  <interfaces>
+  <interface name="Period Management API" kind="REST endpoints" signature="GET /api/v1/periods/current, GET /api/v1/periods/open, GET /api/v1/periods/{id}, GET /api/v1/periods/{id}/summary, POST /api/v1/periods/{id}/close, POST /api/v1/periods/{id}/reopen" path="backend/src/main/java/com/accounting/controller/period/PeriodController.java" />
+  <interface name="Period Management Service" kind="Service interface" signature="interface PeriodManagementService { AccountingPeriod closePeriod(UUID periodId, String reason); AccountingPeriod reopenPeriod(UUID periodId, String reason, String approvalMetadata); List&lt;AccountingPeriod&gt; getOpenPeriods(); AccountingPeriod getCurrentPeriod(); PeriodSummary getPeriodSummary(UUID periodId); }" path="backend/src/main/java/com/accounting/service/period/PeriodManagementService.java" />
+  <interface name="Period Validation Extension" kind="Service extension" signature="interface PeriodValidationService { ValidationErrorMap validatePeriodForVoucherCreation(LocalDate voucherDate); ValidationErrorMap validatePeriodForVoucherPosting(UUID periodId); boolean isPeriodOpen(UUID periodId); void blockOperationsInClosedPeriod(UUID periodId, String operation); }" path="backend/src/main/java/com/accounting/service/period/PeriodValidationService.java" />
+  <interface name="Period Audit Extension" kind="Audit service extension" signature="interface PeriodAuditService { void logPeriodClosed(UUID periodId, String reason, String hashDigest); void logPeriodReopened(UUID periodId, String reason, String approvalMetadata, String hashDigest); void logPeriodValidationBlocked(UUID periodId, String operation, String reason); }" path="backend/src/main/java/com/accounting/service/period/PeriodAuditService.java" />
+  <interface name="PeriodSelector Component" kind="React component" signature="interface PeriodSelectorProps { selectedPeriod?: AccountingPeriod; onPeriodChange: (period: AccountingPeriod) => void; showSummary?: boolean; disabled?: boolean; }" path="frontend/src/components/period/PeriodSelector.tsx" />
+  <interface name="Voucher Period Integration" kind="Entity extension" signature="class Voucher extends CompanyScopedEntity { @ManyToOne private AccountingPeriod period; // periodId field already exists }" path="backend/src/main/java/com/accounting/entity/Voucher.java" />
+</interfaces>
+  <tests>
+    <standards>Follow comprehensive testing patterns from Story 3-3: Unit tests for service layer validation logic using JUnit 5 and Mockito. Integration tests using @SpringBootTest with TestContainers for database operations. API endpoint tests covering RBAC enforcement, company scoping, and error responses. Frontend component tests using Vitest and Testing Library for user interactions and state management. Negative test scenarios for all blocked operations (close with drafts, create in closed period, reopen without approval). Test data setup with proper company scoping and role-based access control validation.</standards>
+    <locations>
+Backend Tests:
+- backend/src/test/java/com/accounting/controller/period/PeriodControllerIntegrationTest.java
+- backend/src/test/java/com/accounting/service/period/PeriodManagementServiceTest.java
+- backend/src/test/java/com/accounting/service/period/PeriodValidationServiceTest.java
+- backend/src/test/java/com/accounting/repository/AccountingPeriodRepositoryTest.java
+
+Frontend Tests:
+- frontend/src/components/period/__tests__/PeriodSelector.test.tsx
+- frontend/src/features/accounting/pages/Periods/__tests__/PeriodManagement.test.tsx
+- frontend/src/services/__tests__/periodService.test.ts
+
+Integration Tests:
+- backend/src/test/java/com/accounting/integration/PeriodManagementIntegrationTest.java
+</locations>
+    <ideas>
+AC1 Tests (Period Selector UI):
+- Test PeriodSelector displays current period + 3 prior/next open periods
+- Test period status badges (OPEN/CLOSED) with correct visual indicators
+- Test period summary badge shows closing status, posting flow status, pending drafts count
+- Test localStorage persistence of selected period per company
+- Test integration with VoucherList and VoucherForm components
+
+AC2 Tests (Period Validation):
+- Test voucher creation blocked in closed periods with 400 error
+- Test voucher posting blocked in future periods with audit logging
+- Test clear error message format: "Cannot create/post voucher in closed period: {period_name}"
+- Test audit trail entries for all blocked attempts with user and period info
+
+AC3 Tests (Period Close):
+- Test successful period close with atomic transaction
+- Test batch voucher locking when closing period
+- Test audit log entry with hash digest, user, timestamp, reason
+- Test validation: prevent close when draft vouchers exist
+- Test validation: prevent close when vouchers are unbalanced
+
+AC4 Tests (Period Reopen):
+- Test successful period reopen with approval metadata
+- Test voucher unlocking when reopening period
+- Test audit logging for all reopen attempts (approved and rejected)
+- Test validation: reopen requires reason and approval metadata
+
+AC5 Tests (Prior-Period Reversals):
+- Test manual reversal workflow for prior-period adjustments (MVP)
+- Test automated reversal creation in next open period (post-MVP placeholder)
+
+AC6 Tests (Period Summary):
+- Test period summary dashboard badge data accuracy
+- Test closing status display (OPEN/CLOSED)
+- Test posting flow status indicators
+- Test pending drafts count accuracy
+
+RBAC Tests:
+- Test period close/reopen restricted to CHIEF_ACCOUNTANT+ roles
+- Test period viewing available to ACCOUNTANT+ roles
+- Test company scoping enforcement across all operations
+</ideas>
+  </tests>
+</story-context>

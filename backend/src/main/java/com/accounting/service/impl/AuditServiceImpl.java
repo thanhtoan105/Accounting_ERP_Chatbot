@@ -9,6 +9,7 @@ import com.accounting.repository.ImportAuditEntryRepository;
 import com.accounting.service.AuditService;
 import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
+import com.accounting.security.SecurityUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -499,6 +500,99 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    public void logVoucherPosted(
+            java.util.UUID voucherId,
+            String voucherNumber,
+            Long postedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(postedByUserId);
+        // Get user email if available
+        if (postedByUserId != null) {
+            userRepository
+                    .findById(postedByUserId)
+                    .ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("VOUCHER_POSTED");
+        String reasonText = String.format("voucher:%s,number:%s", voucherId, voucherNumber);
+        log.setReason(reasonText.length() > 50 ? reasonText.substring(0, 47) + "..." : reasonText);
+        log.setIpAddress(request.getRemoteAddr());
+        log.setUserAgent(request.getHeader("User-Agent"));
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logVoucherUnposted(
+            java.util.UUID voucherId,
+            String voucherNumber,
+            String reason,
+            Long unpostedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(unpostedByUserId);
+        // Get user email if available
+        if (unpostedByUserId != null) {
+            userRepository
+                    .findById(unpostedByUserId)
+                    .ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("VOUCHER_UNPOSTED");
+        // Store voucher ID, number, and reason (truncate to fit VARCHAR(50))
+        String reasonText = String.format("voucher:%s,number:%s", voucherId, voucherNumber);
+        if (reason != null && !reason.isBlank()) {
+            // Include reason, but truncate if too long
+            String fullReason = reasonText + ",reason:" + reason;
+            if (fullReason.length() > 50) {
+                reasonText = reasonText + ",reason:" + reason.substring(0, Math.min(reason.length(), 30)) + "...";
+            } else {
+                reasonText = fullReason;
+            }
+        }
+        log.setReason(reasonText.length() > 50 ? reasonText.substring(0, 47) + "..." : reasonText);
+        log.setIpAddress(request.getRemoteAddr());
+        log.setUserAgent(request.getHeader("User-Agent"));
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void logVoucherReversed(
+            java.util.UUID originalVoucherId,
+            String originalVoucherNumber,
+            java.util.UUID reversalVoucherId,
+            String reversalVoucherNumber,
+            String reason,
+            Long reversedByUserId,
+            HttpServletRequest request) {
+        AuditLog log = new AuditLog();
+        log.setUserId(reversedByUserId);
+        // Get user email if available
+        if (reversedByUserId != null) {
+            userRepository
+                    .findById(reversedByUserId)
+                    .ifPresent(user -> log.setEmail(user.getEmail()));
+        }
+        log.setAction("VOUCHER_REVERSED");
+        // Store original and reversal voucher IDs/numbers, and reason (truncate to fit VARCHAR(50))
+        String reasonText = String.format("original:%s,reversal:%s", originalVoucherId, reversalVoucherId);
+        if (reason != null && !reason.isBlank()) {
+            // Include reason, but truncate if too long
+            String fullReason = reasonText + ",reason:" + reason;
+            if (fullReason.length() > 50) {
+                reasonText = reasonText + ",reason:" + reason.substring(0, Math.min(reason.length(), 20)) + "...";
+            } else {
+                reasonText = fullReason;
+            }
+        }
+        log.setReason(reasonText.length() > 50 ? reasonText.substring(0, 47) + "..." : reasonText);
+        log.setIpAddress(request.getRemoteAddr());
+        log.setUserAgent(request.getHeader("User-Agent"));
+        log.setCreatedAt(Instant.now());
+        auditLogRepository.save(log);
+    }
+
+    @Override
     public void logCompanySettingsUpdated(
             Long companyId,
             Long updatedByUserId,
@@ -952,5 +1046,421 @@ public class AuditServiceImpl implements AuditService {
       log.setFailureReason("FINDINGS_REPORTED");
     }
     persist(log);
+    }
+
+    @Override
+    public void logFraudDetection(
+            Long userId,
+            Long accountId,
+            String accountCode,
+            int lineNumber,
+            java.math.BigDecimal attemptedAmount,
+            String fraudType,
+            HttpServletRequest request) {
+        AuditLog log = startLog("FRAUD_DETECTION", request);
+        log.setEventType("SECURITY");
+        assignActor(log, userId, null);
+        assignEntity(log, "ACCOUNT", accountId, accountCode);
+        log.setSuccess(Boolean.FALSE);
+        log.setFailureReason("POSSIBLE_FRAUD");
+        
+        // Build reason field (truncate to fit VARCHAR(50))
+        String reason = String.format("type:%s,line:%d,amt:%s", 
+            fraudType, lineNumber, attemptedAmount != null ? attemptedAmount.toString() : "N/A");
+        if (reason.length() > 50) {
+            reason = reason.substring(0, 47) + "...";
+        }
+        log.setReason(reason);
+        
+        // Build metadata with full details
+        ObjectNode metadata = buildMetadata();
+        metadata.put("fraudType", fraudType);
+        metadata.put("lineNumber", lineNumber);
+        if (attemptedAmount != null) {
+            metadata.put("attemptedAmount", attemptedAmount.toString());
+        }
+        if (accountId != null) {
+            metadata.put("accountId", accountId);
+        }
+        if (accountCode != null) {
+            metadata.put("accountCode", accountCode);
+        }
+        log.setMetadata(metadata);
+        
+        persist(log);
+    }
+
+    @Override
+    public void logBlockedAttempt(
+            Long userId,
+            Long accountId,
+            String accountCode,
+            int lineNumber,
+            String fieldName,
+            String reason,
+            String attemptType,
+            HttpServletRequest request) {
+        AuditLog log = startLog("VALIDATION_BLOCKED", request);
+        log.setEventType("VALIDATION");
+        assignActor(log, userId, null);
+        assignEntity(log, "ACCOUNT", accountId, accountCode);
+        log.setSuccess(Boolean.FALSE);
+        log.setFailureReason(attemptType);
+        
+        // Build reason field (truncate to fit VARCHAR(50))
+        String reasonText = String.format("type:%s,line:%d,field:%s", 
+            attemptType, lineNumber, fieldName != null ? fieldName : "N/A");
+        if (reason != null && !reason.isBlank()) {
+            String fullReason = reasonText + ",msg:" + reason;
+            if (fullReason.length() > 50) {
+                fullReason = fullReason.substring(0, 47) + "...";
+            }
+            reasonText = fullReason;
+        } else if (reasonText.length() > 50) {
+            reasonText = reasonText.substring(0, 47) + "...";
+        }
+        log.setReason(reasonText);
+        
+        // Build metadata with full details
+        ObjectNode metadata = buildMetadata();
+        metadata.put("attemptType", attemptType);
+        metadata.put("lineNumber", lineNumber);
+        if (fieldName != null) {
+            metadata.put("fieldName", fieldName);
+        }
+        if (reason != null) {
+            metadata.put("reason", reason);
+        }
+        if (accountId != null) {
+            metadata.put("accountId", accountId);
+        }
+        if (accountCode != null) {
+            metadata.put("accountCode", accountCode);
+        }
+        log.setMetadata(metadata);
+        
+        persist(log);
+    }
+
+    @Override
+    public void logVoucherEvent(
+            UUID voucherId,
+            String voucherNumber,
+            String action,
+            com.fasterxml.jackson.databind.JsonNode beforeSnapshot,
+            com.fasterxml.jackson.databind.JsonNode afterSnapshot,
+            String diffHash,
+            HttpServletRequest request) {
+        try {
+            AuditLog log = startLog(action, request);
+            log.setEventType("VOUCHER");
+            assignEntity(log, "VOUCHER", voucherId, voucherNumber);
+            
+            // Get current user from SecurityContext
+            Long userId = getCurrentUserId();
+            if (userId != null) {
+                assignActor(log, userId, null);
+            }
+            
+            // Build changes JSON with before/after snapshots
+            ObjectNode changes = objectMapper.createObjectNode();
+            if (beforeSnapshot != null) {
+                changes.set("before", beforeSnapshot);
+            }
+            if (afterSnapshot != null) {
+                changes.set("after", afterSnapshot);
+            }
+            if (!changes.isEmpty()) {
+                log.setChanges(changes);
+            }
+            
+            // Build metadata with diff hash and summary
+            ObjectNode metadata = buildMetadata();
+            if (diffHash != null) {
+                metadata.put("diffHash", diffHash);
+            }
+            metadata.put("voucherId", voucherId.toString());
+            metadata.put("voucherNumber", voucherNumber);
+            log.setMetadata(metadata);
+            
+            log.setSuccess(Boolean.TRUE);
+            persist(log);
+        } catch (Exception e) {
+            // Non-blocking: log error but don't break main flow
+            org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
+                .error("Failed to log voucher event for voucher {}: {}", voucherId, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logBatchVoucherAction(
+            java.util.List<UUID> voucherIds,
+            String action,
+            AuditService.BatchActionStats stats,
+            java.time.Instant startTime,
+            java.time.Instant endTime,
+            String summary,
+            HttpServletRequest request) {
+        try {
+            AuditLog log = startLog(action, request);
+            log.setEventType("VOUCHER_BATCH");
+            
+            // Get current user from SecurityContext
+            Long userId = getCurrentUserId();
+            if (userId != null) {
+                assignActor(log, userId, null);
+            }
+            
+            // Build metadata with batch action details
+            ObjectNode metadata = buildMetadata();
+            metadata.put("action", action);
+            metadata.put("summary", summary != null ? summary : "");
+            
+            // Add voucher IDs list
+            com.fasterxml.jackson.databind.node.ArrayNode voucherIdsArray = objectMapper.createArrayNode();
+            if (voucherIds != null) {
+                for (UUID voucherId : voucherIds) {
+                    voucherIdsArray.add(voucherId.toString());
+                }
+            }
+            metadata.set("voucherIds", voucherIdsArray);
+            
+            // Add statistics
+            if (stats != null) {
+                ObjectNode statsNode = objectMapper.createObjectNode();
+                statsNode.put("successCount", stats.getSuccessCount());
+                statsNode.put("failureCount", stats.getFailureCount());
+                statsNode.put("totalCount", stats.getTotalCount());
+                metadata.set("stats", statsNode);
+            }
+            
+            // Add timestamps
+            if (startTime != null) {
+                metadata.put("startTime", startTime.toString());
+            }
+            if (endTime != null) {
+                metadata.put("endTime", endTime.toString());
+            }
+            if (startTime != null && endTime != null) {
+                long durationMs = java.time.Duration.between(startTime, endTime).toMillis();
+                metadata.put("durationMs", durationMs);
+            }
+            
+            log.setMetadata(metadata);
+            log.setSuccess(stats != null && stats.getFailureCount() == 0);
+            if (stats != null && stats.getFailureCount() > 0) {
+                log.setFailureReason(String.format("Batch action completed with %d failures", stats.getFailureCount()));
+            }
+            
+            persist(log);
+        } catch (Exception e) {
+            // Non-blocking: log error but don't break main flow
+            org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
+                .error("Failed to log batch voucher action: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logPeriodClosed(UUID periodId, String reason, String hashDigest) {
+        try {
+            AuditLog log = startLog("PERIOD_CLOSED", null);
+            log.setEventType("PERIOD_MANAGEMENT");
+
+            // Get current user from SecurityContext
+            Long userId = getCurrentUserId();
+            if (userId != null) {
+                assignActor(log, userId, null);
+            }
+
+            // Build metadata with period close details
+            ObjectNode metadata = buildMetadata();
+            metadata.put("periodId", periodId != null ? periodId.toString() : "");
+            metadata.put("reason", reason != null ? reason : "");
+            metadata.put("hashDigest", hashDigest != null ? hashDigest : "");
+
+            log.setMetadata(metadata);
+            log.setSuccess(true);
+
+            persist(log);
+        } catch (Exception e) {
+            // Non-blocking: log error but don't break main flow
+            org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
+                .error("Failed to log period close for period {}: {}", periodId, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logPeriodReopened(UUID periodId, String reason, String approvalMetadata, String hashDigest) {
+        try {
+            AuditLog log = startLog("PERIOD_REOPENED", null);
+            log.setEventType("PERIOD_MANAGEMENT");
+
+            // Get current user from SecurityContext
+            Long userId = getCurrentUserId();
+            if (userId != null) {
+                assignActor(log, userId, null);
+            }
+
+            // Build metadata with period reopen details
+            ObjectNode metadata = buildMetadata();
+            metadata.put("periodId", periodId != null ? periodId.toString() : "");
+            metadata.put("reason", reason != null ? reason : "");
+            metadata.put("approvalMetadata", approvalMetadata != null ? approvalMetadata : "");
+            metadata.put("hashDigest", hashDigest != null ? hashDigest : "");
+
+            log.setMetadata(metadata);
+            log.setSuccess(true);
+
+            persist(log);
+        } catch (Exception e) {
+            // Non-blocking: log error but don't break main flow
+            org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
+                .error("Failed to log period reopen for period {}: {}", periodId, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logPeriodValidationBlocked(UUID periodId, String operation, String reason) {
+        try {
+            AuditLog log = startLog("PERIOD_VALIDATION_BLOCKED", null);
+            log.setEventType("PERIOD_VALIDATION");
+            log.setSuccess(false);
+            log.setFailureReason(reason);
+
+            // Get current user from SecurityContext
+            Long userId = getCurrentUserId();
+            if (userId != null) {
+                assignActor(log, userId, null);
+            }
+
+            // Build metadata with validation block details
+            ObjectNode metadata = buildMetadata();
+            metadata.put("periodId", periodId != null ? periodId.toString() : "");
+            metadata.put("operation", operation != null ? operation : "");
+            metadata.put("reason", reason != null ? reason : "");
+
+            log.setMetadata(metadata);
+
+            persist(log);
+        } catch (Exception e) {
+            // Non-blocking: log error but don't break main flow
+            org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
+                .error("Failed to log period validation block for period {}: {}", periodId, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logAttachmentDownload(
+            UUID attachmentId,
+            UUID voucherId,
+            String fileName,
+            Long fileSize,
+            String mimeType,
+            Long downloadedByUserId,
+            HttpServletRequest request) {
+        try {
+            AuditLog log = startLog("ATTACHMENT_DOWNLOAD", request);
+            assignActor(log, downloadedByUserId, null);
+            assignEntity(log, "VOUCHER_ATTACHMENT", attachmentId != null ? attachmentId.toString() : null, fileName);
+            
+            ObjectNode metadata = buildMetadata();
+            metadata.put("attachmentId", attachmentId != null ? attachmentId.toString() : "");
+            metadata.put("voucherId", voucherId != null ? voucherId.toString() : "");
+            metadata.put("fileName", fileName != null ? fileName : "");
+            metadata.put("fileSize", fileSize != null ? fileSize : 0);
+            metadata.put("mimeType", mimeType != null ? mimeType : "");
+            
+            log.setMetadata(metadata);
+            log.setSuccess(true);
+            persist(log);
+        } catch (Exception e) {
+            // Non-blocking: log error but don't break main flow
+            org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
+                .error("Failed to log attachment download for attachment {}: {}", attachmentId, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logAttachmentView(
+            UUID attachmentId,
+            UUID voucherId,
+            String fileName,
+            Long fileSize,
+            String mimeType,
+            Long viewedByUserId,
+            HttpServletRequest request) {
+        try {
+            AuditLog log = startLog("ATTACHMENT_VIEW", request);
+            assignActor(log, viewedByUserId, null);
+            assignEntity(log, "VOUCHER_ATTACHMENT", attachmentId != null ? attachmentId.toString() : null, fileName);
+            
+            ObjectNode metadata = buildMetadata();
+            metadata.put("attachmentId", attachmentId != null ? attachmentId.toString() : "");
+            metadata.put("voucherId", voucherId != null ? voucherId.toString() : "");
+            metadata.put("fileName", fileName != null ? fileName : "");
+            metadata.put("fileSize", fileSize != null ? fileSize : 0);
+            metadata.put("mimeType", mimeType != null ? mimeType : "");
+            
+            log.setMetadata(metadata);
+            log.setSuccess(true);
+            persist(log);
+        } catch (Exception e) {
+            // Non-blocking: log error but don't break main flow
+            org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
+                .error("Failed to log attachment view for attachment {}: {}", attachmentId, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logAttachmentDelete(
+            UUID attachmentId,
+            UUID voucherId,
+            String fileName,
+            Long fileSize,
+            String mimeType,
+            String reason,
+            Long deletedByUserId,
+            HttpServletRequest request) {
+        try {
+            AuditLog log = startLog("ATTACHMENT_DELETE", request);
+            assignActor(log, deletedByUserId, null);
+            assignEntity(log, "VOUCHER_ATTACHMENT", attachmentId != null ? attachmentId.toString() : null, fileName);
+            
+            ObjectNode metadata = buildMetadata();
+            metadata.put("attachmentId", attachmentId != null ? attachmentId.toString() : "");
+            metadata.put("voucherId", voucherId != null ? voucherId.toString() : "");
+            metadata.put("fileName", fileName != null ? fileName : "");
+            metadata.put("fileSize", fileSize != null ? fileSize : 0);
+            metadata.put("mimeType", mimeType != null ? mimeType : "");
+            metadata.put("reason", reason != null ? reason : "");
+            
+            log.setMetadata(metadata);
+            log.setReason(trimReason(reason));
+            log.setSuccess(true);
+            persist(log);
+        } catch (Exception e) {
+            // Non-blocking: log error but don't break main flow
+            org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
+                .error("Failed to log attachment delete for attachment {}: {}", attachmentId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get current user ID from SecurityContext.
+     * @return user ID or null if not available
+     */
+    private Long getCurrentUserId() {
+        try {
+            return SecurityUtils.getCurrentUserId();
+        } catch (Exception e) {
+            // Non-blocking: return null if user ID cannot be determined
+            return null;
+        }
     }
 }

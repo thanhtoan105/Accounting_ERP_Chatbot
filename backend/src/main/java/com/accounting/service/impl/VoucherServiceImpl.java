@@ -3,9 +3,11 @@ package com.accounting.service.impl;
 import com.accounting.dto.VoucherCreateRequest;
 import com.accounting.dto.VoucherCountDTO;
 import com.accounting.dto.VoucherDTO;
+import com.accounting.dto.VoucherEntryLineRequest;
 import com.accounting.dto.VoucherLineDTO;
 import com.accounting.dto.VoucherListDTO;
 import com.accounting.dto.VoucherValidationResult;
+import com.accounting.exception.VoucherValidationException;
 import com.accounting.entity.User;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
@@ -17,8 +19,11 @@ import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.JwtTokenProvider;
 import com.accounting.service.AuditService;
+import com.accounting.service.PeriodManagementService;
+import com.accounting.dto.AccountingPeriodDTO;
 import com.accounting.service.VoucherService;
 import com.accounting.service.VoucherValidationService;
+import com.accounting.service.util.VoucherAuditHelper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -28,7 +33,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -61,6 +65,8 @@ public class VoucherServiceImpl implements VoucherService {
   private final AuditService auditService;
   private final JwtTokenProvider jwtTokenProvider;
   private final VoucherValidationService voucherValidationService;
+  private final VoucherAuditHelper voucherAuditHelper;
+  private final PeriodManagementService periodManagementService;
 
   @PersistenceContext
   private EntityManager entityManager;
@@ -73,7 +79,9 @@ public class VoucherServiceImpl implements VoucherService {
       SupplierRepository supplierRepository,
       AuditService auditService,
       JwtTokenProvider jwtTokenProvider,
-      VoucherValidationService voucherValidationService) {
+      VoucherValidationService voucherValidationService,
+      VoucherAuditHelper voucherAuditHelper,
+      PeriodManagementService periodManagementService) {
     this.voucherRepository = voucherRepository;
     this.voucherLineRepository = voucherLineRepository;
     this.userRepository = userRepository;
@@ -82,6 +90,8 @@ public class VoucherServiceImpl implements VoucherService {
     this.auditService = auditService;
     this.jwtTokenProvider = jwtTokenProvider;
     this.voucherValidationService = voucherValidationService;
+    this.voucherAuditHelper = voucherAuditHelper;
+    this.periodManagementService = periodManagementService;
   }
 
   @Override
@@ -94,58 +104,59 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     // Build specification with company scope and optional filters
-    Specification<Voucher> spec =
-        (root, query, criteriaBuilder) -> {
-          List<Predicate> predicates = new ArrayList<>();
+    Specification<Voucher> spec = (root, query, criteriaBuilder) -> {
+      List<Predicate> predicates = new ArrayList<>();
 
-          // Always filter by company
-          predicates.add(criteriaBuilder.equal(root.get("companyId"), companyId));
+      // Always filter by company
+      predicates.add(criteriaBuilder.equal(root.get("companyId"), companyId));
 
-          // Filter by status
-          if (status != null && !status.isBlank()) {
-            predicates.add(criteriaBuilder.equal(root.get("status"), status));
-          }
+      // Filter by status
+      if (status != null && !status.isBlank()) {
+        predicates.add(criteriaBuilder.equal(root.get("status"), status));
+      }
 
-          // Filter by date range
-          if (dateFrom != null) {
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("voucherDate"), dateFrom));
-          }
-          if (dateTo != null) {
-            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("voucherDate"), dateTo));
-          }
+      // Filter by date range
+      if (dateFrom != null) {
+        predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("voucherDate"), dateFrom));
+      }
+      if (dateTo != null) {
+        predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("voucherDate"), dateTo));
+      }
 
-          // Search by voucher number or description (unaccented Vietnamese support)
-          if (search != null && !search.isBlank()) {
-            // Use native PostgreSQL unaccent_search function for accurate Vietnamese matching
-            List<UUID> matchingIds = voucherRepository.findIdsByCompanyIdAndSearchTerm(
-                companyId, search.trim());
-            if (matchingIds.isEmpty()) {
-              // No matches found, return empty result by adding impossible condition
-              predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
-            } else {
-              // Filter to only matching IDs
-              predicates.add(root.get("id").in(matchingIds));
-            }
-          }
+      // Search by voucher number or description (unaccented Vietnamese support)
+      if (search != null && !search.isBlank()) {
+        // Use native PostgreSQL unaccent_search function for accurate Vietnamese
+        // matching
+        List<UUID> matchingIds = voucherRepository.findIdsByCompanyIdAndSearchTerm(
+            companyId, search.trim());
+        if (matchingIds.isEmpty()) {
+          // No matches found, return empty result by adding impossible condition
+          predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
+        } else {
+          // Filter to only matching IDs
+          predicates.add(root.get("id").in(matchingIds));
+        }
+      }
 
-          // Filter by account ID (if provided, filter vouchers that have lines with this account)
-          if (accountId != null) {
-            List<UUID> voucherIdsWithAccount = voucherLineRepository
-                .findByCompanyIdAndAccountId(companyId, accountId)
-                .stream()
-                .map(VoucherLine::getVoucherId)
-                .distinct()
-                .collect(Collectors.toList());
-            if (voucherIdsWithAccount.isEmpty()) {
-              // No vouchers with this account, return empty result
-              predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
-            } else {
-              predicates.add(root.get("id").in(voucherIdsWithAccount));
-            }
-          }
+      // Filter by account ID (if provided, filter vouchers that have lines with this
+      // account)
+      if (accountId != null) {
+        List<UUID> voucherIdsWithAccount = voucherLineRepository
+            .findByCompanyIdAndAccountId(companyId, accountId)
+            .stream()
+            .map(VoucherLine::getVoucherId)
+            .distinct()
+            .collect(Collectors.toList());
+        if (voucherIdsWithAccount.isEmpty()) {
+          // No vouchers with this account, return empty result
+          predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
+        } else {
+          predicates.add(root.get("id").in(voucherIdsWithAccount));
+        }
+      }
 
-          return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+      return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+    };
 
     Page<Voucher> vouchers = voucherRepository.findAll(spec, pageable);
     return vouchers.map(this::toListDTO);
@@ -160,24 +171,21 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     // Use findAll with search filter (no pagination for search)
-    Page<VoucherListDTO> results =
-        findAll(
-            Pageable.unpaged(),
-            null, // status
-            null, // dateFrom
-            null, // dateTo
-            searchTerm,
-            null); // accountId
+    Page<VoucherListDTO> results = findAll(
+        Pageable.unpaged(),
+        null, // status
+        null, // dateFrom
+        null, // dateTo
+        searchTerm,
+        null); // accountId
 
     // Convert ListDTO to full DTO
     return results.getContent().stream()
         .map(
-            listDto ->
-                getVoucherById(listDto.getId())
-                    .orElseThrow(
-                        () ->
-                            new ResponseStatusException(
-                                HttpStatus.NOT_FOUND, "Voucher not found: " + listDto.getId())))
+            listDto -> getVoucherById(listDto.getId())
+                .orElseThrow(
+                    () -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Voucher not found: " + listDto.getId())))
         .collect(Collectors.toList());
   }
 
@@ -226,8 +234,21 @@ public class VoucherServiceImpl implements VoucherService {
       throwValidationException(validationResult);
     }
 
-    // TODO: Validate period is open (PeriodService integration when available)
-    // For now, we skip period validation - it should be added when PeriodService is implemented
+    // Auto-determine period from voucher date if not provided
+    UUID periodId = request.getPeriodId();
+    if (periodId == null) {
+      Optional<AccountingPeriodDTO> periodOpt = periodManagementService.findPeriodByDate(request.getDate());
+      if (periodOpt.isPresent()) {
+        periodId = periodOpt.get().getId();
+      } else {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Cannot create voucher: No period found for date " + request.getDate());
+      }
+    }
+
+    // Validate period is open for voucher creation
+    validatePeriodForVoucher(request.getDate(), periodId);
 
     // Generate voucher number using database function
     int year = request.getDate().getYear();
@@ -238,18 +259,24 @@ public class VoucherServiceImpl implements VoucherService {
     voucher.setCompanyId(companyId);
     voucher.setVoucherNumber(voucherNumber);
     voucher.setVoucherDate(request.getDate());
-    voucher.setPeriodId(request.getPeriodId());
+    voucher.setPeriodId(periodId);
     voucher.setDescription(request.getDescription());
     voucher.setStatus("draft"); // Always create as draft
-    voucher.setCurrency("VND");
+    voucher.setCurrency(
+        request.getCurrency() != null ? request.getCurrency() : "VND");
     voucher.setEnteredBy(enteredBy);
     voucher.setCreatedAt(Instant.now());
     voucher.setUpdatedAt(Instant.now());
 
-    // Calculate totals from lines
+    List<VoucherLineDTO> ledgerLines = resolveLedgerLines(request);
+    if (ledgerLines == null || ledgerLines.isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "At least one voucher line is required");
+    }
+
     BigDecimal totalDebit = BigDecimal.ZERO;
     BigDecimal totalCredit = BigDecimal.ZERO;
-    for (VoucherLineDTO lineDto : request.getLines()) {
+    for (VoucherLineDTO lineDto : ledgerLines) {
       totalDebit = totalDebit.add(lineDto.getDebit() != null ? lineDto.getDebit() : BigDecimal.ZERO);
       totalCredit = totalCredit.add(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
     }
@@ -262,7 +289,7 @@ public class VoucherServiceImpl implements VoucherService {
     // Save voucher lines
     int lineNumber = 1;
     List<VoucherLine> lines = new ArrayList<>();
-    for (VoucherLineDTO lineDto : request.getLines()) {
+    for (VoucherLineDTO lineDto : ledgerLines) {
       VoucherLine line = new VoucherLine();
       line.setVoucherId(voucher.getId());
       line.setLineNumber(lineNumber++);
@@ -278,6 +305,23 @@ public class VoucherServiceImpl implements VoucherService {
       lines.add(line);
     }
     voucherLineRepository.saveAll(lines);
+
+    // Log audit event for voucher creation
+    try {
+      com.fasterxml.jackson.databind.JsonNode afterSnapshot = voucherAuditHelper.serializeVoucherToJson(voucher);
+      String diffHash = voucherAuditHelper.calculateDiffHash(null, afterSnapshot);
+      auditService.logVoucherEvent(
+          voucher.getId(),
+          voucher.getVoucherNumber(),
+          "VOUCHER_CREATED",
+          null, // before snapshot (null for create)
+          afterSnapshot,
+          diffHash,
+          null); // HttpServletRequest not available in service layer
+    } catch (Exception e) {
+      // Non-blocking: log error but don't break main flow
+      logger.error("Failed to log audit event for voucher creation: {}", e.getMessage(), e);
+    }
 
     logger.info("Created voucher: {} with {} lines", voucherNumber, lines.size());
     return toDTO(voucher);
@@ -297,6 +341,9 @@ public class VoucherServiceImpl implements VoucherService {
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
 
+    // Capture before snapshot for audit logging
+    com.fasterxml.jackson.databind.JsonNode beforeSnapshot = voucherAuditHelper.serializeVoucherToJson(voucher);
+
     // Validate voucher is in draft status
     if (!"draft".equals(voucher.getStatus())) {
       throw new ResponseStatusException(
@@ -314,18 +361,40 @@ public class VoucherServiceImpl implements VoucherService {
       throwValidationException(validationResult);
     }
 
-    // TODO: Validate period is open (PeriodService integration when available)
+    // Auto-determine period from voucher date if not provided
+    UUID periodId = request.getPeriodId();
+    if (periodId == null) {
+      Optional<AccountingPeriodDTO> periodOpt = periodManagementService.findPeriodByDate(request.getDate());
+      if (periodOpt.isPresent()) {
+        periodId = periodOpt.get().getId();
+      } else {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Cannot update voucher: No period found for date " + request.getDate());
+      }
+    }
+
+    // Validate period is open for voucher update
+    validatePeriodForVoucher(request.getDate(), periodId);
 
     // Update voucher fields (voucher number is not changed on update)
     voucher.setVoucherDate(request.getDate());
-    voucher.setPeriodId(request.getPeriodId());
+    voucher.setPeriodId(periodId);
     voucher.setDescription(request.getDescription());
+    if (request.getCurrency() != null) {
+      voucher.setCurrency(request.getCurrency());
+    }
     voucher.setUpdatedAt(Instant.now());
 
-    // Calculate totals from lines
+    List<VoucherLineDTO> ledgerLines = resolveLedgerLines(request);
+    if (ledgerLines == null || ledgerLines.isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "At least one voucher line is required");
+    }
+
     BigDecimal totalDebit = BigDecimal.ZERO;
     BigDecimal totalCredit = BigDecimal.ZERO;
-    for (VoucherLineDTO lineDto : request.getLines()) {
+    for (VoucherLineDTO lineDto : ledgerLines) {
       totalDebit = totalDebit.add(lineDto.getDebit() != null ? lineDto.getDebit() : BigDecimal.ZERO);
       totalCredit = totalCredit.add(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
     }
@@ -342,7 +411,7 @@ public class VoucherServiceImpl implements VoucherService {
     // Save new voucher lines
     int lineNumber = 1;
     List<VoucherLine> lines = new ArrayList<>();
-    for (VoucherLineDTO lineDto : request.getLines()) {
+    for (VoucherLineDTO lineDto : ledgerLines) {
       VoucherLine line = new VoucherLine();
       line.setVoucherId(voucher.getId());
       line.setLineNumber(lineNumber++);
@@ -358,6 +427,23 @@ public class VoucherServiceImpl implements VoucherService {
       lines.add(line);
     }
     voucherLineRepository.saveAll(lines);
+
+    // Log audit event for voucher update
+    try {
+      com.fasterxml.jackson.databind.JsonNode afterSnapshot = voucherAuditHelper.serializeVoucherToJson(voucher);
+      String diffHash = voucherAuditHelper.calculateDiffHash(beforeSnapshot, afterSnapshot);
+      auditService.logVoucherEvent(
+          voucher.getId(),
+          voucher.getVoucherNumber(),
+          "VOUCHER_UPDATED",
+          beforeSnapshot,
+          afterSnapshot,
+          diffHash,
+          null); // HttpServletRequest not available in service layer
+    } catch (Exception e) {
+      // Non-blocking: log error but don't break main flow
+      logger.error("Failed to log audit event for voucher update: {}", e.getMessage(), e);
+    }
 
     logger.info("Updated voucher: {} with {} lines", voucher.getVoucherNumber(), lines.size());
     return toDTO(voucher);
@@ -402,18 +488,49 @@ public class VoucherServiceImpl implements VoucherService {
    * @param validationResult validation result with errors
    */
   private void throwValidationException(VoucherValidationResult validationResult) {
-    // Convert validation errors to a format suitable for HTTP response
-    Map<Integer, Map<String, String>> errors = validationResult.getErrors();
-    StringBuilder errorMessage = new StringBuilder("Validation failed:\n");
-    for (Map.Entry<Integer, Map<String, String>> entry : errors.entrySet()) {
-      Integer lineNumber = entry.getKey();
-      Map<String, String> lineErrors = entry.getValue();
-      for (Map.Entry<String, String> fieldError : lineErrors.entrySet()) {
-        errorMessage.append(String.format("Line %d, %s: %s\n", lineNumber, fieldError.getKey(), fieldError.getValue()));
-      }
+    throw new VoucherValidationException(validationResult);
+  }
+
+  private List<VoucherLineDTO> resolveLedgerLines(VoucherCreateRequest request) {
+    if (request.getEntryLines() != null && !request.getEntryLines().isEmpty()) {
+      return convertEntryLines(request.getEntryLines());
     }
-    throw new ResponseStatusException(
-        HttpStatus.BAD_REQUEST, errorMessage.toString());
+    return request.getLines();
+  }
+
+  private List<VoucherLineDTO> convertEntryLines(List<VoucherEntryLineRequest> entryLines) {
+    List<VoucherLineDTO> lines = new ArrayList<>();
+    if (entryLines == null) {
+      return lines;
+    }
+
+    for (VoucherEntryLineRequest entry : entryLines) {
+      BigDecimal amount = entry.getAmount() != null ? entry.getAmount() : BigDecimal.ZERO;
+
+      VoucherLineDTO debitLine = new VoucherLineDTO();
+      debitLine.setAccountId(entry.getDebitAccountId());
+      debitLine.setDebit(amount);
+      debitLine.setCredit(BigDecimal.ZERO);
+      debitLine.setDescription(entry.getDescription());
+      debitLine.setCustomerId(entry.getCustomerId());
+      debitLine.setVendorId(entry.getSupplierId());
+      debitLine.setCostCenterId(entry.getCostCenterId());
+      debitLine.setItemId(entry.getItemId());
+      lines.add(debitLine);
+
+      VoucherLineDTO creditLine = new VoucherLineDTO();
+      creditLine.setAccountId(entry.getCreditAccountId());
+      creditLine.setDebit(BigDecimal.ZERO);
+      creditLine.setCredit(amount);
+      creditLine.setDescription(entry.getDescription());
+      creditLine.setCustomerId(entry.getCustomerId());
+      creditLine.setVendorId(entry.getSupplierId());
+      creditLine.setCostCenterId(entry.getCostCenterId());
+      creditLine.setItemId(entry.getItemId());
+      lines.add(creditLine);
+    }
+
+    return lines;
   }
 
   @Override
@@ -431,15 +548,41 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     // Find voucher
-    Voucher voucher =
-        voucherRepository
-            .findByCompanyIdAndId(companyId, voucherId)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
+    Voucher voucher = voucherRepository
+        .findByCompanyIdAndId(companyId, voucherId)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
 
-    // Validate voucher is in draft status
+    // Validate voucher is in draft status - posted vouchers cannot be deleted (AC
+    // #7)
+    if ("posted".equals(voucher.getStatus())) {
+      // Log blocked deletion attempt in audit trail
+      Long deletedByUserId = null;
+      String authHeader = request.getHeader("Authorization");
+      if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        String token = authHeader.substring(7);
+        try {
+          deletedByUserId = jwtTokenProvider.getUserIdFromToken(token);
+        } catch (Exception e) {
+          logger.warn("Failed to extract user ID from JWT token for blocked deletion audit log", e);
+        }
+      }
+      if (deletedByUserId != null) {
+        try {
+          auditService.logVoucherDeleted(
+              voucherId, voucher.getVoucherNumber(), "Blocked: Posted voucher cannot be deleted", deletedByUserId,
+              request);
+        } catch (Exception e) {
+          logger.error("Failed to log blocked deletion to audit trail", e);
+        }
+      }
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT,
+          "Cannot delete posted voucher. Only draft vouchers can be deleted.");
+    }
+
+    // Also block unposted vouchers that are not draft
     if (!"draft".equals(voucher.getStatus())) {
       throw new ResponseStatusException(
           HttpStatus.CONFLICT,
@@ -471,8 +614,10 @@ public class VoucherServiceImpl implements VoucherService {
             voucherId,
             voucher.getVoucherNumber(),
             e.getMessage());
-        // Continue with deletion but audit log will be missing - this is a compliance risk
-        // Consider failing deletion if audit is critical for your compliance requirements
+        // Continue with deletion but audit log will be missing - this is a compliance
+        // risk
+        // Consider failing deletion if audit is critical for your compliance
+        // requirements
       }
     } else {
       logger.warn(
@@ -491,7 +636,8 @@ public class VoucherServiceImpl implements VoucherService {
             voucher.getVoucherNumber(),
             e.getMessage(),
             e);
-        // Audit logging failure is critical for compliance - consider failing deletion here
+        // Audit logging failure is critical for compliance - consider failing deletion
+        // here
         // For now, we log the error and allow deletion to proceed
       }
     }
@@ -508,7 +654,7 @@ public class VoucherServiceImpl implements VoucherService {
     String arApEntity = null;
     Long companyId = voucher.getCompanyId();
     List<VoucherLine> lines = voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(voucher.getId());
-    
+
     // Find first line with customer or vendor ID
     for (VoucherLine line : lines) {
       if (line.getCustomerId() != null) {
@@ -538,6 +684,7 @@ public class VoucherServiceImpl implements VoucherService {
         postedByName,
         arApEntity,
         voucher.getReversalOf() != null, // Has reversal badge
+        voucher.getReversedByVoucherId(), // Reversal voucher ID for navigation
         0, // Attachment count - placeholder (deferred to Epic 4/5)
         voucher.getCurrency());
   }
@@ -548,8 +695,7 @@ public class VoucherServiceImpl implements VoucherService {
   private VoucherDTO toDTO(Voucher voucher) {
     String enteredByName = getUserName(voucher.getEnteredBy());
     String postedByName = voucher.getPostedBy() != null ? getUserName(voucher.getPostedBy()) : null;
-    String reversedByName =
-        voucher.getReversedBy() != null ? getUserName(voucher.getReversedBy()) : null;
+    String reversedByName = voucher.getReversedBy() != null ? getUserName(voucher.getReversedBy()) : null;
 
     // Load voucher lines
     List<VoucherLine> lines = voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(voucher.getId());
@@ -574,6 +720,7 @@ public class VoucherServiceImpl implements VoucherService {
         postedByName,
         voucher.getPostedAt(),
         voucher.getReversalOf(),
+        voucher.getReversedByVoucherId(),
         voucher.getReversedBy(),
         reversedByName,
         voucher.getCreatedAt(),
@@ -613,5 +760,79 @@ public class VoucherServiceImpl implements VoucherService {
         .findById(userId)
         .map(User::getFullName)
         .orElse("Unknown");
+  }
+
+  /**
+   * Validate that voucher date is in an open period.
+   * Logs blocked attempts in audit trail.
+   *
+   * @param voucherDate voucher date to validate
+   * @param periodId optional period ID (if provided, validates specific period)
+   * @return true if period is open, throws ResponseStatusException if closed
+   */
+  private boolean validatePeriodForVoucher(LocalDate voucherDate, UUID periodId) {
+    try {
+      // First validate that date is in an open period
+      if (!periodManagementService.isDateInOpenPeriod(voucherDate)) {
+        // Find the period for this date to get period details for error message
+        Optional<com.accounting.dto.AccountingPeriodDTO> periodOpt = periodManagementService.findPeriodByDate(voucherDate);
+
+        String periodName = periodOpt
+            .map(com.accounting.dto.AccountingPeriodDTO::getPeriodName)
+            .orElse("Unknown Period");
+
+        // Log the blocked attempt in audit trail
+        try {
+          auditService.logPeriodValidationBlocked(
+              periodOpt.map(com.accounting.dto.AccountingPeriodDTO::getId).orElse(null),
+              "VOUCHER_CREATION",
+              "Cannot create voucher in closed or future period: " + periodName
+          );
+        } catch (Exception e) {
+          logger.error("Failed to log period validation block to audit trail", e);
+        }
+
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Cannot create voucher in closed or future period: " + periodName
+        );
+      }
+
+      // Validate that the period is open
+      if (!periodManagementService.isPeriodOpen(periodId)) {
+        Optional<AccountingPeriodDTO> periodOpt = periodManagementService.getPeriodById(periodId);
+
+        String periodName = periodOpt
+            .map(AccountingPeriodDTO::getPeriodName)
+            .orElse("Unknown Period");
+
+        // Log the blocked attempt in audit trail
+        try {
+          auditService.logPeriodValidationBlocked(
+              periodId,
+              "VOUCHER_CREATION",
+              "Cannot create voucher in closed period: " + periodName
+          );
+        } catch (Exception e) {
+          logger.error("Failed to log period validation block to audit trail", e);
+        }
+
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Cannot create voucher in closed period: " + periodName
+        );
+      }
+
+      return true;
+    } catch (ResponseStatusException e) {
+      // Re-throw ResponseStatusException (period closed)
+      throw e;
+    } catch (Exception e) {
+      logger.error("Failed to validate period for voucher", e);
+      throw new ResponseStatusException(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "Failed to validate period for voucher creation"
+      );
+    }
   }
 }

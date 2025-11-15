@@ -198,6 +198,59 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
+         * Log voucher posting. Records voucher ID, voucher number, user who posted,
+         * timestamp, and IP address.
+         *
+         * @param voucherId       voucher ID that was posted
+         * @param voucherNumber   voucher number for reference
+         * @param postedByUserId ID of user who posted the voucher
+         * @param request         HTTP request for IP address and user agent
+         */
+        void logVoucherPosted(
+                        java.util.UUID voucherId,
+                        String voucherNumber,
+                        Long postedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log voucher unposting. Records voucher ID, voucher number, reason, user who unposted,
+         * timestamp, and IP address.
+         *
+         * @param voucherId         voucher ID that was unposted
+         * @param voucherNumber     voucher number for reference
+         * @param reason            unposting reason (required)
+         * @param unpostedByUserId  ID of user who unposted the voucher
+         * @param request           HTTP request for IP address and user agent
+         */
+        void logVoucherUnposted(
+                        java.util.UUID voucherId,
+                        String voucherNumber,
+                        String reason,
+                        Long unpostedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log voucher reversal. Records original voucher ID, reversal voucher ID,
+         * voucher numbers, reason, user who reversed, timestamp, and IP address.
+         *
+         * @param originalVoucherId  original voucher ID that was reversed
+         * @param originalVoucherNumber original voucher number
+         * @param reversalVoucherId  reversal voucher ID
+         * @param reversalVoucherNumber reversal voucher number
+         * @param reason             reversal reason (required)
+         * @param reversedByUserId   ID of user who reversed the voucher
+         * @param request            HTTP request for IP address and user agent
+         */
+        void logVoucherReversed(
+                        java.util.UUID originalVoucherId,
+                        String originalVoucherNumber,
+                        java.util.UUID reversalVoucherId,
+                        String reversalVoucherNumber,
+                        String reason,
+                        Long reversedByUserId,
+                        HttpServletRequest request);
+
+        /**
          * Log company settings update with old/new values.
          *
          * @param companyId       target company id
@@ -595,4 +648,219 @@ public interface AuditService {
                         int findingsCount,
                         boolean throttled,
                         HttpServletRequest request);
+
+        /**
+         * Log fraud detection event. Records user, account, line number, attempted amount,
+         * fraud type, timestamp, and IP address.
+         *
+         * @param userId         ID of user who attempted the fraudulent action
+         * @param accountId      account ID involved in the fraud attempt
+         * @param accountCode    account code for reference
+         * @param lineNumber     line number in voucher where fraud was detected
+         * @param attemptedAmount attempted amount (negative value)
+         * @param fraudType      type of fraud (e.g., NEGATIVE_AMOUNT, NEGATIVE_DEBIT, NEGATIVE_CREDIT)
+         * @param request        HTTP request for IP address and user agent
+         */
+        void logFraudDetection(
+                        Long userId,
+                        Long accountId,
+                        String accountCode,
+                        int lineNumber,
+                        java.math.BigDecimal attemptedAmount,
+                        String fraudType,
+                        HttpServletRequest request);
+
+        /**
+         * Log blocked validation attempt. Records user, account, line number, field name,
+         * reason, attempt type, timestamp, and IP address.
+         *
+         * @param userId      ID of user who attempted the blocked action
+         * @param accountId   account ID involved in the blocked attempt
+         * @param accountCode account code for reference
+         * @param lineNumber  line number in voucher where attempt was blocked
+         * @param fieldName   field name where the attempt occurred (e.g., debitAccount, creditAccount)
+         * @param reason      reason for blocking (error message)
+         * @param attemptType type of blocked attempt (e.g., NON_POSTABLE_ACCOUNT, NON_LEAF_ACCOUNT)
+         * @param request     HTTP request for IP address and user agent
+         */
+        void logBlockedAttempt(
+                        Long userId,
+                        Long accountId,
+                        String accountCode,
+                        int lineNumber,
+                        String fieldName,
+                        String reason,
+                        String attemptType,
+                        HttpServletRequest request);
+
+        /**
+         * Log voucher lifecycle event with JSON snapshots and SHA-256 diff hash.
+         * Records before/after snapshots, cryptographic hash, user ID/role, device/IP.
+         *
+         * @param voucherId       voucher ID
+         * @param voucherNumber   voucher number for reference
+         * @param action          action type (e.g., VOUCHER_CREATED, VOUCHER_UPDATED, VOUCHER_POSTED)
+         * @param beforeSnapshot  JSON snapshot of voucher before the change (null for create)
+         * @param afterSnapshot   JSON snapshot of voucher after the change
+         * @param diffHash        SHA-256 hash of the JSON diff between before/after snapshots
+         * @param request        HTTP request for IP address and user agent
+         */
+        void logVoucherEvent(
+                        UUID voucherId,
+                        String voucherNumber,
+                        String action,
+                        com.fasterxml.jackson.databind.JsonNode beforeSnapshot,
+                        com.fasterxml.jackson.databind.JsonNode afterSnapshot,
+                        String diffHash,
+                        HttpServletRequest request);
+
+        /**
+         * Log batch/mass voucher action with aggregated entry.
+         * Records voucher IDs list, action stats (success/failure counts), start/end timestamp, summary.
+         *
+         * <p><b>Note:</b> This method is implemented and ready for use, but batch voucher operations
+         * (e.g., bulk posting, bulk import, bulk delete) are deferred to post-MVP. When batch
+         * operations are implemented, they should call this method to log aggregated audit entries
+         * as required by AC2 (Story 3.5).
+         *
+         * @param voucherIds  list of voucher IDs involved in the batch action
+         * @param action      action type (e.g., BATCH_POST, BATCH_DELETE, BATCH_IMPORT)
+         * @param stats       batch action statistics (success/failure counts)
+         * @param startTime   start timestamp of the batch operation
+         * @param endTime     end timestamp of the batch operation
+         * @param summary     summary description of the batch action
+         * @param request     HTTP request for IP address and user agent
+         */
+        void logBatchVoucherAction(
+                        java.util.List<UUID> voucherIds,
+                        String action,
+                        BatchActionStats stats,
+                        java.time.Instant startTime,
+                        java.time.Instant endTime,
+                        String summary,
+                        HttpServletRequest request);
+
+        /**
+         * Log period close event with JSON snapshot and SHA-256 hash.
+         * Records period details, close reason, user metadata, hash digest.
+         *
+         * @param periodId   period ID that was closed
+         * @param reason     close reason provided by user
+         * @param hashDigest SHA-256 hash of the period snapshot for integrity verification
+         */
+        void logPeriodClosed(UUID periodId, String reason, String hashDigest);
+
+        /**
+         * Log period reopen event with approval metadata and SHA-256 hash.
+         * Records period details, reopen reason, approval metadata, hash digest.
+         * Logs all reopen attempts (approved and rejected) for compliance.
+         *
+         * @param periodId         period ID that was reopened
+         * @param reason           reopen reason provided by user
+         * @param approvalMetadata approval metadata (approver, approval reference, etc.)
+         * @param hashDigest       SHA-256 hash of the period snapshot for integrity verification
+         */
+        void logPeriodReopened(UUID periodId, String reason, String approvalMetadata, String hashDigest);
+
+        /**
+         * Log period validation blocked attempt.
+         * Records user, period, operation, reason, timestamp for audit trail.
+         *
+         * @param periodId period ID where operation was blocked
+         * @param operation operation that was blocked (e.g., VOUCHER_CREATE, VOUCHER_POST)
+         * @param reason   reason for blocking (e.g., PERIOD_CLOSED, PERIOD_FUTURE)
+         */
+        void logPeriodValidationBlocked(UUID periodId, String operation, String reason);
+
+        /**
+         * Log attachment download event. Records attachment ID, voucher ID, file metadata,
+         * user ID, timestamp, and IP address.
+         *
+         * @param attachmentId attachment ID that was downloaded
+         * @param voucherId voucher ID that the attachment belongs to
+         * @param fileName file name of the attachment
+         * @param fileSize file size in bytes
+         * @param mimeType MIME type of the file
+         * @param downloadedByUserId ID of user who downloaded the attachment
+         * @param request HTTP request for IP address and user agent
+         */
+        void logAttachmentDownload(
+                        UUID attachmentId,
+                        UUID voucherId,
+                        String fileName,
+                        Long fileSize,
+                        String mimeType,
+                        Long downloadedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log attachment view/preview event. Records attachment ID, voucher ID, file metadata,
+         * user ID, timestamp, and IP address.
+         *
+         * @param attachmentId attachment ID that was viewed
+         * @param voucherId voucher ID that the attachment belongs to
+         * @param fileName file name of the attachment
+         * @param fileSize file size in bytes
+         * @param mimeType MIME type of the file
+         * @param viewedByUserId ID of user who viewed the attachment
+         * @param request HTTP request for IP address and user agent
+         */
+        void logAttachmentView(
+                        UUID attachmentId,
+                        UUID voucherId,
+                        String fileName,
+                        Long fileSize,
+                        String mimeType,
+                        Long viewedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log attachment delete event. Records attachment ID, voucher ID, file metadata,
+         * deletion reason, user ID, timestamp, and IP address.
+         *
+         * @param attachmentId attachment ID that was deleted
+         * @param voucherId voucher ID that the attachment belongs to
+         * @param fileName file name of the attachment
+         * @param fileSize file size in bytes
+         * @param mimeType MIME type of the file
+         * @param reason deletion reason (required for audit)
+         * @param deletedByUserId ID of user who deleted the attachment
+         * @param request HTTP request for IP address and user agent
+         */
+        void logAttachmentDelete(
+                        UUID attachmentId,
+                        UUID voucherId,
+                        String fileName,
+                        Long fileSize,
+                        String mimeType,
+                        String reason,
+                        Long deletedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * DTO for batch action statistics.
+         */
+        class BatchActionStats {
+                private final int successCount;
+                private final int failureCount;
+                private final int totalCount;
+
+                public BatchActionStats(int successCount, int failureCount) {
+                        this.successCount = successCount;
+                        this.failureCount = failureCount;
+                        this.totalCount = successCount + failureCount;
+                }
+
+                public int getSuccessCount() {
+                        return successCount;
+                }
+
+                public int getFailureCount() {
+                        return failureCount;
+                }
+
+                public int getTotalCount() {
+                        return totalCount;
+                }
+        }
 }

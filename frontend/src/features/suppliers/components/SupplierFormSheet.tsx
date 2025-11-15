@@ -171,7 +171,7 @@ export default function SupplierFormSheet({
       if (isEditMode && supplier) {
         // Only send changed fields to match test expectations
         const request: SupplierUpdateRequest = {}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         const dirty: any = form.formState.dirtyFields
         if (dirty?.code) request.code = values.code.trim()
         if (dirty?.name) request.name = values.name.trim()

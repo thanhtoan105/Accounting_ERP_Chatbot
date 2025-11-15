@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Locale;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -100,6 +101,77 @@ public class SupabaseStorageService implements StorageService {
         } catch (Exception e) {
             throw new RuntimeException("Supabase sign error", e);
         }
+    }
+
+    @Override
+    public String uploadVoucherAttachment(UUID voucherId, MultipartFile file) {
+        if (voucherId == null || file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Missing voucherId or file");
+        }
+        try {
+            // Generate randomized path: vouchers/{voucherId}/{uuid}-{filename}
+            String uuid = UUID.randomUUID().toString();
+            String originalFilename = file.getOriginalFilename();
+            String filename = originalFilename != null ? originalFilename : "file";
+            // Sanitize filename (remove path separators and special chars)
+            filename = filename.replaceAll("[^a-zA-Z0-9._-]", "_");
+            String objectPath = "vouchers/" + voucherId + "/" + uuid + "-" + filename;
+            
+            String url = supabaseUrl.replaceAll("/+$", "") + 
+                "/storage/v1/object/" + bucket + "/" + objectPath;
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(60)) // Longer timeout for large files
+                .header("Authorization", "Bearer " + supabaseServiceKey)
+                .header("Content-Type", file.getContentType() == null ? "application/octet-stream" : file.getContentType())
+                .PUT(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
+                .build();
+
+            HttpResponse<Void> res = httpClient.send(req, HttpResponse.BodyHandlers.discarding());
+            if (res.statusCode() >= 200 && res.statusCode() < 300) {
+                return objectPath; // Return storage path, not URL
+            }
+            throw new RuntimeException("Supabase upload failed: HTTP " + res.statusCode());
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Supabase upload error", e);
+        }
+    }
+
+    @Override
+    public void deleteVoucherAttachment(String storagePath) {
+        if (storagePath == null || storagePath.isBlank()) {
+            throw new IllegalArgumentException("Missing storagePath");
+        }
+        try {
+            String url = supabaseUrl.replaceAll("/+$", "") + 
+                "/storage/v1/object/" + bucket + "/" + storagePath;
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(15))
+                .header("Authorization", "Bearer " + supabaseServiceKey)
+                .DELETE()
+                .build();
+
+            HttpResponse<Void> res = httpClient.send(req, HttpResponse.BodyHandlers.discarding());
+            if (res.statusCode() < 200 || res.statusCode() >= 300) {
+                // 404 is acceptable (file already deleted)
+                if (res.statusCode() != 404) {
+                    throw new RuntimeException("Supabase delete failed: HTTP " + res.statusCode());
+                }
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Supabase delete error", e);
+        }
+    }
+
+    @Override
+    public String generateSignedUrl(String storagePath, int expiresInSeconds) {
+        if (storagePath == null || storagePath.isBlank()) {
+            throw new IllegalArgumentException("Missing storagePath");
+        }
+        return signObjectUrl(storagePath, expiresInSeconds);
     }
 
     private String detectExtension(String contentType) {

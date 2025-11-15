@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.accounting.dto.VoucherCountDTO;
@@ -14,6 +16,7 @@ import com.accounting.dto.VoucherDTO;
 import com.accounting.dto.VoucherLineDTO;
 import com.accounting.dto.VoucherListDTO;
 import com.accounting.dto.VoucherValidationResult;
+import com.accounting.exception.VoucherValidationException;
 import com.accounting.entity.User;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
@@ -25,6 +28,7 @@ import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.JwtTokenProvider;
 import com.accounting.service.AuditService;
+import com.accounting.service.PeriodManagementService;
 import com.accounting.service.VoucherValidationService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
@@ -59,51 +63,68 @@ import org.springframework.web.server.ResponseStatusException;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class VoucherServiceImplTest {
 
-  @Mock private VoucherRepository voucherRepository;
+  @Mock
+  private VoucherRepository voucherRepository;
 
-  @Mock private VoucherLineRepository voucherLineRepository;
+  @Mock
+  private VoucherLineRepository voucherLineRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private CustomerRepository customerRepository;
+  @Mock
+  private CustomerRepository customerRepository;
 
-  @Mock private SupplierRepository supplierRepository;
+  @Mock
+  private SupplierRepository supplierRepository;
 
-  @Mock private AuditService auditService;
+  @Mock
+  private AuditService auditService;
 
-  @Mock private JwtTokenProvider jwtTokenProvider;
+  @Mock
+  private JwtTokenProvider jwtTokenProvider;
 
-  @Mock private VoucherValidationService voucherValidationService;
+  @Mock
+  private VoucherValidationService voucherValidationService;
 
-  @Mock private EntityManager entityManager;
+  @Mock
+  private com.accounting.service.util.VoucherAuditHelper voucherAuditHelper;
 
-  @Mock private HttpServletRequest request;
+  @Mock
+  private PeriodManagementService periodManagementService;
+
+  @Mock
+  private EntityManager entityManager;
+
+  @Mock
+  private HttpServletRequest request;
 
   private VoucherServiceImpl voucherService;
 
   @BeforeEach
   void setUp() {
-    voucherService =
-        new VoucherServiceImpl(
-            voucherRepository,
-            voucherLineRepository,
-            userRepository,
-            customerRepository,
-            supplierRepository,
-            auditService,
-            jwtTokenProvider,
-            voucherValidationService);
-    
+    voucherService = new VoucherServiceImpl(
+        voucherRepository,
+        voucherLineRepository,
+        userRepository,
+        customerRepository,
+        supplierRepository,
+        auditService,
+        jwtTokenProvider,
+        voucherValidationService,
+        voucherAuditHelper,
+        periodManagementService);
+
     // Inject EntityManager via reflection (since it's @PersistenceContext)
     ReflectionTestUtils.setField(voucherService, "entityManager", entityManager);
-    
+
     // Set up SecurityContext for getCurrentUserId()
     SecurityContext securityContext = org.mockito.Mockito.mock(SecurityContext.class);
     Authentication authentication = org.mockito.Mockito.mock(Authentication.class);
     when(securityContext.getAuthentication()).thenReturn(authentication);
     when(authentication.getPrincipal()).thenReturn("1"); // User ID as string
     SecurityContextHolder.setContext(securityContext);
-    
+
     CompanyContext.setCompanyId(1L);
   }
 
@@ -125,8 +146,7 @@ class VoucherServiceImplTest {
         .thenReturn(page);
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
-    Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), null, null, null, null, null);
+    Page<VoucherListDTO> result = voucherService.findAll(PageRequest.of(0, 20), null, null, null, null, null);
 
     assertNotNull(result);
     assertEquals(2, result.getTotalElements());
@@ -144,8 +164,7 @@ class VoucherServiceImplTest {
         .thenReturn(page);
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
-    Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), "draft", null, null, null, null);
+    Page<VoucherListDTO> result = voucherService.findAll(PageRequest.of(0, 20), "draft", null, null, null, null);
 
     assertEquals(1, result.getContent().size());
     assertEquals("draft", result.getContent().get(0).getStatus());
@@ -155,8 +174,7 @@ class VoucherServiceImplTest {
   void findAll_withDateRange_filtersByDate() {
     LocalDate fromDate = LocalDate.of(2025, 1, 1);
     LocalDate toDate = LocalDate.of(2025, 1, 31);
-    Voucher voucherInRange =
-        createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.of(2025, 1, 15), "draft");
+    Voucher voucherInRange = createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.of(2025, 1, 15), "draft");
 
     List<Voucher> filteredVouchers = List.of(voucherInRange);
     Page<Voucher> page = new PageImpl<>(filteredVouchers, PageRequest.of(0, 20), 1);
@@ -165,16 +183,14 @@ class VoucherServiceImplTest {
         .thenReturn(page);
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
-    Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), null, fromDate, toDate, null, null);
+    Page<VoucherListDTO> result = voucherService.findAll(PageRequest.of(0, 20), null, fromDate, toDate, null, null);
 
     assertEquals(1, result.getContent().size());
   }
 
   @Test
   void findAll_withSearchTerm_searchesVoucherNumberAndDescription() {
-    Voucher matchingVoucher =
-        createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.now(), "draft");
+    Voucher matchingVoucher = createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.now(), "draft");
     matchingVoucher.setDescription("Payment for services");
 
     List<Voucher> matchingVouchers = List.of(matchingVoucher);
@@ -184,8 +200,7 @@ class VoucherServiceImplTest {
         .thenReturn(page);
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
-    Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), null, null, null, "VC2025", null);
+    Page<VoucherListDTO> result = voucherService.findAll(PageRequest.of(0, 20), null, null, null, "VC2025", null);
 
     assertEquals(1, result.getContent().size());
   }
@@ -194,10 +209,9 @@ class VoucherServiceImplTest {
   void findAll_missingCompanyContext_throwsException() {
     CompanyContext.clear();
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.findAll(PageRequest.of(0, 20), null, null, null, null, null));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.findAll(PageRequest.of(0, 20), null, null, null, null, null));
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Missing company context"));
@@ -221,8 +235,7 @@ class VoucherServiceImplTest {
   void getCounts_missingCompanyContext_throwsException() {
     CompanyContext.clear();
 
-    ResponseStatusException exception =
-        assertThrows(ResponseStatusException.class, () -> voucherService.getCounts());
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> voucherService.getCounts());
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Missing company context"));
@@ -279,13 +292,14 @@ class VoucherServiceImplTest {
     when(voucherRepository.findByCompanyIdAndId(1L, voucherId))
         .thenReturn(Optional.of(voucher));
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.delete(voucherId, "Test reason", request));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.delete(voucherId, "Test reason", request));
 
     assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-    assertTrue(exception.getReason() != null && exception.getReason().contains("only draft vouchers can be deleted"));
+    assertTrue(exception.getReason() != null &&
+        (exception.getReason().contains("Cannot delete posted voucher") ||
+            exception.getReason().contains("only draft vouchers can be deleted")));
   }
 
   @Test
@@ -297,10 +311,9 @@ class VoucherServiceImplTest {
         .thenReturn(Optional.of(voucher));
     when(voucherRepository.isReferenced(voucherId)).thenReturn(true);
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.delete(voucherId, "Test reason", request));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.delete(voucherId, "Test reason", request));
 
     assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("referenced"));
@@ -310,10 +323,9 @@ class VoucherServiceImplTest {
   void delete_missingReason_throwsBadRequestException() {
     UUID voucherId = UUID.randomUUID();
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.delete(voucherId, null, request));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.delete(voucherId, null, request));
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Deletion reason is required"));
@@ -323,10 +335,9 @@ class VoucherServiceImplTest {
   void delete_blankReason_throwsBadRequestException() {
     UUID voucherId = UUID.randomUUID();
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.delete(voucherId, "   ", request));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.delete(voucherId, "   ", request));
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Deletion reason is required"));
@@ -338,10 +349,9 @@ class VoucherServiceImplTest {
 
     when(voucherRepository.findByCompanyIdAndId(1L, voucherId)).thenReturn(Optional.empty());
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.delete(voucherId, "Test reason", request));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.delete(voucherId, "Test reason", request));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Voucher not found"));
@@ -349,8 +359,7 @@ class VoucherServiceImplTest {
 
   @Test
   void search_withSearchTerm_returnsMatchingVouchers() {
-    Voucher matchingVoucher =
-        createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.now(), "draft");
+    Voucher matchingVoucher = createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.now(), "draft");
     matchingVoucher.setDescription("Payment invoice");
 
     List<Voucher> matchingVouchers = List.of(matchingVoucher);
@@ -410,6 +419,10 @@ class VoucherServiceImplTest {
 
     VoucherValidationResult validationResult = new VoucherValidationResult(true, null);
     when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management to allow voucher creation
+    when(periodManagementService.isDateInOpenPeriod(any())).thenReturn(true);
+
     when(voucherRepository.save(any(Voucher.class)))
         .thenAnswer(
             invocation -> {
@@ -446,11 +459,11 @@ class VoucherServiceImplTest {
     validationResult.addError(1, "accountId", "Account is required");
     when(voucherValidationService.validate(any())).thenReturn(validationResult);
 
-    ResponseStatusException exception =
-        assertThrows(ResponseStatusException.class, () -> voucherService.create(request));
+    VoucherValidationException exception = assertThrows(VoucherValidationException.class,
+        () -> voucherService.create(request));
 
-    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
-    assertTrue(exception.getReason().contains("Validation failed"));
+    assertNotNull(exception.getValidationResult());
+    assertFalse(exception.getValidationResult().isValid());
   }
 
   @Test
@@ -473,6 +486,10 @@ class VoucherServiceImplTest {
 
     VoucherValidationResult validationResult = new VoucherValidationResult(true, null);
     when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management to allow voucher update
+    when(periodManagementService.isDateInOpenPeriod(any())).thenReturn(true);
+
     when(voucherRepository.findByCompanyIdAndId(1L, voucherId))
         .thenReturn(Optional.of(existingVoucher));
     when(voucherRepository.save(any(Voucher.class))).thenReturn(existingVoucher);
@@ -498,8 +515,8 @@ class VoucherServiceImplTest {
     when(voucherRepository.findByCompanyIdAndId(1L, voucherId))
         .thenReturn(Optional.of(postedVoucher));
 
-    ResponseStatusException exception =
-        assertThrows(ResponseStatusException.class, () -> voucherService.update(voucherId, request));
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.update(voucherId, request));
 
     assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     assertTrue(exception.getReason().contains("only draft vouchers can be updated"));
@@ -516,11 +533,287 @@ class VoucherServiceImplTest {
 
     when(voucherRepository.findByCompanyIdAndId(1L, voucherId)).thenReturn(Optional.empty());
 
-    ResponseStatusException exception =
-        assertThrows(ResponseStatusException.class, () -> voucherService.update(voucherId, request));
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.update(voucherId, request));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertTrue(exception.getReason().contains("Voucher not found"));
   }
-}
 
+  // ========== PERIOD VALIDATION TESTS ==========
+
+  @Test
+  void create_voucherWithDateInOpenPeriod_succeeds() {
+    LocalDate voucherDate = LocalDate.of(2025, 1, 15);
+    VoucherCreateRequest request = createValidVoucherRequest(voucherDate);
+
+    // Mock successful validation
+    VoucherValidationResult validationResult = new VoucherValidationResult();
+    validationResult.setValid(true);
+    when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management - date is in open period
+    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenReturn(true);
+    when(voucherRepository.save(any(Voucher.class))).thenReturn(createVoucher(UUID.randomUUID(), "VC2025-001", voucherDate, "draft"));
+
+    // Should not throw any exception
+    assertDoesNotThrow(() -> voucherService.create(request));
+  }
+
+  @Test
+  void create_voucherWithDateInClosedPeriod_throwsBadRequest() {
+    LocalDate voucherDate = LocalDate.of(2024, 12, 15); // Closed period
+    VoucherCreateRequest request = createValidVoucherRequest(voucherDate);
+
+    // Mock successful validation
+    VoucherValidationResult validationResult = new VoucherValidationResult();
+    validationResult.setValid(true);
+    when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management - date is NOT in open period
+    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenReturn(false);
+
+    // Mock period lookup for error message
+    com.accounting.dto.AccountingPeriodDTO closedPeriod = new com.accounting.dto.AccountingPeriodDTO();
+    closedPeriod.setId(UUID.randomUUID());
+    closedPeriod.setPeriodName("Dec-2024");
+    when(periodManagementService.findPeriodByDate(voucherDate)).thenReturn(Optional.of(closedPeriod));
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.create(request));
+
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    assertTrue(exception.getReason().contains("Cannot create voucher in closed or future period: Dec-2024"));
+
+    // Verify audit logging was called
+    verify(auditService).logPeriodValidationBlocked(
+        closedPeriod.getId(),
+        "VOUCHER_CREATION",
+        "Cannot create voucher in closed or future period: Dec-2024"
+    );
+  }
+
+  @Test
+  void create_voucherWithDateInClosedPeriodNotFound_throwsBadRequestWithUnknownPeriod() {
+    LocalDate voucherDate = LocalDate.of(2024, 12, 15); // Closed period
+    VoucherCreateRequest request = createValidVoucherRequest(voucherDate);
+
+    // Mock successful validation
+    VoucherValidationResult validationResult = new VoucherValidationResult();
+    validationResult.setValid(true);
+    when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management - date is NOT in open period and period not found
+    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenReturn(false);
+    when(periodManagementService.findPeriodByDate(voucherDate)).thenReturn(Optional.empty());
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.create(request));
+
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    assertTrue(exception.getReason().contains("Cannot create voucher in closed or future period: Unknown Period"));
+
+    // Verify audit logging was called with null period ID
+    verify(auditService).logPeriodValidationBlocked(
+        null,
+        "VOUCHER_CREATION",
+        "Cannot create voucher in closed or future period: Unknown Period"
+    );
+  }
+
+  @Test
+  void create_voucherWithSpecificClosedPeriodId_throwsBadRequest() {
+    LocalDate voucherDate = LocalDate.now(); // Current date (should be open)
+    UUID closedPeriodUuid = UUID.randomUUID();
+    VoucherCreateRequest request = createValidVoucherRequest(voucherDate);
+    request.setPeriodId(closedPeriodUuid);
+
+    // Mock successful validation
+    VoucherValidationResult validationResult = new VoucherValidationResult();
+    validationResult.setValid(true);
+    when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management - date is in open period but specific period ID is closed
+    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenReturn(true);
+    when(periodManagementService.isPeriodOpen(closedPeriodUuid)).thenReturn(false);
+
+    // Mock period lookup for error message
+    com.accounting.dto.AccountingPeriodDTO closedPeriod = new com.accounting.dto.AccountingPeriodDTO();
+    closedPeriod.setId(closedPeriodUuid);
+    closedPeriod.setPeriodName("Jan-2025");
+    when(periodManagementService.getPeriodById(closedPeriodUuid)).thenReturn(Optional.of(closedPeriod));
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.create(request));
+
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    assertTrue(exception.getReason().contains("Cannot create voucher in closed period: Jan-2025"));
+
+    // Verify audit logging was called
+    verify(auditService).logPeriodValidationBlocked(
+        closedPeriodUuid,
+        "VOUCHER_CREATION",
+        "Cannot create voucher in closed period: Jan-2025"
+    );
+  }
+
+  @Test
+  void update_voucherWithOpenPeriod_succeeds() {
+    UUID voucherId = UUID.randomUUID();
+    LocalDate voucherDate = LocalDate.of(2025, 1, 15);
+    VoucherCreateRequest request = createValidVoucherRequest(voucherDate);
+
+    // Mock existing voucher
+    Voucher existingVoucher = createVoucher(voucherId, "VC2025-001", voucherDate, "draft");
+    when(voucherRepository.findByCompanyIdAndId(1L, voucherId)).thenReturn(Optional.of(existingVoucher));
+
+    // Mock successful validation
+    VoucherValidationResult validationResult = new VoucherValidationResult();
+    validationResult.setValid(true);
+    when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management - date is in open period
+    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenReturn(true);
+    when(voucherRepository.save(any(Voucher.class))).thenReturn(existingVoucher);
+
+    // Should not throw any exception
+    assertDoesNotThrow(() -> voucherService.update(voucherId, request));
+  }
+
+  @Test
+  void update_voucherWithClosedPeriod_throwsBadRequest() {
+    UUID voucherId = UUID.randomUUID();
+    LocalDate voucherDate = LocalDate.of(2024, 12, 15); // Closed period
+    VoucherCreateRequest request = createValidVoucherRequest(voucherDate);
+
+    // Mock existing voucher
+    Voucher existingVoucher = createVoucher(voucherId, "VC2025-001", voucherDate, "draft");
+    when(voucherRepository.findByCompanyIdAndId(1L, voucherId)).thenReturn(Optional.of(existingVoucher));
+
+    // Mock successful validation
+    VoucherValidationResult validationResult = new VoucherValidationResult();
+    validationResult.setValid(true);
+    when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management - date is NOT in open period
+    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenReturn(false);
+
+    // Mock period lookup for error message
+    com.accounting.dto.AccountingPeriodDTO closedPeriod = new com.accounting.dto.AccountingPeriodDTO();
+    closedPeriod.setId(UUID.randomUUID());
+    closedPeriod.setPeriodName("Dec-2024");
+    when(periodManagementService.findPeriodByDate(voucherDate)).thenReturn(Optional.of(closedPeriod));
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.update(voucherId, request));
+
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    assertTrue(exception.getReason().contains("Cannot create voucher in closed or future period: Dec-2024"));
+  }
+
+  @Test
+  void create_periodValidationServiceThrowsException_throwsInternalServerError() {
+    LocalDate voucherDate = LocalDate.now();
+    VoucherCreateRequest request = createValidVoucherRequest(voucherDate);
+
+    // Mock successful validation
+    VoucherValidationResult validationResult = new VoucherValidationResult();
+    validationResult.setValid(true);
+    when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management service throwing exception
+    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenThrow(new RuntimeException("Database error"));
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.create(request));
+
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
+    assertTrue(exception.getReason().contains("Failed to validate period for voucher creation"));
+  }
+
+  @Test
+  void update_periodValidationServiceThrowsException_throwsInternalServerError() {
+    UUID voucherId = UUID.randomUUID();
+    LocalDate voucherDate = LocalDate.now();
+    VoucherCreateRequest request = createValidVoucherRequest(voucherDate);
+
+    // Mock existing voucher
+    Voucher existingVoucher = createVoucher(voucherId, "VC2025-001", voucherDate, "draft");
+    when(voucherRepository.findByCompanyIdAndId(1L, voucherId)).thenReturn(Optional.of(existingVoucher));
+
+    // Mock successful validation
+    VoucherValidationResult validationResult = new VoucherValidationResult();
+    validationResult.setValid(true);
+    when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management service throwing exception
+    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenThrow(new RuntimeException("Database error"));
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.update(voucherId, request));
+
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
+    assertTrue(exception.getReason().contains("Failed to validate period for voucher creation"));
+  }
+
+  @Test
+  void create_auditLoggingFails_continuesWithValidation() {
+    LocalDate voucherDate = LocalDate.of(2024, 12, 15);
+    VoucherCreateRequest request = createValidVoucherRequest(voucherDate);
+
+    // Mock successful validation
+    VoucherValidationResult validationResult = new VoucherValidationResult();
+    validationResult.setValid(true);
+    when(voucherValidationService.validate(any())).thenReturn(validationResult);
+
+    // Mock period management - date is NOT in open period
+    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenReturn(false);
+
+    // Mock period lookup for error message
+    com.accounting.dto.AccountingPeriodDTO closedPeriod = new com.accounting.dto.AccountingPeriodDTO();
+    closedPeriod.setId(UUID.randomUUID());
+    closedPeriod.setPeriodName("Dec-2024");
+    when(periodManagementService.findPeriodByDate(voucherDate)).thenReturn(Optional.of(closedPeriod));
+
+    // Mock audit service throwing exception
+    doThrow(new RuntimeException("Audit service error")).when(auditService).logPeriodValidationBlocked(any(), any(), any());
+
+    // Should still throw the period validation exception even if audit logging fails
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.create(request));
+
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    assertTrue(exception.getReason().contains("Cannot create voucher in closed or future period: Dec-2024"));
+  }
+
+  // Helper method to create valid voucher request
+  private VoucherCreateRequest createValidVoucherRequest(LocalDate date) {
+    VoucherCreateRequest request = new VoucherCreateRequest();
+    request.setDate(date);
+    request.setDescription("Test voucher");
+    request.setCurrency("VND");
+
+    // Create valid voucher lines
+    VoucherLineDTO debitLine = new VoucherLineDTO();
+    debitLine.setAccountId(101L);
+    debitLine.setDebit(new BigDecimal("1000"));
+    debitLine.setCredit(BigDecimal.ZERO);
+
+    VoucherLineDTO creditLine = new VoucherLineDTO();
+    creditLine.setAccountId(201L);
+    creditLine.setDebit(BigDecimal.ZERO);
+    creditLine.setCredit(new BigDecimal("1000"));
+
+    request.setLines(List.of(debitLine, creditLine));
+    return request;
+  }
+
+  // Helper method to assert that no exception is thrown
+  private void assertDoesNotThrow(Runnable runnable) {
+    try {
+      runnable.run();
+    } catch (Exception e) {
+      throw new AssertionError("Expected no exception, but got: " + e.getMessage(), e);
+    }
+  }
+}

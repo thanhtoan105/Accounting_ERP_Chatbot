@@ -19,6 +19,8 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    out-of-order: true
+    validate-on-migrate: true
   config:
     import:
       - optional:file:../.env[.properties]

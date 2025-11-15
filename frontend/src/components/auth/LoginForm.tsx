@@ -178,6 +178,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
                 <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
+                  data-testid="email-input"
                   type="email"
                   placeholder="m@example.com"
                   {...register('email')}
@@ -197,6 +198,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
                 <div className="relative">
                   <Input
                     id="password"
+                    data-testid="password-input"
                     type={showPassword ? 'text' : 'password'}
                     {...register('password')}
                     aria-invalid={!!errors.password}
@@ -230,7 +232,12 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
               </Field>
 
               <Field>
-                <Button type="submit" disabled={submitting || isSubmitting} className="w-full">
+                <Button
+                  type="submit"
+                  data-testid="login-button"
+                  disabled={submitting || isSubmitting}
+                  className="w-full"
+                >
                   {submitting || isSubmitting ? 'Logging in…' : 'Log in'}
                 </Button>
               </Field>

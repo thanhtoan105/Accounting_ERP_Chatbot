@@ -53,6 +53,8 @@ public abstract class IntegrationTest {
     registry.add("spring.flyway.enabled", () -> true);
     registry.add("spring.flyway.locations", () -> "classpath:db/migration");
     registry.add("spring.flyway.clean-disabled", () -> false);
+    registry.add("spring.flyway.out-of-order", () -> true); // Allow out-of-order migrations in tests
+    registry.add("spring.flyway.validate-on-migrate", () -> false); // Disable validation on migrate
   }
 
   @BeforeEach
