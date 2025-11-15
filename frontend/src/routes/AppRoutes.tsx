@@ -12,6 +12,7 @@ import {
   VoucherList,
   VoucherForm,
   VoucherTemplateManagementPage,
+  AccountControls,
 } from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
@@ -125,6 +126,16 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
               <ChartOfAccounts />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/account-controls"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
+              <AccountControls />
             </RoleGuard>
           </ProtectedLayout>
         }

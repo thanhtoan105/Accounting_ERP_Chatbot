@@ -1,7 +1,18 @@
 {
-  "status": "init",
-  "scope": "codebase",
+  "status": "commited",
   "type": "frontend",
-  "localEndpoint": "http://localhost:5173/",
-  "serverPort": 45281
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:5173",
+  "loginUser": "admin@example.com",
+  "loginPassword": "password",
+  "executionArgs": {
+    "projectName": "accounting",
+    "projectPath": "/home/thanhtoan/code/accounting/frontend",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-H7S7O2133Scz2-ZIspGRuDS-6Ytj35FiWxvuzJ4pYTOsZS2jnSZ1sZNYXa6MWBcYoY8Ov7MTZivoDwzBfE2CzFJfG1e4gqNt-hk9fI2YR-cL6cB1YymnpQ-B6wqmRw25ORk"
+    }
+  },
+  "proxy": "http://b554019b-9a85-4035-a3c2-420486e26227:06KafKjullnOAMmPsW1ByvSjCdlAKNw7@tun.testsprite.com:8080"
 }

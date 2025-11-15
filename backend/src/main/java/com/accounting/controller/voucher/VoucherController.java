@@ -8,9 +8,17 @@ import com.accounting.dto.VoucherListDTO;
 import com.accounting.dto.VoucherValidationResult;
 import com.accounting.dto.VoucherLineDTO;
 import com.accounting.dto.VoucherTemplateDTO;
+import com.accounting.dto.PostVoucherRequest;
+import com.accounting.dto.PostVoucherResponse;
+import com.accounting.exception.VoucherPostingException;
 import com.accounting.service.VoucherService;
 import com.accounting.service.VoucherTemplateService;
 import com.accounting.service.VoucherValidationService;
+import com.accounting.dto.UnpostVoucherRequest;
+import com.accounting.dto.ReverseVoucherRequest;
+import com.accounting.service.voucher.VoucherPostingService;
+import com.accounting.service.voucher.VoucherReversalService;
+import com.accounting.service.voucher.VoucherUnpostingService;
 import com.accounting.security.CompanyContext;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
@@ -54,14 +62,23 @@ public class VoucherController {
   private final VoucherService voucherService;
   private final VoucherValidationService voucherValidationService;
   private final VoucherTemplateService voucherTemplateService;
+  private final VoucherPostingService voucherPostingService;
+  private final VoucherUnpostingService voucherUnpostingService;
+  private final VoucherReversalService voucherReversalService;
 
   public VoucherController(
       VoucherService voucherService,
       VoucherValidationService voucherValidationService,
-      VoucherTemplateService voucherTemplateService) {
+      VoucherTemplateService voucherTemplateService,
+      VoucherPostingService voucherPostingService,
+      VoucherUnpostingService voucherUnpostingService,
+      VoucherReversalService voucherReversalService) {
     this.voucherService = voucherService;
     this.voucherValidationService = voucherValidationService;
     this.voucherTemplateService = voucherTemplateService;
+    this.voucherPostingService = voucherPostingService;
+    this.voucherUnpostingService = voucherUnpostingService;
+    this.voucherReversalService = voucherReversalService;
   }
 
   /**
@@ -289,8 +306,85 @@ public class VoucherController {
   }
 
   /**
+   * Post a voucher (change status from DRAFT to POSTED).
+   * Generates journal entries atomically in a single transaction.
+   * Requires Chief Accountant+ role.
+   *
+   * @param voucherId voucher ID to post
+   * @param request   posting request (optional validateOnly flag)
+   * @return posted voucher and generated journal entries
+   */
+  @PostMapping("/{voucherId}/post")
+  @PreAuthorize("hasAnyRole('CHIEF_ACCOUNTANT', 'ADMIN', 'CFO')")
+  public ResponseEntity<Map<String, Object>> postVoucher(
+      @PathVariable UUID voucherId,
+      @RequestBody(required = false) PostVoucherRequest request,
+      HttpServletRequest httpRequest) {
+    try {
+      PostVoucherResponse response = voucherPostingService.postVoucher(voucherId, httpRequest);
+      Map<String, Object> body = new HashMap<>();
+      body.put("data", response);
+      return ResponseEntity.ok(body);
+    } catch (VoucherPostingException e) {
+      // Return 400 with detailed validation error map
+      Map<String, Object> errorBody = new HashMap<>();
+      errorBody.put("error", e.getMessage());
+      errorBody.put("validationErrors", e.getValidationErrors());
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody);
+    }
+  }
+
+  /**
+   * Unpost a voucher (change status from POSTED to DRAFT).
+   * Deletes journal entries atomically in a single transaction.
+   * Requires Chief Accountant+ role.
+   *
+   * @param voucherId voucher ID to unpost
+   * @param request   unposting request with reason (required for audit)
+   * @return unposted voucher
+   */
+  @PostMapping("/{voucherId}/unpost")
+  @PreAuthorize("hasAnyRole('CHIEF_ACCOUNTANT', 'ADMIN', 'CFO')")
+  public ResponseEntity<Map<String, Object>> unpostVoucher(
+      @PathVariable UUID voucherId,
+      @Valid @RequestBody UnpostVoucherRequest request,
+      HttpServletRequest httpRequest) {
+    VoucherDTO voucher = voucherUnpostingService.unpostVoucher(voucherId, request.getReason(), httpRequest);
+    Map<String, Object> body = new HashMap<>();
+    body.put("data", voucher);
+    return ResponseEntity.ok(body);
+  }
+
+  /**
+   * Reverse a posted voucher.
+   * Creates a new reversal voucher with REV-{original_number} format,
+   * swaps debit/credit amounts, links bi-directionally, and auto-posts.
+   * Requires Chief Accountant+ role.
+   *
+   * @param voucherId voucher ID to reverse
+   * @param request   reversal request with description and reason
+   * @return both original and reversal vouchers
+   */
+  @PostMapping("/{voucherId}/reverse")
+  @PreAuthorize("hasAnyRole('CHIEF_ACCOUNTANT', 'ADMIN', 'CFO')")
+  public ResponseEntity<Map<String, Object>> reverseVoucher(
+      @PathVariable UUID voucherId,
+      @Valid @RequestBody ReverseVoucherRequest request,
+      HttpServletRequest httpRequest) {
+    VoucherReversalService.ReversalResult result = voucherReversalService.reverseVoucher(
+        voucherId, request.getDescription(), request.getReason(), httpRequest);
+    Map<String, Object> data = new HashMap<>();
+    data.put("original", result.getOriginal());
+    data.put("reversal", result.getReversal());
+    Map<String, Object> body = new HashMap<>();
+    body.put("data", data);
+    return ResponseEntity.ok(body);
+  }
+
+  /**
    * Delete voucher with validation.
    * Only draft vouchers that are not referenced can be deleted.
+   * Posted vouchers cannot be deleted (returns 409 Conflict).
    * Requires deletion reason.
    * Requires authenticated user with Accountant+ role.
    *

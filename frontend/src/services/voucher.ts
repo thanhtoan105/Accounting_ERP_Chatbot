@@ -13,6 +13,8 @@ import type {
   VoucherTemplatePayload,
   ApplyTemplateRequest,
   ApplyTemplateResponse,
+  PostVoucherResponse,
+  ReverseVoucherResponse,
 } from '../types/voucher'
 import { fetchWithAuth } from '../utils/axios'
 
@@ -255,4 +257,50 @@ export async function uploadVoucherAttachment(
   }
 
   return await handleJsonResponse<UploadAttachmentResponse>(res)
+}
+
+export async function postVoucher(
+  voucherId: string,
+  request?: { validateOnly?: boolean },
+): Promise<PostVoucherResponse> {
+  const res = await fetchWithAuth(`${API_BASE}/vouchers/${voucherId}/post`, {
+    method: 'POST',
+    body: JSON.stringify(request || {}),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Posting failed' }))
+    throw error
+  }
+  const payload = await handleJsonResponse<{ data: PostVoucherResponse }>(res)
+  return payload.data
+}
+
+export async function unpostVoucher(voucherId: string, reason: string): Promise<VoucherDTO> {
+  const res = await fetchWithAuth(`${API_BASE}/vouchers/${voucherId}/unpost`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Unposting failed' }))
+    throw error
+  }
+  const payload = await handleJsonResponse<{ data: VoucherDTO }>(res)
+  return payload.data
+}
+
+export async function reverseVoucher(
+  voucherId: string,
+  description: string,
+  reason: string,
+): Promise<ReverseVoucherResponse> {
+  const res = await fetchWithAuth(`${API_BASE}/vouchers/${voucherId}/reverse`, {
+    method: 'POST',
+    body: JSON.stringify({ description, reason }),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Reversal failed' }))
+    throw error
+  }
+  const payload = await handleJsonResponse<{ data: ReverseVoucherResponse }>(res)
+  return payload.data
 }

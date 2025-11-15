@@ -20,6 +20,10 @@ import {
   ShieldAlert,
   Sparkles,
   FileText,
+  CheckCircle,
+  XCircle,
+  RotateCcw,
+  ArrowLeftRight,
 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
@@ -49,11 +53,19 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Calendar } from '@/components/ui/calendar'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { toast } from 'sonner'
 
 import type { AccountSummary } from '@/components/account/AccountPicker'
 import useUndoRedo from '@/hooks/useUndoRedo'
 import { useAuth } from '@/hooks/useAuth'
+import { useRole } from '@/hooks/useRole'
 import { useCompany } from '@/hooks/useCompany'
 import { getCompanyId } from '@/utils/axios'
 import type {
@@ -69,6 +81,9 @@ import {
   updateVoucher,
   getVoucherById,
   applyVoucherTemplate,
+  postVoucher,
+  unpostVoucher,
+  reverseVoucher,
 } from '@/services/voucher'
 import { getPostableAccounts } from '@/services/chartOfAccounts'
 import type { ChartOfAccount } from '@/types/chartOfAccount'
@@ -262,6 +277,7 @@ export default function VoucherForm() {
   const voucherId = params.voucherId && params.voucherId !== 'new' ? params.voucherId : undefined
   const isEditing = Boolean(voucherId)
   const { user } = useAuth()
+  const { hasAnyRole, isChiefAccountant } = useRole()
   const { company } = useCompany()
   const currentUserId = user?.id ? String(user.id) : 'anonymous'
   const companyId = getCompanyId()
@@ -301,6 +317,7 @@ export default function VoucherForm() {
     canRedo,
   } = useUndoRedo<VoucherEntryLine[]>(initialState.lines)
   const [validationMap, setValidationMap] = useState<Record<number, Record<string, string[]>>>({})
+  const [validating, setValidating] = useState(false)
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loadingAccounts, setLoadingAccounts] = useState(true)
@@ -320,6 +337,17 @@ export default function VoucherForm() {
   const [autoSaveError, setAutoSaveError] = useState<string | null>(null)
   const [attachmentCount, setAttachmentCount] = useState(0)
   const [applyingTemplate, setApplyingTemplate] = useState(false)
+  const [posting, setPosting] = useState(false)
+  const [unposting, setUnposting] = useState(false)
+  const [reversing, setReversing] = useState(false)
+  const [postingErrorModalOpen, setPostingErrorModalOpen] = useState(false)
+  const [postingErrors, setPostingErrors] = useState<Record<string, any> | null>(null)
+  const [unpostDialogOpen, setUnpostDialogOpen] = useState(false)
+  const [reverseDialogOpen, setReverseDialogOpen] = useState(false)
+  const [unpostReason, setUnpostReason] = useState('')
+  const [reverseDescription, setReverseDescription] = useState('')
+  const [reverseReason, setReverseReason] = useState('')
+  const [validationSummaryOpen, setValidationSummaryOpen] = useState(false)
   const today = useMemo(() => new Date(), [])
   const openPeriodRange = useMemo(() => {
     const fiscalStartBase = company?.fiscalYearStart
@@ -509,22 +537,62 @@ export default function VoucherForm() {
     }
   }, [accounts, form, isEditing, loadingAccounts, resetLines, voucherId])
 
-  async function handleValidate(values: VoucherFormValues) {
-    try {
-      setSaving(true)
-      const payload = buildRequest(values)
+  // Real-time validation (debounced, silent)
+  const performRealTimeValidation = useCallback(
+    async (silent = true) => {
+      if (!lines.length || lines.every((line) => !line.debitAccount && !line.creditAccount)) {
+        // Skip validation if no lines or all lines are empty
+        return
+      }
+
+      try {
+        setValidating(true)
+        const currentValues = form.getValues()
+        const payload = buildRequest(currentValues)
       const result = await validateVoucher(payload, voucherId)
       setValidationMap(result.errors || {})
+        if (!silent) {
       if (result.valid) {
         toast.success('Tất cả dòng chứng từ hợp lệ')
       } else {
         toast.warning('Một số dòng cần kiểm tra lại')
+          }
       }
     } catch (err: any) {
+        // Silently fail for real-time validation, only show errors for manual validation
+        if (!silent) {
       toast.error('Không thể xác thực chứng từ', { description: err?.message })
+        }
     } finally {
-      setSaving(false)
+        setValidating(false)
+      }
+    },
+    [lines, form, voucherId],
+  )
+
+  // Debounced real-time validation when lines change
+  useEffect(() => {
+    if (isEditing || loadingAccounts || loadingVoucher) return
+    if (lines.length === 0) return
+
+    // Only validate if there's at least one line with accounts filled
+    const hasFilledLines = lines.some(
+      (line) => line.debitAccount || line.creditAccount || line.amount,
+    )
+    if (!hasFilledLines) {
+      setValidationMap({})
+      return
     }
+
+    const timeout = setTimeout(() => {
+      performRealTimeValidation(true) // Silent validation
+    }, 1000) // 1 second debounce
+
+    return () => clearTimeout(timeout)
+  }, [lines, isEditing, loadingAccounts, loadingVoucher, performRealTimeValidation])
+
+  async function handleValidate(values: VoucherFormValues) {
+    await performRealTimeValidation(false) // Manual validation with toast messages
   }
 
   async function handleSave(values: VoucherFormValues) {
@@ -543,10 +611,90 @@ export default function VoucherForm() {
         setLastSavedAt(null)
       }
       setValidationMap({})
+      // Reload voucher if editing to get updated status
+      if (isEditing && voucherId) {
+        const updated = await getVoucherById(voucherId)
+        setEditingVoucher(updated)
+      }
     } catch (err: any) {
       toast.error('Không thể lưu chứng từ', { description: err?.message })
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handlePost() {
+    if (!voucherId || !editingVoucher) return
+    if (editingVoucher.status !== 'draft') {
+      toast.error('Chỉ có thể ghi sổ phiếu ở trạng thái nháp')
+      return
+    }
+    try {
+      setPosting(true)
+      const response = await postVoucher(voucherId)
+      toast.success('Đã ghi sổ chứng từ thành công', {
+        description: `Đã tạo ${response.journalEntries.length} bút toán`,
+      })
+      // Reload voucher to get updated status
+      const updated = await getVoucherById(voucherId)
+      setEditingVoucher(updated)
+    } catch (err: any) {
+      if (err?.validationErrors) {
+        // Show bulk validation errors in modal
+        setPostingErrors(err.validationErrors)
+        setPostingErrorModalOpen(true)
+      } else {
+        toast.error('Không thể ghi sổ chứng từ', { description: err?.message || err?.error?.message })
+      }
+    } finally {
+      setPosting(false)
+    }
+  }
+
+  async function handleUnpost() {
+    if (!voucherId || !editingVoucher) return
+    if (!unpostReason.trim()) {
+      toast.error('Vui lòng nhập lý do hủy ghi sổ')
+      return
+    }
+    try {
+      setUnposting(true)
+      await unpostVoucher(voucherId, unpostReason.trim())
+      toast.success('Đã hủy ghi sổ chứng từ')
+      setUnpostDialogOpen(false)
+      setUnpostReason('')
+      // Reload voucher to get updated status
+      const updated = await getVoucherById(voucherId)
+      setEditingVoucher(updated)
+    } catch (err: any) {
+      toast.error('Không thể hủy ghi sổ chứng từ', { description: err?.message || err?.error?.message })
+    } finally {
+      setUnposting(false)
+    }
+  }
+
+  async function handleReverse() {
+    if (!voucherId || !editingVoucher) return
+    if (!reverseDescription.trim() || !reverseReason.trim()) {
+      toast.error('Vui lòng nhập đầy đủ mô tả và lý do đảo ngược')
+      return
+    }
+    try {
+      setReversing(true)
+      const response = await reverseVoucher(voucherId, reverseDescription.trim(), reverseReason.trim())
+      toast.success('Đã đảo ngược chứng từ thành công', {
+        description: `Phiếu đảo ngược: ${response.reversal.voucherNumber}`,
+      })
+      setReverseDialogOpen(false)
+      setReverseDescription('')
+      setReverseReason('')
+      // Reload voucher to get updated status
+      const updated = await getVoucherById(voucherId)
+      setEditingVoucher(updated)
+    } catch (err: any) {
+      toast.error('Không thể đảo ngược chứng từ', { description: err?.message || err?.error?.message })
+    } finally {
+      setReversing(false)
     }
   }
 
@@ -634,6 +782,16 @@ export default function VoucherForm() {
 
   const onSubmit = (values: VoucherFormValues) => handleSave(values)
   const formDisabled = saving || loadingAccounts || loadingVoucher || isLocked
+
+  // Calculate validation summary
+  const validationSummary = useMemo(() => {
+    const errorCount = Object.keys(validationMap).length
+    const totalErrors = Object.values(validationMap).reduce(
+      (sum, fieldErrors) => sum + Object.values(fieldErrors).flat().length,
+      0,
+    )
+    return { errorCount, totalErrors }
+  }, [validationMap])
   const isDateDisabled = useCallback(
     (date: Date) => {
       if (selectedDate && isSameDay(date, selectedDate)) return false
@@ -678,6 +836,28 @@ export default function VoucherForm() {
             {editingVoucher?.voucherNumber ? (
               <Badge variant="secondary">{editingVoucher.voucherNumber}</Badge>
             ) : null}
+            {editingVoucher?.reversedByVoucherId ? (
+              <Badge
+                variant="outline"
+                className="cursor-pointer hover:bg-orange-100"
+                onClick={() => {
+                  window.location.href = `/vouchers/${editingVoucher.reversedByVoucherId}`
+                }}
+              >
+                Reversed by
+              </Badge>
+            ) : null}
+            {editingVoucher?.reversalOf ? (
+              <Badge
+                variant="outline"
+                className="cursor-pointer hover:bg-blue-100"
+                onClick={() => {
+                  window.location.href = `/vouchers/${editingVoucher.reversalOf}`
+                }}
+              >
+                Reversal of
+              </Badge>
+            ) : null}
             {attachmentCount > 0 && (
               <Badge variant="outline" className="gap-1">
                 <FileText className="size-3" />
@@ -720,8 +900,62 @@ export default function VoucherForm() {
             )}
             Lưu nháp
           </Button>
+          {isEditing &&
+            editingVoucher &&
+            hasAnyRole(['admin', 'chief_accountant', 'cfo']) && (
+              <>
+                {editingVoucher.status === 'draft' && (
+                  <Button
+                    type="button"
+                    onClick={handlePost}
+                    disabled={posting || formDisabled}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {posting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                    )}
+                    Ghi sổ
+                  </Button>
+                )}
+                {editingVoucher.status === 'posted' && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setUnpostDialogOpen(true)}
+                      disabled={unposting || formDisabled}
+                    >
+                      {unposting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                      )}
+                      Hủy ghi sổ
+                    </Button>
+                    {!editingVoucher.reversedByVoucherId && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setReverseDialogOpen(true)}
+                        disabled={reversing || formDisabled}
+                      >
+                        {reversing ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <ArrowLeftRight className="mr-2 h-4 w-4" />
+                        )}
+                        Đảo ngược
+                      </Button>
+                    )}
+                  </>
+                )}
+              </>
+            )}
         </div>
       </div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="text-xs text-muted-foreground">
         {autoSaveStatus === 'saving' && 'Đang lưu nháp...'}
         {autoSaveStatus === 'saved' &&
@@ -732,6 +966,19 @@ export default function VoucherForm() {
             <AlertCircle className="h-3 w-3" />
             {autoSaveError || 'Không thể lưu nháp'}
           </span>
+          )}
+        </div>
+        {validationSummary.errorCount > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() => setValidationSummaryOpen(true)}
+            className="text-destructive border-destructive"
+          >
+            <AlertCircle className="mr-2 h-4 w-4" />
+            {validationSummary.errorCount} dòng có lỗi ({validationSummary.totalErrors} lỗi)
+          </Button>
         )}
       </div>
 
@@ -823,11 +1070,12 @@ export default function VoucherForm() {
                   lines={lines}
                   onLinesChange={(updated) => {
                     setLines(() => updated)
-                    setValidationMap({})
+                    // Don't clear validation map immediately - let debounced validation update it
                   }}
                   validationMap={validationMap}
                   lockedAccountIds={lockedAccountIds}
                   readOnly={formDisabled}
+                  loading={validating}
                   onUndo={undo}
                   onRedo={redo}
                   canUndo={canUndo}
@@ -866,6 +1114,205 @@ export default function VoucherForm() {
         onTemplateApplied={handleTemplateApplied}
         isApplying={applyingTemplate}
       />
+
+      {/* Validation Summary Modal */}
+      <Dialog open={validationSummaryOpen} onOpenChange={setValidationSummaryOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Tóm tắt lỗi xác thực
+            </DialogTitle>
+            <DialogDescription>
+              Có {validationSummary.errorCount} dòng với {validationSummary.totalErrors} lỗi cần xử lý
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {Object.entries(validationMap).length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Không có lỗi xác thực
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(validationMap)
+                  .sort(([a], [b]) => Number(a) - Number(b))
+                  .map(([lineNum, fieldErrors]) => (
+                    <div
+                      key={lineNum}
+                      className="rounded-lg border border-destructive/50 bg-destructive/5 p-4"
+                    >
+                      <div className="font-semibold text-destructive mb-3 flex items-center gap-2">
+                        <span>Dòng {lineNum}:</span>
+                        <Badge variant="destructive" className="text-xs">
+                          {Object.values(fieldErrors).flat().length} lỗi
+                        </Badge>
+                      </div>
+                      <div className="space-y-2 ml-4">
+                        {Object.entries(fieldErrors).map(([field, errors]) => (
+                          <div key={field} className="text-sm">
+                            <span className="font-medium text-muted-foreground capitalize">
+                              {field === 'debitAccount'
+                                ? 'Tài khoản Nợ'
+                                : field === 'creditAccount'
+                                  ? 'Tài khoản Có'
+                                  : field === 'amount'
+                                    ? 'Số tiền'
+                                    : field === 'dimensions'
+                                      ? 'Dimensions'
+                                      : field}:
+                            </span>{' '}
+                            <span className="text-destructive">
+                              {Array.isArray(errors) ? errors.join(', ') : String(errors)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setValidationSummaryOpen(false)}>Đóng</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setValidationSummaryOpen(false)
+                form.handleSubmit(handleValidate)()
+              }}
+            >
+              <ShieldAlert className="mr-2 h-4 w-4" />
+              Kiểm tra lại
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Validation Error Modal (for posting errors) */}
+      <Dialog open={postingErrorModalOpen} onOpenChange={setPostingErrorModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Lỗi xác thực khi ghi sổ
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {postingErrors && (
+              <div className="space-y-3">
+                {postingErrors.lines && typeof postingErrors.lines === 'object' && (
+                  <div className="space-y-2">
+                    {Object.entries(postingErrors.lines).map(([lineNum, errors]: [string, any]) => (
+                      <div
+                        key={lineNum}
+                        className="rounded-lg border border-destructive/50 bg-destructive/10 p-3"
+                      >
+                        <div className="font-semibold text-destructive mb-2">
+                          Dòng {lineNum === '0' ? 'chung' : lineNum}:
+                        </div>
+                        {typeof errors === 'object' &&
+                          Object.entries(errors).map(([field, fieldErrors]: [string, any]) => (
+                            <div key={field} className="ml-4 mb-1">
+                              <span className="font-medium">{field}:</span>{' '}
+                              {Array.isArray(fieldErrors)
+                                ? fieldErrors.join(', ')
+                                : String(fieldErrors)}
+                            </div>
+                          ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {postingErrors.global && Array.isArray(postingErrors.global) && (
+                  <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3">
+                    <div className="font-semibold text-destructive mb-2">Lỗi chung:</div>
+                    <ul className="list-disc list-inside ml-2">
+                      {postingErrors.global.map((error: string, idx: number) => (
+                        <li key={idx}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setPostingErrorModalOpen(false)}>Đóng</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unpost Dialog */}
+      <Dialog open={unpostDialogOpen} onOpenChange={setUnpostDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Hủy ghi sổ chứng từ</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="unpost-reason">Lý do hủy ghi sổ *</Label>
+              <Textarea
+                id="unpost-reason"
+                value={unpostReason}
+                onChange={(e) => setUnpostReason(e.target.value)}
+                placeholder="Nhập lý do hủy ghi sổ (bắt buộc cho kiểm toán)"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUnpostDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button onClick={handleUnpost} disabled={!unpostReason.trim() || unposting}>
+              {unposting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Xác nhận hủy ghi sổ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reverse Dialog */}
+      <Dialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đảo ngược chứng từ</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="reverse-description">Mô tả phiếu đảo ngược *</Label>
+              <Input
+                id="reverse-description"
+                value={reverseDescription}
+                onChange={(e) => setReverseDescription(e.target.value)}
+                placeholder="Mô tả cho phiếu đảo ngược"
+              />
+            </div>
+            <div>
+              <Label htmlFor="reverse-reason">Lý do đảo ngược *</Label>
+              <Textarea
+                id="reverse-reason"
+                value={reverseReason}
+                onChange={(e) => setReverseReason(e.target.value)}
+                placeholder="Nhập lý do đảo ngược (bắt buộc cho kiểm toán)"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReverseDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button
+              onClick={handleReverse}
+              disabled={!reverseDescription.trim() || !reverseReason.trim() || reversing}
+            >
+              {reversing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Xác nhận đảo ngược
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

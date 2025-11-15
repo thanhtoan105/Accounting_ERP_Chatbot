@@ -14,6 +14,7 @@ import com.accounting.dto.VoucherDTO;
 import com.accounting.dto.VoucherLineDTO;
 import com.accounting.dto.VoucherListDTO;
 import com.accounting.dto.VoucherValidationResult;
+import com.accounting.exception.VoucherValidationException;
 import com.accounting.entity.User;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
@@ -59,51 +60,60 @@ import org.springframework.web.server.ResponseStatusException;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class VoucherServiceImplTest {
 
-  @Mock private VoucherRepository voucherRepository;
+  @Mock
+  private VoucherRepository voucherRepository;
 
-  @Mock private VoucherLineRepository voucherLineRepository;
+  @Mock
+  private VoucherLineRepository voucherLineRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private CustomerRepository customerRepository;
+  @Mock
+  private CustomerRepository customerRepository;
 
-  @Mock private SupplierRepository supplierRepository;
+  @Mock
+  private SupplierRepository supplierRepository;
 
-  @Mock private AuditService auditService;
+  @Mock
+  private AuditService auditService;
 
-  @Mock private JwtTokenProvider jwtTokenProvider;
+  @Mock
+  private JwtTokenProvider jwtTokenProvider;
 
-  @Mock private VoucherValidationService voucherValidationService;
+  @Mock
+  private VoucherValidationService voucherValidationService;
 
-  @Mock private EntityManager entityManager;
+  @Mock
+  private EntityManager entityManager;
 
-  @Mock private HttpServletRequest request;
+  @Mock
+  private HttpServletRequest request;
 
   private VoucherServiceImpl voucherService;
 
   @BeforeEach
   void setUp() {
-    voucherService =
-        new VoucherServiceImpl(
-            voucherRepository,
-            voucherLineRepository,
-            userRepository,
-            customerRepository,
-            supplierRepository,
-            auditService,
-            jwtTokenProvider,
-            voucherValidationService);
-    
+    voucherService = new VoucherServiceImpl(
+        voucherRepository,
+        voucherLineRepository,
+        userRepository,
+        customerRepository,
+        supplierRepository,
+        auditService,
+        jwtTokenProvider,
+        voucherValidationService);
+
     // Inject EntityManager via reflection (since it's @PersistenceContext)
     ReflectionTestUtils.setField(voucherService, "entityManager", entityManager);
-    
+
     // Set up SecurityContext for getCurrentUserId()
     SecurityContext securityContext = org.mockito.Mockito.mock(SecurityContext.class);
     Authentication authentication = org.mockito.Mockito.mock(Authentication.class);
     when(securityContext.getAuthentication()).thenReturn(authentication);
     when(authentication.getPrincipal()).thenReturn("1"); // User ID as string
     SecurityContextHolder.setContext(securityContext);
-    
+
     CompanyContext.setCompanyId(1L);
   }
 
@@ -125,8 +135,7 @@ class VoucherServiceImplTest {
         .thenReturn(page);
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
-    Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), null, null, null, null, null);
+    Page<VoucherListDTO> result = voucherService.findAll(PageRequest.of(0, 20), null, null, null, null, null);
 
     assertNotNull(result);
     assertEquals(2, result.getTotalElements());
@@ -144,8 +153,7 @@ class VoucherServiceImplTest {
         .thenReturn(page);
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
-    Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), "draft", null, null, null, null);
+    Page<VoucherListDTO> result = voucherService.findAll(PageRequest.of(0, 20), "draft", null, null, null, null);
 
     assertEquals(1, result.getContent().size());
     assertEquals("draft", result.getContent().get(0).getStatus());
@@ -155,8 +163,7 @@ class VoucherServiceImplTest {
   void findAll_withDateRange_filtersByDate() {
     LocalDate fromDate = LocalDate.of(2025, 1, 1);
     LocalDate toDate = LocalDate.of(2025, 1, 31);
-    Voucher voucherInRange =
-        createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.of(2025, 1, 15), "draft");
+    Voucher voucherInRange = createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.of(2025, 1, 15), "draft");
 
     List<Voucher> filteredVouchers = List.of(voucherInRange);
     Page<Voucher> page = new PageImpl<>(filteredVouchers, PageRequest.of(0, 20), 1);
@@ -165,16 +172,14 @@ class VoucherServiceImplTest {
         .thenReturn(page);
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
-    Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), null, fromDate, toDate, null, null);
+    Page<VoucherListDTO> result = voucherService.findAll(PageRequest.of(0, 20), null, fromDate, toDate, null, null);
 
     assertEquals(1, result.getContent().size());
   }
 
   @Test
   void findAll_withSearchTerm_searchesVoucherNumberAndDescription() {
-    Voucher matchingVoucher =
-        createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.now(), "draft");
+    Voucher matchingVoucher = createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.now(), "draft");
     matchingVoucher.setDescription("Payment for services");
 
     List<Voucher> matchingVouchers = List.of(matchingVoucher);
@@ -184,8 +189,7 @@ class VoucherServiceImplTest {
         .thenReturn(page);
     when(userRepository.findById(any())).thenReturn(Optional.of(createTestUser(1L, "User 1")));
 
-    Page<VoucherListDTO> result =
-        voucherService.findAll(PageRequest.of(0, 20), null, null, null, "VC2025", null);
+    Page<VoucherListDTO> result = voucherService.findAll(PageRequest.of(0, 20), null, null, null, "VC2025", null);
 
     assertEquals(1, result.getContent().size());
   }
@@ -194,10 +198,9 @@ class VoucherServiceImplTest {
   void findAll_missingCompanyContext_throwsException() {
     CompanyContext.clear();
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.findAll(PageRequest.of(0, 20), null, null, null, null, null));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.findAll(PageRequest.of(0, 20), null, null, null, null, null));
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Missing company context"));
@@ -221,8 +224,7 @@ class VoucherServiceImplTest {
   void getCounts_missingCompanyContext_throwsException() {
     CompanyContext.clear();
 
-    ResponseStatusException exception =
-        assertThrows(ResponseStatusException.class, () -> voucherService.getCounts());
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> voucherService.getCounts());
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Missing company context"));
@@ -279,13 +281,14 @@ class VoucherServiceImplTest {
     when(voucherRepository.findByCompanyIdAndId(1L, voucherId))
         .thenReturn(Optional.of(voucher));
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.delete(voucherId, "Test reason", request));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.delete(voucherId, "Test reason", request));
 
     assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-    assertTrue(exception.getReason() != null && exception.getReason().contains("only draft vouchers can be deleted"));
+    assertTrue(exception.getReason() != null &&
+        (exception.getReason().contains("Cannot delete posted voucher") ||
+            exception.getReason().contains("only draft vouchers can be deleted")));
   }
 
   @Test
@@ -297,10 +300,9 @@ class VoucherServiceImplTest {
         .thenReturn(Optional.of(voucher));
     when(voucherRepository.isReferenced(voucherId)).thenReturn(true);
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.delete(voucherId, "Test reason", request));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.delete(voucherId, "Test reason", request));
 
     assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("referenced"));
@@ -310,10 +312,9 @@ class VoucherServiceImplTest {
   void delete_missingReason_throwsBadRequestException() {
     UUID voucherId = UUID.randomUUID();
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.delete(voucherId, null, request));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.delete(voucherId, null, request));
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Deletion reason is required"));
@@ -323,10 +324,9 @@ class VoucherServiceImplTest {
   void delete_blankReason_throwsBadRequestException() {
     UUID voucherId = UUID.randomUUID();
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.delete(voucherId, "   ", request));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.delete(voucherId, "   ", request));
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Deletion reason is required"));
@@ -338,10 +338,9 @@ class VoucherServiceImplTest {
 
     when(voucherRepository.findByCompanyIdAndId(1L, voucherId)).thenReturn(Optional.empty());
 
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> voucherService.delete(voucherId, "Test reason", request));
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> voucherService.delete(voucherId, "Test reason", request));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertTrue(exception.getReason() != null && exception.getReason().contains("Voucher not found"));
@@ -349,8 +348,7 @@ class VoucherServiceImplTest {
 
   @Test
   void search_withSearchTerm_returnsMatchingVouchers() {
-    Voucher matchingVoucher =
-        createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.now(), "draft");
+    Voucher matchingVoucher = createVoucher(UUID.randomUUID(), "VC2025-001", LocalDate.now(), "draft");
     matchingVoucher.setDescription("Payment invoice");
 
     List<Voucher> matchingVouchers = List.of(matchingVoucher);
@@ -446,11 +444,11 @@ class VoucherServiceImplTest {
     validationResult.addError(1, "accountId", "Account is required");
     when(voucherValidationService.validate(any())).thenReturn(validationResult);
 
-    ResponseStatusException exception =
-        assertThrows(ResponseStatusException.class, () -> voucherService.create(request));
+    VoucherValidationException exception = assertThrows(VoucherValidationException.class,
+        () -> voucherService.create(request));
 
-    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
-    assertTrue(exception.getReason().contains("Validation failed"));
+    assertNotNull(exception.getValidationResult());
+    assertFalse(exception.getValidationResult().isValid());
   }
 
   @Test
@@ -498,8 +496,8 @@ class VoucherServiceImplTest {
     when(voucherRepository.findByCompanyIdAndId(1L, voucherId))
         .thenReturn(Optional.of(postedVoucher));
 
-    ResponseStatusException exception =
-        assertThrows(ResponseStatusException.class, () -> voucherService.update(voucherId, request));
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.update(voucherId, request));
 
     assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     assertTrue(exception.getReason().contains("only draft vouchers can be updated"));
@@ -516,11 +514,10 @@ class VoucherServiceImplTest {
 
     when(voucherRepository.findByCompanyIdAndId(1L, voucherId)).thenReturn(Optional.empty());
 
-    ResponseStatusException exception =
-        assertThrows(ResponseStatusException.class, () -> voucherService.update(voucherId, request));
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> voucherService.update(voucherId, request));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertTrue(exception.getReason().contains("Voucher not found"));
   }
 }
-

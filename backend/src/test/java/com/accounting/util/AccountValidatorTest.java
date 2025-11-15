@@ -2,7 +2,6 @@ package com.accounting.util;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.accounting.entity.ChartOfAccount;
@@ -17,7 +16,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class AccountValidatorTest {
 
-  @Mock private ChartOfAccountsRepository chartOfAccountsRepository;
+  @Mock
+  private ChartOfAccountsRepository chartOfAccountsRepository;
 
   private AccountValidator accountValidator;
 

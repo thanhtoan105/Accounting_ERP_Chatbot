@@ -1,23 +1,18 @@
 package com.accounting.controller;
 
 import com.accounting.dto.ImportResultDTO;
-import com.accounting.dto.ImportRowErrorDTO;
 import com.accounting.imports.ImportType;
 import com.accounting.imports.exception.ImportValidationException;
-import com.accounting.imports.model.ImportContext;
 import com.accounting.imports.model.ImportSummary;
 import com.accounting.imports.service.ImportErrorReportService;
 import com.accounting.imports.service.ImportTemplateService;
 import com.accounting.imports.service.MasterDataImportFacade;
-import com.accounting.imports.service.MasterDataImportService;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AuditService;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -73,8 +68,7 @@ public class ImportController {
           HttpStatus.UNAUTHORIZED, "Authenticated user is required");
     }
 
-    ImportResultDTO result =
-        importFacade.process(importType, file, locale, request);
+    ImportResultDTO result = importFacade.process(importType, file, locale, request);
     return ResponseEntity.ok(result);
   }
 
@@ -96,15 +90,14 @@ public class ImportController {
     }
     String filename = importType.getTemplateBaseName() + "." + extension;
 
-    MediaType mediaType =
-        switch (normalizedFormat) {
-          case "csv" -> MediaType.parseMediaType("text/csv");
-          case "xls" ->
-              MediaType.parseMediaType("application/vnd.ms-excel");
-          default ->
-              MediaType.parseMediaType(
-                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        };
+    MediaType mediaType = switch (normalizedFormat) {
+      case "csv" -> MediaType.parseMediaType("text/csv");
+      case "xls" ->
+        MediaType.parseMediaType("application/vnd.ms-excel");
+      default ->
+        MediaType.parseMediaType(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    };
 
     return ResponseEntity.ok()
         .header(
@@ -161,7 +154,8 @@ public class ImportController {
           summary.getSuccessCount(), summary.getErrorCount(), userId, request);
       case BANK_ACCOUNTS -> auditService.logBankAccountImport(
           summary.getSuccessCount(), summary.getErrorCount(), userId, request);
-      default -> {}
+      default -> {
+      }
     }
   }
 
@@ -172,9 +166,9 @@ public class ImportController {
       case CUSTOMERS -> auditService.logCustomerImport(0, errorCount, userId, request);
       case SUPPLIERS -> auditService.logSupplierImport(0, errorCount, userId, request);
       case BANK_ACCOUNTS -> auditService.logBankAccountImport(0, errorCount, userId, request);
-      default -> {}
+      default -> {
+      }
     }
   }
 
 }
-
