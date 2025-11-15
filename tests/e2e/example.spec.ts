@@ -30,6 +30,9 @@ test.describe('Example Test Suite', () => {
     // For this example, we'll simulate the login flow
     await page.goto('/login');
 
+    // Wait for login form to be ready
+    await page.waitForSelector('[data-testid="email-input"]', { state: 'visible' });
+
     // Then: Fill login form and submit
     await page.fill('[data-testid="email-input"]', user.email);
     await page.fill('[data-testid="password-input"]', user.password || '');
