@@ -84,12 +84,7 @@ describe('ReminderDialog', () => {
     const user = userEvent.setup()
 
     render(
-      <ReminderDialog
-        open
-        onOpenChange={() => {}}
-        supplierIds={[10, 11]}
-        onSuccess={() => {}}
-      />,
+      <ReminderDialog open onOpenChange={() => {}} supplierIds={[10, 11]} onSuccess={() => {}} />,
     )
 
     await user.type(screen.getByPlaceholderText('email@example.com'), 'batch@example.com')
@@ -104,5 +99,3 @@ describe('ReminderDialog', () => {
     )
   })
 })
-
-

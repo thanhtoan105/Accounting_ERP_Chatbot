@@ -43,14 +43,8 @@ import {
 } from '@/components/ui/table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  getAgingReport,
-  exportAgingReport,
-} from '@/services/apAging'
-import type {
-  APAgingReportDTO,
-  APAgingQueryParams,
-} from '@/types/apAging'
+import { getAgingReport, exportAgingReport } from '@/services/apAging'
+import type { APAgingReportDTO, APAgingQueryParams } from '@/types/apAging'
 import { AgingBillDetailsDialog } from '@/components/ap-aging/AgingBillDetailsDialog'
 import { ReminderDialog } from '@/components/ap-aging/ReminderDialog'
 import { formatCurrency } from '@/utils/format'
@@ -90,7 +84,9 @@ export function APAgingReport() {
 
   // Reminder dialog
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false)
-  const [selectedSupplierForReminder, setSelectedSupplierForReminder] = useState<number | undefined>(undefined)
+  const [selectedSupplierForReminder, setSelectedSupplierForReminder] = useState<
+    number | undefined
+  >(undefined)
 
   // Export loading
   const [exporting, setExporting] = useState(false)
@@ -288,7 +284,9 @@ export function APAgingReport() {
         accessorKey: 'totalOutstanding',
         header: 'Total Outstanding',
         cell: ({ row }) => (
-          <div className="text-right font-semibold">{formatCurrency(row.original.totalOutstanding)}</div>
+          <div className="text-right font-semibold">
+            {formatCurrency(row.original.totalOutstanding)}
+          </div>
         ),
       },
       {
@@ -336,7 +334,8 @@ export function APAgingReport() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
-            AP Aging Report <span className="text-muted-foreground text-lg">/ Báo cáo công nợ phải trả</span>
+            AP Aging Report{' '}
+            <span className="text-muted-foreground text-lg">/ Báo cáo công nợ phải trả</span>
           </h1>
           <p className="text-muted-foreground">
             View aging buckets by supplier with drill-down to bill/payment history.
@@ -347,19 +346,11 @@ export function APAgingReport() {
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleExport('EXCEL')}
-            disabled={exporting}
-          >
+          <Button variant="outline" onClick={() => handleExport('EXCEL')} disabled={exporting}>
             <Download className={`mr-2 h-4 w-4 ${exporting ? 'animate-spin' : ''}`} />
             Export Excel
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleExport('PDF')}
-            disabled={exporting}
-          >
+          <Button variant="outline" onClick={() => handleExport('PDF')} disabled={exporting}>
             <Download className={`mr-2 h-4 w-4 ${exporting ? 'animate-spin' : ''}`} />
             Export PDF
           </Button>
@@ -489,7 +480,10 @@ export function APAgingReport() {
               ))
             ) : isEmpty ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   No aging data found
                 </TableCell>
               </TableRow>
@@ -598,4 +592,3 @@ export function APAgingReport() {
     </div>
   )
 }
-

@@ -42,7 +42,12 @@ describe('PaymentApprovalDialog', () => {
   it('does not render when payment is null', () => {
     const { queryByText } = render(
       // @ts-expect-error testing null payment scenario
-      <PaymentApprovalDialog payment={null} open={true} onOpenChange={() => {}} onApproved={() => {}} />,
+      <PaymentApprovalDialog
+        payment={null}
+        open={true}
+        onOpenChange={() => {}}
+        onApproved={() => {}}
+      />,
     )
 
     expect(queryByText('Approve Payment')).toBeNull()
@@ -87,9 +92,9 @@ describe('PaymentApprovalDialog', () => {
       />,
     )
 
-    const approveButton = screen.getByRole('button', { name: /Approve & Post/i }) as HTMLButtonElement
+    const approveButton = screen.getByRole('button', {
+      name: /Approve & Post/i,
+    }) as HTMLButtonElement
     expect(approveButton.disabled).toBe(true)
-    })
-    })
-
-
+  })
+})

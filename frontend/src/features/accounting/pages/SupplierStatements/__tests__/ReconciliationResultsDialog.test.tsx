@@ -70,7 +70,7 @@ describe('ReconciliationResultsDialog', () => {
         onOpenChange={vi.fn()}
         result={sampleReconciliationResult}
         supplierId={1}
-      />
+      />,
     )
 
     expect(screen.getByText(/Reconciliation Results/i)).toBeInTheDocument()
@@ -83,7 +83,7 @@ describe('ReconciliationResultsDialog', () => {
         onOpenChange={vi.fn()}
         result={sampleReconciliationResult}
         supplierId={1}
-      />
+      />,
     )
 
     expect(screen.queryByText(/Reconciliation Results/i)).not.toBeInTheDocument()
@@ -96,7 +96,7 @@ describe('ReconciliationResultsDialog', () => {
         onOpenChange={vi.fn()}
         result={sampleReconciliationResult}
         supplierId={1}
-      />
+      />,
     )
 
     expect(screen.getByText(/5 matched/i)).toBeInTheDocument()
@@ -111,7 +111,7 @@ describe('ReconciliationResultsDialog', () => {
         onOpenChange={vi.fn()}
         result={sampleReconciliationResult}
         supplierId={1}
-      />
+      />,
     )
 
     // Click on Matched tab
@@ -128,7 +128,7 @@ describe('ReconciliationResultsDialog', () => {
         onOpenChange={vi.fn()}
         result={sampleReconciliationResult}
         supplierId={1}
-      />
+      />,
     )
 
     // Click on Mismatched tab
@@ -145,7 +145,7 @@ describe('ReconciliationResultsDialog', () => {
         onOpenChange={vi.fn()}
         result={sampleReconciliationResult}
         supplierId={1}
-      />
+      />,
     )
 
     // Click on Missing tab
@@ -164,7 +164,7 @@ describe('ReconciliationResultsDialog', () => {
         onOpenChange={onOpenChange}
         result={sampleReconciliationResult}
         supplierId={1}
-      />
+      />,
     )
 
     const saveButton = screen.getByRole('button', { name: /Save Reconciliation/i })
@@ -174,7 +174,7 @@ describe('ReconciliationResultsDialog', () => {
       expect(mockSaveReconciliation).toHaveBeenCalledWith(
         1,
         sampleReconciliationResult,
-        expect.any(String)
+        expect.any(String),
       )
     })
 
@@ -189,7 +189,7 @@ describe('ReconciliationResultsDialog', () => {
         onOpenChange={vi.fn()}
         result={sampleReconciliationResult}
         supplierId={1}
-      />
+      />,
     )
 
     // Find notes input for a mismatched item
@@ -209,7 +209,7 @@ describe('ReconciliationResultsDialog', () => {
         onOpenChange={onOpenChange}
         result={sampleReconciliationResult}
         supplierId={1}
-      />
+      />,
     )
 
     const cancelButton = screen.getByRole('button', { name: /Cancel/i })
@@ -227,7 +227,7 @@ describe('ReconciliationResultsDialog', () => {
         onOpenChange={vi.fn()}
         result={sampleReconciliationResult}
         supplierId={1}
-      />
+      />,
     )
 
     const saveButton = screen.getByRole('button', { name: /Save Reconciliation/i })
@@ -238,4 +238,3 @@ describe('ReconciliationResultsDialog', () => {
     })
   })
 })
-

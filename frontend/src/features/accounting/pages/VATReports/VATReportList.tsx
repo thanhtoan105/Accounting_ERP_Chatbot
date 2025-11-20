@@ -303,16 +303,9 @@ export function VATReportList() {
     const searched = !query
       ? base
       : base.filter((item) => {
-          const supplier =
-            (item.supplierName || '') + ' ' + (item.supplierCode || '')
-          const bill =
-            (item.billNumber || '') +
-            ' ' +
-            format(new Date(item.billDate), 'dd/MM/yyyy')
-          return (
-            supplier.toLowerCase().includes(query) ||
-            bill.toLowerCase().includes(query)
-          )
+          const supplier = (item.supplierName || '') + ' ' + (item.supplierCode || '')
+          const bill = (item.billNumber || '') + ' ' + format(new Date(item.billDate), 'dd/MM/yyyy')
+          return supplier.toLowerCase().includes(query) || bill.toLowerCase().includes(query)
         })
 
     // Apply sorting
@@ -400,9 +393,7 @@ export function VATReportList() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={() => setGenerateDialogOpen(true)}>
-            Generate Report
-          </Button>
+          <Button onClick={() => setGenerateDialogOpen(true)}>Generate Report</Button>
           <Button
             variant="outline"
             onClick={handleRefresh}
@@ -531,9 +522,7 @@ export function VATReportList() {
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
               {format(new Date(report.generationDate), 'dd/MM/yyyy HH:mm')}
-              <div className="text-xs text-foreground">
-                {report.generatedByName ?? 'System'}
-              </div>
+              <div className="text-xs text-foreground">{report.generatedByName ?? 'System'}</div>
             </CardContent>
           </Card>
           <Card>
@@ -542,12 +531,10 @@ export function VATReportList() {
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-1">
               <div>
-                VAT:{' '}
-                <span className="font-mono text-foreground">{report.grandTotalVAT}</span>
+                VAT: <span className="font-mono text-foreground">{report.grandTotalVAT}</span>
               </div>
               <div>
-                Amount:{' '}
-                <span className="font-mono text-foreground">{report.grandTotalAmount}</span>
+                Amount: <span className="font-mono text-foreground">{report.grandTotalAmount}</span>
               </div>
             </CardContent>
           </Card>
@@ -658,9 +645,7 @@ export function VATReportList() {
                     <div className="space-y-0.5">
                       <div className="font-medium">{item.supplierName ?? '—'}</div>
                       {item.supplierCode && (
-                        <div className="text-xs text-muted-foreground">
-                          {item.supplierCode}
-                        </div>
+                        <div className="text-xs text-muted-foreground">{item.supplierCode}</div>
                       )}
                     </div>
                   </TableCell>
@@ -677,15 +662,9 @@ export function VATReportList() {
                   <TableCell>
                     <Badge variant="outline">{item.vatRate}</Badge>
                   </TableCell>
-                  <TableCell className="text-right font-mono text-sm">
-                    {item.baseAmount}
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-sm">
-                    {item.vatAmount}
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-sm">
-                    {item.totalAmount}
-                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm">{item.baseAmount}</TableCell>
+                  <TableCell className="text-right font-mono text-sm">{item.vatAmount}</TableCell>
+                  <TableCell className="text-right font-mono text-sm">{item.totalAmount}</TableCell>
                 </TableRow>
               ))
             )}
@@ -706,18 +685,14 @@ export function VATReportList() {
                 {(['ZERO', 'FIVE', 'TEN', 'EXEMPT'] as const).map((rate) => (
                   <span key={rate}>
                     <span className="uppercase">{rate}</span> VAT:{' '}
-                    <span className="font-mono">
-                      {report.totalVATByRate?.[rate] ?? '0'}
-                    </span>
+                    <span className="font-mono">{report.totalVATByRate?.[rate] ?? '0'}</span>
                   </span>
                 ))}
                 <span>
-                  Grand VAT:{' '}
-                  <span className="font-mono">{report.grandTotalVAT}</span>
+                  Grand VAT: <span className="font-mono">{report.grandTotalVAT}</span>
                 </span>
                 <span>
-                  Grand Amount:{' '}
-                  <span className="font-mono">{report.grandTotalAmount}</span>
+                  Grand Amount: <span className="font-mono">{report.grandTotalAmount}</span>
                 </span>
               </div>
             </>
@@ -1022,5 +997,3 @@ export function VATReportList() {
     </div>
   )
 }
-
-

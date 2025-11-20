@@ -172,4 +172,3 @@ export function SendStatementDialog({
     </Dialog>
   )
 }
-

@@ -59,7 +59,9 @@ export function PurchaseBillAttachmentManagementModal({
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [selectedAttachment, setSelectedAttachment] = useState<PurchaseBillAttachmentDTO | null>(null)
+  const [selectedAttachment, setSelectedAttachment] = useState<PurchaseBillAttachmentDTO | null>(
+    null,
+  )
   const [deleteReason, setDeleteReason] = useState('')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
@@ -302,4 +304,3 @@ export function PurchaseBillAttachmentManagementModal({
     </>
   )
 }
-

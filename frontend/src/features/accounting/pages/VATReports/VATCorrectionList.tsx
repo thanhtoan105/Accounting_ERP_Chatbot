@@ -255,8 +255,8 @@ export function VATCorrectionList() {
                         correction.status === 'APPROVED'
                           ? 'default'
                           : correction.status === 'REJECTED'
-                          ? 'destructive'
-                          : 'outline'
+                            ? 'destructive'
+                            : 'outline'
                       }
                     >
                       {correction.status}
@@ -350,5 +350,3 @@ export function VATCorrectionList() {
 function Labelled({ children }: { children: React.ReactNode }) {
   return <div className="space-y-2 text-sm text-muted-foreground">{children}</div>
 }
-
-

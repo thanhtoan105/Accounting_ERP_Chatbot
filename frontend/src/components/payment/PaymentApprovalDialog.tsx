@@ -77,8 +77,8 @@ export function PaymentApprovalDialog({
           <DialogDescription>
             You are about to approve payment{' '}
             <span className="font-medium">{payment.paymentNumber}</span> to{' '}
-            <span className="font-medium">{payment.supplierName || payment.supplierCode}</span>. This
-            will post the payment, generate a voucher, and update related bill balances.
+            <span className="font-medium">{payment.supplierName || payment.supplierCode}</span>.
+            This will post the payment, generate a voucher, and update related bill balances.
           </DialogDescription>
         </DialogHeader>
 
@@ -134,5 +134,3 @@ export function PaymentApprovalDialog({
     </Dialog>
   )
 }
-
-

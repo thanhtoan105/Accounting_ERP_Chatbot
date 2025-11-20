@@ -67,7 +67,8 @@ export function PaymentAllocationGrid({
     allocations.forEach((allocation, index) => {
       const remainingBalance = allocation.purchaseBillRemainingBalance || 0
       if (allocation.allocatedAmount > remainingBalance) {
-        newErrors[`allocations.${index}.allocatedAmount`] = `Allocated amount (${formatCurrency(allocation.allocatedAmount)}) exceeds remaining balance (${formatCurrency(remainingBalance)})`
+        newErrors[`allocations.${index}.allocatedAmount`] =
+          `Allocated amount (${formatCurrency(allocation.allocatedAmount)}) exceeds remaining balance (${formatCurrency(remainingBalance)})`
       }
     })
     setLocalErrors(newErrors)
@@ -140,7 +141,10 @@ export function PaymentAllocationGrid({
               </TableRow>
             ) : allocations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={readOnly ? 7 : 8} className="h-24 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={readOnly ? 7 : 8}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   No allocations. Use FIFO allocation or add manually.
                 </TableCell>
               </TableRow>
@@ -211,9 +215,7 @@ export function PaymentAllocationGrid({
                           )}
                         />
                       )}
-                      {hasError && (
-                        <p className="text-xs text-destructive mt-1">{error}</p>
-                      )}
+                      {hasError && <p className="text-xs text-destructive mt-1">{error}</p>}
                     </TableCell>
                     {!readOnly && (
                       <TableCell>
@@ -272,4 +274,3 @@ export function PaymentAllocationGrid({
     </div>
   )
 }
-

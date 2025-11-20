@@ -64,7 +64,10 @@ export async function getOverdueSuppliers(
   return await handleJsonResponse<OverdueSupplierDTO[]>(res)
 }
 
-export async function getOverdueCount(period?: number, asOfDate?: string): Promise<OverdueCountDTO> {
+export async function getOverdueCount(
+  period?: number,
+  asOfDate?: string,
+): Promise<OverdueCountDTO> {
   const queryParams = new URLSearchParams()
   if (period) queryParams.append('period', String(period))
   if (asOfDate) queryParams.append('asOfDate', asOfDate)
@@ -156,4 +159,3 @@ export async function sendBatchReminders(
   }
   return await handleJsonResponse<BatchReminderResultDTO>(res)
 }
-
