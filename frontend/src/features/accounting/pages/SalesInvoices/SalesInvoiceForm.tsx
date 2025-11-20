@@ -930,7 +930,9 @@ export default function SalesInvoiceForm() {
                               disabled={(date) =>
                                 isBefore(
                                   date,
-                                  parseISO(watchedValues.invoiceDate || format(today, 'yyyy-MM-dd')),
+                                  parseISO(
+                                    watchedValues.invoiceDate || format(today, 'yyyy-MM-dd'),
+                                  ),
                                 )
                               }
                               initialFocus

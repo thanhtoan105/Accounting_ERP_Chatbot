@@ -404,9 +404,12 @@ export interface ApprovalWorkflowDTO {
 }
 
 export async function submitForApproval(invoiceId: string): Promise<ApprovalWorkflowDTO> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/${invoiceId}/submit-for-approval`, {
-    method: 'POST',
-  })
+  const res = await fetchWithAuth(
+    `${API_BASE}/purchase-invoices/${invoiceId}/submit-for-approval`,
+    {
+      method: 'POST',
+    },
+  )
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: 'Submit for approval failed' }))
     throw error
