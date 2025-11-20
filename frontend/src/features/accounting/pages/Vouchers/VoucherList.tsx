@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Calendar,
+  Calendar as CalendarIcon,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
@@ -29,6 +29,8 @@ import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
 import {
   Select,
   SelectContent,
@@ -485,7 +487,7 @@ export default function VoucherList() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
-            Vouchers <span className="text-muted-foreground text-lg">/ Phiếu kế toán</span>
+            Vouchers
           </h1>
           <p className="text-muted-foreground">
             View, search, and manage voucher entries with server-side pagination.
@@ -567,31 +569,69 @@ export default function VoucherList() {
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+            <CalendarIcon className="h-4 w-4" />
             Date From
           </label>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => {
-              setDateFrom(e.target.value)
-              setPage(0)
-            }}
-          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal"
+              >
+                {dateFrom ? format(new Date(dateFrom), 'dd/MM/yyyy') : 'Select date'}
+                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateFrom ? new Date(dateFrom) : undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    setDateFrom(format(date, 'yyyy-MM-dd'))
+                    setPage(0)
+                  } else {
+                    setDateFrom('')
+                    setPage(0)
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+            <CalendarIcon className="h-4 w-4" />
             Date To
           </label>
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => {
-              setDateTo(e.target.value)
-              setPage(0)
-            }}
-          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal"
+              >
+                {dateTo ? format(new Date(dateTo), 'dd/MM/yyyy') : 'Select date'}
+                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateTo ? new Date(dateTo) : undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    setDateTo(format(date, 'yyyy-MM-dd'))
+                    setPage(0)
+                  } else {
+                    setDateTo('')
+                    setPage(0)
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">Account</label>

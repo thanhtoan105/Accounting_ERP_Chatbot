@@ -20,23 +20,23 @@ import { getSuppliers } from '@/features/suppliers/services/supplier'
 type DimensionType = 'customer' | 'supplier' | 'costCenter'
 
 const costCenterOptions: VoucherDimensionOption[] = [
-  { id: 'CC-OPS', code: 'OPS', name: 'Vận hành' },
-  { id: 'CC-SALES', code: 'SAL', name: 'Kinh doanh' },
+    { id: 'CC-OPS', code: 'OPS', name: 'Operations' },
+  { id: 'CC-SALES', code: 'SAL', name: 'Sales' },
   { id: 'CC-MKT', code: 'MKT', name: 'Marketing' },
-  { id: 'CC-RND', code: 'RND', name: 'Nghiên cứu & PT' },
-  { id: 'CC-ADM', code: 'ADM', name: 'Hành chính' },
+  { id: 'CC-RND', code: 'RND', name: 'Research & Development' },
+  { id: 'CC-ADM', code: 'ADM', name: 'Administration' },
 ]
 
 const typeLabels: Record<DimensionType, string> = {
-  customer: 'Khách hàng',
-  supplier: 'Nhà cung cấp',
-  costCenter: 'Trung tâm chi phí',
+  customer: 'Customer',
+  supplier: 'Supplier',
+  costCenter: 'Cost center',
 }
 
 const placeholderMap: Record<DimensionType, string> = {
-  customer: 'Chọn khách hàng...',
-  supplier: 'Chọn nhà cung cấp...',
-  costCenter: 'Chọn trung tâm chi phí...',
+  customer: 'Select customer...',
+  supplier: 'Select supplier...',
+  costCenter: 'Select cost center...',
 }
 
 async function fetchOptions(
@@ -141,7 +141,7 @@ export function DimensionPicker({
             onClick={() => onChange?.(null)}
           >
             <X className="h-3 w-3" />
-            Xoá
+            Delete
           </button>
         ) : null}
       </div>
@@ -163,7 +163,7 @@ export function DimensionPicker({
         <PopoverContent className="w-[320px] p-0" align="start">
           <Command>
             <CommandInput
-              placeholder={`Tìm ${typeLabels[type].toLowerCase()}...`}
+              placeholder={`Search ${typeLabels[type].toLowerCase()}...`}
               value={search}
               onValueChange={setSearch}
             />
@@ -171,10 +171,10 @@ export function DimensionPicker({
               {loading ? (
                 <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Đang tải...
+                  Loading...
                 </div>
               ) : null}
-              <CommandEmpty>Không tìm thấy kết quả phù hợp.</CommandEmpty>
+              <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup>
                 {options.map((option) => (
                   <CommandItem
@@ -194,7 +194,7 @@ export function DimensionPicker({
                     </div>
                     {value?.id === option.id ? (
                       <Badge variant="secondary" className="ml-auto">
-                        Đã chọn
+                          Selected
                       </Badge>
                     ) : null}
                   </CommandItem>

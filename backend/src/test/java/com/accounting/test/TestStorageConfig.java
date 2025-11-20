@@ -33,6 +33,18 @@ public class TestStorageConfig {
       }
 
       @Override
+      public String uploadPurchaseBillAttachment(java.util.UUID purchaseBillId, MultipartFile file) {
+        String uuid = UUID.randomUUID().toString();
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+        return "purchase-bills/" + purchaseBillId + "/" + uuid + "-" + filename;
+      }
+
+      @Override
+      public void deletePurchaseBillAttachment(String storagePath) {
+        // Mock implementation - no-op
+      }
+
+      @Override
       public String generateSignedUrl(String storagePath, int expiresInSeconds) {
         return "https://example.test/storage/signed/" + storagePath + "?expires=" + expiresInSeconds;
       }

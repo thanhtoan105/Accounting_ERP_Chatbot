@@ -1,0 +1,238 @@
+﻿DANH SÁCH HỆ THỐNG TÀI KHOẢN ;;;;;;
+;;;;;;
+STT;Số tài khoản;Tên tài khoản;Tính chất;Tên tiếng Anh;Diễn giải;Trạng thái
+1;111;Tiền mặt;Dư Nợ;Cash in hand;;Đang sử dụng
+2;1111;Tiền Việt Nam;Dư Nợ;Vietnam dong;;Đang sử dụng
+3;1112;Ngoại tệ;Dư Nợ;Foreign currency;;Đang sử dụng
+4;1113;Vàng tiền tệ;Dư Nợ;Monetary gold;;Đang sử dụng
+5;112;Tiền gửi Ngân hàng;Dư Nợ;Cash in bank;;Đang sử dụng
+6;1121;Tiền Việt Nam;Dư Nợ;Vietnam dong;;Đang sử dụng
+7;1122;Ngoại tệ;Dư Nợ;Foreign currency;;Đang sử dụng
+8;1123;Vàng tiền tệ;Dư Nợ;Monetary gold;;Đang sử dụng
+9;113;Tiền đang chuyển;Dư Nợ;Cash in transit;;Đang sử dụng
+10;1131;Tiền Việt Nam;Dư Nợ;Vietnam dong;;Đang sử dụng
+11;1132;Ngoại tệ;Dư Nợ;Foreign currency;;Đang sử dụng
+12;121;Chứng khoán kinh doanh;Dư Nợ;Trading securities;;Đang sử dụng
+13;1211;Cổ phiếu;Dư Nợ;Shares;;Đang sử dụng
+14;1212;Trái phiếu;Dư Nợ;Bond;;Đang sử dụng
+15;1218;Chứng khoán và công cụ tài chính khác;Dư Nợ;Other securities and financial deprivations;;Đang sử dụng
+16;128;Đầu tư nắm giữ đến ngày đáo hạn;Dư Nợ;Held to maturity investment;;Đang sử dụng
+17;1281;Tiền gửi có kỳ hạn;Dư Nợ;Term deposits;;Đang sử dụng
+18;1282;Trái phiếu;Dư Nợ;Bond;;Đang sử dụng
+19;1283;Cho vay;Dư Nợ;Lending loans;;Đang sử dụng
+20;1288;Các khoản đầu tư khác nắm giữ đến ngày đáo hạn;Dư Nợ;Other held to maturity investments;;Đang sử dụng
+21;131;Phải thu của khách hàng;Lưỡng tính;Receivables from customers;;Đang sử dụng
+22;133;Thuế GTGT được khấu trừ;Dư Nợ;VAT receivable;;Đang sử dụng
+23;1331;Thuế GTGT được khấu trừ của hàng hóa, dịch vụ;Dư Nợ;VAT receivable - goods and services;;Đang sử dụng
+24;1332;Thuế GTGT được khấu trừ của TSCĐ;Dư Nợ;VAT receivable - fixed assets;;Đang sử dụng
+25;136;Phải thu nội bộ;Dư Nợ;Internal receivables;;Đang sử dụng
+26;1361;Vốn kinh doanh ở các đơn vị trực thuộc;Dư Nợ;Investment in equity of subsidiaries;;Đang sử dụng
+27;1362;Phải thu nội bộ về chênh lệch tỷ giá;Dư Nợ;Internal receivables on foreign exchange differences;;Đang sử dụng
+28;1363;Phải thu nội bộ về chi phí đi vay đủ điều kiện được vốn hóa;Dư Nợ;Internal receivables on borrowing expenses eligible to be capitalised;;Đang sử dụng
+29;1368;Phải thu nội bộ khác;Dư Nợ;Other internal receivables;;Đang sử dụng
+30;138;Phải thu khác;Lưỡng tính;Other receivable;;Đang sử dụng
+31;1381;Tài sản thiếu chờ xử lý;Lưỡng tính;Shortage of assets awaiting resolution;;Đang sử dụng
+32;1385;Phải thu về cổ phần hóa;Lưỡng tính;Equitisation receivable;;Đang sử dụng
+33;1388;Phải thu khác;Lưỡng tính;Other receivable;;Đang sử dụng
+34;141;Tạm ứng;Dư Nợ;Advances;;Đang sử dụng
+35;151;Hàng mua đang đi đường;Dư Nợ;Goods in transit;;Đang sử dụng
+36;152;Nguyên liệu, vật liệu;Dư Nợ;Raw materials;;Đang sử dụng
+37;153;Công cụ, dụng cụ;Dư Nợ;Tools and equipments;;Đang sử dụng
+38;1531;Công cụ, dụng cụ;Dư Nợ;Tools and equipments;;Đang sử dụng
+39;1532;Bao bì luân chuyển;Dư Nợ;Reusable packaging materials;;Đang sử dụng
+40;1533;Đồ dùng cho thuê;Dư Nợ;Instruments for renting;;Đang sử dụng
+41;1534;Thiết bị, phụ tùng thay thế;Dư Nợ;Equipment, spare parts for replacement;;Đang sử dụng
+42;154;Chi phí sản xuất, kinh doanh dở dang;Dư Nợ;Work in progress;;Đang sử dụng
+43;155;Thành phẩm;Dư Nợ;Finished goods;;Đang sử dụng
+44;1551;Thành phẩm nhập kho;Dư Nợ;Finished products;;Đang sử dụng
+45;1557;Thành phẩm bất động sản;Dư Nợ;Finished real-estate;;Đang sử dụng
+46;156;Hàng hóa;Dư Nợ;Goods;;Đang sử dụng
+47;1561;Giá mua hàng hóa;Dư Nợ;Cost of purchases;;Đang sử dụng
+48;1562;Chi phí thu mua hàng hóa;Dư Nợ;Purchasing expense;;Đang sử dụng
+49;1567;Hàng hóa bất động sản;Dư Nợ;Real Estate;;Đang sử dụng
+50;157;Hàng gửi đi bán;Dư Nợ;Goods on consignment;;Đang sử dụng
+51;158;Hàng hóa kho bảo thuế;Dư Nợ;Goods in bonded factory;;Đang sử dụng
+52;161;Chi sự nghiệp;Dư Nợ;Expenditures from subsidies of state budget;;Đang sử dụng
+53;1611;Chi sự nghiệp năm trước;Dư Nợ;Last year;;Đang sử dụng
+54;1612;Chi sự nghiệp năm nay;Dư Nợ;This year;;Đang sử dụng
+55;171;Giao dịch mua bán lại trái phiếu chính phủ;Lưỡng tính;Treasury bonds purchased for resale;;Đang sử dụng
+56;211;Tài sản cố định hữu hình;Dư Nợ;Tangible fixed assets;;Đang sử dụng
+57;2111;Nhà cửa, vật kiến trúc;Dư Nợ;House, building;;Đang sử dụng
+58;2112;Máy móc, thiết bị;Dư Nợ;Machinery, equipments;;Đang sử dụng
+59;2113;Phương tiện vận tải, truyền dẫn;Dư Nợ;Means of transport, conveyance equipment;;Đang sử dụng
+60;2114;Thiết bị, dụng cụ quản lý;Dư Nợ;Managerial equipment and instruments;;Đang sử dụng
+61;2115;Cây lâu năm, súc vật làm việc và cho sản phẩm;Dư Nợ;Plants and livestocks;;Đang sử dụng
+62;2118;TSCĐ khác;Dư Nợ;Other tangible fixed assets;;Đang sử dụng
+63;212;Tài sản cố định thuê tài chính;Dư Nợ;Financial leasing fixed assets;;Đang sử dụng
+64;2121;TSCĐ hữu hình thuê tài chính;Dư Nợ;Financial leasing tangible fixed assets ;;Đang sử dụng
+65;2122;TSCĐ vô hình thuê tài chính;Dư Nợ;Financial leasing Intangible fixed assets;;Đang sử dụng
+66;213;Tài sản cố định vô hình;Dư Nợ;Intangible fixed assets;;Đang sử dụng
+67;2131;Quyền sử dụng đất;Dư Nợ;Right of land use;;Đang sử dụng
+68;2132;Quyền phát hành;Dư Nợ;Publishing rights;;Đang sử dụng
+69;2133;Bản quyền, bằng sáng chế;Dư Nợ;Copyright, patents;;Đang sử dụng
+70;2134;Nhãn hiệu, tên thương mại;Dư Nợ;Product labels and trade marks;;Đang sử dụng
+71;2135;Chương trình phần mềm;Dư Nợ;Computer software;;Đang sử dụng
+72;2136;Giấy phép và giấy phép nhượng quyền;Dư Nợ;License and Concession Agreement;;Đang sử dụng
+73;2138;TSCĐ vô hình khác;Dư Nợ;Other intangible fixed assets;;Đang sử dụng
+74;214;Hao mòn tài sản cố định;Dư Có;Accumulated depreciation - fixed assets;;Đang sử dụng
+75;2141;Hao mòn TSCĐ hữu hình;Dư Có;Accumulated depreciation - tangible fixed assets;;Đang sử dụng
+76;2142;Hao mòn TSCĐ thuê tài chính;Dư Có;Accumulated depreciation - financial leasing fixed assets;;Đang sử dụng
+77;2143;Hao mòn TSCĐ vô hình;Dư Có;Accumulated depreciation - intangible fixed assets;;Đang sử dụng
+78;2147;Hao mòn bất động sản đầu tư;Dư Có;Accumulated depreciation - investment property;;Đang sử dụng
+79;217;Bất động sản đầu tư;Dư Nợ;Investmet property;;Đang sử dụng
+80;221;Đầu tư vào công ty con;Dư Nợ;Equity investments in subsidiaries;;Đang sử dụng
+81;222;Đầu tư vào công ty liên doanh, liên kết;Dư Nợ;Investments in joint ventures and associates;;Đang sử dụng
+82;228;Đầu tư khác;Dư Nợ;Other investments;;Đang sử dụng
+83;2281;Đầu tư góp vốn vào đơn vị khác;Dư Nợ;Equity investments in other entities;;Đang sử dụng
+84;2288;Đầu tư khác;Dư Nợ;Other investments;;Đang sử dụng
+85;229;Dự phòng tổn thất tài sản;Dư Có;Provisions for impairment of assets;;Đang sử dụng
+86;2291;Dự phòng giảm giá chứng khoán kinh doanh;Dư Có;Provision for diminution in the value of trading securities ;;Đang sử dụng
+87;2292;Dự phòng tổn thất đầu tư vào đơn vị khác;Dư Có;Provisions for impairment of investments in other entities;;Đang sử dụng
+88;2293;Dự phòng phải thu khó đòi;Dư Có;Provisions for doubtful debts;;Đang sử dụng
+89;2294;Dự phòng giảm giá hàng tồn kho;Dư Có;Provisions for inventories;;Đang sử dụng
+90;241;Xây dựng cơ bản dở dang;Dư Nợ;Construction in process;;Đang sử dụng
+91;2411;Mua sắm TSCĐ;Dư Nợ;Fixed assets purchases;;Đang sử dụng
+92;2412;Xây dựng cơ bản;Dư Nợ;Construction in process;;Đang sử dụng
+93;2413;Sửa chữa lớn TSCĐ;Dư Nợ;Major repair of fixed assets;;Đang sử dụng
+94;242;Chi phí trả trước;Dư Nợ;Prepaid expenses;;Đang sử dụng
+95;243;Tài sản thuế thu nhập hoãn lại;Dư Nợ;Deferred income tax assets;;Đang sử dụng
+96;244;Cầm cố, thế chấp, ký quỹ, ký cược;Dư Nợ;Mortgages, collateral, deposits;;Đang sử dụng
+97;331;Phải trả cho người bán;Lưỡng tính;Payable to suppliers;;Đang sử dụng
+98;333;Thuế và các khoản phải nộp Nhà nước;Lưỡng tính;Taxes and payable to state budget;;Đang sử dụng
+99;3331;Thuế giá trị gia tăng phải nộp;Lưỡng tính;Value Added Tax payables;;Đang sử dụng
+100;33311;Thuế GTGT đầu ra;Lưỡng tính;VAT output;;Đang sử dụng
+101;33312;Thuế GTGT hàng nhập khẩu;Lưỡng tính;VAT for imported goods;;Đang sử dụng
+102;3332;Thuế tiêu thụ đặc biệt;Lưỡng tính;Special consumption tax;;Đang sử dụng
+103;3333;Thuế xuất, nhập khẩu;Lưỡng tính;Import & export duties;;Đang sử dụng
+104;3334;Thuế thu nhập doanh nghiệp;Lưỡng tính;Company income tax;;Đang sử dụng
+105;3335;Thuế thu nhập cá nhân;Lưỡng tính;Personal income tax;;Đang sử dụng
+106;3336;Thuế tài nguyên;Lưỡng tính;Natural resource tax;;Đang sử dụng
+107;3337;Thuế nhà đất, tiền thuê đất;Lưỡng tính;Land & housing tax, land rental charges;;Đang sử dụng
+108;3338;Thuế bảo vệ môi trường và các loại thuế khác;Lưỡng tính;Environment protection tax and other taxes;;Đang sử dụng
+109;33381;Thuế bảo vệ môi trường;Lưỡng tính;Environment protection tax;;Đang sử dụng
+110;33382;Các loại thuế khác;Lưỡng tính;Other taxes;;Đang sử dụng
+111;3339;Phí, lệ phí và các khoản phải nộp khác;Lưỡng tính;Fee & charge & other payables;;Đang sử dụng
+112;334;Phải trả người lao động;Dư Có;Payable to employees;;Đang sử dụng
+113;3341;Phải trả công nhân viên;Dư Có;Payable to employees;;Đang sử dụng
+114;3348;Phải trả người lao động khác;Dư Có;Payable to other employees;;Đang sử dụng
+115;335;Chi phí phải trả;Dư Có;Payable expenses;;Đang sử dụng
+116;336;Phải trả nội bộ;Dư Có;Internal payables;;Đang sử dụng
+117;3361;Phải trả nội bộ về vốn kinh doanh;Dư Có;Internal payables for operating capital received;;Đang sử dụng
+118;3362;Phải trả nội bộ về chênh lệch tỷ giá;Dư Có;Internal payables for foreign exchange differences;;Đang sử dụng
+119;3363;Phải trả nội bộ về chi phí đi vay đủ điều kiện được vốn hóa;Dư Có;Internal payables for borrowing expenses eligible to be capitalized;;Đang sử dụng
+120;3368;Phải trả nội bộ khác;Dư Có;Other Internal payables;;Đang sử dụng
+121;337;Thanh toán theo tiến độ kế hoạch hợp đồng xây dựng;Lưỡng tính;Construction contract's progress payment due to customers;;Đang sử dụng
+122;338;Phải trả, phải nộp khác;Lưỡng tính;Other payable;;Đang sử dụng
+123;3381;Tài sản thừa chờ giải quyết;Lưỡng tính;Surplus assets awaiting for resolution;;Đang sử dụng
+124;3382;Kinh phí công đoàn;Lưỡng tính;Trade Union fees;;Đang sử dụng
+125;3383;Bảo hiểm xã hội;Lưỡng tính;Social insurance;;Đang sử dụng
+126;3384;Bảo hiểm y tế;Lưỡng tính;Health insurance;;Đang sử dụng
+127;3385;Phải trả về cổ phần hóa;Lưỡng tính;Privatisation payable;;Đang sử dụng
+128;3386;Bảo hiểm thất nghiệp;Lưỡng tính;Unemployment insurance;;Đang sử dụng
+129;3387;Doanh thu chưa thực hiện;Lưỡng tính;Unrealised revenue;;Đang sử dụng
+130;3388;Phải trả, phải nộp khác;Lưỡng tính;Other payable;;Đang sử dụng
+131;341;Vay và nợ thuê tài chính;Dư Có;Borrowings and financial lease liabilities;;Đang sử dụng
+132;3411;Các khoản đi vay;Dư Có;Borrowing;;Đang sử dụng
+133;3412;Nợ thuê tài chính;Dư Có;Financial lease liabilities;;Đang sử dụng
+134;343;Trái phiếu phát hành;Dư Có;Issued bond;;Đang sử dụng
+135;3431;Trái phiếu thường;Dư Có;Ordinary bonds;;Đang sử dụng
+136;34311;Mệnh giá trái phiếu;Dư Có;Bond face value;;Đang sử dụng
+137;34312;Chiết khấu trái phiếu;Dư Có;Bond discount;;Đang sử dụng
+138;34313;Phụ trội trái phiếu;Dư Có;Additional bond;;Đang sử dụng
+139;3432;Trái phiếu chuyển đổi;Dư Có;Convertible bonds;;Đang sử dụng
+140;344;Nhận ký quỹ, ký cược;Dư Có;Collaterals, deposits received;;Đang sử dụng
+141;347;Thuế thu nhập hoãn lại phải trả;Dư Có;Deferred income tax;;Đang sử dụng
+142;352;Dự phòng phải trả;Dư Có;Provisions for payables;;Đang sử dụng
+143;3521;Dự phòng bảo hành sản phẩm hàng hóa;Dư Có;Product warranty provisions;;Đang sử dụng
+144;3522;Dự phòng bảo hành công trình xây dựng;Dư Có;Construction warranty provisions;;Đang sử dụng
+145;3523;Dự phòng tái cơ cấu doanh nghiệp;Dư Có;Enterprise restructuring provisions;;Đang sử dụng
+146;3524;Dự phòng phải trả khác;Dư Có;Other provisions;;Đang sử dụng
+147;353;Quỹ khen thưởng, phúc lợi;Dư Có;Bonus & welfare funds;;Đang sử dụng
+148;3531;Quỹ khen thưởng;Dư Có;Bonus fund;;Đang sử dụng
+149;3532;Quỹ phúc lợi;Dư Có;Welfare fund;;Đang sử dụng
+150;3533;Quỹ phúc lợi đã hình thành TSCĐ;Dư Có;Welfare fund used to acquire fixed assets;;Đang sử dụng
+151;3534;Quỹ thưởng ban quản lý điều hành công ty;Dư Có;Management bonus fund;;Đang sử dụng
+152;356;Quỹ phát triển khoa học và công nghệ;Dư Có;Science and technology development fund;;Đang sử dụng
+153;3561;Quỹ phát triển khoa học và công nghệ;Dư Có;Science and technology development fund;;Đang sử dụng
+154;3562;Quỹ phát triển khoa học và công nghệ đã hình thành TSCĐ;Dư Có;Science and technology development fund used for fixed asset acquisition;;Đang sử dụng
+155;357;Quỹ bình ổn giá;Dư Có;Price stabilisation fund;;Đang sử dụng
+156;411;Vốn đầu tư của chủ sở hữu;Dư Có;Contributed legal capital;;Đang sử dụng
+157;4111;Vốn góp của chủ sở hữu;Dư Có;Contributed capital ;;Đang sử dụng
+158;41111;Cổ phiếu phổ thông có quyền biểu quyết;Dư Có;Ordinary shares with voting rights;;Đang sử dụng
+159;41112;Cổ phiếu ưu đãi;Dư Có;Preferred shares;;Đang sử dụng
+160;4112;Thặng dư vốn cổ phần;Dư Có;Share capital surplus;;Đang sử dụng
+161;4113;Quyền chọn chuyển đổi trái phiếu;Dư Có;Conversion options on convertible bonds;;Đang sử dụng
+162;4118;Vốn khác;Dư Có;Other capital;;Đang sử dụng
+163;412;Chênh lệch đánh giá lại tài sản;Lưỡng tính;Differences upon asset revaluation;;Đang sử dụng
+164;413;Chênh lệch tỷ giá hối đoái;Lưỡng tính;Foreign exchange differences;;Đang sử dụng
+165;4131;Chênh lệch tỷ giá do đánh giá lại các khoản mục tiền tệ có gốc ngoại tệ;Lưỡng tính;Exchange rate differneces upon revaluation of monetary items denominated in foreign currency;;Đang sử dụng
+166;4132;Chênh lệch tỷ giá hối đoái trong giai đoạn trước hoạt động;Lưỡng tính;Exchange rate differneces in pre-operating period;;Đang sử dụng
+167;414;Quỹ đầu tư phát triển;Dư Có;Investment & development funds;;Đang sử dụng
+168;417;Quỹ hỗ trợ sắp xếp doanh nghiệp;Dư Có;Enterprise reorganization assistance fund;;Đang sử dụng
+169;418;Các quỹ khác thuộc vốn chủ sở hữu;Dư Có;Other funds;;Đang sử dụng
+170;419;Cổ phiếu quỹ;Dư Nợ;Treasury share;;Đang sử dụng
+171;421;Lợi nhuận sau thuế chưa phân phối;Lưỡng tính;Undistributed earnings;;Đang sử dụng
+172;4211;Lợi nhuận sau thuế chưa phân phối năm trước;Lưỡng tính;Previous year undistributed earnings;;Đang sử dụng
+173;4212;Lợi nhuận sau thuế chưa phân phối năm nay;Lưỡng tính;This year undistributed earnings;;Đang sử dụng
+174;441;Nguồn vốn đầu tư xây dựng cơ bản;Dư Có;Construction investment fund;;Đang sử dụng
+175;461;Nguồn kinh phí sự nghiệp;Dư Có;Budget resources;;Đang sử dụng
+176;4611;Nguồn kinh phí sự nghiệp năm trước;Dư Có;Precious year budget resources;;Đang sử dụng
+177;4612;Nguồn kinh phí sự nghiệp năm nay;Dư Có;This year budget resources;;Đang sử dụng
+178;466;Nguồn kinh phí đã hình thành TSCĐ;Dư Có;Budget resources used to acquire fixed assets;;Đang sử dụng
+179;511;Doanh thu bán hàng và cung cấp dịch vụ;Lưỡng tính;Revenue from sales of goods and provision of services;;Đang sử dụng
+180;5111;Doanh thu bán hàng hóa;Lưỡng tính;Revenue from sales of goods;;Đang sử dụng
+181;5112;Doanh thu bán các thành phẩm;Lưỡng tính;Revenue from sales of finished goods;;Đang sử dụng
+182;5113;Doanh thu cung cấp dịch vụ;Lưỡng tính;Revenue from provision of services;;Đang sử dụng
+183;5114;Doanh thu trợ cấp, trợ giá;Lưỡng tính;Revenue from sales of Subsidies;;Đang sử dụng
+184;5117;Doanh thu kinh doanh bất động sản đầu tư;Lưỡng tính;Revenue from sales of Investment property;;Đang sử dụng
+185;5118;Doanh thu khác;Lưỡng tính;Other revenues;;Đang sử dụng
+186;515;Doanh thu hoạt động tài chính;Lưỡng tính;Revenue from financial operations;;Đang sử dụng
+187;521;Các khoản giảm trừ doanh thu;Lưỡng tính;Revenue deductions;;Đang sử dụng
+188;5211;Chiết khấu thương mại;Lưỡng tính;Sales discount;;Đang sử dụng
+189;5212;Hàng bán bị trả lại;Lưỡng tính;Sales returns;;Đang sử dụng
+190;5213;Giảm giá hàng bán;Lưỡng tính;Devaluation of sales price;;Đang sử dụng
+191;611;Mua hàng;Lưỡng tính;Cost of purchases;;Đang sử dụng
+192;6111;Mua nguyên liệu, vật liệu;Lưỡng tính;Raw materials purchase;;Đang sử dụng
+193;6112;Mua hàng hóa;Lưỡng tính;Cost of purchases;;Đang sử dụng
+194;621;Chi phí nguyên liệu, vật liệu trực tiếp;Lưỡng tính;Direct raw materials expense;;Đang sử dụng
+195;622;Chi phí nhân công trực tiếp;Lưỡng tính;Direct labor expense;;Đang sử dụng
+196;623;Chi phí sử dụng máy thi công;Lưỡng tính;Machinery expense;;Đang sử dụng
+197;6231;Chi phí nhân công;Lưỡng tính;Labour expense;;Đang sử dụng
+198;6232;Chi phí vật liệu;Lưỡng tính;Material expense;;Đang sử dụng
+199;6233;Chi phí dụng cụ sản xuất;Lưỡng tính;Production tool expense;;Đang sử dụng
+200;6234;Chi phí khấu hao máy thi công;Lưỡng tính;Machinery expense;;Đang sử dụng
+201;6237;Chi phí dịch vụ mua ngoài;Lưỡng tính;Outsource expense;;Đang sử dụng
+202;6238;Chi phí bằng tiền khác;Lưỡng tính;Other Cost in cash;;Đang sử dụng
+203;627;Chi phí sản xuất chung;Lưỡng tính;General operation expense;;Đang sử dụng
+204;6271;Chi phí nhân viên phân xưởng;Lưỡng tính;Factory worker expense;;Đang sử dụng
+205;6272;Chi phí vật liệu;Lưỡng tính;Material expense;;Đang sử dụng
+206;6273;Chi phí dụng cụ sản xuất;Lưỡng tính;Production tool expense;;Đang sử dụng
+207;6274;Chi phí khấu hao TSCĐ;Lưỡng tính;Fixed asset depreciation;;Đang sử dụng
+208;6277;Chi phí dịch vụ mua ngoài;Lưỡng tính;Outsource expense;;Đang sử dụng
+209;6278;Chi phí bằng tiền khác;Lưỡng tính;Other Cost in cash;;Đang sử dụng
+210;631;Giá thành sản xuất;Lưỡng tính;Cost of production;;Đang sử dụng
+211;632;Giá vốn hàng bán;Lưỡng tính;Cost of goods sold;;Đang sử dụng
+212;635;Chi phí tài chính;Lưỡng tính;Financial activities expenses;;Đang sử dụng
+213;641;Chi phí bán hàng;Lưỡng tính;Selling expenses;;Đang sử dụng
+214;6411;Chi phí nhân viên;Lưỡng tính;Labor expense;;Đang sử dụng
+215;6412;Chi phí vật liệu, bao bì;Lưỡng tính;Material, packing expense;;Đang sử dụng
+216;6413;Chi phí dụng cụ, đồ dùng;Lưỡng tính;Tools and equipments expense;;Đang sử dụng
+217;6414;Chi phí khấu hao TSCĐ;Lưỡng tính;Fixed asset depreciation;;Đang sử dụng
+218;6415;Chi phí bảo hành;Lưỡng tính;Warranty expense;;Đang sử dụng
+219;6417;Chi phí dịch vụ mua ngoài;Lưỡng tính;Outsource expense;;Đang sử dụng
+220;6418;Chi phí bằng tiền khác;Lưỡng tính;Other Cost in cash;;Đang sử dụng
+221;642;Chi phí quản lý doanh nghiệp;Lưỡng tính;General & administration expenses;;Đang sử dụng
+222;6421;Chi phí nhân viên quản lý;Lưỡng tính;Employees expense;;Đang sử dụng
+223;6422;Chi phí vật liệu quản lý;Lưỡng tính;Tools expense;;Đang sử dụng
+224;6423;Chi phí đồ dùng văn phòng;Lưỡng tính;Stationery expense;;Đang sử dụng
+225;6424;Chi phí khấu hao TSCĐ;Lưỡng tính;Fixed asset depreciation;;Đang sử dụng
+226;6425;Thuế, phí và lệ phí;Lưỡng tính;Taxes, fees, charges;;Đang sử dụng
+227;6426;Chi phí dự phòng;Lưỡng tính;Provision expense;;Đang sử dụng
+228;6427;Chi phí dịch vụ mua ngoài;Lưỡng tính;Outsource expense;;Đang sử dụng
+229;6428;Chi phí bằng tiền khác;Lưỡng tính;Other Cost in cash;;Đang sử dụng
+230;711;Thu nhập khác;Lưỡng tính;Other income;;Đang sử dụng
+231;811;Chi phí khác;Lưỡng tính;Other expenses;;Đang sử dụng
+232;821;Chi phí thuế thu nhập doanh nghiệp;Lưỡng tính;Business Income tax charge;;Đang sử dụng
+233;8211;Chi phí thuế TNDN hiện hành;Lưỡng tính;Current business income tax charge;;Đang sử dụng
+234;8212;Chi phí thuế TNDN hoãn lại;Lưỡng tính;Deferred business income tax charge;;Đang sử dụng
+235;911;Xác định kết quả kinh doanh;Lưỡng tính;Evaluation of business results;;Đang sử dụng

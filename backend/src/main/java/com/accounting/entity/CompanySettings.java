@@ -106,6 +106,11 @@ public class CompanySettings implements CompanyScopedEntity {
   @Column(name = "audit_retention_period_days")
   private Integer auditRetentionPeriodDays; // Days to retain audit logs
 
+  // Approval Workflow section
+  @Min(0)
+  @Column(name = "approval_threshold_amount", precision = 19, scale = 2)
+  private java.math.BigDecimal approvalThresholdAmount; // Default 20,000,000 VND
+
   // Numbering section (stored as JSON)
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "numbering_config", columnDefinition = "JSONB")
@@ -288,6 +293,14 @@ public class CompanySettings implements CompanyScopedEntity {
 
   public void setAuditRetentionPeriodDays(Integer auditRetentionPeriodDays) {
     this.auditRetentionPeriodDays = auditRetentionPeriodDays;
+  }
+
+  public java.math.BigDecimal getApprovalThresholdAmount() {
+    return approvalThresholdAmount;
+  }
+
+  public void setApprovalThresholdAmount(java.math.BigDecimal approvalThresholdAmount) {
+    this.approvalThresholdAmount = approvalThresholdAmount;
   }
 
   public String getNumberingConfig() {

@@ -1,0 +1,386 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>3</storyId>
+    <title>Cash Payments (Linked to Bills, Standalone)</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-27</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-3-cash-payments-linked-to-bills-standalone.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Accountant</asA>
+    <iWant>to record supplier payments linked to purchase bills or as standalone payments</iWant>
+    <soThat>accounts payable are accurately tracked, payments are properly allocated, and financial records are maintained with full audit compliance</soThat>
+    <tasks>
+- Backend: Create APPayment entity and database migration (AC: #1, #2, #3, #4, #5, #8)
+- Backend: Payment validation service (AC: #1, #2, #4, #6, #8)
+- Backend: Payment service and FIFO allocation logic (AC: #1, #2, #4, #9)
+- Backend: Payment controller and API (AC: #1, #2, #3, #4, #5, #6, #8, #9)
+- Backend: Integration with voucher posting engine (AC: #9, #10)
+- Backend: Payment approval workflow integration (AC: #7)
+- Backend: Account balance validation service (AC: #8)
+- Backend: Payment batch import service (AC: #9)
+- Frontend: Payment form component (AC: #1, #2, #3, #4, #5, #6, #8)
+- Frontend: Payment list component (AC: #1, #2, #3, #4, #5)
+- Frontend: Payment allocation UI component (AC: #2, #4)
+- Frontend: Payment approval UI integration (AC: #7)
+- Frontend: Account balance display component (AC: #3, #8)
+- Testing: Unit and integration tests for payment functionality (AC: #1-#10)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. New payment form: supplier picker lists only suppliers with open/unpaid bills, supports batch/link
+2. Allows multiple bills per payment: allocates via FIFO by default, allows override/modification before post
+3. Required fields: date, auto-generated number, cash/bank account (shows balance), payee, amount, reference, payment proof (required if above-config threshold), method
+4. Disallows overpayment (enforces by current bill balance), error if attempted
+5. Standalone payment (advance/ad hoc): allowed for admin with warning tag
+6. Suggests "quick add" supplier if non-master; logs ad hoc tag
+7. Payment approval for over-threshold follows Story 4.2 workflow
+8. Sufficient balance confirmed for each payment; overdraft triggers warning/block (configurable)
+9. Posts payment as voucher (Dr AP 331, Cr cash/bank 111/112); batch import allowed with atomic error reporting
+10. All audit rules as for voucher entry/posting apply
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic 4 Technical Specification - Payment Functionality</title>
+        <section>Story 4.3: Cash Payments (Linked to Bills, Standalone)</section>
+        <snippet>Payment form with supplier picker showing only suppliers with open/unpaid bills. FIFO allocation algorithm for automatic bill allocation (default), with manual override capability. Required fields: date, auto-generated payment number, cash/bank account (with balance display), payee, amount, reference, payment proof (required if above threshold), payment method. Overpayment prevention enforced at database constraint level and application logic. Standalone payment support for advance payments (admin-only with warning tag). Payment approval workflow integration for payments exceeding configurable threshold. Account balance validation with overdraft warning/block (configurable). Voucher posting integration (Dr AP 331, Cr cash/bank 111/112). Batch import support with atomic error reporting. Complete audit trail for all payment operations.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Payment Allocation and Posting Flow Sequence Diagram</title>
+        <section>Workflows and Sequencing - Payment Allocation and Posting Flow</section>
+        <snippet>Complete sequence diagram showing Accountant → System → Database → Voucher Engine flow. Covers payment creation, open bills fetching, FIFO allocation, validation (overpayment, balance), payment posting, voucher generation (Dr 331, Cr 111/112), bill status updates (PAID/PARTIALLY_PAID), and remaining balance updates.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Payment Allocation FIFO Logic Flowchart</title>
+        <section>Workflows and Sequencing - Payment Allocation FIFO Logic</section>
+        <snippet>Flowchart showing payment creation → fetch open/unpaid bills → user selection vs FIFO default → allocation algorithm (sort by dueDate ASC, allocate to first bill, continue until amount exhausted) → validation → save allocations → ready for posting.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-1-purchase-bills-entry-edit-and-draft-management.md</path>
+        <title>Story 4.1 - Purchase Bills Foundation (Prerequisite)</title>
+        <section>Completion Notes List</section>
+        <snippet>PurchaseBill Entity Foundation: PurchaseBill entity with status tracking (DRAFT, PENDING_APPROVAL, POSTED, REJECTED, PAID, PARTIALLY_PAID) and remaining_balance calculation - payment allocation can leverage these fields for bill status updates. Validation Service Patterns: PurchaseBillValidationService pattern established with field-level error mapping via PurchaseBillValidationResult DTO - extend this pattern for payment validation (overpayment prevention, balance validation, allocation validation). Service Layer Patterns: PurchaseBillService with company scoping, RBAC enforcement, and transaction management patterns established - follow same patterns for PaymentService. Frontend Component Patterns: PurchaseBillForm and PurchaseBillList components with shadcn/ui, TanStack Table, and validation patterns established - extend these for payment form and list components. Supplier Picker Component: Supplier picker with typeahead search pattern established - reuse for payment form supplier selection, filtered to show only suppliers with open/unpaid bills.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-2-purchase-bill-approval-workflow-maker-checker.md</path>
+        <title>Story 4.2 - Approval Workflow Foundation (Prerequisite)</title>
+        <section>Completion Notes List</section>
+        <snippet>Approval Workflow Integration: Story 4.2 established ApprovalWorkflowService with threshold checking and maker-checker patterns - integrate payment approval workflow using same service for payments exceeding threshold. Approval Threshold Configuration: Approval threshold stored in CompanySettings.approvalThresholdAmount (default 20M VND) - reuse for payment approval threshold. Approval UI Patterns: ApprovalDecisionDialog and approval workflow history components established - extend for payment approval UI. Voucher Posting Integration: Story 4.2 integrated with Epic 3 voucher engine for bill posting - extend for payment voucher posting (Dr AP 331, Cr cash/bank 111/112).</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-4-accounts-payable-ap-module.md</path>
+        <title>Epic 4 - Accounts Payable Module Overview</title>
+        <section>Story 4.3: Cash Payments (Linked to Bills, Standalone)</section>
+        <snippet>As an accountant, I want to enter, allocate, and track payments against supplier bills or ad-hoc, so that AP balances and actual outflows are transparent and controlled. Includes all 10 acceptance criteria for payment functionality, FIFO allocation, overpayment prevention, standalone payments, approval workflow, balance validation, and voucher posting.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/data-architecture.md</path>
+        <title>Data Architecture - AP Payments Schema</title>
+        <section>AP/AR</section>
+        <snippet>ap_payments table structure: id, supplier_id, payment_date, amount, cash_account_id, bank_account_id, status, linked_voucher_id, company_id. Payment allocations table for many-to-many relationship with purchase_bills. Multi-tenancy via company_id row-level filtering.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/security-architecture.md</path>
+        <title>Security Architecture - RBAC and Authentication</title>
+        <section>Authorization</section>
+        <snippet>Role-Based Access Control: Admin, Accountant, Chief Accountant, CFO roles. Spring Security method-level security with @PreAuthorize annotations. API-level permission checks and company-level data isolation. JWT authentication with access tokens and refresh tokens. Admin-only standalone payments require additional role check.</snippet>
+      </doc>
+      <doc>
+        <path>docs/ux-design-specification.md</path>
+        <title>UX Design Specification - Payment Form Patterns</title>
+        <section>Design System Foundation</section>
+        <snippet>shadcn/ui (Tailwind + Radix primitives) for payment form components. DataTablePro patterns for payment list. VoucherLineGrid patterns for payment allocation interface. MoneyInput for Vietnamese currency formatting. Persistent left sidebar navigation pattern. Follow PurchaseBillForm patterns for payment form UI.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/PurchaseBill.java</path>
+        <kind>entity</kind>
+        <symbol>PurchaseBill</symbol>
+        <lines>31-276</lines>
+        <reason>Existing purchase bill entity with status tracking (DRAFT, PENDING_APPROVAL, POSTED, REJECTED, PAID, PARTIALLY_PAID) and remaining_balance calculation. Payment allocation will update bill statuses to PAID/PARTIALLY_PAID and update remaining_balance fields. Entity includes supplier_id, total_amount, vat_amount, due_date fields needed for FIFO allocation algorithm.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PurchaseBillService.java</path>
+        <kind>service-interface</kind>
+        <symbol>PurchaseBillService</symbol>
+        <lines>14-112</lines>
+        <reason>Existing service with CRUD operations, company scoping, and RBAC patterns. Extend with getOpenBillsForSupplier(supplierId) method to return list of open/unpaid bills for supplier picker. Update bill status and remaining_balance methods needed for payment posting integration.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/ApprovalWorkflowService.java</path>
+        <kind>service-interface</kind>
+        <symbol>ApprovalWorkflowService</symbol>
+        <lines>N/A</lines>
+        <reason>Approval workflow service from Story 4.2 with threshold checking and maker-checker patterns. Reuse for payment approval workflow integration (AC #7). Methods: checkApprovalRequired(), submitForApproval(), approve(), reject(), autoApprove(). Payment service should integrate with this service for payments exceeding threshold.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/VoucherService.java</path>
+        <kind>service-interface</kind>
+        <symbol>VoucherService</symbol>
+        <lines>N/A</lines>
+        <reason>Voucher posting service from Epic 3 for generating journal entries. Extend for payment voucher posting: generate voucher with journal entries (Dr AP 331, Cr cash/bank 111/112). Link payment to generated voucher via linked_voucher_id. Handle voucher posting failures with rollback.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PeriodManagementService.java</path>
+        <kind>service-interface</kind>
+        <symbol>PeriodManagementService</symbol>
+        <lines>17-148</lines>
+        <reason>Period validation service with isPeriodOpen() and validatePeriodForVoucherOperation() methods. Reuse for payment date validation and period close checks. Prevent posting payments to closed periods with clear error messages (AC #9, #10).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/util/PurchaseBillAuditHelper.java</path>
+        <kind>helper</kind>
+        <symbol>PurchaseBillAuditHelper</symbol>
+        <lines>17-86</lines>
+        <reason>Audit helper with JSON snapshot serialization and SHA-256 diff hash calculation. Create similar PaymentAuditHelper for payment operations audit logging. Reuse pattern for payment create, allocate, post, cancel operations logging (AC #10).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service-interface</kind>
+        <symbol>AuditService</symbol>
+        <lines>10-914</lines>
+        <reason>Comprehensive audit logging interface with methods for all entity operations. Add new methods: logPaymentCreated, logPaymentAllocated, logPaymentPosted, logPaymentCancelled, logPaymentOverpaymentAttempt, logPaymentBalanceWarning. Integrate with all payment operations for complete audit trail (AC #10).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/purchase/PurchaseBillValidationServiceImpl.java</path>
+        <kind>service-impl</kind>
+        <symbol>PurchaseBillValidationServiceImpl</symbol>
+        <lines>33-200</lines>
+        <reason>Validation service pattern with field-level error mapping via PurchaseBillValidationResult DTO. Create PaymentValidationService following same pattern: validateSupplierHasOpenBills(), validateAllocations(), validateAccountBalance(), validateStandalonePayment(), validatePaymentProof(), suggestQuickAddSupplier(). Return detailed field-level error map (not generic 400).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/purchase/SupplierPicker.tsx</path>
+        <kind>component</kind>
+        <symbol>SupplierPicker</symbol>
+        <lines>20-100</lines>
+        <reason>Supplier picker component with typeahead search pattern. Extend for payment form: filter to show only suppliers with open/unpaid bills (use GET /api/v1/ap-payments/suppliers/{supplierId}/open-bills endpoint). Reuse typeahead search and selection patterns for payment supplier selection (AC #1).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/PurchaseBills/PurchaseBillForm.tsx</path>
+        <kind>component</kind>
+        <symbol>PurchaseBillForm</symbol>
+        <lines>N/A</lines>
+        <reason>Purchase bill form component with shadcn/ui, validation, line items grid, attachments. Follow same patterns for PaymentForm component: form validation, error display, draft autosave, required fields, account picker integration. Extend for payment-specific fields: payment allocation interface, account balance display, payment proof upload.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/PurchaseBills/PurchaseBillList.tsx</path>
+        <kind>component</kind>
+        <symbol>PurchaseBillList</symbol>
+        <lines>N/A</lines>
+        <reason>Purchase bill list component with TanStack Table, search, filters, pagination, status badges. Follow same patterns for PaymentList component: DataTablePro with pagination, sorting, filtering (supplier, status, date range, standalone flag), status badges (DRAFT, PENDING_APPROVAL, POSTED, CANCELLED), actions (view, edit, delete, post, view allocations).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/voucher/VoucherLineItemGrid.tsx</path>
+        <kind>component</kind>
+        <symbol>VoucherLineItemGrid</symbol>
+        <lines>N/A</lines>
+        <reason>Voucher line item grid component with editable rows, validation, add/remove functionality. Create similar PaymentAllocationGrid component: display open bills for selected supplier with bill number, date, due date, total amount, remaining balance, allocated amount input. FIFO allocation preview, manual override capability, real-time validation, allocation summary.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <backend>
+        <dependency name="spring-boot-starter-web" version="3.5.7">REST API endpoints for payment operations</dependency>
+        <dependency name="spring-boot-starter-data-jpa" version="3.5.7">Persistence for APPayment and PaymentAllocation entities</dependency>
+        <dependency name="spring-boot-starter-security" version="3.5.7">RBAC enforcement (Accountant can create, Chief Accountant/CFO can approve, Admin for standalone)</dependency>
+        <dependency name="spring-boot-starter-validation" version="3.5.7">Input validation for payment requests and allocations</dependency>
+        <dependency name="apache-poi" version="5.2.5">Excel parsing for batch import functionality</dependency>
+        <dependency name="postgresql" version="42.7.4">Database for ap_payments and payment_allocations tables</dependency>
+        <dependency name="flyway-core" version="11.10.0">Database migration for payment schema</dependency>
+        <dependency name="jjwt" version="0.12.5">JWT token handling for user context</dependency>
+      </backend>
+      <frontend>
+        <dependency name="react" version="18+">UI components for payment form and list</dependency>
+        <dependency name="@tanstack/react-table" version="latest">Payment list table and allocation grid</dependency>
+        <dependency name="shadcn/ui" version="latest">Payment form components, account picker, status badges, approval dialog</dependency>
+        <dependency name="axios" version="latest">API calls for payment operations</dependency>
+        <dependency name="date-fns" version="latest">Date formatting for payment dates and timestamps</dependency>
+        <dependency name="zod" version="latest">Form validation for payment form</dependency>
+        <dependency name="react-hook-form" version="latest">Form state management for payment form</dependency>
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Multi-tenancy: All payment operations must be company-scoped via CompanyScopedEntity and CompanyContext. Database queries filtered by company_id. APPayment and PaymentAllocation entities must implement CompanyScopedEntity interface.</constraint>
+    <constraint>RBAC: Accountant role can create payments. Chief Accountant and CFO roles can approve high-value payments. Admin role required for standalone payments. Use @PreAuthorize annotations for method-level security.</constraint>
+    <constraint>Database: Overpayment prevention enforced at database constraint level (CHECK constraint: allocated_amount <= purchase_bill.remaining_balance) AND application logic in PaymentValidationService. Unique constraint: payment_number per company per year.</constraint>
+    <constraint>FIFO Allocation: Default allocation algorithm sorts bills by due_date ASC, allocates payment amount to bills in FIFO order. Manual override allowed before posting. Store allocation_order in PaymentAllocation entity for audit trail.</constraint>
+    <constraint>Account Balance Validation: Integrate with cash/bank account balance tracking to validate sufficient balance before payment posting. Support configurable overdraft behavior (warn vs block) via CompanySettings.overdraftPolicy. Display account balance in payment form.</constraint>
+    <constraint>Payment Approval Workflow: Reuse ApprovalWorkflowService from Story 4.2 for payment approval. Payments exceeding CompanySettings.approvalThresholdAmount require approval before posting. Follow same maker-checker pattern: approver ≠ creator, period validation, audit logging.</constraint>
+    <constraint>Voucher Posting Integration: Integrate with Epic 3 voucher engine to generate journal entries on payment posting: Debit AP 331 (Accounts Payable) - allocated amount per bill, Credit Cash/Bank 111/112 - total payment amount. Link payment to generated voucher via linked_voucher_id for traceability.</constraint>
+    <constraint>Period Validation: Reuse PeriodManagementService for payment date validation and period close checks. Prevent posting payments to closed periods with clear error messages.</constraint>
+    <constraint>Standalone Payment Handling: Standalone payments (advance payments, ad hoc transactions) require admin role and are tagged with is_standalone=true flag. These payments don't require bill allocation but still generate proper journal entries (Dr AP 331, Cr cash/bank 111/112). Log ad hoc supplier suggestions for future master data creation.</constraint>
+    <constraint>Audit Trail: All payment operations (create, allocate, post, cancel, overpayment attempt, balance warning) logged with before/after snapshots, SHA-256 diff hash, user/timestamp/IP. Append-only, immutable. Follow same audit patterns as voucher entry/posting (AC #10).</constraint>
+    <constraint>Transaction Integrity: Payment operations wrapped in @Transactional with rollback on validation failures. Atomic payment creation and allocation. Batch import uses atomic transactions (all-or-nothing) with comprehensive error reporting.</constraint>
+    <constraint>Payment Number Generation: Auto-generated payment number must be unique per company per year. Format: PAY-YYYY-XXXXX (e.g., PAY-2025-00001). Store in database with unique constraint.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GET /api/v1/ap-payments</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/ap-payments?page=0&amp;size=20&amp;sort=paymentDate,desc&amp;supplier={supplierId}&amp;status={status}&amp;dateFrom={date}&amp;dateTo={date}&amp;search={query}&amp;standalone={boolean} - Response: Page&lt;APPaymentDTO&gt; with pagination metadata</signature>
+      <path>backend/src/main/java/com/accounting/controller/payment/PaymentController.java (new)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/ap-payments/{id}</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/ap-payments/{id} - Response: APPaymentDTO with allocations and linked voucher details</signature>
+      <path>backend/src/main/java/com/accounting/controller/payment/PaymentController.java (new)</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/ap-payments</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/ap-payments - Request: APPaymentCreateRequest {supplierId, paymentDate, cashAccountId?, bankAccountId?, payee, amount, reference, paymentMethod, paymentProofUrl?, isStandalone, allocations?[]}, Response: APPaymentDTO, @PreAuthorize("hasAnyRole('ACCOUNTANT', 'ADMIN')")</signature>
+      <path>backend/src/main/java/com/accounting/controller/payment/PaymentController.java (new)</path>
+    </interface>
+    <interface>
+      <name>PUT /api/v1/ap-payments/{id}</name>
+      <kind>REST endpoint</kind>
+      <signature>PUT /api/v1/ap-payments/{id} - Request: APPaymentUpdateRequest, Response: APPaymentDTO, Only DRAFT status allowed, @PreAuthorize("hasAnyRole('ACCOUNTANT', 'ADMIN')")</signature>
+      <path>backend/src/main/java/com/accounting/controller/payment/PaymentController.java (new)</path>
+    </interface>
+    <interface>
+      <name>DELETE /api/v1/ap-payments/{id}</name>
+      <kind>REST endpoint</kind>
+      <signature>DELETE /api/v1/ap-payments/{id} - Response: 204 No Content, Only DRAFT status allowed, @PreAuthorize("hasAnyRole('ACCOUNTANT', 'ADMIN')")</signature>
+      <path>backend/src/main/java/com/accounting/controller/payment/PaymentController.java (new)</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/ap-payments/{id}/allocate</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/ap-payments/{id}/allocate - Request: PaymentAllocationRequest[] {purchaseBillId, allocatedAmount}, Response: APPaymentDTO with updated allocations, Manual allocation override</signature>
+      <path>backend/src/main/java/com/accounting/controller/payment/PaymentController.java (new)</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/ap-payments/{id}/post</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/ap-payments/{id}/post - Response: APPaymentDTO with POSTED status and linked voucher, Triggers voucher posting (Dr 331, Cr 111/112), Updates bill statuses, @PreAuthorize("hasAnyRole('ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO', 'ADMIN')")</signature>
+      <path>backend/src/main/java/com/accounting/controller/payment/PaymentController.java (new)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/ap-payments/suppliers/{supplierId}/open-bills</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/ap-payments/suppliers/{supplierId}/open-bills - Response: List&lt;PurchaseBillDTO&gt; with status=POSTED and remaining_balance &gt; 0, For supplier picker in payment form</signature>
+      <path>backend/src/main/java/com/accounting/controller/payment/PaymentController.java (new)</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/ap-payments/batch-import</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/ap-payments/batch-import - Request: MultipartFile (Excel), Response: PaymentImportResult {successCount, errorCount, errors[]}, Atomic transaction, downloadable error map</signature>
+      <path>backend/src/main/java/com/accounting/controller/payment/PaymentController.java (new)</path>
+    </interface>
+    <interface>
+      <name>PaymentService.findAll</name>
+      <kind>service method</kind>
+      <signature>Page&lt;APPaymentDTO&gt; findAll(Pageable pageable, PaymentFilter filter) - Pagination, sorting, filtering (supplier, status, date range, search, standalone flag), Company-scoped</signature>
+      <path>backend/src/main/java/com/accounting/service/PaymentService.java (new)</path>
+    </interface>
+    <interface>
+      <name>PaymentService.create</name>
+      <kind>service method</kind>
+      <signature>APPaymentDTO create(APPaymentCreateRequest request) - Creates payment with validation, FIFO allocation if allocations not provided, audit logging</signature>
+      <path>backend/src/main/java/com/accounting/service/PaymentService.java (new)</path>
+    </interface>
+    <interface>
+      <name>PaymentService.allocateFIFO</name>
+      <kind>service method</kind>
+      <signature>List&lt;PaymentAllocationDTO&gt; allocateFIFO(BigDecimal paymentAmount, Long supplierId) - Fetches open/unpaid bills sorted by due_date ASC, allocates payment amount to bills in FIFO order, returns allocation list</signature>
+      <path>backend/src/main/java/com/accounting/service/PaymentService.java (new)</path>
+    </interface>
+    <interface>
+      <name>PaymentService.allocateManually</name>
+      <kind>service method</kind>
+      <signature>APPaymentDTO allocateManually(UUID paymentId, List&lt;PaymentAllocationRequest&gt; allocations) - Allows manual override of FIFO allocation, validates no overpayment, updates allocations before posting</signature>
+      <path>backend/src/main/java/com/accounting/service/PaymentService.java (new)</path>
+    </interface>
+    <interface>
+      <name>PaymentService.postPayment</name>
+      <kind>service method</kind>
+      <signature>APPaymentDTO postPayment(UUID paymentId) - Posts payment, generates voucher (Dr AP 331, Cr cash/bank 111/112), updates bill statuses (PAID/PARTIALLY_PAID), updates bill remaining balances, audit logging</signature>
+      <path>backend/src/main/java/com/accounting/service/PaymentService.java (new)</path>
+    </interface>
+    <interface>
+      <name>PaymentService.getOpenBillsForSupplier</name>
+      <kind>service method</kind>
+      <signature>List&lt;PurchaseBillDTO&gt; getOpenBillsForSupplier(Long supplierId) - Returns list of open/unpaid bills (status=POSTED, remaining_balance &gt; 0) for supplier picker</signature>
+      <path>backend/src/main/java/com/accounting/service/PaymentService.java (new)</path>
+    </interface>
+    <interface>
+      <name>PaymentValidationService.validateAllocations</name>
+      <kind>service method</kind>
+      <signature>PaymentValidationResult validateAllocations(List&lt;PaymentAllocationRequest&gt; allocations, BigDecimal paymentAmount) - Checks no overpayment, allocated amounts don't exceed bill remaining balances, returns detailed field-level errors</signature>
+      <path>backend/src/main/java/com/accounting/service/PaymentValidationService.java (new)</path>
+    </interface>
+    <interface>
+      <name>PaymentValidationService.validateAccountBalance</name>
+      <kind>service method</kind>
+      <signature>PaymentValidationResult validateAccountBalance(Long accountId, BigDecimal paymentAmount) - Checks sufficient balance, triggers warning/block if overdraft (configurable), returns validation result with warnings/errors</signature>
+      <path>backend/src/main/java/com/accounting/service/PaymentValidationService.java (new)</path>
+    </interface>
+    <interface>
+      <name>AccountBalanceService.getAccountBalance</name>
+      <kind>service method</kind>
+      <signature>BigDecimal getAccountBalance(Long accountId) - Fetches current balance for cash/bank account, company-scoped</signature>
+      <path>backend/src/main/java/com/accounting/service/AccountBalanceService.java (new)</path>
+    </interface>
+    <interface>
+      <name>AccountBalanceService.validateSufficientBalance</name>
+      <kind>service method</kind>
+      <signature>boolean validateSufficientBalance(Long accountId, BigDecimal paymentAmount) - Checks sufficient balance, returns true if balance &gt;= paymentAmount</signature>
+      <path>backend/src/main/java/com/accounting/service/AccountBalanceService.java (new)</path>
+    </interface>
+    <interface>
+      <name>AccountBalanceService.checkOverdraft</name>
+      <kind>service method</kind>
+      <signature>OverdraftResult checkOverdraft(Long accountId, BigDecimal paymentAmount) - Checks overdraft, returns warning/block based on CompanySettings.overdraftPolicy configuration</signature>
+      <path>backend/src/main/java/com/accounting/service/AccountBalanceService.java (new)</path>
+    </interface>
+    <interface>
+      <name>PaymentImportService.importPayments</name>
+      <kind>service method</kind>
+      <signature>PaymentImportResult importPayments(MultipartFile file) - Parses Excel file, validates each row, collects all errors, atomic transaction (all valid rows or none), generates downloadable error map with row numbers and reasons</signature>
+      <path>backend/src/main/java/com/accounting/service/PaymentImportService.java (new)</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Follow testing patterns established in Stories 4.1 and 4.2: Use TestContainers with PostgreSQL for integration tests. Mock external services (voucher engine, approval workflow) in unit tests. Test FIFO allocation algorithm comprehensively with various scenarios. Verify overpayment prevention at database and application levels. Test account balance validation and overdraft handling. Validate payment approval workflow integration. Test voucher posting integration (Dr AP 331, Cr cash/bank 111/112). Verify RBAC enforcement at all levels (service, controller, UI). Backend: JUnit 5 + Mockito + AssertJ. Frontend: Vitest + Testing Library. Target: 70% coverage for service layer, critical flows for integration tests.</standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/impl/payment/PaymentServiceImplTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/service/impl/payment/PaymentValidationServiceImplTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/service/impl/payment/AccountBalanceServiceImplTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/service/impl/payment/PaymentImportServiceImplTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/controller/payment/PaymentControllerIntegrationTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/integration/PaymentFIFOAllocationIntegrationTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/integration/PaymentOverpaymentPreventionIntegrationTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/integration/PaymentVoucherPostingIntegrationTest.java (new)</location>
+      <location>frontend/src/components/payment/__tests__/PaymentForm.test.tsx (new)</location>
+      <location>frontend/src/components/payment/__tests__/PaymentAllocationGrid.test.tsx (new)</location>
+      <location>frontend/src/components/payment/__tests__/AccountBalanceDisplay.test.tsx (new)</location>
+      <location>tests/e2e/payment-flow.spec.ts (new)</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test supplier picker lists only suppliers with open/unpaid bills. Test GET /api/v1/ap-payments/suppliers/{supplierId}/open-bills returns only bills with status=POSTED and remaining_balance &gt; 0. Test supplier picker filters out suppliers with no open bills.</idea>
+      <idea ac="2">Test FIFO allocation algorithm sorts bills by due_date ASC and allocates payment amount to bills in order. Test manual override allows modification of allocations before posting. Test allocation_order stored correctly for audit trail. Test multiple bills per payment allocation.</idea>
+      <idea ac="3">Test required fields validation: date, payment number (auto-generated), cash/bank account (with balance display), payee, amount, reference, payment proof (required if above threshold), method. Test payment number format: PAY-YYYY-XXXXX. Test account balance displayed in real-time.</idea>
+      <idea ac="4">Test overpayment prevention at database constraint level (CHECK constraint). Test application validation returns detailed error if overpayment attempted. Test allocated_amount cannot exceed bill.remaining_balance. Test error message shows which bill has insufficient balance.</idea>
+      <idea ac="5">Test standalone payment requires admin role. Test is_standalone=true flag set correctly. Test warning tag displayed in UI for standalone payments. Test standalone payments don't require bill allocation but still generate journal entries.</idea>
+      <idea ac="6">Test "quick add supplier" suggestion for non-master suppliers. Test ad hoc tag logged correctly. Test suggestion appears when supplier not found in master data.</idea>
+      <idea ac="7">Test payment approval workflow integration with ApprovalWorkflowService. Test payments exceeding threshold require approval before posting. Test approval workflow follows Story 4.2 maker-checker pattern. Test auto-approve for payments below threshold.</idea>
+      <idea ac="8">Test account balance validation checks sufficient balance before payment posting. Test overdraft warning/block based on CompanySettings.overdraftPolicy. Test balance displayed in payment form updates in real-time. Test insufficient balance blocks payment posting.</idea>
+      <idea ac="9">Test payment posting generates voucher with journal entries: Dr AP 331 (allocated amount per bill), Cr cash/bank 111/112 (total payment amount). Test bill statuses updated to PAID/PARTIALLY_PAID. Test bill remaining_balance updated correctly. Test batch import with atomic error reporting.</idea>
+      <idea ac="10">Test all payment operations logged with before/after snapshots, SHA-256 diff hash, user/timestamp/IP. Test audit trail includes: create, allocate, post, cancel, overpayment attempt, balance warning. Test audit rules same as voucher entry/posting.</idea>
+    </ideas>
+  </tests>
+</story-context>
+

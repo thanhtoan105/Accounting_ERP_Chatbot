@@ -73,6 +73,7 @@
 - **FR40: Automated Embedding Pipeline:** An n8n workflow must automatically index accounting data into Pinecone nightly at 2:00 AM, with email alerts on failure.
 - **FR41: Source Citation in Answers:** The chatbot must provide citations (e.g., TT200 article, link to source data) and a confidence score for each answer.
 - **FR42: Context-Aware Guidance:** The chatbot should provide helpful suggestions based on the user's current screen (e.g., on the voucher screen, offer guidance on TT200-compliant entry).
+- **Note:** Story 9.0 (Voucher-Focused RAG MVP) delivers an early subset of FR38–FR41 focused on voucher/AR/AP data with citations; the remaining functionality stays scoped to Epic 9.
 
 **8. Admin & Utilities**
 

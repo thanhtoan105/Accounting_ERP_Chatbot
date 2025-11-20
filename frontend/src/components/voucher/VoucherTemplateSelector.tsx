@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+  import { useEffect, useMemo, useState } from 'react'
 import { Loader2, RefreshCw, Search, ShieldCheck } from 'lucide-react'
 
 import {
   getVoucherTemplateById,
   getVoucherTemplates,
-  type VoucherTemplateDTO,
-  type VoucherTemplateSummaryDTO,
 } from '@/services/voucher'
+import type {
+  VoucherTemplateDTO,
+  VoucherTemplateSummaryDTO,
+} from '@/types/voucher'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -64,7 +66,7 @@ export function VoucherTemplateSelector({
           setTemplates(response)
         }
       } catch (err: any) {
-        setError(err?.message || 'Không thể tải danh sách mẫu chứng từ')
+        setError(err?.message || 'Cannot load voucher template list')
       } finally {
         setLoading(false)
       }
@@ -81,7 +83,7 @@ export function VoucherTemplateSelector({
       const detailed = await getVoucherTemplateById(template.id)
       setSelectedTemplate(detailed)
     } catch (err: any) {
-      setError(err?.message || 'Không thể xem mẫu')
+      setError(err?.message || 'Cannot view template')
     } finally {
       setPreviewLoading(false)
     }
@@ -91,9 +93,9 @@ export function VoucherTemplateSelector({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Áp dụng mẫu chứng từ</DialogTitle>
+          <DialogTitle>Apply voucher template</DialogTitle>
           <DialogDescription>
-            Chọn mẫu có sẵn để tự động điền tài khoản và diễn giải cho phiếu kế toán.
+            Select available template to automatically fill accounts and descriptions for accounting vouchers.
           </DialogDescription>
         </DialogHeader>
 
@@ -102,7 +104,7 @@ export function VoucherTemplateSelector({
             <div className="relative flex-1 min-w-[220px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Tìm theo tên hoặc mô tả mẫu..."
+                placeholder="Search by name or template description..."
                 className="pl-9"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -117,7 +119,7 @@ export function VoucherTemplateSelector({
                 setSelectedTemplate(null)
               }}
             >
-              Xóa tìm kiếm
+              Clear search
             </Button>
             <Button
               type="button"
@@ -131,12 +133,12 @@ export function VoucherTemplateSelector({
                 setLoading(true)
                 getVoucherTemplates()
                   .then(setTemplates)
-                  .catch((err) => setError(err?.message || 'Không thể tải danh sách mẫu'))
+                  .catch((err) => setError(err?.message || 'Cannot load template list'))
                   .finally(() => setLoading(false))
               }}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
-              Làm mới
+                  Refresh
             </Button>
           </div>
 
@@ -145,8 +147,8 @@ export function VoucherTemplateSelector({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-md border">
               <div className="flex items-center justify-between border-b px-4 py-2">
-                <p className="text-sm font-semibold">Mẫu có sẵn ({filteredTemplates.length})</p>
-                {loading ? <span className="text-xs text-muted-foreground">Đang tải…</span> : null}
+                <p className="text-sm font-semibold">Available templates ({filteredTemplates.length})</p>
+                {loading ? <span className="text-xs text-muted-foreground">Loading…</span> : null}
               </div>
               <ScrollArea className="h-[360px]">
                 <div className="divide-y">
@@ -158,7 +160,7 @@ export function VoucherTemplateSelector({
                     </div>
                   ) : filteredTemplates.length === 0 ? (
                     <div className="p-6 text-center text-sm text-muted-foreground">
-                      Không tìm thấy mẫu nào phù hợp.
+                      No templates found.
                     </div>
                   ) : (
                     filteredTemplates.map((template) => (
@@ -173,22 +175,22 @@ export function VoucherTemplateSelector({
                       >
                         <p className="font-semibold text-sm">{template.name}</p>
                         <p className="text-xs text-muted-foreground line-clamp-2">
-                          {template.description || 'Không có mô tả'}
+                          {template.description || 'No description'}  
                         </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                           {template.isActive ? (
-                            <Badge variant="secondary">Đang kích hoạt</Badge>
+                            <Badge variant="secondary">Active</Badge>
                           ) : (
-                            <Badge variant="outline">Tạm ngưng</Badge>
+                            <Badge variant="outline">Inactive</Badge>
                           )}
                           {template.firstLineDebitAccount ? (
                             <Badge variant="outline">
-                              Nợ {template.firstLineDebitAccount.code}
+                              Debit {template.firstLineDebitAccount.code}
                             </Badge>
                           ) : null}
                           {template.firstLineCreditAccount ? (
                             <Badge variant="outline">
-                              Có {template.firstLineCreditAccount.code}
+                              Credit {template.firstLineCreditAccount.code}
                             </Badge>
                           ) : null}
                         </div>
@@ -201,9 +203,9 @@ export function VoucherTemplateSelector({
 
             <div className="rounded-md border">
               <div className="flex items-center justify-between border-b px-4 py-2">
-                <p className="text-sm font-semibold">Xem chi tiết</p>
+                <p className="text-sm font-semibold">View details</p>
                 {previewLoading ? (
-                  <span className="text-xs text-muted-foreground">Đang tải…</span>
+                  <span className="text-xs text-muted-foreground">Loading…</span>
                 ) : null}
               </div>
               <div className="space-y-3 p-4 text-sm">
@@ -213,7 +215,7 @@ export function VoucherTemplateSelector({
                       <div>
                         <p className="text-base font-semibold">{selectedTemplate.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {selectedTemplate.description || 'Không có mô tả'}
+                          {selectedTemplate.description || 'No description'}
                         </p>
                       </div>
                       {selectedTemplate.isActive ? (
@@ -228,7 +230,7 @@ export function VoucherTemplateSelector({
                     <Separator />
                     <div className="space-y-2">
                       <p className="text-xs font-semibold uppercase text-muted-foreground">
-                        Định nghĩa dòng
+                        Define line
                       </p>
                       <div className="space-y-3">
                         {selectedTemplate.lines.map((line) => (
@@ -237,7 +239,7 @@ export function VoucherTemplateSelector({
                             className="rounded-md border p-3 text-xs leading-relaxed"
                           >
                             <p className="font-semibold">
-                              Dòng {line.lineNumber}: Nợ {line.debitAccountCode || '---'} / Có{' '}
+                              Line {line.lineNumber}: Debit {line.debitAccountCode || '---'} / Credit{' '}
                               {line.creditAccountCode || '---'}
                             </p>
                             {line.defaultDescription ? (
@@ -245,16 +247,16 @@ export function VoucherTemplateSelector({
                             ) : null}
                             <div className="mt-1 flex flex-wrap gap-2">
                               {line.requiresCustomer ? (
-                                <Badge variant="outline">Yêu cầu KH</Badge>
+                                <Badge variant="outline">Requires customer</Badge>
                               ) : null}
                               {line.requiresSupplier ? (
-                                <Badge variant="outline">Yêu cầu NCC</Badge>
+                                <Badge variant="outline">Requires supplier</Badge>
                               ) : null}
                               {line.requiresCostCenter ? (
-                                <Badge variant="outline">Yêu cầu trung tâm CP</Badge>
+                                  <Badge variant="outline">Requires cost center</Badge>
                               ) : null}
                               {line.lockAccounts ? (
-                                <Badge variant="destructive">Khóa tài khoản</Badge>
+                                <Badge variant="destructive">Lock accounts</Badge>
                               ) : null}
                             </div>
                           </div>
@@ -270,16 +272,16 @@ export function VoucherTemplateSelector({
                       {isApplying ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Đang áp dụng...
+                          Applying...
                         </>
                       ) : (
-                        'Áp dụng mẫu này'
+                        'Apply this template'
                       )}
                     </Button>
                   </>
                 ) : (
                   <div className="text-sm text-muted-foreground">
-                    Chọn một mẫu ở danh sách bên trái để xem chi tiết và áp dụng.
+                      Select a template from the list on the left to view details and apply.
                   </div>
                 )}
               </div>

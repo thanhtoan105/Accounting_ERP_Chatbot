@@ -1,0 +1,201 @@
+---
+alwaysApply: true
+---
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Development Commands
+
+### Docker Services
+
+- Start all services: `docker compose up -d`
+- Stop all services: `docker compose down`
+- View logs: `docker compose logs -f [service-name]`
+
+### Backend (Java 21 + Spring Boot 3.5.7)
+
+- Run development server: `cd backend && mvn spring-boot:run`
+- Run tests: `cd backend && mvn test`
+- Build: `cd backend && mvn clean package`
+- Compile: `cd backend && mvn clean compile`
+- Format code: `cd backend && mvn spotless:apply`
+- Run specific test: `cd backend && mvn test -Dtest=ClassName`
+
+### Frontend (React + TypeScript + Vite)
+
+- Install dependencies: `cd frontend && pnpm install`
+- Run development server: `cd frontend && pnpm dev`
+- Build for production: `cd frontend && pnpm build`
+- Run tests: `cd frontend && pnpm test`
+- Run tests in watch mode: `cd frontend && pnpm test:watch`
+- Format code: `cd frontend && pnpm format:fix`
+- Lint code: `cd frontend && pnpm lint`
+- Shadcn UI: `cd frontend && pnpm dlx shadcn@latest add [component]`
+
+## Architecture Overview
+
+This is a multi-tenant accounting system built as a monorepo with clear separation between backend and frontend.
+
+### Backend Architecture (Spring Boot)
+
+**Multi-tenancy Pattern**: The system uses row-level security through a company-scoped architecture:
+
+- Every business entity extends `CompanyScopedEntity` interface (gets `companyId` field)
+- `CompanyContext` manages the current company ID in ThreadLocal storage
+- `CompanyContextFilter` extracts company from JWT and sets context
+- `CompanyScopeAspect` and `CompanyScopeEnforcer` automatically apply company filtering
+
+**Security Stack**:
+
+- JWT-based authentication with access/refresh tokens
+- Spring Security with custom filter chain
+- Password encoding with BCrypt
+- Role-based access control (RBAC) foundation
+
+**Database Layer**:
+
+- PostgreSQL with Flyway migrations
+- JPA/Hibernate with validation
+- Automatic audit trails via `AuditLog` entity
+
+**Key Packages**:
+
+- `entity/`: JPA entities (Company, User, Customer, AuditLog)
+- `repository/`: JPA repositories with company-scoped specifications
+- `security/`: JWT, password encoding, company context management
+- `service/`: Business logic layer
+- `controller/`: REST API endpoints with OpenAPI documentation
+
+**Configuration**:
+
+- Main config: `application.yml`
+- Security: `SecurityConfig` class
+- Database migrations in `src/main/resources/db/migration/`
+
+### Frontend Architecture (React + TypeScript)
+
+**UI Framework**: shadcn/ui (Tailwind + Radix)
+**Routing**: React Router với protected layout
+**State Management**: React hooks and context
+**API Communication**: Axios + typed services
+**Build Tool**: Vite (proxy `/api` → backend)
+
+**Cấu trúc thư mục (feature-first)**:
+
+- `src/features/`
+
+  - `auth/`
+    - `pages/` → `Login.tsx`, `ForgotPassword.tsx`, `ResetPassword.tsx`
+    - `components/` → `LoginForm.tsx` (re-export from `@/components/auth/LoginForm`)
+    - `services/` → `auth.ts`
+    - `index.ts` → barrel exports (re-exports pages, services, and components)
+  - `dashboard/`
+    - `pages/Dashboard.tsx`
+    - `index.ts` → barrel exports
+  - `company/`
+    - `pages/CompanySettings.tsx`
+    - `index.ts` → barrel exports
+  - `users/`
+    - `pages/UserManagement.tsx`
+    - `components/` → tables, columns, etc.
+    - `index.ts` → barrel exports (re-exports pages and components)
+  - `accounting/`
+    - `pages/ChartOfAccounts.tsx`
+    - `pages/Vouchers/` → `VoucherList.tsx`, `VoucherForm.tsx`, `index.ts`
+    - `index.ts` → barrel exports
+
+- `src/components/`
+
+  - `app/` → `index.ts`, `app-sidebar.tsx`, `nav-main.tsx`
+  - `guards/` → `RoleGuard.tsx`, `CompanyGuard.tsx` (barrel: `index.ts`)
+  - `voucher/` → `DeleteVoucherDialog.tsx`, `VoucherLineItemGrid.tsx`, `index.ts`
+  - `ui/` → shadcn primitives (button, card, input, sidebar, breadcrumb, avatar, ...)
+  - `index.ts` → barrel (re-exports from `guards` and other shared components)
+
+- `src/layouts/` → `ProtectedLayout.tsx` (shadcn sidebar-06)
+- `src/routes/` → `AppRoutes.tsx` (toàn bộ route map)
+- `src/hooks/` → hooks dùng chung (vd. `useAuth`, `useRole`, `use-mobile`)
+- `src/services/` → services dùng chung khác (voucher, chartOfAccounts, ...)
+- `src/utils/` → helpers (axios token, date, cn, ...)
+
+> Note:
+>
+> - The `index.ts` (barrel) files provide easy import aliases such as `@/features/auth`, `@/features/users`, `@/features/accounting`, `@/components`, `@/components/app`, `@/components/voucher`.
+> - Pages within a feature should import components via the feature’s barrel file (for example: `import { LoginForm } from '@/features/auth'`) to maintain clear feature boundaries and make refactoring easier.
+
+**Layout Pattern**:
+
+- `ProtectedLayout`: tích hợp `SidebarProvider` + `AppSidebar` (block sidebar-06) + `SidebarInset` + breadcrumb header.
+
+### Development Services
+
+- **PostgreSQL**: Primary database (localhost:5432)
+- **pgAdmin**: Database management UI (localhost:5050)
+- **Redis**: Caching and session storage (localhost:6379)
+- **Maildev**: Email testing UI (localhost:1080)
+
+### Project Structure & Workflows
+
+**BMAD Framework**: The project uses a structured development workflow with epic-based planning:
+
+- Epic definitions in `docs/stories/`
+- Sprint status tracking in `docs/sprint-status.yaml`
+- Context XML files for technical specifications
+
+**API Documentation**: Available at `http://localhost:8080/api/docs` (Swagger UI)
+
+**Testing Strategy**:
+
+- Backend: JUnit 5 + TestContainers for integration tests
+- Frontend: Vitest + Testing Library + jsdom
+- Coverage reporting configured for both
+
+**Code Quality**:
+
+- Backend: Spotless for code formatting
+- Frontend: ESLint + Prettier
+- Husky for pre-commit hooks
+- TypeScript for type safety
+
+## Key Development Patterns
+
+**Company Scoping**: When working with repositories, always use the company context:
+
+```java
+// Automatic filtering through CompanyScopedEntity
+List<Customer> customers = customerRepository.findAll(); // Automatically filtered by current company
+```
+
+**API Endpoints**: Follow the pattern `/api/v1/[resource]` with proper authentication:
+
+```java
+@GetMapping("/api/v1/customers")
+public ResponseEntity<List<Customer>> getCustomers() // Requires JWT
+```
+
+**Frontend Routes**: Tất cả routes được khai báo tại `src/routes/AppRoutes.tsx`:
+
+```tsx
+import { BrowserRouter } from "react-router-dom";
+import AppRoutes from "@/routes/AppRoutes";
+
+// App.tsx
+<BrowserRouter>
+  <AppRoutes />
+</BrowserRouter>;
+```
+
+**Database Migrations**: Use Flyway with numbered versions (V1**, V2**, etc.) and descriptive names.
+
+Do not create markdown files unless explicitly requested by the user
+Using gkg mcp to find codebase structure and code, relevant files, functions, classes, variables, and code snippets.
+
+When designing user interfaces with tables using shadcn components, always ensure the following key features are included:
+
+- **Search Functionality**: Add a search input above or within the table to allow users to quickly filter records based on keywords or relevant fields.
+- **Refresh Button**: Include a refresh button near the search bar or table header to enable users to reload the table data with a single click, ensuring access to the most up-to-date records.
+- **Record Count and Page Size Selector**: At the bottom of the table, display the total number of records currently shown as well as the overall record count. Provide a dropdown for users to select how many records to display per page, with the following default options: 10, 20, 30, 50, and 100 records per page.
+- **Pagination**: Implement pagination controls at the bottom of the table to allow users to navigate between pages of data efficiently.
+
+Including these standard features improves usability, performance, and consistency across the application’s data tables.
+Use gkg mcp to find codebase structure and code, relevant files, functions, classes, variables, and code snippets.
+Using the frontend skills to design UI for frontend
