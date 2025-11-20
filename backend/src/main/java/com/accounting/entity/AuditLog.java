@@ -74,6 +74,12 @@ public class AuditLog {
   @Column(name = "trace_id", length = 64)
   private String traceId;
 
+  @Column(name = "chain_hash", length = 64)
+  private String chainHash;
+
+  @Column(name = "retention_until")
+  private Instant retentionUntil;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
@@ -81,6 +87,11 @@ public class AuditLog {
   public void prePersist() {
     if (createdAt == null) {
       createdAt = Instant.now();
+    }
+    // Default retention: 10 years
+    if (retentionUntil == null) {
+      retentionUntil = createdAt.atZone(java.time.ZoneId.systemDefault())
+          .plusYears(10).toInstant();
     }
   }
 
@@ -226,6 +237,22 @@ public class AuditLog {
 
   public void setTraceId(String traceId) {
     this.traceId = traceId;
+  }
+
+  public String getChainHash() {
+    return chainHash;
+  }
+
+  public void setChainHash(String chainHash) {
+    this.chainHash = chainHash;
+  }
+
+  public Instant getRetentionUntil() {
+    return retentionUntil;
+  }
+
+  public void setRetentionUntil(Instant retentionUntil) {
+    this.retentionUntil = retentionUntil;
   }
 
   public Instant getCreatedAt() {

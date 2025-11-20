@@ -164,8 +164,10 @@ export function VoucherLineGrid({
   const updateLine = useCallback(
     (index: number, patch: Partial<VoucherEntryLine>) => {
       if (!onLinesChange) return
-      const next = lines.map((line, idx) =>
-        idx === index ? { ...line, ...patch, status: 'dirty' } : line,
+      const next: VoucherEntryLine[] = lines.map((line, idx) =>
+        idx === index
+          ? ({ ...line, ...patch, status: 'dirty' as const } as VoucherEntryLine)
+          : line,
       )
       onLinesChange(next)
     },
@@ -299,8 +301,8 @@ export function VoucherLineGrid({
       <div ref={containerRef} className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm font-medium text-muted-foreground">
-            Dòng định khoản
-            {loading ? <span className="ml-2 animate-pulse text-xs">Đang tải…</span> : null}
+            Entry lines
+            {loading ? <span className="ml-2 animate-pulse text-xs">Loading...</span> : null}
           </div>
           {!readOnly ? (
             <div className="flex flex-wrap items-center gap-2">
@@ -313,7 +315,7 @@ export function VoucherLineGrid({
                   disabled={loading}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Thêm dòng
+                  Add line
                 </Button>
                 <Button
                   type="button"
@@ -321,10 +323,10 @@ export function VoucherLineGrid({
                   variant="ghost"
                   onClick={onUndo}
                   disabled={!canUndo}
-                  aria-label="Hoàn tác (Ctrl+Z)"
+                  aria-label="Undo (Ctrl+Z)"
                 >
                   <Undo2 className="mr-2 h-4 w-4" />
-                  Hoàn tác
+                  Undo
                 </Button>
                 <Button
                   type="button"
@@ -332,15 +334,15 @@ export function VoucherLineGrid({
                   variant="ghost"
                   onClick={onRedo}
                   disabled={!canRedo}
-                  aria-label="Làm lại (Ctrl+Shift+Z)"
+                  aria-label="Redo (Ctrl+Shift+Z)"
                 >
                   <Redo2 className="mr-2 h-4 w-4" />
-                  Làm lại
+                  Redo
                 </Button>
               </div>
               <div className="text-xs text-muted-foreground">
-                Phím tắt: Ctrl+N (thêm), Ctrl+D (nhân bản), Ctrl+Backspace (xóa), Ctrl+Z /
-                Ctrl+Shift+Z (hoàn tác), kéo thả để sắp xếp
+                Shortcuts: Ctrl+N (add), Ctrl+D (duplicate), Ctrl+Backspace (delete), Ctrl+Z /
+                Ctrl+Shift+Z (undo), drag and drop to reorder
               </div>
             </div>
           ) : null}
@@ -359,13 +361,13 @@ export function VoucherLineGrid({
               <TableRow>
                 <TableHead className="w-[40px]" />
                 <TableHead className="w-[60px] text-center">STT</TableHead>
-                <TableHead className="min-w-[220px]">Tài khoản Nợ</TableHead>
-                <TableHead className="min-w-[220px]">Tài khoản Có</TableHead>
-                <TableHead className="min-w-[200px]">Mô tả</TableHead>
-                <TableHead className="w-[160px] text-right">Số tiền (VND)</TableHead>
+                <TableHead className="min-w-[220px]">Debit account</TableHead>
+                <TableHead className="min-w-[220px]">Credit account</TableHead>
+                <TableHead className="min-w-[200px]">Description</TableHead>
+                <TableHead className="w-[160px] text-right">Amount</TableHead>
                 <TableHead className="min-w-[240px]">Dimensions</TableHead>
-                <TableHead className="w-[120px] text-center">Trạng thái</TableHead>
-                <TableHead className="w-[80px] text-center">Tác vụ</TableHead>
+                <TableHead className="w-[120px] text-center">Status</TableHead>
+                <TableHead className="w-[80px] text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -430,7 +432,7 @@ export function VoucherLineGrid({
                         disabled={readOnly || loading}
                         lockReason={
                           lockedDebit && line.source === 'template'
-                            ? 'TK Nợ bị khóa bởi mẫu'
+                            ? 'Debit account is locked by template'
                             : undefined
                         }
                       />
@@ -449,7 +451,7 @@ export function VoucherLineGrid({
                         disabled={readOnly || loading}
                         lockReason={
                           lockedCredit && line.source === 'template'
-                            ? 'TK Có bị khóa bởi mẫu'
+                            ? 'Credit account is locked by template'
                             : undefined
                         }
                       />
@@ -467,15 +469,15 @@ export function VoucherLineGrid({
                           updateLine(actualIndex, { description: event.target.value })
                         }
                         disabled={readOnly || loading}
-                        placeholder="Diễn giải dòng"
+                          placeholder="Line description"
                       />
                     </TableCell>
                     <TableCell>
                       <MoneyInput
                         value={line.amount ?? null}
                         onFocus={() => setActiveRowIndex(actualIndex)}
-                        onChange={(value) => updateLine(actualIndex, { amount: value ?? null })}
-                        onKeyDown={(event) => {
+                        onChange={(value: number | null) => updateLine(actualIndex, { amount: value ?? null })}
+                        onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
                           if (
                             event.key === 'Tab' &&
                             !event.shiftKey &&
@@ -508,7 +510,7 @@ export function VoucherLineGrid({
                           required={requireCustomer}
                           error={
                             requireCustomer && !(line.customerId || line.customer?.id)
-                              ? 'Bắt buộc chọn khách hàng'
+                                ? 'Customer is required'
                               : null
                           }
                         />
@@ -525,7 +527,7 @@ export function VoucherLineGrid({
                           required={requireSupplier}
                           error={
                             requireSupplier && !(line.supplierId || line.supplier?.id)
-                              ? 'Bắt buộc chọn nhà cung cấp'
+                              ? 'Supplier is required'
                               : null
                           }
                         />
@@ -545,7 +547,7 @@ export function VoucherLineGrid({
                             required={requireCostCenter}
                             error={
                               requireCostCenter && !(line.costCenterId || line.costCenter?.id)
-                                ? 'Bắt buộc chọn trung tâm chi phí'
+                                ? 'Cost center is required'
                                 : null
                             }
                           />
@@ -559,9 +561,9 @@ export function VoucherLineGrid({
                     </TableCell>
                     <TableCell className="text-center">
                       {hasErrors ? (
-                        <Badge variant="destructive">Cần xử lý</Badge>
+                        <Badge variant="destructive">Needs review</Badge>
                       ) : (
-                        <Badge variant="secondary">Hợp lệ</Badge>
+                        <Badge variant="secondary">Valid</Badge>
                       )}
                     </TableCell>
                     <TableCell className="flex items-center justify-center gap-1 text-center">
@@ -578,7 +580,7 @@ export function VoucherLineGrid({
                               📎
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Đính kèm chứng từ</TooltipContent>
+                          <TooltipContent>Attach voucher</TooltipContent>
                         </Tooltip>
                       ) : null}
 
@@ -597,7 +599,7 @@ export function VoucherLineGrid({
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => insertLine(actualIndex + 1)}>
                               <Plus className="mr-2 h-4 w-4" />
-                              Thêm bên dưới
+                              Add below
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>
@@ -605,7 +607,7 @@ export function VoucherLineGrid({
                               }
                             >
                               <ArrowUpDown className="mr-2 h-4 w-4" />
-                              Đưa lên
+                              Move up
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => {
@@ -614,14 +616,14 @@ export function VoucherLineGrid({
                               }}
                             >
                               <Copy className="mr-2 h-4 w-4" />
-                              Nhân bản
+                              Duplicate
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
                               onClick={() => removeLine(actualIndex)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Xóa dòng
+                              Delete line
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -639,22 +641,22 @@ export function VoucherLineGrid({
           </Table>
           <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-4 py-2 text-sm backdrop-blur supports-[backdrop-filter]:bg-background/75">
             <span>
-              {lines.length} dòng • Tổng tiền{' '}
+              {lines.length} lines • Total amount{' '}
               <span className="font-semibold">{amountFormatter.format(totals.amount)}</span> VND
             </span>
-            <span className="text-xs text-muted-foreground">Tổng Nợ = Tổng Có</span>
+            <span className="text-xs text-muted-foreground">Total Debit = Total Credit</span>
           </div>
         </div>
 
         <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3 text-sm md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-4">
             <span>
-              Tổng tiền: <strong>{totals.amount.toLocaleString('vi-VN')}</strong>
+                Total amount: <strong>{totals.amount.toLocaleString('vi-VN')}</strong>
             </span>
-            <span className="text-muted-foreground">Số dòng: {lines.length}</span>
+            <span className="text-muted-foreground">Number of lines: {lines.length}</span>
           </div>
           <div className="text-xs text-muted-foreground">
-            Dòng được đánh dấu đỏ có lỗi cần xử lý trước khi ghi nhận chứng từ.
+            Lines marked in red have errors that need to be reviewed before posting the voucher.
           </div>
         </div>
       </div>

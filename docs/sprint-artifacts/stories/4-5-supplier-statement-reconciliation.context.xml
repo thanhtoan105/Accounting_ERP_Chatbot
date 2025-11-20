@@ -1,0 +1,332 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>5</storyId>
+    <title>Supplier Statement &amp; Reconciliation</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-5-supplier-statement-reconciliation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>an accountant</asA>
+    <iWant>to generate official supplier statements and support reconciliation for disputes/matching</iWant>
+    <soThat>payables are resolved with confidence</soThat>
+    <tasks>
+      - Backend: Create SupplierStatementService and statement generation logic (AC: #1, #2)
+      - Backend: Statement export functionality (AC: #2, #7)
+      - Backend: Email statement functionality (AC: #3, #7)
+      - Backend: Statement import and reconciliation (AC: #4, #6)
+      - Backend: Statement history and tracking (AC: #5, #7)
+      - Backend: Statement controller and API (AC: #1-#7)
+      - Database: Flyway migrations for new entities (AC: #5, #6)
+      - Frontend: Supplier statement list component (AC: #1, #5)
+      - Frontend: Statement generation and export (AC: #1, #2, #3)
+      - Frontend: Statement import and reconciliation (AC: #4, #6)
+      - Frontend: Statement history and batch operations (AC: #5, #7)
+      - Testing: Unit and integration tests for statement functionality (AC: #1-#7)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Statement views: summary (by bill) and detailed (by payment/event)
+    2. Export as TT200-compliant PDF/Excel, includes hash and legal footer
+    3. "Send to supplier" emails exported statement with delivery/audit logging
+    4. Import supplier-provided statement: parses/compares items, flags mismatches/missing/applied, supports manual notes and adjustment vouchers
+    5. History: all statements sent, viewed, exported stored per supplier; batch ZIP/email allowed (max size configured/audited)
+    6. Dispute log: reason/actioned/edited by AR/accountant; included in next export and in audit trail
+    7. Attachments: batch download ZIP per-statement; logs every download/email
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Accounts Payable (AP) Module</title>
+        <section>Story 4.5: Supplier Statement &amp; Reconciliation</section>
+        <snippet>Detailed acceptance criteria for statement generation (summary/detailed views), TT200-compliant export (PDF/Excel with hash and legal footer), email functionality with delivery logging, import/reconciliation with mismatch detection, comprehensive history tracking, and dispute logging with audit trail.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-4-accounts-payable-ap-module.md</path>
+        <title>Epic 4: Accounts Payable (AP) Module</title>
+        <section>Story 4.5: Supplier Statement &amp; Reconciliation</section>
+        <snippet>Business requirements for supplier statement generation and reconciliation functionality, enabling accountants to produce statements, compare with supplier-provided statements, track discrepancies, and maintain complete audit trail.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/architecture-decision-records-adrs.md</path>
+        <title>Architecture Decision Records (ADRs)</title>
+        <section>Technology Stack</section>
+        <snippet>Key architectural decisions: Spring Boot 3.5.7 with Java 21, PostgreSQL, Shadcn UI with Tailwind CSS, multi-tenant architecture with company-scoped entities.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-4-ap-aging-and-overdue-alerts.md</path>
+        <title>Story 4.4: AP Aging and Overdue Alerts</title>
+        <section>Export Patterns and Service Patterns</section>
+        <snippet>Established patterns for Excel/PDF export with Apache POI, audit logging for all operations, RBAC enforcement at service and API levels, and email integration approach. All export operations include metadata, timestamp, and audit trail.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-1-purchase-bills-entry-edit-and-draft-management.md</path>
+        <title>Story 4.1: Purchase Bills – Entry, Edit, and Draft Management</title>
+        <section>PurchaseBill Entity and Service Patterns</section>
+        <snippet>PurchaseBill entity with complete bill details (bill_number, bill_date, due_date, total_amount, remaining_balance, status). Service patterns with @Transactional, @Cacheable, and @PreAuthorize annotations. Multi-tenancy with CompanyScopedEntity pattern.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-3-cash-payments-linked-to-bills-standalone.md</path>
+        <title>Story 4.3: Cash Payments (Linked to Bills, Standalone)</title>
+        <section>Payment Allocation Data</section>
+        <snippet>APPayment and PaymentAllocation entities track payment history with payment number, date, amount, and allocated amount. FIFO allocation logic and overpayment prevention patterns established.</snippet>
+      </doc>
+    </docs>
+    
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/Supplier.java</path>
+        <kind>entity</kind>
+        <symbol>Supplier</symbol>
+        <lines>1-69</lines>
+        <reason>Supplier entity with company scoping, validation, and contact information (email) for statement generation and email delivery</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/SupplierRepository.java</path>
+        <kind>repository</kind>
+        <symbol>SupplierRepository</symbol>
+        <lines>1-54</lines>
+        <reason>Supplier repository with company-scoped queries for filtering suppliers by company and retrieving contact information</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/SupplierService.java</path>
+        <kind>service</kind>
+        <symbol>SupplierService</symbol>
+        <lines>1-72</lines>
+        <reason>Supplier service interface with CRUD operations and search capabilities for statement supplier selection</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/PurchaseBill.java</path>
+        <kind>entity</kind>
+        <symbol>PurchaseBill</symbol>
+        <lines>1-104</lines>
+        <reason>PurchaseBill entity with bill details (bill_number, bill_date, due_date, total_amount, status) required for statement generation</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/PurchaseBillRepository.java</path>
+        <kind>repository</kind>
+        <symbol>PurchaseBillRepository</symbol>
+        <lines>1-64</lines>
+        <reason>PurchaseBill repository with queries for filtering bills by supplier, status, and date range for statement data</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PurchaseBillService.java</path>
+        <kind>service</kind>
+        <symbol>PurchaseBillService</symbol>
+        <lines>1-67</lines>
+        <reason>PurchaseBill service with find operations and filtering for statement bill queries</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/APPayment.java</path>
+        <kind>entity</kind>
+        <symbol>APPayment</symbol>
+        <lines>1-109</lines>
+        <reason>APPayment entity with payment details (payment_number, payment_date, amount) for detailed statement view</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/PaymentAllocation.java</path>
+        <kind>entity</kind>
+        <symbol>PaymentAllocation</symbol>
+        <lines>1-28</lines>
+        <reason>PaymentAllocation entity linking payments to bills with allocated amounts for detailed statement reconciliation</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PaymentService.java</path>
+        <kind>service</kind>
+        <symbol>PaymentService</symbol>
+        <lines>1-66</lines>
+        <reason>Payment service with find operations and filtering for statement payment event queries</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>AuditServiceImpl</symbol>
+        <lines>1-1037</lines>
+        <reason>Audit service implementation for logging all statement operations (generation, export, email, import, reconciliation) with user, timestamp, and IP tracking</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service</kind>
+        <symbol>AuditService</symbol>
+        <lines>1-46</lines>
+        <reason>Audit service interface defining logging methods to be extended for statement operations</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/ap/APAgingServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>exportToExcel, exportToPDF</symbol>
+        <lines>408-553</lines>
+        <reason>Export functionality patterns using Apache POI for Excel and text-based PDF for MVP, includes metadata, timestamp, and formatting</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/ap/APAgingController.java</path>
+        <kind>controller</kind>
+        <symbol>exportAgingReport</symbol>
+        <lines>237-261</lines>
+        <reason>Export endpoint pattern with format parameter, filters, and ResponseEntity&lt;byte[]&gt; return type for file download</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/services/apAging.ts</path>
+        <kind>service</kind>
+        <symbol>exportAgingReport</symbol>
+        <lines>105-132</lines>
+        <reason>Frontend export service pattern using fetchWithAuth and Blob response for file download</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/APAging/APAgingReport.tsx</path>
+        <kind>component</kind>
+        <symbol>APAgingReport</symbol>
+        <lines>69-600</lines>
+        <reason>Frontend report component pattern with DataTable, filtering, export buttons, and drill-down functionality to reuse for statement list</reason>
+      </artifact>
+    </code>
+    
+    <dependencies>
+      <backend>
+        <package name="org.springframework.boot:spring-boot-starter-web" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-data-jpa" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-security" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-validation" version="3.5.7" />
+        <package name="org.apache.poi:poi" version="5.3.0" note="For Excel export generation" />
+        <package name="org.postgresql:postgresql" version="42.7.4" />
+        <package name="org.flywaydb:flyway-core" version="11.10.0" note="For database migrations" />
+        <package name="io.jsonwebtoken:jjwt-api" version="0.12.5" note="For JWT authentication" />
+      </backend>
+      <frontend>
+        <package name="react" version="^19.1.1" />
+        <package name="react-router-dom" version="^7.9.5" />
+        <package name="@tanstack/react-table" version="^8.21.3" note="For data tables" />
+        <package name="@radix-ui/react-dialog" version="^1.1.15" note="For dialog components" />
+        <package name="axios" version="^1.7.9" note="For HTTP requests" />
+        <package name="zod" version="^4.1.12" note="For validation" />
+        <package name="react-hook-form" version="^7.66.0" note="For forms" />
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Multi-Tenancy: All statement entities (SupplierStatementHistory, SupplierStatementDispute) must extend CompanyScopedEntity interface and implement company_id field. All queries must be filtered by CompanyContext.getCompanyId().</constraint>
+    <constraint>RBAC Enforcement: All authenticated users can generate and view statements (company-scoped), but export/email/reconciliation operations require appropriate permissions (Accountant, Chief Accountant, CFO). Use @PreAuthorize annotations at service and controller methods.</constraint>
+    <constraint>TT200 Compliance: Statement exports must follow TT200 format requirements including legal footer, SHA-256 hash generation for document integrity, and proper Vietnamese formatting (currency: #,##0.00₫, dates: dd/MM/yyyy).</constraint>
+    <constraint>Audit Logging: All statement operations (generation, export, email, import, reconciliation, dispute updates) must be logged via AuditService with action, user, timestamp, IP address, and change details.</constraint>
+    <constraint>Service Layer Patterns: Use @Transactional for data modifications, @Cacheable for read operations where appropriate, and @PreAuthorize for RBAC enforcement. Follow naming convention: SupplierStatementService with SupplierStatementServiceImpl in service/impl/ap/ package.</constraint>
+    <constraint>Database Design: Create new entities for statement history (SupplierStatementHistory) and dispute logging (SupplierStatementDispute) with proper indexes on supplier_id, company_id, generation_date, and status fields for query performance.</constraint>
+    <constraint>Export Patterns: Use Apache POI (XSSFWorkbook) for Excel generation with proper cell formatting and auto-sizing. Use text-based PDF generation for MVP (similar to aging reports). Include metadata (supplier, period, timestamp) and hash in exported files.</constraint>
+    <constraint>Email Integration: Log email requests via AuditService, integrate with actual email service when available. Track delivery status and recipients in SupplierStatementHistory entity. Support batch ZIP emails with configurable max size limit.</constraint>
+    <constraint>Reconciliation Logic: Use tolerance-based matching (default ±1,000₫ for amount differences). Categorize results as Matched, Mismatched, Missing, Applied. Create SupplierStatementDispute entries for mismatched/missing items with status tracking (OPEN, IN_PROGRESS, RESOLVED, REJECTED).</constraint>
+    <constraint>Frontend Structure: Create feature under features/accounting/pages/SupplierStatements/ following feature-first structure. Reuse existing DataTable components, export functionality, and dialog patterns from APAging components.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>SupplierStatementService</name>
+      <kind>service interface</kind>
+      <signature>
+        Page&lt;SupplierStatementDTO&gt; findAll(Pageable pageable, Long supplierId, LocalDate startDate, LocalDate endDate, String statementType, String status)
+        SupplierStatementDTO generateSummaryStatement(Long supplierId, LocalDate startDate, LocalDate endDate)
+        DetailedStatementDTO generateDetailedStatement(Long supplierId, LocalDate startDate, LocalDate endDate)
+        byte[] exportStatement(UUID statementId, String format)
+        void sendStatementToSupplier(UUID statementId, List&lt;String&gt; recipientEmails)
+        void sendBatchStatements(List&lt;UUID&gt; statementIds, List&lt;String&gt; recipientEmails)
+        ReconciliationResultDTO importSupplierStatement(Long supplierId, MultipartFile file, String format)
+        void saveReconciliationResults(Long supplierId, ReconciliationResultDTO results, String notes)
+        void updateDisputeLog(UUID disputeId, String status, String resolution, Long actionedBy)
+        Page&lt;SupplierStatementHistoryDTO&gt; getStatementHistory(Long supplierId, Pageable pageable)
+        Page&lt;SupplierStatementDisputeDTO&gt; getDisputeLog(Long supplierId, String status, Pageable pageable)
+        byte[] downloadStatementBatch(List&lt;UUID&gt; statementIds)
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/SupplierStatementService.java</path>
+    </interface>
+    
+    <interface>
+      <name>SupplierStatementController REST API</name>
+      <kind>REST endpoints</kind>
+      <signature>
+        POST /api/v1/supplier-statements/generate (generate statement - summary or detailed)
+        GET /api/v1/supplier-statements/{id} (get statement by ID)
+        GET /api/v1/supplier-statements (list statements with pagination and filters)
+        GET /api/v1/supplier-statements/{id}/export (export statement to PDF/Excel)
+        POST /api/v1/supplier-statements/{id}/send (send statement to supplier via email)
+        POST /api/v1/supplier-statements/send-batch (send multiple statements as ZIP)
+        POST /api/v1/supplier-statements/import (import supplier statement for reconciliation)
+        GET /api/v1/supplier-statements/reconciliation/{id} (get reconciliation results)
+        POST /api/v1/supplier-statements/disputes (create/update dispute)
+        GET /api/v1/supplier-statements/disputes (list disputes with filters)
+        GET /api/v1/supplier-statements/history/{supplierId} (get statement history for supplier)
+        POST /api/v1/supplier-statements/download-batch (download multiple statements as ZIP)
+      </signature>
+      <path>backend/src/main/java/com/accounting/controller/ap/SupplierStatementController.java</path>
+    </interface>
+    
+    <interface>
+      <name>SupplierStatementHistory Entity</name>
+      <kind>database entity</kind>
+      <signature>
+        Fields: id (UUID), company_id (Long), supplier_id (Long), statement_type (SUMMARY/DETAILED), generation_date (Instant), generated_by (Long), format (PDF/EXCEL), file_path (String), hash (String), sent_date (Instant), sent_to (String JSON array), view_count (Integer), download_count (Integer)
+        Extends: CompanyScopedEntity
+        Indexes: supplier_id, generation_date, company_id
+      </signature>
+      <path>backend/src/main/java/com/accounting/entity/SupplierStatementHistory.java</path>
+    </interface>
+    
+    <interface>
+      <name>SupplierStatementDispute Entity</name>
+      <kind>database entity</kind>
+      <signature>
+        Fields: id (UUID), company_id (Long), supplier_id (Long), bill_id (UUID nullable), dispute_reason (String), status (OPEN/IN_PROGRESS/RESOLVED/REJECTED), resolution_notes (String), created_by (Long), created_at (Instant), resolved_by (Long), resolved_at (Instant)
+        Extends: CompanyScopedEntity
+        Indexes: supplier_id, bill_id, status, company_id
+      </signature>
+      <path>backend/src/main/java/com/accounting/entity/SupplierStatementDispute.java</path>
+    </interface>
+    
+    <interface>
+      <name>Frontend supplierStatement API service</name>
+      <kind>typescript service</kind>
+      <signature>
+        generateStatement(request: GenerateStatementRequest): Promise&lt;SupplierStatementDTO&gt;
+        getStatements(params: StatementFilterParams): Promise&lt;PaginatedResponse&lt;SupplierStatementDTO&gt;&gt;
+        exportStatement(statementId: string, format: 'PDF' | 'EXCEL'): Promise&lt;Blob&gt;
+        sendStatement(statementId: string, recipients: string[]): Promise&lt;void&gt;
+        importStatement(supplierId: number, file: File): Promise&lt;ReconciliationResultDTO&gt;
+        getDisputeLog(params: DisputeFilterParams): Promise&lt;PaginatedResponse&lt;SupplierStatementDisputeDTO&gt;&gt;
+        updateDispute(disputeId: string, update: DisputeUpdateRequest): Promise&lt;void&gt;
+      </signature>
+      <path>frontend/src/services/supplierStatement.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Follow testing patterns established in Stories 4.1-4.4: Use TestContainers with PostgreSQL for integration tests. Test all service operations with company-scoped data isolation. Verify RBAC enforcement at service and API levels. Test export functionality (Excel and PDF formats) with TT200 compliance. Test import and reconciliation logic with various scenarios (matched, mismatched, missing, applied). Verify dispute logging and resolution workflows. Test statement history tracking and batch operations (ZIP download, batch email). Validate email functionality (mocked for tests). Test audit logging for all operations. Use JUnit 5 for backend tests and Vitest + Testing Library for frontend component tests.
+    </standards>
+    
+    <locations>
+      backend/src/test/java/com/accounting/service/impl/ap/SupplierStatementServiceImplTest.java
+      backend/src/test/java/com/accounting/controller/ap/SupplierStatementControllerTest.java
+      backend/src/test/java/com/accounting/integration/SupplierStatementIntegrationTest.java
+      frontend/src/features/accounting/pages/SupplierStatements/__tests__/SupplierStatementList.test.tsx
+      frontend/src/features/accounting/pages/SupplierStatements/__tests__/GenerateStatementDialog.test.tsx
+      frontend/src/features/accounting/pages/SupplierStatements/__tests__/ImportStatementDialog.test.tsx
+    </locations>
+    
+    <ideas>
+      <test ac="1" idea="Test statement generation for both summary (by bill) and detailed (by payment/event) views. Verify correct data aggregation, opening/closing balance calculation, and line-by-line bill items and payment events."/>
+      <test ac="2" idea="Test Excel export using Apache POI with proper formatting (header, summary table, detailed table, footer with hash and legal text). Test PDF export with TT200-compliant format and UTF-8 encoding for Vietnamese characters."/>
+      <test ac="3" idea="Test email functionality with statement attachment, delivery logging, and audit trail. Verify sent_date and sent_to fields updated in SupplierStatementHistory. Test batch email with ZIP archive."/>
+      <test ac="4" idea="Test statement import parsing (Excel/CSV), comparison with system bills, and mismatch detection. Verify categorization (matched, mismatched, missing, applied) with tolerance-based amount matching. Test manual notes and adjustment voucher generation."/>
+      <test ac="5" idea="Test statement history tracking with all generated/sent statements. Verify pagination, filtering by supplier/date range/status. Test batch ZIP download with max size limit enforcement and audit logging."/>
+      <test ac="6" idea="Test dispute log creation with reason, status transitions (OPEN → IN_PROGRESS → RESOLVED/REJECTED), resolution notes, and actioned_by tracking. Verify disputes included in next statement export if unresolved. Test full audit compliance."/>
+      <test ac="7" idea="Test batch download ZIP generation with multiple statements. Verify max size limit enforcement (configurable, default 50MB). Test download/email event logging with initiator and timestamp."/>
+      <test ac="all" idea="Test RBAC enforcement: all authenticated users can generate/view (company-scoped), but export/email/reconciliation requires appropriate permissions. Test multi-tenancy: verify all queries filtered by company_id and no cross-company data access."/>
+      <test ac="all" idea="Test audit logging for all operations: generation, export, email, import, reconciliation, dispute updates. Verify action, user, timestamp, IP address, and change details captured in audit log."/>
+    </ideas>
+  </tests>
+</story-context>
+

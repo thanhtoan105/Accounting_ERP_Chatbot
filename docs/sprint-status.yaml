@@ -67,15 +67,15 @@ development_status:
   3-7-attachments-and-voucher-documentation: done
   epic-3-retrospective: completed
 
-  epic-4: backlog
-  4-1-purchase-bills-entry-edit-and-draft-management: backlog
-  4-2-purchase-bill-approval-workflow-maker-checker: backlog
-  4-3-cash-payments-linked-to-bills-standalone: backlog
-  4-4-ap-aging-and-overdue-alerts: backlog
-  4-5-supplier-statement-reconciliation: backlog
-  4-6-vat-handling-and-reporting: backlog
-  4-7-audit-trail-and-compliance-for-all-ap-activities: backlog
-  epic-4-retrospective: optional
+  epic-4: contexted
+  4-1-purchase-bills-entry-edit-and-draft-management: done
+  4-2-purchase-bill-approval-workflow-maker-checker: done
+  4-3-cash-payments-linked-to-bills-standalone: done
+  4-4-ap-aging-and-overdue-alerts: done
+  4-5-supplier-statement-reconciliation: done
+  4-6-vat-handling-and-reporting: done
+  4-7-audit-trail-and-compliance-for-all-ap-activities: done
+  epic-4-retrospective: done
 
   epic-5: backlog
   5-1-sales-invoice-entry-edit-and-draft-management: backlog

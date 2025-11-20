@@ -9,7 +9,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Utility class for security context operations.
- * Provides shared methods for extracting user information from security context.
+ * Provides shared methods for extracting user information from security
+ * context.
  */
 public class SecurityUtils {
 
@@ -19,7 +20,8 @@ public class SecurityUtils {
    * Get current user ID from security context.
    *
    * @return current user ID
-   * @throws ResponseStatusException if user cannot be determined (401 Unauthorized)
+   * @throws ResponseStatusException if user cannot be determined (401
+   *                                 Unauthorized)
    */
   public static Long getCurrentUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -27,13 +29,21 @@ public class SecurityUtils {
       throw new ResponseStatusException(
           HttpStatus.UNAUTHORIZED, "Unable to determine current user");
     }
+
+    Object principal = authentication.getPrincipal();
+
+    // Handle Long principal directly (from JWT filter)
+    if (principal instanceof Long) {
+      return (Long) principal;
+    }
+
+    // Handle String principal (fallback for other authentication mechanisms)
     try {
-      return Long.parseLong(authentication.getPrincipal().toString());
+      return Long.parseLong(principal.toString());
     } catch (NumberFormatException e) {
-      logger.error("Failed to parse user ID from authentication principal", e);
+      logger.error("Failed to parse user ID from authentication principal: {}", principal, e);
       throw new ResponseStatusException(
           HttpStatus.UNAUTHORIZED, "Unable to determine current user");
     }
   }
 }
-

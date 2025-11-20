@@ -33,4 +33,20 @@ public interface StorageService {
      * @return signed URL with expiry
      */
     String generateSignedUrl(String storagePath, int expiresInSeconds);
+
+    /**
+     * Upload a purchase bill attachment and return the storage path.
+     * 
+     * @param purchaseBillId purchase bill ID
+     * @param file file to upload
+     * @return storage path (e.g., "purchase-bills/{purchaseBillId}/{uuid}-{filename}")
+     */
+    String uploadPurchaseBillAttachment(UUID purchaseBillId, MultipartFile file);
+
+    /**
+     * Delete a purchase bill attachment from storage.
+     * 
+     * @param storagePath storage path of the file to delete
+     */
+    void deletePurchaseBillAttachment(String storagePath);
 }

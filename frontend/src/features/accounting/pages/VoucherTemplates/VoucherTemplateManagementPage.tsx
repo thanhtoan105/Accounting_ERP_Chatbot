@@ -66,9 +66,9 @@ import {
 import { toast } from 'sonner'
 
 const STATUS_FILTERS = [
-  { label: 'Tất cả trạng thái', value: 'all' },
-  { label: 'Đang kích hoạt', value: 'active' },
-  { label: 'Tạm ngưng', value: 'inactive' },
+  { label: 'All Status', value: 'all' },
+  { label: 'Active', value: 'active' },
+  { label: 'Inactive', value: 'inactive' },
 ]
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]
@@ -187,7 +187,7 @@ function TemplateStatusBadge({ isActive }: { isActive: boolean }) {
   }
   return (
     <Badge variant="outline" className="gap-1 text-muted-foreground">
-      Tạm ngưng
+      Inactive
     </Badge>
   )
 }
@@ -245,7 +245,7 @@ export default function VoucherTemplateManagementPage() {
       const response = await getPostableAccounts()
       setAccounts(mapAccountsToSummaries(response))
     } catch (err: any) {
-      setAccountsError(err?.message || 'Không thể tải danh mục tài khoản')
+      setAccountsError(err?.message || 'Cannot load account catalog')
       toast.error('Không thể tải danh mục tài khoản', { description: err?.message })
     } finally {
       setAccountsLoading(false)
@@ -259,9 +259,9 @@ export default function VoucherTemplateManagementPage() {
       const response = await getVoucherTemplates()
       setTemplates(response)
     } catch (err: any) {
-      const message = err?.message || 'Không thể tải danh sách mẫu chứng từ'
+      const message = err?.message || 'Cannot load voucher template list'
       setError(message)
-      toast.error('Tải mẫu thất bại', { description: message })
+      toast.error('Load voucher template failed', { description: message })
     } finally {
       setLoading(false)
     }
@@ -275,7 +275,7 @@ export default function VoucherTemplateManagementPage() {
     setRefreshing(true)
     await loadTemplates()
     setRefreshing(false)
-    toast.success('Đã làm mới danh sách mẫu')
+    toast.success('Refreshed voucher template list')
   }
 
   const openCreateDialog = () => {
@@ -313,9 +313,9 @@ export default function VoucherTemplateManagementPage() {
       setFormState(adjustedState)
       setEditingTemplateId(mode === 'edit' ? templateId : null)
     } catch (err: any) {
-      const message = err?.message || 'Không thể tải thông tin mẫu'
+      const message = err?.message || 'Cannot load template information'
       setFormError(message)
-      toast.error('Không thể mở biểu mẫu', { description: message })
+      toast.error('Cannot open template form', { description: message })
       setFormOpen(false)
     } finally {
       setFormLoading(false)
@@ -324,15 +324,15 @@ export default function VoucherTemplateManagementPage() {
 
   const validateForm = () => {
     if (!formState.name.trim()) {
-      setFormError('Tên mẫu là bắt buộc.')
+      setFormError('Template name is required.')
       return false
     }
     if (!formState.lines.length) {
-      setFormError('Cần ít nhất một dòng định khoản.')
+      setFormError('At least one line is required.')
       return false
     }
     if (formState.lines.some((line) => !line.debitAccount || !line.creditAccount)) {
-      setFormError('Mỗi dòng cần chọn đầy đủ tài khoản Nợ/Có.')
+        setFormError('Each line must select both debit and credit accounts.')
       return false
     }
     setFormError(null)
@@ -347,19 +347,19 @@ export default function VoucherTemplateManagementPage() {
       const isEdit = formMode === 'edit' && editingTemplateId
       if (isEdit) {
         await updateVoucherTemplate(editingTemplateId, payload)
-        toast.success('Đã cập nhật mẫu chứng từ')
+        toast.success('Updated voucher template')
       } else {
         await createVoucherTemplate(payload)
-        toast.success('Đã tạo mẫu chứng từ')
+        toast.success('Created voucher template')
       }
       setFormOpen(false)
       setFormState(initialFormState)
       setEditingTemplateId(null)
       await loadTemplates()
     } catch (err: any) {
-      const message = err?.message || 'Không thể lưu mẫu'
+      const message = err?.message || 'Cannot save template'
       setFormError(message)
-      toast.error('Lưu mẫu thất bại', { description: message })
+      toast.error('Save template failed', { description: message })
     } finally {
       setFormLoading(false)
     }
@@ -370,12 +370,12 @@ export default function VoucherTemplateManagementPage() {
     setDeleteLoading(true)
     try {
       await deleteVoucherTemplate(deleteState.template.id)
-      toast.success('Đã xoá mẫu chứng từ')
+      toast.success('Deleted voucher template')
       setDeleteState({ open: false, template: null })
       await loadTemplates()
     } catch (err: any) {
-      const message = err?.message || 'Không thể xoá mẫu'
-      toast.error('Xoá mẫu thất bại', { description: message })
+      const message = err?.message || 'Cannot delete template'
+      toast.error('Delete template failed', { description: message })
     } finally {
       setDeleteLoading(false)
     }
@@ -386,15 +386,15 @@ export default function VoucherTemplateManagementPage() {
     try {
       if (template.isActive) {
         await deactivateVoucherTemplate(template.id)
-        toast.success(`Đã tạm ngưng mẫu ${template.name}`)
+        toast.success(`Deactivated template ${template.name}`)
       } else {
         await activateVoucherTemplate(template.id)
-        toast.success(`Đã kích hoạt mẫu ${template.name}`)
+        toast.success(`Activated template ${template.name}`)
       }
       await loadTemplates()
     } catch (err: any) {
-      const message = err?.message || 'Không thể cập nhật trạng thái'
-      toast.error('Cập nhật trạng thái thất bại', { description: message })
+      const message = err?.message || 'Cannot update status'
+      toast.error('Update status failed', { description: message })
     } finally {
       setRowActionId(null)
     }
@@ -427,7 +427,7 @@ export default function VoucherTemplateManagementPage() {
         <TableRow>
           <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
             <Loader2 className="mx-auto mb-3 h-5 w-5 animate-spin" />
-            Đang tải danh sách mẫu...
+              Loading voucher template list...
           </TableCell>
         </TableRow>
       )
@@ -439,7 +439,7 @@ export default function VoucherTemplateManagementPage() {
           <TableCell colSpan={6} className="py-10 text-center">
             <p className="text-sm text-destructive">{error}</p>
             <Button variant="outline" size="sm" className="mt-3" onClick={loadTemplates}>
-              Thử lại
+              Try again
             </Button>
           </TableCell>
         </TableRow>
@@ -450,7 +450,7 @@ export default function VoucherTemplateManagementPage() {
       return (
         <TableRow>
           <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-            Không có mẫu phù hợp với bộ lọc hiện tại.
+            No template matches the current filter.
           </TableCell>
         </TableRow>
       )
@@ -466,14 +466,14 @@ export default function VoucherTemplateManagementPage() {
               <TemplateStatusBadge isActive={template.isActive} />
             </div>
             <p className="text-xs text-muted-foreground line-clamp-2">
-              {template.description || 'Không có mô tả'}
+              {template.description || 'No description'}
             </p>
           </div>
         </TableCell>
         <TableCell>
           {template.firstLineDebitAccount ? (
             <Badge variant="outline" className="text-xs">
-              Nợ {template.firstLineDebitAccount.code}
+              Debit {template.firstLineDebitAccount.code}
             </Badge>
           ) : (
             '—'
@@ -482,7 +482,7 @@ export default function VoucherTemplateManagementPage() {
         <TableCell>
           {template.firstLineCreditAccount ? (
             <Badge variant="outline" className="text-xs">
-              Có {template.firstLineCreditAccount.code}
+              Credit {template.firstLineCreditAccount.code}
             </Badge>
           ) : (
             '—'
@@ -494,7 +494,7 @@ export default function VoucherTemplateManagementPage() {
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Sửa"
+              aria-label="Edit"
               onClick={() => handleEdit(template)}
             >
               <Pencil className="h-4 w-4" />
@@ -502,7 +502,7 @@ export default function VoucherTemplateManagementPage() {
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Nhân bản"
+              aria-label="Duplicate"
               onClick={() => handleDuplicate(template)}
             >
               <Copy className="h-4 w-4" />
@@ -510,7 +510,7 @@ export default function VoucherTemplateManagementPage() {
             <Button
               variant="ghost"
               size="icon"
-              aria-label={template.isActive ? 'Tạm ngưng' : 'Kích hoạt'}
+              aria-label={template.isActive ? 'Deactivate' : 'Activate'}
               onClick={() => handleToggleStatus(template)}
               disabled={rowActionId === template.id}
             >
@@ -525,7 +525,7 @@ export default function VoucherTemplateManagementPage() {
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Xoá"
+              aria-label="Delete"
               onClick={() => setDeleteState({ open: true, template })}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -564,7 +564,7 @@ export default function VoucherTemplateManagementPage() {
           <div>
             <h1 className="text-2xl font-semibold">Voucher Templates</h1>
             <p className="text-sm text-muted-foreground">
-              Quản lý thư viện mẫu định khoản để áp dụng nhanh cho phiếu kế toán.
+              Manage voucher template library to apply quickly for accounting vouchers.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -572,18 +572,18 @@ export default function VoucherTemplateManagementPage() {
               {refreshing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang làm mới...
+                  Refreshing...
                 </>
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Làm mới
+                      Refresh
                 </>
               )}
             </Button>
             <Button onClick={openCreateDialog}>
               <Plus className="mr-2 h-4 w-4" />
-              Tạo mẫu mới
+              Create new template
             </Button>
           </div>
         </div>
@@ -594,7 +594,7 @@ export default function VoucherTemplateManagementPage() {
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Tìm tên hoặc mô tả..."
+              placeholder="Search by name or description..."
               className="pl-9"
             />
           </div>
@@ -603,7 +603,7 @@ export default function VoucherTemplateManagementPage() {
             onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
           >
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Trạng thái" />
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               {STATUS_FILTERS.map((option) => (
@@ -620,11 +620,11 @@ export default function VoucherTemplateManagementPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[60px] text-center">#</TableHead>
-                <TableHead>Tên mẫu</TableHead>
-                <TableHead className="w-[160px]">TK Nợ (dòng 1)</TableHead>
-                <TableHead className="w-[160px]">TK Có (dòng 1)</TableHead>
-                <TableHead className="w-[160px]">Người tạo</TableHead>
-                <TableHead className="w-[140px] text-center">Tác vụ</TableHead>
+                <TableHead>Template Name</TableHead>
+                <TableHead className="w-[160px]">Debit Account (Line 1)</TableHead>
+                <TableHead className="w-[160px]">Credit Account (Line 1)</TableHead>
+                <TableHead className="w-[160px]">Created By</TableHead>
+                <TableHead className="w-[140px] text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>{renderTableBody()}</TableBody>
@@ -633,12 +633,12 @@ export default function VoucherTemplateManagementPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
           <div>
-            Hiển thị {paginatedTemplates.length ? page * pageSize + 1 : 0}-
-            {page * pageSize + paginatedTemplates.length} / {filteredTemplates.length} mẫu
+            Display {paginatedTemplates.length ? page * pageSize + 1 : 0}-
+            {page * pageSize + paginatedTemplates.length} / {filteredTemplates.length} templates
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2">
-              <span>Kích thước trang</span>
+              <span>Page size</span>
               <Select
                 value={String(pageSize)}
                 onValueChange={(value) => setPageSize(Number(value))}
@@ -665,7 +665,7 @@ export default function VoucherTemplateManagementPage() {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span>
-                Trang {page + 1}/{totalPages}
+                Page {page + 1}/{totalPages}
               </span>
               <Button
                 variant="outline"
@@ -685,24 +685,24 @@ export default function VoucherTemplateManagementPage() {
           <DialogHeader>
             <DialogTitle>
               {formMode === 'edit'
-                ? 'Chỉnh sửa mẫu chứng từ'
+                  ? 'Edit voucher template'
                 : formMode === 'duplicate'
-                  ? 'Nhân bản mẫu chứng từ'
-                  : 'Tạo mẫu chứng từ'}
+                  ? 'Duplicate voucher template'
+                  : 'Create voucher template'}
             </DialogTitle>
             <DialogDescription>
               {formMode === 'edit'
-                ? 'Cập nhật thông tin mẫu và các dòng định khoản mặc định.'
+                ? 'Update template information and default line accounts.'
                 : formMode === 'duplicate'
-                  ? 'Sao chép mẫu hiện có, bạn có thể chỉnh sửa trước khi lưu.'
-                  : 'Khai báo các dòng định khoản mẫu để áp dụng nhanh cho phiếu kế toán.'}
+                  ? 'Copy existing template, you can edit before saving.'
+                  : 'Declare template line accounts to apply quickly for accounting vouchers.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {(formLoading || accountsLoading) && (
               <div className="rounded-md border border-dashed px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Đang tải dữ liệu...
+                Loading data...
               </div>
             )}
             {formError ? (
@@ -712,18 +712,18 @@ export default function VoucherTemplateManagementPage() {
             ) : null}
             <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
               <div className="space-y-2">
-                <Label htmlFor="template-name">Tên mẫu *</Label>
+                <Label htmlFor="template-name">Template Name *</Label>
                 <Input
                   id="template-name"
                   value={formState.name}
                   onChange={(event) =>
                     setFormState((prev) => ({ ...prev, name: event.target.value }))
                   }
-                  placeholder="VD: Thu tiền mặt khách hàng"
+                  placeholder="Example: Cash received from customer"
                 />
               </div>
               <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                <span className="text-sm font-medium">Kích hoạt</span>
+                <span className="text-sm font-medium">Active</span>
                 <Switch
                   checked={formState.isActive}
                   onCheckedChange={(checked) =>
@@ -733,7 +733,7 @@ export default function VoucherTemplateManagementPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="template-description">Mô tả</Label>
+              <Label htmlFor="template-description">Description</Label>
               <Textarea
                 id="template-description"
                 rows={3}
@@ -741,20 +741,20 @@ export default function VoucherTemplateManagementPage() {
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, description: event.target.value }))
                 }
-                placeholder="Mô tả mục đích sử dụng mẫu..."
+                placeholder="Description of template purpose..."
               />
             </div>
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-sm">Dòng định khoản mẫu</p>
+                    <p className="font-semibold text-sm">Template line accounts</p>
                 <p className="text-xs text-muted-foreground">
-                  Mỗi dòng gồm 1 tài khoản Nợ + 1 tài khoản Có và các điều kiện bắt buộc.
+                  Each line must have 1 debit account + 1 credit account and required conditions.
                 </p>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={addLine}>
                 <Plus className="mr-1.5 h-4 w-4" />
-                Thêm dòng
+                Add line
               </Button>
             </div>
             <ScrollArea className="max-h-[420px] rounded-md border p-4">
@@ -765,7 +765,7 @@ export default function VoucherTemplateManagementPage() {
                     className="rounded-lg border p-4 space-y-3 bg-muted/40 relative"
                   >
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline">Dòng {index + 1}</Badge>
+                      <Badge variant="outline">Line {index + 1}</Badge>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -773,12 +773,12 @@ export default function VoucherTemplateManagementPage() {
                         onClick={() => removeLine(line.id)}
                         className="text-destructive"
                       >
-                        Xoá
+                        Delete
                       </Button>
                     </div>
                     <div className="grid gap-3 md:grid-cols-2">
                       <div>
-                        <Label>Tài khoản Nợ *</Label>
+                        <Label>Debit Account *</Label>
                         <AccountPicker
                           options={accounts}
                           value={line.debitAccount}
@@ -787,7 +787,7 @@ export default function VoucherTemplateManagementPage() {
                         />
                       </div>
                       <div>
-                        <Label>Tài khoản Có *</Label>
+                        <Label>Credit Account *</Label>
                         <AccountPicker
                           options={accounts}
                           value={line.creditAccount}
@@ -797,13 +797,13 @@ export default function VoucherTemplateManagementPage() {
                       </div>
                     </div>
                     <div>
-                      <Label>Diễn giải mặc định</Label>
+                      <Label>Default description</Label>
                       <Input
                         value={line.defaultDescription}
                         onChange={(event) =>
                           updateLine(line.id, { defaultDescription: event.target.value })
                         }
-                        placeholder="VD: Thu tiền mặt của khách hàng..."
+                        placeholder="Example: Cash received from customer..."
                       />
                     </div>
                     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
@@ -814,7 +814,7 @@ export default function VoucherTemplateManagementPage() {
                             updateLine(line.id, { requiresCustomer: Boolean(checked) })
                           }
                         />
-                        Yêu cầu khách hàng
+                        Requires customer
                       </Label>
                       <Label className="flex items-center gap-2 text-sm font-medium">
                         <Checkbox
@@ -823,7 +823,7 @@ export default function VoucherTemplateManagementPage() {
                             updateLine(line.id, { requiresSupplier: Boolean(checked) })
                           }
                         />
-                        Yêu cầu nhà cung cấp
+                        Requires supplier
                       </Label>
                       <Label className="flex items-center gap-2 text-sm font-medium">
                         <Checkbox
@@ -832,16 +832,16 @@ export default function VoucherTemplateManagementPage() {
                             updateLine(line.id, { requiresCostCenter: Boolean(checked) })
                           }
                         />
-                        Yêu cầu trung tâm chi phí
+                            Requires cost center
                       </Label>
                       <Label className="flex items-center justify-between gap-2 text-sm font-medium">
-                        Khoá tài khoản
-                        <Switch
+                        <Checkbox
                           checked={line.lockAccounts}
                           onCheckedChange={(checked) =>
                             updateLine(line.id, { lockAccounts: Boolean(checked) })
                           }
                         />
+                          Lock accounts
                       </Label>
                     </div>
                   </div>

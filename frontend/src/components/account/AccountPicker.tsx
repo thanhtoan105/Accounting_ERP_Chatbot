@@ -42,20 +42,20 @@ export interface AccountPickerProps {
 }
 
 const BALANCE_LABEL: Record<AccountBalanceSide, string> = {
-  debit: 'Dư nợ',
-  credit: 'Dư có',
-  both: 'Lưỡng tính',
+  debit: 'Debit',
+  credit: 'Credit',
+  both: 'Balanced',
 }
 
 export function AccountPicker({
   value = null,
   options,
   onChange,
-  placeholder = 'Chọn tài khoản...',
+  placeholder = 'Select account...',
   allowOverride = true,
   disabled = false,
   lockReason,
-  searchPlaceholder = 'Tìm theo mã hoặc tên...',
+  searchPlaceholder = 'Search by code or name...',
   className,
 }: AccountPickerProps) {
   const [open, setOpen] = useState(false)
@@ -84,7 +84,7 @@ export function AccountPicker({
                   disabled={disabled || isLocked}
                   role="combobox"
                   aria-expanded={open}
-                  aria-label="Chọn tài khoản kế toán"
+                  aria-label="Select accounting account"
                 >
                   <span className="truncate">{selectedLabel}</span>
                   {isLocked ? (
@@ -103,7 +103,7 @@ export function AccountPicker({
                 <Command>
                   <CommandInput placeholder={searchPlaceholder} />
                   <CommandList>
-                    <CommandEmpty>Không tìm thấy tài khoản.</CommandEmpty>
+                    <CommandEmpty>No accounts found.</CommandEmpty>
                     <CommandGroup>
                       <CommandItem
                         value="__clear__"
@@ -112,7 +112,7 @@ export function AccountPicker({
                           setOpen(false)
                         }}
                       >
-                        <span className="text-muted-foreground">Bỏ chọn</span>
+                        <span className="text-muted-foreground">Clear selection</span>
                         {!value ? <CheckIcon className="ml-auto size-4" /> : null}
                       </CommandItem>
                       {options.map((account) => {
@@ -132,7 +132,7 @@ export function AccountPicker({
                                   {BALANCE_LABEL[account.balanceSide]}
                                 </Badge>
                                 {!account.isLeaf ? (
-                                  <Badge variant="destructive">Không hạch toán</Badge>
+                                  <Badge variant="destructive">Not debited or credited</Badge>
                                 ) : null}
                               </div>
                             </div>

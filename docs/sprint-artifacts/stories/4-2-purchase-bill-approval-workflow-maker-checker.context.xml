@@ -1,0 +1,252 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>2</storyId>
+    <title>Purchase Bill Approval Workflow (Maker-Checker)</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-2-purchase-bill-approval-workflow-maker-checker.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Chief Accountant or CFO</asA>
+    <iWant>purchase bills above a configurable threshold to require approval through a maker-checker workflow</iWant>
+    <soThat>high-value supplier payments are properly authorized and financial controls are maintained</soThat>
+    <tasks>
+- Backend: Create ApprovalWorkflow entity and approval threshold configuration (AC: #1, #2, #9)
+- Backend: ApprovalWorkflow service and threshold checking logic (AC: #1, #2, #4, #8, #9)
+- Backend: Notification service integration for approval alerts (AC: #3)
+- Backend: ApprovalWorkflow controller and API endpoints (AC: #4, #5, #7, #8)
+- Backend: Audit logging and workflow history tracking (AC: #6, #10)
+- Backend: Integration with voucher posting engine (AC: #7)
+- Frontend: Approval workflow UI integration in existing components (AC: #5)
+- Frontend: Approval decision UI and workflow history viewer (AC: #5, #6)
+- Frontend: In-app notification system for approval workflows (AC: #3)
+- Testing: Unit and integration tests for approval workflow (AC: #1-#10)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Approval threshold is admin-configurable (default 20M VND)
+2. If bill exceeds threshold OR marked sensitive: auto-moves to 'Pending Approval' status
+3. In-app notification (bell icon) and email notification to Chief Accountant (with backup/escalation after 48h/no action)
+4. Approver ≠ creator enforced by system (database constraint + application logic)
+5. Approver UI: Approve/Reject buttons (with reason mandatory on reject), all attachments/history shown
+6. All workflow state transitions (draft→pending→posted/rejected) logged and visible in bill audit
+7. On approval, mark "Posted by" as approver (not creator)
+8. Approval after period close disabled; error on attempt, logged
+9. If workflow not triggered (amount ≤ threshold AND not sensitive): auto-approve, logs shadow "auto-approved" record
+10. All notification/rejection/status updates audit-logged
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic 4 Technical Specification - Approval Workflow Details</title>
+        <section>Story 4.2: Purchase Bill Approval Workflow (Maker-Checker)</section>
+        <snippet>Configurable approval threshold (default 20M VND), in-app/email notifications, approver ≠ creator enforcement, workflow state transitions with audit logging. Includes sequence diagram for approval flow and integration with voucher posting engine.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Purchase Bill Approval Flow Sequence Diagram</title>
+        <section>Workflows and Sequencing - Purchase Bill Approval Flow</section>
+        <snippet>Complete sequence diagram showing Accountant (Maker) → System → Database → Chief Accountant (Checker) → Notification Service → Voucher Engine flow. Covers threshold checking, workflow creation, approval/rejection paths, and auto-approval for bills below threshold.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-1-purchase-bills-entry-edit-and-draft-management.md</path>
+        <title>Story 4.1 - Purchase Bills Foundation (Prerequisite)</title>
+        <section>Completion Notes List</section>
+        <snippet>ApprovalWorkflow infrastructure ready: PurchaseBillStatus enum includes PENDING_APPROVAL and REJECTED statuses, PurchaseBill entity includes approved_by_id field. Validation service patterns with PurchaseBillValidationResult DTO, comprehensive audit logging via PurchaseBillAuditHelper. Service layer patterns with company scoping and RBAC enforcement established.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/security-architecture.md</path>
+        <title>Security Architecture - RBAC and Authentication</title>
+        <section>Authorization</section>
+        <snippet>Role-Based Access Control: Admin, Accountant, Chief Accountant, CFO roles. Spring Security method-level security with @PreAuthorize annotations. API-level permission checks and company-level data isolation. JWT authentication with access tokens and refresh tokens.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/PurchaseBill.java</path>
+        <kind>entity</kind>
+        <symbol>PurchaseBill</symbol>
+        <lines>29-276</lines>
+        <reason>Existing purchase bill entity with approved_by_id field and PENDING_APPROVAL/REJECTED statuses already in place from Story 4.1. Extend for approval workflow integration.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PurchaseBillService.java</path>
+        <kind>service-interface</kind>
+        <symbol>PurchaseBillService</symbol>
+        <lines>14-112</lines>
+        <reason>Existing service with CRUD operations, company scoping, and RBAC patterns. Extend with approval workflow trigger methods (submitForApproval, approve, reject).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/util/PurchaseBillAuditHelper.java</path>
+        <kind>helper</kind>
+        <symbol>PurchaseBillAuditHelper</symbol>
+        <lines>17-86</lines>
+        <reason>Audit helper with JSON snapshot serialization and SHA-256 diff hash calculation. Reuse pattern for approval workflow state transitions logging.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service-interface</kind>
+        <symbol>AuditService</symbol>
+        <lines>10-914</lines>
+        <reason>Comprehensive audit logging interface with methods for all entity operations. Add new methods: logApprovalWorkflowCreated, logBillApproved, logBillRejected, logApprovalNotificationSent, logApprovalEscalation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PeriodManagementService.java</path>
+        <kind>service-interface</kind>
+        <symbol>PeriodManagementService</symbol>
+        <lines>17-148</lines>
+        <reason>Period validation service with isPeriodOpen() and validatePeriodForVoucherOperation() methods. Reuse for approval period validation (AC #8).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/EmailService.java</path>
+        <kind>service-interface</kind>
+        <symbol>EmailService</symbol>
+        <lines>6-28</lines>
+        <reason>Email notification service with Resend integration. Extend with sendApprovalRequestEmail() and sendApprovalDecisionEmail() methods for approval workflow notifications (AC #3).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/PurchaseBills/PurchaseBillList.tsx</path>
+        <kind>component</kind>
+        <symbol>PurchaseBillList</symbol>
+        <lines>N/A</lines>
+        <reason>Existing list component with TanStack Table, search, filters, pagination. Extend with approval status badges, "Submit for Approval" and "Approve/Reject" action buttons (AC #5).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/PurchaseBills/PurchaseBillForm.tsx</path>
+        <kind>component</kind>
+        <symbol>PurchaseBillForm</symbol>
+        <lines>N/A</lines>
+        <reason>Existing form component with validation, line items grid, attachments. Show approval workflow status and history timeline (AC #6).</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <backend>
+        <dependency name="spring-boot-starter-web" version="3.5.7">REST API endpoints for approval workflow</dependency>
+        <dependency name="spring-boot-starter-data-jpa" version="3.5.7">Persistence for ApprovalWorkflow entity</dependency>
+        <dependency name="spring-boot-starter-security" version="3.5.7">RBAC enforcement (Chief Accountant/CFO can approve)</dependency>
+        <dependency name="spring-boot-starter-validation" version="3.5.7">Input validation for approval requests</dependency>
+        <dependency name="resend-java" version="3.1.0">Email notifications for approval requests and decisions</dependency>
+        <dependency name="postgresql" version="42.7.4">Database for approval_workflows table</dependency>
+        <dependency name="flyway-core" version="11.10.0">Database migration for approval schema</dependency>
+        <dependency name="jjwt" version="0.12.5">JWT token handling for user context</dependency>
+      </backend>
+      <frontend>
+        <dependency name="react" version="18+">UI components for approval workflow</dependency>
+        <dependency name="@tanstack/react-table" version="latest">Approval workflow history table</dependency>
+        <dependency name="shadcn/ui" version="latest">Approval decision dialog, status badges</dependency>
+        <dependency name="axios" version="latest">API calls for approval operations</dependency>
+        <dependency name="date-fns" version="latest">Date formatting for approval timestamps</dependency>
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Multi-tenancy: All approval workflow operations must be company-scoped via CompanyScopedEntity and CompanyContext. Database queries filtered by company_id.</constraint>
+    <constraint>RBAC: Chief Accountant and CFO roles can approve/reject bills. Accountant role can only submit for approval. Use @PreAuthorize annotations for method-level security.</constraint>
+    <constraint>Database: Approver ≠ creator enforced at database constraint level (CHECK constraint) AND application logic in service layer.</constraint>
+    <constraint>Period Validation: Approval operations must respect period close rules. Bills cannot be approved if period is closed. Reuse PeriodManagementService for validation.</constraint>
+    <constraint>Threshold Configuration: Approval threshold stored in database configuration table (default 20M VND), configurable by Admin at runtime.</constraint>
+    <constraint>Notification Strategy: Dual notification system - in-app (primary) and email (secondary). Email failures must not block approval operations.</constraint>
+    <constraint>Audit Trail: All approval workflow state transitions logged with before/after snapshots, SHA-256 diff hash, user/timestamp/IP. Append-only, immutable.</constraint>
+    <constraint>Transaction Integrity: Approval operations wrapped in @Transactional with rollback on validation failures. Atomic workflow creation and bill status update.</constraint>
+    <constraint>Auto-Approval: Bills ≤ threshold AND not sensitive must auto-approve with shadow workflow record for audit trail (AC #9).</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /api/v1/purchase-bills/{id}/submit-for-approval</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/purchase-bills/{id}/submit-for-approval - Request: {}, Response: PurchaseBillDTO with updated status</signature>
+      <path>backend/src/main/java/com/accounting/controller/purchase/PurchaseBillController.java</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/purchase-bills/{id}/approve</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/purchase-bills/{id}/approve - Request: {reason?: string}, Response: PurchaseBillDTO with POSTED status, @PreAuthorize("hasAnyRole('CHIEF_ACCOUNTANT', 'CFO')")</signature>
+      <path>backend/src/main/java/com/accounting/controller/purchase/ApprovalWorkflowController.java (new)</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/purchase-bills/{id}/reject</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/purchase-bills/{id}/reject - Request: {reason: string}, Response: PurchaseBillDTO with REJECTED status, @PreAuthorize("hasAnyRole('CHIEF_ACCOUNTANT', 'CFO')")</signature>
+      <path>backend/src/main/java/com/accounting/controller/purchase/ApprovalWorkflowController.java (new)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/approval-workflows/pending</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/approval-workflows/pending - Response: List&lt;ApprovalWorkflowDTO&gt; for current user's role (Chief Accountant/CFO)</signature>
+      <path>backend/src/main/java/com/accounting/controller/purchase/ApprovalWorkflowController.java (new)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/purchase-bills/{id}/approval-history</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/purchase-bills/{id}/approval-history - Response: List&lt;ApprovalWorkflowEventDTO&gt; with timeline data</signature>
+      <path>backend/src/main/java/com/accounting/controller/purchase/ApprovalWorkflowController.java (new)</path>
+    </interface>
+    <interface>
+      <name>ApprovalWorkflowService.checkApprovalRequired</name>
+      <kind>service method</kind>
+      <signature>boolean checkApprovalRequired(PurchaseBill bill) - Returns true if bill.totalAmount > threshold OR bill.isSensitive</signature>
+      <path>backend/src/main/java/com/accounting/service/ApprovalWorkflowService.java (new)</path>
+    </interface>
+    <interface>
+      <name>ApprovalWorkflowService.submitForApproval</name>
+      <kind>service method</kind>
+      <signature>ApprovalWorkflowDTO submitForApproval(UUID billId, Long submitterId) - Creates workflow, updates bill status to PENDING_APPROVAL, triggers notifications</signature>
+      <path>backend/src/main/java/com/accounting/service/ApprovalWorkflowService.java (new)</path>
+    </interface>
+    <interface>
+      <name>ApprovalWorkflowService.approve</name>
+      <kind>service method</kind>
+      <signature>ApprovalWorkflowDTO approve(UUID workflowId, Long approverId, String reason) - Validates approver ≠ creator, period open, posts bill via VoucherEngine</signature>
+      <path>backend/src/main/java/com/accounting/service/ApprovalWorkflowService.java (new)</path>
+    </interface>
+    <interface>
+      <name>ApprovalWorkflowService.reject</name>
+      <kind>service method</kind>
+      <signature>ApprovalWorkflowDTO reject(UUID workflowId, Long approverId, String reason) - Updates workflow status to REJECTED, bill status to REJECTED, sends notification to creator</signature>
+      <path>backend/src/main/java/com/accounting/service/ApprovalWorkflowService.java (new)</path>
+    </interface>
+    <interface>
+      <name>EmailService.sendApprovalRequestEmail</name>
+      <kind>service method</kind>
+      <signature>void sendApprovalRequestEmail(String toEmail, String billNumber, BigDecimal amount, String supplierName, String approvalUrl) - Sends email to Chief Accountant for approval request</signature>
+      <path>backend/src/main/java/com/accounting/service/EmailService.java (extend)</path>
+    </interface>
+    <interface>
+      <name>EmailService.sendApprovalDecisionEmail</name>
+      <kind>service method</kind>
+      <signature>void sendApprovalDecisionEmail(String toEmail, String billNumber, boolean approved, String reason) - Sends email to bill creator with approval/rejection decision</signature>
+      <path>backend/src/main/java/com/accounting/service/EmailService.java (extend)</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Follow testing patterns established in Story 4.1: Use TestContainers with PostgreSQL for integration tests. Mock external services (email) in unit tests. Test approval workflow state transitions comprehensively. Verify RBAC enforcement at all levels (service, controller, UI). Test approver ≠ creator constraint thoroughly. Validate notification sending and escalation logic. Backend: JUnit 5 + Mockito + AssertJ. Frontend: Vitest + Testing Library. Target: 70% coverage for service layer, critical flows for integration tests.</standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/impl/purchase/ApprovalWorkflowServiceImplTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/controller/purchase/ApprovalWorkflowControllerIntegrationTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/service/impl/purchase/ApprovalNotificationServiceImplTest.java (new)</location>
+      <location>frontend/src/components/purchase/__tests__/ApprovalDecisionDialog.test.tsx (new)</location>
+      <location>frontend/src/components/purchase/__tests__/ApprovalWorkflowHistory.test.tsx (new)</location>
+      <location>tests/e2e/approval-workflow.spec.ts (new)</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test approval threshold is configurable via admin settings. Verify default value is 20M VND. Test threshold changes apply immediately to new bills.</idea>
+      <idea ac="2">Test bills exceeding threshold auto-move to PENDING_APPROVAL status. Test sensitive flag triggers approval regardless of amount. Test bills ≤ threshold bypass workflow.</idea>
+      <idea ac="3">Test in-app notification sent to Chief Accountant on approval request. Test email notification sent via Resend service. Test escalation notification after 48h no action. Mock email service in tests.</idea>
+      <idea ac="4">Test approver = creator returns 400 error at service level. Test database CHECK constraint prevents same user approval. Test different users in same role can approve.</idea>
+      <idea ac="5">Test approve/reject buttons only visible to Chief Accountant/CFO roles. Test rejection requires mandatory reason. Test all attachments and history shown in approval UI.</idea>
+      <idea ac="6">Test workflow state transitions logged with before/after snapshots. Test SHA-256 diff hash calculated for each transition. Test audit timeline shows all events chronologically.</idea>
+      <idea ac="7">Test posted bill shows approver as "Posted by" not creator. Test voucher audit trail shows approver user. Test approval timestamp recorded correctly.</idea>
+      <idea ac="8">Test approval after period close returns validation error. Test approval blocked with clear error message. Test audit log records blocked attempt.</idea>
+      <idea ac="9">Test bills ≤ threshold auto-approve with shadow workflow record. Test auto-approval logged in audit trail. Test auto-approved bills skip notification.</idea>
+      <idea ac="10">Test all notification send attempts logged. Test rejection reason logged with timestamp. Test status updates logged with user/IP address.</idea>
+    </ideas>
+  </tests>
+</story-context>

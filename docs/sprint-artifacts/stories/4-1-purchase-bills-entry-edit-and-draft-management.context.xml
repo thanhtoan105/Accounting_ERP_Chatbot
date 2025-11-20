@@ -1,0 +1,313 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>1</storyId>
+    <title>Purchase Bills – Entry, Edit, and Draft Management</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-15T20:19:12Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/4-1-purchase-bills-entry-edit-and-draft-management.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>accountant</asA>
+    <iWant>create, edit, and validate supplier bills</iWant>
+    <soThat>all AP data is accurate, well-documented, and easily retrievable</soThat>
+    <tasks>
+- [ ] Backend: Create PurchaseBill entity and database migration (AC: #1, #2, #3, #4, #6, #7, #10)
+  - [ ] Create `PurchaseBill` entity with fields: id, company_id, supplier_id, bill_number, bill_date, due_date, reference, description, status (DRAFT, PENDING_APPROVAL, POSTED, REJECTED, PAID, PARTIALLY_PAID), total_amount, vat_amount, created_by_id, approved_by_id, created_at, updated_at
+  - [ ] Implement `CompanyScopedEntity` interface for multi-tenancy
+  - [ ] Add unique constraint `UNIQUE(company_id, supplier_id, bill_number, EXTRACT(YEAR FROM bill_date))` at database level
+  - [ ] Create `PurchaseBillLine` entity with fields: id, purchase_bill_id, line_number, account_id, description, quantity, unit_price, amount, vat_rate (0/5/10/EXEMPT), vat_amount, cost_center_id (optional), item_id (optional)
+  - [ ] Create Flyway migration `V{next}__create_purchase_bills.sql` with table creation
+  - [ ] Add validation annotations: `@NotBlank` for required fields, `@Positive` for amounts, `@Min(0)` for quantities
+  - [ ] Add foreign key constraints: supplier_id → suppliers, account_id → chart_of_accounts, created_by_id → users, approved_by_id → users
+  - [ ] Add check constraints: positive amounts, valid date ranges, VAT rate enum values
+  - [ ] Add indexes: supplier_id, bill_date, status, company_id (for multi-tenancy filtering)
+- [ ] Backend: PurchaseBill validation service (AC: #1, #2, #6, #7, #8, #10)
+  - [ ] Create `PurchaseBillValidationService` interface and implementation
+  - [ ] Implement `validateBillNumber(supplierId, billNumber, billDate, companyId)` - checks uniqueness per supplier/year
+  - [ ] Implement `validateDates(billDate, dueDate)` - checks future dates disabled, period validation
+  - [ ] Implement `validateLineItems(lines)` - checks leaf/postable accounts, positive amounts, required dimensions
+  - [ ] Implement `validateVATSum(headerVAT, lineVATSum)` - checks VAT sum match (tolerance: 1,000₫)
+  - [ ] Implement `validateDuplicate(supplierId, billNumber, billDate, companyId)` - checks duplicate supplier+bill/date combination
+  - [ ] Implement `validateRequiredDimensions(lines)` - checks required dimensions (customer for AR accounts, supplier for AP accounts, cost center for expense accounts)
+  - [ ] Return detailed field-level error map (not generic 400) with errors for each field
+- [ ] Backend: PurchaseBill service and repository (AC: #1, #2, #3, #4, #6, #7, #9, #10, #12)
+  - [ ] Create `PurchaseBillService` interface and `PurchaseBillServiceImpl`
+  - [ ] Implement `findAll()` with pagination, sorting, filtering (supplier, status, date range, search)
+  - [ ] Implement `findById(id)` with company scoping
+  - [ ] Implement `create(billData)` with validation and audit logging
+  - [ ] Implement `update(id, billData)` - only DRAFT status, creator-only unless admin
+  - [ ] Implement `delete(id)` - only DRAFT status, creator-only unless admin
+  - [ ] Implement `saveDraft(billData)` - autosave every 30 seconds, optimistic UI updates
+  - [ ] Implement `recoverDraft(id)` - recoverable by creator/admin
+  - [ ] Implement `checkDuplicate(supplierId, billNumber, billDate)` method
+  - [ ] Add search method with unaccented Vietnamese support (PostgreSQL `unaccent` extension)
+  - [ ] Integrate `AuditLogService` for all operations (create, edit, draft, import, delete)
+- [ ] Backend: PurchaseBill controller and API (AC: #1, #2, #3, #4, #6, #7, #9, #10, #11)
+  - [ ] Create `PurchaseBillController` with REST endpoints:
+    - [ ] `GET /api/v1/purchase-bills` (pagination, sorting, filters, search)
+    - [ ] `GET /api/v1/purchase-bills/{id}` (bill details with lines and attachments)
+    - [ ] `POST /api/v1/purchase-bills` (create with validation)
+    - [ ] `PUT /api/v1/purchase-bills/{id}` (update - only DRAFT, creator-only)
+    - [ ] `DELETE /api/v1/purchase-bills/{id}` (delete - only DRAFT, creator-only)
+    - [ ] `POST /api/v1/purchase-bills/{id}/save-draft` (autosave endpoint)
+    - [ ] `GET /api/v1/purchase-bills/drafts` (list recoverable drafts)
+    - [ ] `POST /api/v1/purchase-bills/batch-import` (Excel import with atomic save, error reporting)
+  - [ ] Support query params: `page`, `size`, `sort`, `supplier`, `status`, `dateFrom`, `dateTo`, `search` (string)
+  - [ ] Return proper HTTP status codes: 200, 201, 204, 400, 403, 404, 409 (Conflict for duplicates)
+  - [ ] Add RBAC: All authenticated users can view; edit requires accountant roles
+  - [ ] Return detailed error messages for duplicate detection and validation failures
+  - [ ] Return 409 Conflict when attempting to edit/delete posted bills
+- [ ] Backend: PurchaseBill batch import service (AC: #11)
+  - [ ] Create `PurchaseBillImportService` interface and implementation
+  - [ ] Implement `importBills(file)` method:
+    - [ ] Parse Excel file (Apache POI) with validated template format
+    - [ ] Validate headers and data types
+    - [ ] Validate each row (supplier, bill number, dates, line items, VAT)
+    - [ ] Collect all errors before saving
+    - [ ] Atomic transaction: all valid rows or none
+    - [ ] Generate downloadable error map with row numbers and reasons
+    - [ ] Auto-add unknown supplier pending confirm (create draft supplier)
+    - [ ] Create audit log entry for each imported row
+- [ ] Backend: Attachment management service (AC: #5)
+  - [ ] Create `PurchaseBillAttachmentService` interface and implementation
+  - [ ] Implement `uploadAttachment(billId, file)` - validates file type, size (max 20MB total, 10 files)
+  - [ ] Implement `deleteAttachment(billId, attachmentId)` - only for DRAFT bills
+  - [ ] Integrate with Supabase Storage for file storage
+  - [ ] Add file type validation (PDF, images)
+  - [ ] Add virus scan simulation with error handling
+  - [ ] Log all attachment operations in audit trail
+- [ ] Backend: VAT calculation and validation service (AC: #7)
+  - [ ] Create `VATService` interface and implementation
+  - [ ] Implement `calculateVAT(amount, rate)` - supports 0%, 5%, 10%, EXEMPT
+  - [ ] Implement `validateVATSum(headerVAT, lineVATSum)` - checks sum match (tolerance: 1,000₫)
+  - [ ] Implement `mapToGL(vatAmount)` - maps VAT to account 3331 (TT200 compliance)
+  - [ ] Return detailed error messages for VAT mismatches
+- [ ] Backend: Due date calculation service (AC: #3)
+  - [ ] Create `DueDateCalculationService` interface and implementation
+  - [ ] Implement `calculateDueDate(billDate, paymentTerms)` - default 30 days
+  - [ ] Support configurable payment terms per supplier or company default
+  - [ ] Handle business days calculation (exclude weekends/holidays if configured)
+- [ ] Frontend: PurchaseBill list page component (AC: #1, #10)
+  - [ ] Create `PurchaseBills.tsx` page component using data-table pattern (TanStack Table)
+  - [ ] Implement table columns: Bill Number, Supplier, Bill Date, Due Date, Amount, VAT, Status, Actions
+  - [ ] Add search input with debounced typeahead (300ms delay)
+  - [ ] Add filters: Supplier, Status (DRAFT, PENDING_APPROVAL, POSTED, etc.), Date Range
+  - [ ] Add sorting: by bill date, amount, supplier (ascending/descending)
+  - [ ] Implement pagination with page size selector (10, 20, 30, 50, 100)
+  - [ ] Display record count and pagination controls
+  - [ ] Add refresh button to reload table data
+  - [ ] Gray out or badge different statuses (DRAFT, POSTED, etc.)
+- [ ] Frontend: PurchaseBill form component (AC: #1, #2, #3, #4, #6, #7, #8, #9, #10)
+  - [ ] Create `PurchaseBillForm.tsx` component (Dialog-based modal or full page)
+  - [ ] Implement form fields:
+    - [ ] Supplier picker with typeahead search and "add new supplier" option (AC: #1)
+    - [ ] Bill Number input with duplicate validation (AC: #1)
+    - [ ] Bill Date picker - disables future dates and holidays, locks after post (AC: #2)
+    - [ ] Due Date input - auto-calculated from bill date + payment terms, editable in draft only (AC: #3)
+    - [ ] Reference/Description input - required, Unicode, 100 char limit (AC: #4)
+    - [ ] Status display (read-only, shows current status)
+  - [ ] Implement line items grid:
+    - [ ] Create `PurchaseBillLineGrid.tsx` component using TanStack Table pattern
+    - [ ] Grid columns: STT, Account (leaf/postable enforced), Description (required), Quantity, Unit Price, Amount (qty × price), VAT Rate (0/5/10/exempt), VAT Amount, Dimensions
+    - [ ] Add AccountPicker for account column with leaf-only validation
+    - [ ] Add MoneyInput for quantity, unit price, amount columns
+    - [ ] Add VAT rate selector with badge/warning for 0% rate (AC: #7)
+    - [ ] Implement keyboard navigation (Tab/Enter) through cells
+    - [ ] Add inline validation with error indicators and tooltips
+    - [ ] Add row operations: insert, duplicate, delete with keyboard shortcuts
+    - [ ] Add dimension pickers (customer/vendor/cost center) with required field validation
+    - [ ] Auto-calculate amount = quantity × unit_price
+    - [ ] Auto-calculate VAT amount based on rate
+    - [ ] Show VAT sum validation error if mismatch >1,000₫ (AC: #7)
+    - [ ] Show required dimension error with UX pointer (AC: #8)
+  - [ ] Implement draft autosave (AC: #9):
+    - [ ] Auto-save every 30 seconds
+    - [ ] Optimistic UI updates
+    - [ ] Edit lock with timeout (clears if session lost >5 min)
+    - [ ] Undo/redo functionality with state persistence
+  - [ ] Implement multi-error summary footer (AC: #10):
+    - [ ] Aggregate all validation errors
+    - [ ] Display error count and summary
+    - [ ] Link to specific fields with errors
+  - [ ] Handle both create and edit modes
+  - [ ] On success: close form, show toast, refresh table
+  - [ ] Block edit/delete for posted bills (show read-only view)
+- [ ] Frontend: Attachment management UI (AC: #5)
+  - [ ] Create `PurchaseBillAttachmentManager.tsx` component
+  - [ ] Implement drag-and-drop file upload zone
+  - [ ] Add file type validation (PDF, images) with error messages
+  - [ ] Add file size validation (20MB total, 10 files max) with error messages
+  - [ ] Implement inline preview for images and PDFs
+  - [ ] Add delete button for attachments (only for DRAFT bills)
+  - [ ] Display attachment count badge on bill form
+  - [ ] Wire to POST /api/v1/purchase-bills/{id}/attachments endpoint
+  - [ ] Wire to DELETE /api/v1/purchase-bills/{id}/attachments/{attachmentId} endpoint
+- [ ] Frontend: Batch import UI (AC: #11)
+  - [ ] Create `PurchaseBillImportDialog.tsx` component
+  - [ ] Add file upload input (Excel template)
+  - [ ] Display import progress and status
+  - [ ] Show error map with downloadable error report
+  - [ ] Handle auto-add unknown supplier confirmation
+  - [ ] Wire to POST /api/v1/purchase-bills/batch-import endpoint
+  - [ ] Show success/failure summary after import
+- [ ] Frontend: Draft recovery UI (AC: #9)
+  - [ ] Create `DraftRecoveryDialog.tsx` component
+  - [ ] Display list of recoverable drafts (creator/admin only)
+  - [ ] Show draft preview (bill number, supplier, date, last modified)
+  - [ ] Add "Recover" button to restore draft
+  - [ ] Wire to GET /api/v1/purchase-bills/drafts endpoint
+- [ ] Integration: Voucher engine integration (AC: #6, #7)
+  - [ ] Integrate with Epic 3 voucher posting engine for bill posting (deferred to Story 4.2)
+  - [ ] Prepare voucher template for AP bills (Dr Expense, Cr 331)
+  - [ ] Prepare VAT voucher template (Dr VAT 3331, Cr Expense adjustment)
+  - [ ] Note: Actual posting will be implemented in Story 4.2
+- [ ] Testing: Unit and integration tests (AC: #1-#12)
+  - [ ] Unit tests for PurchaseBillService (validation, CRUD, draft autosave)
+  - [ ] Unit tests for PurchaseBillValidationService (bill number uniqueness, VAT sum, dimensions)
+  - [ ] Unit tests for PurchaseBillImportService (Excel parsing, error mapping, atomic save)
+  - [ ] Integration tests for POST /api/v1/purchase-bills endpoint (create, validation errors, company scoping)
+  - [ ] Integration tests for PUT /api/v1/purchase-bills/{id} endpoint (update draft, block posted bills)
+  - [ ] Integration tests for DELETE /api/v1/purchase-bills/{id} endpoint (delete draft, block posted bills)
+  - [ ] Integration tests for POST /api/v1/purchase-bills/batch-import endpoint (import, error reporting)
+  - [ ] Integration tests for attachment upload/download endpoints
+  - [ ] E2E tests for bill creation workflow (supplier picker, line items, VAT, save)
+  - [ ] E2E tests for draft autosave and recovery
+  - [ ] E2E tests for batch import with error handling
+  - [ ] Component tests for PurchaseBillForm (validation, autosave, undo/redo)
+  - [ ] Component tests for PurchaseBillLineGrid (line item operations, VAT calculation)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Supplier picker with typeahead search and "add new supplier" option; bill number must be unique per supplier per year; system disables edit if duplicate found.
+2. Date field: disables future dates and holidays; locks after post or period close.
+3. Due date auto-calculated from bill date + payment terms (default 30 days), editable in draft only.
+4. Reference/description required; supports Unicode, 100 character limit.
+5. Attachments: drag/drop support, max 10 files per bill, 20MB total; inline preview; deletion allowed for drafts only.
+6. Line items: quantity × price calculation, positive amounts only; description required; account must be leaf/postable (enforced).
+7. VAT: supports rates 0%, 5%, 10%, exempt; badge/warning for 0% rate; sum check on header/lines (mismatch >1,000₫ blocks post).
+8. Missing required dimension = error at save/post (UX pointer, blocks operation).
+9. Draft autosave every 30 seconds; creator-only edit/delete; undo/redo support; recoverable by creator/admin.
+10. Multi-error summary footer on save; duplicate supplier+bill/date combination blocks save/post.
+11. Batch import: validated Excel template, atomic save (all-or-nothing), downloadable error map, auto-add unknown supplier pending confirm.
+12. Audit log for every create, edit, draft, import, delete attempt (who/when/diff).
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-4.md" title="Epic Technical Specification: Accounts Payable (AP) Module" section="Story 4.1: Purchase Bills – Entry, Edit, and Draft Management">
+        Comprehensive technical specification for Epic 4, including detailed acceptance criteria, data models, APIs, workflows, and integration points. Story 4.1 section covers all 12 acceptance criteria with implementation guidance.
+      </doc>
+      <doc path="docs/epics/epic-4-accounts-payable-ap-module.md" title="Epic 4: Accounts Payable (AP) Module" section="Story 4.1: Purchase Bills – Entry, Edit, and Draft Management">
+        Epic definition with expanded goal and story acceptance criteria. Provides business context and prerequisites for the AP module.
+      </doc>
+      <doc path="docs/sprint-artifacts/4-1-purchase-bills-entry-edit-and-draft-management.md" title="Story 4.1: Purchase Bills – Entry, Edit, and Draft Management" section="Dev Notes">
+        Story file with detailed task breakdown, learnings from previous stories (Story 3-7 attachment patterns), architecture constraints, and project structure notes. Includes references to reusable components and patterns.
+      </doc>
+      <doc path="docs/sprint-artifacts/3-7-attachments-and-voucher-documentation.md" title="Story 3.7: Attachments and Voucher Documentation" section="Completion Notes">
+        Attachment management patterns established in Story 3.7 that should be reused for Purchase Bill attachments. Includes VoucherAttachment entity pattern, AttachmentDropzone component, Supabase Storage integration, and audit logging infrastructure.
+      </doc>
+      <doc path="docs/sprint-artifacts/3-4-leaf-only-and-double-entry-validation-engine.md" title="Story 3.4: Leaf-Only and Double-Entry Validation Engine" section="Validation Patterns">
+        Validation error map patterns from VoucherValidationService that should be followed for PurchaseBill validation. Includes field-level error reporting and unit testing patterns.
+      </doc>
+      <doc path="docs/sprint-artifacts/3-3-posting-unposting-reversal-workflows.md" title="Story 3.3: Posting, Unposting, Reversal Workflows" section="Transaction Management">
+        Transaction management patterns using @Transactional for atomic operations. Error handling and RBAC patterns applicable to purchase bill operations.
+      </doc>
+      <doc path="docs/sprint-artifacts/3-5-audit-trail-for-voucher-lifecycle.md" title="Story 3.5: Audit Trail for Voucher Lifecycle" section="Audit Logging">
+        Audit logging infrastructure and patterns that should be reused for purchase bill audit trails. Includes AuditLog entity usage and file reuse guidance.
+      </doc>
+    </docs>
+    <code>
+      <code path="backend/src/main/java/com/accounting/entity/VoucherAttachment.java" kind="entity" symbol="VoucherAttachment" lines="21-148" reason="Entity pattern with CompanyScopedEntity interface that should be adapted for PurchaseBillAttachment. Includes company scoping, file metadata, and audit fields." />
+      <code path="backend/src/main/java/com/accounting/service/voucher/VoucherAttachmentService.java" kind="interface" symbol="VoucherAttachmentService" lines="11-55" reason="Service interface pattern for attachment management. Should be adapted for PurchaseBillAttachmentService with similar methods: uploadAttachment, deleteAttachment, getAttachments." />
+      <code path="backend/src/main/java/com/accounting/service/impl/voucher/VoucherAttachmentServiceImpl.java" kind="service" symbol="VoucherAttachmentServiceImpl" lines="34-308" reason="Service implementation with Supabase Storage integration, signed URL generation (10-minute expiry), virus scan simulation, and audit logging. Pattern to follow for PurchaseBillAttachmentServiceImpl." />
+      <code path="backend/src/main/java/com/accounting/service/VoucherValidationService.java" kind="interface" symbol="VoucherValidationService" lines="11-20" reason="Validation service interface pattern. Should be adapted for PurchaseBillValidationService with methods for bill number uniqueness, dates, line items, VAT sum, and duplicate checks." />
+      <code path="backend/src/main/java/com/accounting/service/impl/voucher/VoucherValidationServiceImpl.java" kind="service" symbol="VoucherValidationServiceImpl" lines="48-611" reason="Validation service implementation with detailed field-level error maps. Returns ValidationErrorMap format: { lines: { [lineNumber]: { [field]: [errors] } } }. Pattern to follow for PurchaseBillValidationServiceImpl." />
+      <code path="backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java" kind="interface" symbol="CompanyScopedEntity" lines="3-5" reason="Interface that all entities must implement for multi-tenancy. PurchaseBill and PurchaseBillLine must implement this interface." />
+      <code path="backend/src/main/java/com/accounting/security/CompanyContext.java" kind="utility" symbol="CompanyContext" lines="3-20" reason="ThreadLocal storage for current company ID. Used throughout services for company scoping. PurchaseBillService must use CompanyContext.getCompanyId() for all operations." />
+      <code path="backend/src/main/java/com/accounting/security/CompanyScopeAspect.java" kind="aspect" symbol="CompanyScopeAspect" lines="10-33" reason="AOP aspect that automatically applies company filtering to repository queries. Ensures all PurchaseBill queries are filtered by company_id." />
+      <code path="frontend/src/components/voucher/VoucherAttachmentDropzone.tsx" kind="component" symbol="VoucherAttachmentDropzone" reason="Frontend component for drag-and-drop file upload. Should be adapted or reused for PurchaseBillAttachmentManager component." />
+      <code path="frontend/src/services/voucher.ts" kind="service" symbol="uploadVoucherAttachment, deleteVoucherAttachment" lines="223-288, 397-413" reason="Frontend service functions for attachment upload/delete. Pattern to follow for purchaseBill.ts service with similar functions for purchase bill attachments." />
+    </code>
+    <dependencies>
+      <node>
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="@tanstack/react-table" version="^8.21.3" />
+        <package name="@tanstack/react-query" version="^5.62.0" />
+        <package name="axios" version="^1.7.9" />
+        <package name="react-hook-form" version="^7.66.0" />
+        <package name="zod" version="^4.1.12" />
+        <package name="date-fns" version="^4.1.0" />
+        <package name="react-pdf" version="^10.2.0" />
+      </node>
+      <java>
+        <package name="org.springframework.boot:spring-boot-starter-web" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-data-jpa" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-validation" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-security" version="3.5.7" />
+        <package name="org.postgresql:postgresql" version="42.7.4" />
+        <package name="org.flywaydb:flyway-core" version="11.10.0" />
+        <package name="io.jsonwebtoken:jjwt-api" version="0.12.5" />
+        <package name="org.apache.poi:poi-ooxml" version="5.3.0" />
+        <package name="org.projectlombok:lombok" />
+        <package name="org.apache.commons:commons-lang3" />
+      </java>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Multi-Tenancy: All entities must implement CompanyScopedEntity interface for automatic company filtering. Use CompanyContext and CompanyScopeAspect for company scoping at repository, service, and controller layers. All database queries must be filtered by company_id.</constraint>
+    <constraint>Data Models: Follow established database schema patterns. purchase_bills table structure: id, company_id, supplier_id, bill_number, bill_date, due_date, reference, description, status, total_amount, vat_amount, created_by_id, approved_by_id, created_at, updated_at. purchase_bill_lines table: id, purchase_bill_id, line_number, account_id, description, quantity, unit_price, amount, vat_rate, vat_amount, cost_center_id (optional), item_id (optional). Unique constraint: UNIQUE(company_id, supplier_id, bill_number, EXTRACT(YEAR FROM bill_date)) for bill number uniqueness per supplier/year.</constraint>
+    <constraint>Security and RBAC: Enforce role-based access control at API level using @PreAuthorize annotations. All authenticated users can view purchase bills; edit requires accountant roles (ACCOUNTANT, CHIEF_ACCOUNTANT, ADMIN, CFO). Creator-only edit/delete for DRAFT bills unless user is admin. JWT authentication with company context in token.</constraint>
+    <constraint>Audit Logging: All purchase bill operations (create, edit, draft, import, delete) must be logged to audit_logs table with user ID, timestamp, IP address, action type, and change diffs. Follow audit logging patterns from Story 3.5 (VoucherAuditHelper, VoucherHistoryService).</constraint>
+    <constraint>Validation Patterns: Return detailed field-level error maps for validation failures (not generic 400 errors). Follow ValidationErrorMap pattern from VoucherValidationService (Story 3.4). Validate: bill number uniqueness, dates (future dates disabled, period validation), line items (leaf/postable accounts, positive amounts, required dimensions), VAT sum match (tolerance: 1,000₫), duplicate supplier+bill/date combination.</constraint>
+    <constraint>Transaction Management: Use @Transactional annotation for operations that involve multiple steps (create bill + lines + attachments, batch import with atomic save). Follow pattern from VoucherPostingService.postVoucher() for atomic operations.</constraint>
+    <constraint>Attachment Management: Reuse attachment management patterns from Story 3.7. VoucherAttachment entity pattern can be adapted for PurchaseBillAttachment. VoucherAttachmentService pattern with Supabase Storage integration, signed URL generation (10-minute expiry), and virus scan simulation. Attachment audit logging infrastructure from Story 3.5. File validation patterns: PDF and images (JPG, PNG, GIF, WEBP) only, size limits enforced. Delete restrictions: Only creator/admin can delete attachments from DRAFT bills.</constraint>
+    <constraint>Backend Structure: Place purchase bill controller under backend/src/main/java/com/accounting/controller/purchase/ following the modular structure. Service layer under backend/src/main/java/com/accounting/service/purchase/. Repository under backend/src/main/java/com/accounting/repository/. Follow the controller/service/repository pattern from Epic 3 stories for consistency.</constraint>
+    <constraint>Frontend Structure: Create purchase bill components under frontend/src/components/purchase/ for shared components (PurchaseBillAttachmentManager, PurchaseBillLineGrid). Integrate purchase bill management into frontend/src/features/accounting/pages/PurchaseBills/. Create purchase bill service under frontend/src/services/purchaseBill.ts, following the service pattern from previous stories.</constraint>
+    <constraint>API Endpoints: Follow REST convention /api/v1/purchase-bills with standard query parameters and response format established in Epic 2 and Epic 3. Response format: { data: PurchaseBillDTO[], meta: {...} }. Follow error response patterns from Story 3.3 and validation error maps from Story 3.4.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="PurchaseBillService" kind="REST API" signature="POST /api/v1/purchase-bills - Create bill (validates supplier, dates, line items, VAT, dimensions)" path="backend/src/main/java/com/accounting/service/purchase/PurchaseBillService.java (to be created)" />
+    <interface name="PurchaseBillService" kind="REST API" signature="PUT /api/v1/purchase-bills/{id} - Update (only DRAFT, creator-only unless admin)" path="backend/src/main/java/com/accounting/service/purchase/PurchaseBillService.java (to be created)" />
+    <interface name="PurchaseBillService" kind="REST API" signature="DELETE /api/v1/purchase-bills/{id} - Delete (only DRAFT, creator-only unless admin)" path="backend/src/main/java/com/accounting/service/purchase/PurchaseBillService.java (to be created)" />
+    <interface name="PurchaseBillService" kind="REST API" signature="POST /api/v1/purchase-bills/{id}/save-draft - Autosave endpoint" path="backend/src/main/java/com/accounting/service/purchase/PurchaseBillService.java (to be created)" />
+    <interface name="PurchaseBillService" kind="REST API" signature="GET /api/v1/purchase-bills/drafts - List recoverable drafts" path="backend/src/main/java/com/accounting/service/purchase/PurchaseBillService.java (to be created)" />
+    <interface name="PurchaseBillImportService" kind="REST API" signature="POST /api/v1/purchase-bills/batch-import - Excel import with atomic save, error reporting" path="backend/src/main/java/com/accounting/service/purchase/PurchaseBillImportService.java (to be created)" />
+    <interface name="PurchaseBillAttachmentService" kind="REST API" signature="POST /api/v1/purchase-bills/{id}/attachments - Upload attachment" path="backend/src/main/java/com/accounting/service/purchase/PurchaseBillAttachmentService.java (to be created)" />
+    <interface name="PurchaseBillAttachmentService" kind="REST API" signature="DELETE /api/v1/purchase-bills/{id}/attachments/{attachmentId} - Delete attachment (only DRAFT)" path="backend/src/main/java/com/accounting/service/purchase/PurchaseBillAttachmentService.java (to be created)" />
+    <interface name="VoucherAttachmentService" kind="Service Interface" signature="String uploadVoucherAttachment(UUID voucherId, MultipartFile file)" path="backend/src/main/java/com/accounting/service/voucher/VoucherAttachmentService.java" reason="Pattern to follow for PurchaseBillAttachmentService.uploadAttachment()" />
+    <interface name="VoucherValidationService" kind="Service Interface" signature="VoucherValidationResult validateVoucher(VoucherCreateRequest request, UUID voucherId)" path="backend/src/main/java/com/accounting/service/VoucherValidationService.java" reason="Pattern to follow for PurchaseBillValidationService with similar validation methods returning detailed error maps" />
+    <interface name="CompanyScopedEntity" kind="Interface" signature="Long getCompanyId()" path="backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java" reason="Interface that PurchaseBill and PurchaseBillLine must implement for multi-tenancy" />
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend testing uses JUnit 5 with TestContainers for integration tests. Unit tests target 70% coverage for service layer. Integration tests cover critical flows with @SpringBootTest and TestContainers (PostgreSQL). Frontend testing uses Vitest with Testing Library and jsdom. Component tests use @testing-library/react. E2E tests are deferred to post-MVP. All acceptance criteria must have corresponding test cases: unit tests for business logic, integration tests for API endpoints, component tests for UI components.
+    </standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/impl/purchase/ - Unit tests for PurchaseBillService, PurchaseBillValidationService, PurchaseBillImportService</location>
+      <location>backend/src/test/java/com/accounting/controller/purchase/ - Integration tests for PurchaseBillController endpoints</location>
+      <location>frontend/src/components/purchase/__tests__/ - Component tests for PurchaseBillForm, PurchaseBillLineGrid, PurchaseBillAttachmentManager</location>
+      <location>frontend/src/features/accounting/pages/PurchaseBills/__tests__/ - Page component tests</location>
+    </locations>
+    <ideas>
+      <test acId="4.1.1" idea="Test duplicate bill number per supplier/year blocks save. Create bill with supplier A, bill number 'BILL-001', year 2025. Attempt to create another bill with same supplier, same bill number, same year. Expect 409 Conflict error." />
+      <test acId="4.1.2" idea="Test date field disables future dates. Attempt to set bill_date to tomorrow. Expect validation error. Test period locking: close period, attempt to edit bill in closed period. Expect error." />
+      <test acId="4.1.3" idea="Test due date auto-calculation. Create bill with bill_date = 2025-01-01, payment terms = 30 days. Expect due_date = 2025-01-31. Test edit in draft: change due_date manually. Expect success. Test edit after post: attempt to change due_date. Expect error." />
+      <test acId="4.1.6" idea="Test line item validation: posting to parent account returns error. Create line item with parent account (non-leaf). Expect validation error with field-level error map pointing to account field." />
+      <test acId="4.1.7" idea="Test VAT mismatch >1,000₫ blocks post. Create bill with header VAT = 100,000₫, line VAT sum = 102,000₫ (mismatch 2,000₫). Attempt to post. Expect validation error blocking post." />
+      <test acId="4.1.8" idea="Test missing required dimension error. Create line item with expense account that requires cost center, but don't provide cost_center_id. Attempt to save. Expect error with UX pointer to dimension field." />
+      <test acId="4.1.9" idea="Test draft autosave every 30 seconds. Create draft bill, wait 30 seconds. Verify draft saved to database. Test undo/redo: make changes, undo, verify state reverted. Test recovery: creator/admin can recover draft." />
+      <test acId="4.1.10" idea="Test duplicate supplier+bill/date combination blocks save. Create bill with supplier A, bill number 'BILL-001', date 2025-01-01. Attempt to create another bill with same supplier, bill number, and date. Expect validation error." />
+      <test acId="4.1.11" idea="Test batch import atomic save. Import Excel with 10 valid rows and 2 invalid rows. Expect no rows saved (atomic transaction). Verify error map downloadable with row numbers and reasons. Test auto-add unknown supplier: import with unknown supplier, verify draft supplier created pending confirm." />
+      <test acId="4.1.12" idea="Test audit log for all operations. Create bill, verify audit log entry with user ID, timestamp, action type 'bill.created', and change diff. Edit bill, verify audit log entry with 'bill.updated' and diff. Delete draft bill, verify audit log entry with 'bill.deleted'." />
+    </ideas>
+  </tests>
+</story-context>
+
