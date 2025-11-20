@@ -4,6 +4,19 @@
 Deliver an AI-powered Retrieval-Augmented Generation (RAG) chatbot tightly integrated with the accounting and documentation system. Enable secure, traceable contextual Q&A, semantic search over docs and ledgers, workflow assistance, feedback capture, and usage analytics—drives productivity, support, and regulatory compliance.
 
 ```markdown
+**Story 9.0: Voucher-Focused RAG MVP (n8n Pipeline)**
+As an accountant or reviewer, I want a working chatbot that can answer voucher / AR / AP questions with citations based on freshly created vouchers, so that stakeholders can validate the RAG integration early in the program.
+**Acceptance Criteria:**
+1. After every successful voucher save/post, the backend triggers an n8n webhook that receives company ID, voucher header, line items, related customers/vendors, and summary balances for embedding into Pinecone.
+2. Embeddings are stored per company namespace; re-indexing is idempotent and handles retries/logging if n8n is unavailable.
+3. A minimal in-app chatbot panel allows Vietnamese questions like "Tình hình công nợ hiện tại ra sao?", calling a backend `/chatbot/query` endpoint that performs hybrid retrieval over Pinecone + ledger aggregates.
+4. Responses always include: natural-language answer, citation list (voucher/invoice IDs with links or reference numbers), and confidence indicator; if no evidence is found, chatbot replies with "Không đủ dữ liệu" and suggests next steps.
+5. Each chatbot query is audit-logged with user, company, timestamp, prompt, answer summary, and citation references; errors are surfaced to the user with retry guidance.
+6. Feature flag or environment toggle allows disabling the chatbot without affecting voucher flows.
+**Prerequisites:** Story 3.2, PRD FR38–FR41
+```
+
+```markdown
 **Story 9.1: Chatbot Widget Integration and Security**
 As a user, I want an in-app chatbot widget that honors my role and data permissions, so I get secure, context-relevant help without leaving my workflow.
 **Acceptance Criteria:**

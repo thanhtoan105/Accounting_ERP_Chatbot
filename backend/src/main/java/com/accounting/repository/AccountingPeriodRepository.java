@@ -95,8 +95,8 @@ public interface AccountingPeriodRepository
    * @param currentDate current date
    * @return list of open periods
    */
-  @Query("SELECT p FROM AccountingPeriod p WHERE p.companyId = :companyId AND p.status = :status " +
-         "ORDER BY ABS(DAYS(p.startDate, :currentDate))")
+  @Query(value = "SELECT * FROM accounting_periods p WHERE p.company_id = :companyId AND p.status = CAST(:status AS VARCHAR) " +
+         "ORDER BY p.start_date DESC", nativeQuery = true)
   List<AccountingPeriod> findOpenPeriodsAroundDate(
       @Param("companyId") Long companyId,
       @Param("status") PeriodStatus status,

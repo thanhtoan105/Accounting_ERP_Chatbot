@@ -11,6 +11,7 @@
 | Epic 7: Reporting         | `controller/report/`, `service/report/`        | `pages/Reports.tsx`                                               | Query from `journal_entries`, `vouchers`                 | Spring Data JPA, Redis cache, PDF/Excel |
 | Epic 8: BI Dashboard      | `controller/dashboard/`, `service/analytics/`  | `pages/Dashboard.tsx`                                             | Materialized views, Redis cache                          | Redis, React Query, Chart.js            |
 | Epic 9: AI RAG            | `controller/chatbot/`, `service/rag/`          | `components/Chatbot.tsx`                                          | External: Pinecone                                       | Pinecone SDK, OpenAI embeddings         |
+| Epic 9.0: RAG MVP         | `controller/chatbot/`, `service/rag/`, n8n webhook | `components/ChatbotMVP.tsx`, chatbot panel entry point             | `vouchers`, `voucher_lines`, Pinecone                    | Spring Boot webhook client, n8n, Pinecone SDK |
 | Epic 10: Admin            | `controller/admin/`                            | `pages/Admin.tsx`                                                 | `audit_logs`, `system_settings`                          | Audit trail, file import/export         |
 
 ---

@@ -14,11 +14,12 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useReactTable, getCoreRowModel } from '@tanstack/react-table'
+import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Select,
   SelectContent,
@@ -118,8 +119,6 @@ export default function AuditLogPage() {
   const [pageSize, setPageSize] = useState(20)
   const [totalElements, setTotalElements] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
-
-  const [detailLog, setDetailLog] = useState<AuditLogItem | null>(null)
 
   const loadAuditLogs = useCallback(async () => {
     try {
@@ -251,8 +250,8 @@ export default function AuditLogPage() {
         header: 'Outcome',
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <Badge variant={row.original.success ? 'success' : 'destructive'}>
-              {row.original.success ? 'Success / Thành công' : 'Failure / Thất bại'}
+            <Badge variant={row.original.success ? 'default' : 'destructive'}>
+              {row.original.success ? 'Success' : 'Failure'}
             </Badge>
             {row.original.failureReason && (
               <span className="text-xs text-muted-foreground">{row.original.failureReason}</span>
@@ -276,13 +275,13 @@ export default function AuditLogPage() {
         cell: ({ row }) => (
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" onClick={() => setDetailLog(row.original)}>
-                View / Xem
+              <Button variant="outline" size="sm">
+                View
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Audit Entry Details / Chi tiết nhật ký</DialogTitle>
+                <DialogTitle>Audit Entry Details</DialogTitle>
               </DialogHeader>
               <ScrollArea className="max-h-[70vh]">
                 <div className="space-y-4">
@@ -322,7 +321,7 @@ export default function AuditLogPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-primary" />
-            Audit Logs <span className="text-muted-foreground text-lg">/ Nhật ký kiểm toán</span>
+            Audit Logs
           </h1>
           <p className="text-muted-foreground">
             Monitor master data changes, security events, and integrity scans.
@@ -331,7 +330,7 @@ export default function AuditLogPage() {
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh / Làm mới
+            Refresh
           </Button>
           <Button variant="secondary" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
@@ -469,21 +468,21 @@ export default function AuditLogPage() {
             Date Range
           </label>
           <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="date"
+            <DatePicker
               value={fromDate}
-              onChange={(e) => {
-                setFromDate(e.target.value)
+              onChange={(value) => {
+                setFromDate(value)
                 setPage(1)
               }}
+              placeholder="Select start date"
             />
-            <Input
-              type="date"
+            <DatePicker
               value={toDate}
-              onChange={(e) => {
-                setToDate(e.target.value)
+              onChange={(value) => {
+                setToDate(value)
                 setPage(1)
               }}
+              placeholder="Select end date"
             />
           </div>
         </div>
@@ -512,8 +511,8 @@ export default function AuditLogPage() {
             {loading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={`skeleton-${index}`}>
-                  {columns.map((column) => (
-                    <TableCell key={`skeleton-${column.id ?? column.accessorKey}-${index}`}>
+                  {columns.map((column, colIndex) => (
+                    <TableCell key={`skeleton-${column.id ?? colIndex}-${index}`}>
                       <Skeleton className="h-10 w-full" />
                     </TableCell>
                   ))}
@@ -529,7 +528,9 @@ export default function AuditLogPage() {
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>{cell.renderCell()}</TableCell>
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))

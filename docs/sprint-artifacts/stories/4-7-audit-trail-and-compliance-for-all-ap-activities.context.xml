@@ -1,0 +1,162 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>7</storyId>
+    <title>Audit Trail and Compliance for All AP Activities</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-20</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-7-audit-trail-and-compliance-for-all-ap-activities.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As an auditor or chief accountant</asA>
+    <iWant>I want a complete, filterable history of every AP event and a disaster recovery (DR) plan</iWant>
+    <soThat>so that statutory and business compliance is bulletproof</soThat>
+    <tasks><![CDATA[
+1. Backend: Ensure comprehensive audit logging for all AP activities (AC: #1)
+   - Verify all bill operations are logged via AuditService.logPurchaseBillEvent() with before/after snapshots, diff hash, user, timestamp, IP address
+   - Verify all payment operations are logged via AuditService.logPaymentEvent() with complete metadata
+   - Verify all VAT operations are logged (from Story 4.6) with rate override, sum validation failure, ratio blocks, corrections, report generation
+   - Verify all statement operations are logged (from Story 4.5) with generation, export, email, import, reconciliation, dispute updates
+   - Add missing audit logging for any AP operations not yet covered
+   - Ensure all audit entries include company_id for multi-tenancy filtering
+
+2. Backend: Create APAuditService for audit timeline and filtering (AC: #2, #5)
+   - Create APAuditService interface and APAuditServiceImpl
+   - Implement getAuditTimeline(filters) method with support for user, action, amount, supplier, attachment, outcome, date range filters
+   - Implement getAuditEventDetails(eventId) method returning full audit event with before/after snapshots
+   - Implement exportAuditTimeline(filters, format) method generating PDF with timeline view, legal appendix, hash verification
+   - Add company scoping to all queries and RBAC: All authenticated users can view timeline (company-filtered)
+
+3. Backend: Abuse detection and unauthorized access monitoring (AC: #3)
+   - Implement detectAbusePatterns(companyId, userId, timeWindow) method for repeated failed delete attempts, unauthorized access attempts, suspicious activity patterns
+   - Implement getUnauthorizedAttempts(filters) method for 403 errors, blocked operations, deletion attempts
+   - Implement notification system for abuse detection with in-app notifications to Chief Accountant/CFO
+   - Create admin/audit view endpoint GET /api/v1/ap-audit/abuse requiring Chief Accountant/CFO/Admin permissions
+
+4. Backend: DR backup and archive functionality (AC: #4)
+   - Create APAuditBackup entity with fields: id, company_id, backup_date, archive_path, hash, record_count, status, created_by
+   - Implement APAuditBackupService with createBackup(companyId) method exporting to compressed archive with SHA-256 hash
+   - Implement scheduled weekly backup job using Spring @Scheduled annotation processing all companies
+   - Implement listBackups(companyId) and downloadBackup(backupId) methods with permission verification
+
+5. Backend: Cryptographic chain hashing and retention management (AC: #6)
+   - Implement calculateChainHash(previousHash, currentEvent) method using SHA-256 hash of (previous_hash + current_event_hash)
+   - Update audit log creation to include chain hash ensuring tamper detection
+   - Implement retention policy enforcement with retention_until field and archival process for expired logs
+   - Implement GDPR purge functionality with POST /api/v1/ap-audit/purge endpoint requiring Admin permission
+
+6. Backend: AP audit controller and API (AC: #1-#6)
+   - Create APAuditController with REST endpoints: GET /api/v1/ap-audit/timeline, GET /api/v1/ap-audit/events/{eventId}, GET /api/v1/ap-audit/timeline/export, GET /api/v1/ap-audit/abuse, GET /api/v1/ap-audit/backups, GET /api/v1/ap-audit/backups/{backupId}/download, POST /api/v1/ap-audit/purge
+   - Support query params/filters: user, action, amount, supplier, attachment, outcome, startDate, endDate
+   - Return proper HTTP status codes and add RBAC with controller delegating to service-level @PreAuthorize guards
+
+7. Database: Flyway migrations for audit enhancements (AC: #1, #4, #6)
+   - Create migration to add AP-specific indexes on audit_logs for efficient timeline queries
+   - Create migration for APAuditBackup table with Company-scoped FK, backup_date, archive_path, hash, record_count, status checks
+   - Create migration to add retention_until and chain_hash fields to audit_logs with default values
+
+8. Frontend: AP audit timeline view component (AC: #2, #5)
+   - Create APAuditTimeline page with chronological list of audit events, colored by action type
+   - Display action type, user, timestamp, entity (bill/payment), summary with expandable event details
+   - Add search and filter controls: user, action, amount, supplier, date range, outcome
+   - Add action buttons: Export PDF, Refresh, Clear Filters with export dialog options
+
+9. Frontend: AP audit abuse detection view (AC: #3)
+   - Create APAuditAbuseView component displaying abuse patterns table and unauthorized attempts table
+   - Add filters: user, date range, pattern type, severity and action buttons: Notify Admin, Export Report
+   - Wire to /api/v1/ap-audit/abuse endpoint and display notifications when abuse patterns detected
+   - Require Chief Accountant/CFO/Admin role to access
+
+10. Frontend: DR backup management interface (AC: #4)
+    - Create APAuditBackupList component displaying backup archives table with Backup Date, Archive Size, Hash, Record Count, Status, Actions
+    - Add filters: date range, status and action buttons: Download, Verify Hash, Create Manual Backup
+    - Wire to /api/v1/ap-audit/backups and download endpoints with backup creation status display
+    - Require Chief Accountant/CFO/Admin role to access
+
+11. Frontend: GDPR purge interface (AC: #6)
+    - Create APAuditPurgeDialog component with purge scope selection: company-wide, user-specific, date range, entity-specific
+    - Display preview of records to be purged with count and date range and require confirmation with warning message
+    - Submit purge request requiring Admin role and display purge results: count of purged records, summary
+    - Wire to /api/v1/ap-audit/purge endpoint
+
+12. Testing: Unit and integration tests for audit functionality (AC: #1-#6)
+    - Unit tests for APAuditService (timeline generation, filtering, abuse detection)
+    - Unit tests for APAuditBackupService (backup creation, hash generation, archive compression)
+    - Unit tests for cryptographic chain hashing (chain calculation, tamper detection)
+    - Unit tests for retention policy (expired log detection, archival)
+    - Integration tests for audit API endpoints (timeline, export, abuse, backups, purge)
+    - Integration tests for scheduled backup job and RBAC filtering
+    - Component tests for UI components - deferred to future sprint
+    ]]></tasks>
+  </story>
+
+  <acceptanceCriteria><![CDATA[
+1. Every bill/payment create, edit, post, approve, import, fail, delete-attempt produces detailed audit log (user, time, action, payload diff, hash)
+
+2. Timeline view: colored by action type, exportable as PDF with legal appendix/hash
+
+3. Unauthorized/deletion attempts/abuse visible in admin/audit view; notification for abuse/repeat blocked operations
+
+4. DR plan: scheduled weekly backup/export of AP audits to external/secure/compressed archive
+
+5. Reviewer filter/export: by user, action, amount, supplier, attachment, or outcome
+
+6. All actions have cryptographic chain hash; 10+ years retention, GDPR purge on demand
+  ]]></acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/epics/epic-4-accounts-payable-ap-module.md" title="Epic 4: Accounts Payable Module" section="Story 4.7 - Audit Trail and Compliance"><![CDATA[Story 4.7: As an auditor or chief accountant, I want a complete, filterable history of every AP event and a disaster recovery (DR) plan, so that statutory and business compliance is bulletproof.]]></doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-4.md" title="Epic 4 Technical Specification" section="Story 4.7 Technical Details"><![CDATA[Objective: Complete audit log for all AP activities, timeline view, DR plan with scheduled backups, cryptographic chain hashing, 10+ years retention. Key services: APAuditService for logging, timeline views, DR backups.]]></doc>
+      <doc path="docs/PRD/requirements.md" title="Product Requirements Document" section="Audit Trail Requirements"><![CDATA[FR48: Immutable Audit Trail - The audit trail must be append-only, stored in a separate table with referential integrity. NFR8: Audit Trail - Append-only, no modifications or deletions allowed.]]></doc>
+      <doc path="docs/architecture/epic-to-architecture-mapping.md" title="Epic to Architecture Mapping" section="Epic 4 Architecture"><![CDATA[Backend Location: controller/purchase/, Frontend Location: pages/PurchaseBills.tsx, Database Tables: purchase_bills, ap_payments. Multi-Tenancy Pattern: Row-level security through company-scoped architecture.]]></doc>
+      <doc path="docs/ux-design-specification.md" title="UX Design Specification" section="Design System"><![CDATA[Design System: shadcn/ui (Tailwind + Radix primitives). DataTablePro: Server-side sorting/filtering/pagination, bulk selection, export CSV/Excel. Color system with semantic usage for errors, success, info states.]]></doc>
+      <doc path="docs/test-design-epic-4.md" title="Epic 4 Test Design" section="Audit Trail Testing"><![CDATA[Comprehensive test design for Epic 4 with 113 test scenarios. P0 critical tests for audit trail, security, and data integrity. Risk assessment with unauthorized approval bypass and data loss risks.]]></doc>
+      <doc path="docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.md" title="Story 4.6 Lessons Learned" section="Audit Logging Patterns"><![CDATA[Story 4.6 implemented comprehensive audit logging via AuditService for all VAT operations, PDF export with TT200-compliant formatting and hash generation, and SHA-256 hash generation for report integrity.]]></doc>
+    </docs>
+    <code>
+      <artifact path="backend/src/main/java/com/accounting/service/AuditService.java" kind="service" symbol="logPurchaseBillEvent"><![CDATA[Existing audit logging interface requiring before/after JSON snapshots, SHA-256 diff hash, and IP/user-agent metadata for every bill lifecycle action.]]></artifact>
+      <artifact path="backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java" kind="service-impl" symbol="logPurchaseBillEvent/logPaymentEvent"><![CDATA[Implementation builds audit records with eventType markers, assigns actor identity from SecurityContext, embeds before/after payloads, persists diff hashes, and reuses same pattern for payments.]]></artifact>
+      <artifact path="backend/src/main/java/com/accounting/controller/admin/AuditLogController.java" kind="controller" symbol="GET /api/v1/admin/audit-logs"><![CDATA[Existing audit controller with pagination/filter plumbing, RBAC guards (ADMIN, CHIEF_ACCOUNTANT), and CSV export that logs downloads via auditService.logAuditExport.]]></artifact>
+      <artifact path="backend/src/main/java/com/accounting/security/CompanyContextFilter.java" kind="filter" symbol="CompanyContextFilter"><![CDATA[Filter that enforces X-Company-Id header, validates numeric company IDs, falls back to authenticated user's company, and always clears thread-local after each request.]]></artifact>
+      <artifact path="frontend/src/features/audit/pages/AuditLogPage.tsx" kind="react-page" symbol="AuditLogPage"><![CDATA[Existing audit page with TanStack Table grid, search inputs, entity/role filters, Refresh + Export buttons, and pagination controls fetching /admin/audit-logs with page/size parameters.]]></artifact>
+      <artifact path="frontend/src/features/accounting/pages/VATReports/VATReportList.tsx" kind="react-page" symbol="VATReportList"><![CDATA[UX patterns including search term, filter chips, refresh + export handlers, PAGE_SIZE_OPTIONS, and dual pagination stacks to replicate for APAudit tables.]]></artifact>
+    </code>
+    <dependencies>
+      <dependency scope="backend" path="backend/pom.xml"><![CDATA[Spring Boot 3.5.7 stack with spring-boot-starter-web, data-jpa, data-redis, security, Flyway 11.10.0, PostgreSQL 42.7.4, JasperReports 6.21.3, DynamicReports 6.20.1, Apache POI 5.3.0, and jjwt 0.12.5 for REST APIs, caching, scheduled jobs, PDF/Excel exports, and JWT-secured RBAC.]]></dependency>
+      <dependency scope="frontend" path="frontend/package.json"><![CDATA[React 19 + Vite 7, shadcn/Radix UI primitives, TanStack React Table 8.21.3, React Query 5.62.0, axios 1.7.9, lucide-react icons, date-fns, zod, and sonner toasts for APAudit timeline tables, filter forms, dialogs, and notifications.]]></dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint><![CDATA[Company context must be supplied via X-Company-Id or inferred from authenticated user, per CompanyContextFilter, so every APAudit endpoint and export job has to call CompanyContext.getCompanyId() before querying.]]></constraint>
+    <constraint><![CDATA[AuditLogController demonstrates that sensitive audit data is limited to ADMIN and CHIEF_ACCOUNTANT; APAudit controllers must extend this RBAC (with CFO) while still allowing read-only timeline access to company users where required.]]></constraint>
+    <constraint><![CDATA[AuditService already stores before/after JSON and diff hashes for bills/payments; any new APAudit ingestion must reuse the same pattern to avoid duplicating snapshot logic and ensure consistent signing.]]></constraint>
+    <constraint><![CDATA[Frontend data tables need search inputs, refresh buttons, record counts, page-size dropdowns (10/20/30/50/100), and pagination at the bottom to satisfy shared UX standards established by VATReportList & AuditLogPage.]]></constraint>
+    <constraint><![CDATA[Disaster-recovery archives and purge operations must log immutable trail entries via AuditService and obey 10+ year retention from Story 4.7, meaning background jobs can archive but never silently delete data.]]></constraint>
+  </constraints>
+  <interfaces>
+    <interface name="GET /api/v1/ap-audit/timeline" kind="REST" auth="isAuthenticated()"><![CDATA[Returns paged chronological events filtered by user, action, amountMin/Max, supplierId, attachment, outcome, startDate, endDate; response mirrors AuditLogPageResponse but limited to AP event types.]]></interface>
+    <interface name="GET /api/v1/ap-audit/events/{eventId}" kind="REST" auth="isAuthenticated()"><![CDATA[Fetches a single AP audit entry with before/after snapshots, diff hash, chain hash, and metadata for drill-down modals.]]></interface>
+    <interface name="GET /api/v1/ap-audit/timeline/export" kind="REST" auth="hasAnyRole('ADMIN','CHIEF_ACCOUNTANT','CFO')"><![CDATA[Streams PDF export for filtered timeline, embedding legal appendix + SHA-256 hash header similar to /admin/audit-logs/export.]]></interface>
+    <interface name="GET /api/v1/ap-audit/abuse" kind="REST" auth="hasAnyRole('ADMIN','CHIEF_ACCOUNTANT','CFO')"><![CDATA[Aggregates abuse detections and raw unauthorized attempts for abuse dashboard, with optional filters user, pattern, severity, startDate, endDate.]]></interface>
+    <interface name="GET /api/v1/ap-audit/backups" kind="REST" auth="hasAnyRole('ADMIN','CHIEF_ACCOUNTANT','CFO')"><![CDATA[List backup metadata with pagination + filters status, startDate, endDate.]]></interface>
+    <interface name="GET /api/v1/ap-audit/backups/{backupId}/download" kind="REST" auth="hasAnyRole('ADMIN','CHIEF_ACCOUNTANT','CFO')"><![CDATA[Streams secure archive, sets X-Content-SHA256, and logs download via AuditService.]]></interface>
+    <interface name="POST /api/v1/ap-audit/purge" kind="REST" auth="hasRole('ADMIN')"><![CDATA[Accepts JSON purge scope, performs GDPR purge/anonymization, emits immutable purge log entries, and returns purgedCount, archivedCount.]]></interface>
+  </interfaces>
+  <tests>
+    <standards><![CDATA[Follow Story 4.7 testing guidance + Epic 1-4 patterns: TestContainers-backed Spring Boot tests for service + controller layers, serialization checks similar to AuditServiceImplSerializationTest, scheduled job coverage, and Vitest/RTL for shadcn components (table filtering, dialogs, pagination).]]></standards>
+    <locations><![CDATA[Backend: backend/src/test/java/com/accounting/service/impl/AuditServiceImplSerializationTest.java for diff snapshots; extend this plus new ap sub-packages for APAuditService/BackupService. Frontend: Vitest suites under frontend/src/features/accounting/pages/APAudit/__tests__/ for timeline table, abuse view, backup list, purge dialog.]]></locations>
+    <ideas><![CDATA[
+- AC1: integration test verifying logPurchaseBillEvent/logPaymentEvent emit chain hashes and company-scoped entries, plus API timeline fetch returns them sorted.
+- AC2: PDF export test confirming color-coded timeline metadata + SHA-256 header with legal appendix.
+- AC3: abuse detection unit tests injecting repeated delete attempts + unauthorized logs to ensure notifications fire and /ap-audit/abuse responds with severities.
+- AC4: scheduler test using @SpringBootTest clock control to ensure weekly backup job processes companies, uploads archives, records metadata/hash.
+- AC5: controller test covering filter combinations and verifying pagination metadata.
+- AC6: retention + purge tests simulating expired records and GDPR purge scope, checking immutable purge audit entries.
+- Frontend: timeline table search/pagination snapshot test, abuse table severity badge rendering, backup list hash verification flow, purge dialog confirmation gating.
+    ]]></ideas>
+  </tests>
+</story-context>

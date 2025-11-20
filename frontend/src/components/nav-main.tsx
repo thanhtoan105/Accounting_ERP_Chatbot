@@ -8,6 +8,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu'
 import {
   SidebarGroup,
@@ -28,6 +31,10 @@ export function NavMain({
     items?: {
       title: string
       url: string
+      items?: {
+        title: string
+        url: string
+      }[]
     }[]
   }[]
 }) {
@@ -51,11 +58,29 @@ export function NavMain({
                   align={isMobile ? 'end' : 'start'}
                   className="min-w-56 rounded-lg"
                 >
-                  {item.items.map((sub) => (
-                    <DropdownMenuItem asChild key={sub.title}>
-                      <RouterLink to={sub.url}>{sub.title}</RouterLink>
-                    </DropdownMenuItem>
-                  ))}
+                  {item.items.map((sub) => {
+                    // Check if sub-item has nested items (submenu)
+                    if (sub.items && sub.items.length > 0) {
+                      return (
+                        <DropdownMenuSub key={sub.title}>
+                          <DropdownMenuSubTrigger>{sub.title}</DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {sub.items.map((nested) => (
+                              <DropdownMenuItem asChild key={nested.title}>
+                                <RouterLink to={nested.url}>{nested.title}</RouterLink>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      )
+                    }
+                    // Regular menu item
+                    return (
+                      <DropdownMenuItem asChild key={sub.title}>
+                        <RouterLink to={sub.url}>{sub.title}</RouterLink>
+                      </DropdownMenuItem>
+                    )
+                  })}
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (

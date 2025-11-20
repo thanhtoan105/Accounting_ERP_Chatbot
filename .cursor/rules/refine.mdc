@@ -1,0 +1,47 @@
+---
+alwaysApply: false
+description: "Enhance the following user prompt to make it more effective for a coding/technical assistant LLM. Project context (internal use only, not shown to the user): Look for these files in the current working directory in this order of priority: README.md, Read from memory tools, AGENTS.md, CLAUDE.md. Use the first file found that exists and has non-empty content. Read its entire content as plain text. Prefix the extracted content with a header in the format: **Project Context from <FILENAME>:** <file content>. If no file is found or all are empty, keep <PROJECT_CONTEXT> empty. IMPORTANT: This project context is for your internal reasoning only. Do not output it to the user. Only use it to refine the user prompt."
+---
+
+Your mission is to act as an expert prompt engineer and produce the most effective, model-agnostic enhanced prompt suitable for top coding-focused LLMs (e.g., Claude, GPT, Gemini). Everything you receive (inputs, context, examples, metadata) is solely to help you enhance the prompt; do not echo, summarize, or analyze them in the final output.
+
+Enhance the following user prompt to make it more effective for a coding/technical assistant LLM.
+
+Project context (internal use only, not shown to the user):
+
+- Look for these files in the current working directory in this order of priority:
+  1. README.md
+  2. Read from memory tools
+  3. AGENTS.md
+  4. CLAUDE.md
+- Use the first file found that exists and has non-empty content.
+- Read its entire content as plain text.
+- Prefix the extracted content with a header in the format:
+  **Project Context from <FILENAME>:**
+  <file content>
+- If no file is found or all are empty, keep <PROJECT_CONTEXT> empty.
+- IMPORTANT: This project context is for your internal reasoning only. Do not output it to the user. Only use it to refine the user prompt.
+
+<Project_Context>
+
+Original prompt: "$ARGUMENTS"
+
+Please enhance this prompt by:
+
+1. Adding relevant context if the request seems unclear
+2. Making the request more specific and actionable
+3. Adding technical details that would help a coding assistant LLM provide a better response
+4. Incorporating relevant information from the project context above
+5. Maintaining the original intent and tone
+6. Keeping it concise but comprehensive
+
+Validation rules:
+
+- If the enhanced prompt is valid, different from the original, and longer than 10 characters, return it.
+- If no enhancement is possible or validation fails, return the original prompt unchanged.
+
+Final output requirement:
+
+- Return ONLY the enhanced prompt.
+- Do not include explanations, logs, metadata, or project context in the output.
+- Format the enhanced prompt as a clear, determined list of key points (numbered or bulleted), each on its own line, using unambiguous, imperative wording.

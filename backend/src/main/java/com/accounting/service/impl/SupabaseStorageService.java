@@ -174,6 +174,69 @@ public class SupabaseStorageService implements StorageService {
         return signObjectUrl(storagePath, expiresInSeconds);
     }
 
+    @Override
+    public String uploadPurchaseBillAttachment(UUID purchaseBillId, MultipartFile file) {
+        if (purchaseBillId == null || file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Missing purchaseBillId or file");
+        }
+        try {
+            // Generate randomized path: purchase-bills/{purchaseBillId}/{uuid}-{filename}
+            String uuid = UUID.randomUUID().toString();
+            String originalFilename = file.getOriginalFilename();
+            String filename = originalFilename != null ? originalFilename : "file";
+            // Sanitize filename (remove path separators and special chars)
+            filename = filename.replaceAll("[^a-zA-Z0-9._-]", "_");
+            String objectPath = "purchase-bills/" + purchaseBillId + "/" + uuid + "-" + filename;
+            
+            String url = supabaseUrl.replaceAll("/+$", "") + 
+                "/storage/v1/object/" + bucket + "/" + objectPath;
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(60)) // Longer timeout for large files
+                .header("Authorization", "Bearer " + supabaseServiceKey)
+                .header("Content-Type", file.getContentType() == null ? "application/octet-stream" : file.getContentType())
+                .PUT(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
+                .build();
+
+            HttpResponse<Void> res = httpClient.send(req, HttpResponse.BodyHandlers.discarding());
+            if (res.statusCode() >= 200 && res.statusCode() < 300) {
+                return objectPath; // Return storage path, not URL
+            }
+            throw new RuntimeException("Supabase upload failed: HTTP " + res.statusCode());
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Supabase upload error", e);
+        }
+    }
+
+    @Override
+    public void deletePurchaseBillAttachment(String storagePath) {
+        if (storagePath == null || storagePath.isBlank()) {
+            throw new IllegalArgumentException("Missing storagePath");
+        }
+        try {
+            String url = supabaseUrl.replaceAll("/+$", "") + 
+                "/storage/v1/object/" + bucket + "/" + storagePath;
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(15))
+                .header("Authorization", "Bearer " + supabaseServiceKey)
+                .DELETE()
+                .build();
+
+            HttpResponse<Void> res = httpClient.send(req, HttpResponse.BodyHandlers.discarding());
+            if (res.statusCode() < 200 || res.statusCode() >= 300) {
+                // 404 is acceptable (file already deleted)
+                if (res.statusCode() != 404) {
+                    throw new RuntimeException("Supabase delete failed: HTTP " + res.statusCode());
+                }
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Supabase delete error", e);
+        }
+    }
+
     private String detectExtension(String contentType) {
         if (contentType == null) return ".bin";
         String ct = contentType.toLowerCase(Locale.ROOT);

@@ -5,3 +5,5 @@ export * from './inputs'
 export * from './filters'
 export * from './voucher'
 export { ErrorBoundary } from './ErrorBoundary'
+// Explicitly re-export types from account for better TypeScript support
+export type { AccountSummary, AccountBalanceSide } from './account'

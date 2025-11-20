@@ -19,6 +19,8 @@ import com.accounting.service.util.VoucherAuditHelper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -73,6 +75,7 @@ public class PeriodManagementServiceImpl implements PeriodManagementService {
   }
 
   @Override
+  @Transactional
   public List<AccountingPeriodDTO> getOpenPeriods() {
     Long companyId = CompanyContext.getCompanyId();
     if (companyId == null) {
@@ -82,6 +85,19 @@ public class PeriodManagementServiceImpl implements PeriodManagementService {
     LocalDate currentDate = LocalDate.now();
     List<AccountingPeriod> periods = periodRepository.findOpenPeriodsAroundDate(
         companyId, PeriodStatus.OPEN, currentDate);
+    
+    // Auto-create periods if none exist for the company
+    if (periods.isEmpty()) {
+      List<AccountingPeriod> allPeriods = periodRepository.findByCompanyId(companyId);
+      if (allPeriods.isEmpty()) {
+        logger.info("No periods found for company {}, auto-creating periods for current year", companyId);
+        createDefaultPeriodsForYear(companyId, currentDate.getYear());
+        // Re-fetch after creation
+        periods = periodRepository.findOpenPeriodsAroundDate(
+            companyId, PeriodStatus.OPEN, currentDate);
+      }
+    }
+    
     // Limit to current + 3 prior/next (7 total)
     return periods.stream()
         .limit(7)
@@ -530,5 +546,33 @@ public class PeriodManagementServiceImpl implements PeriodManagementService {
       logger.error("Failed to serialize period to JSON: {}", e.getMessage(), e);
       return objectMapper.createObjectNode();
     }
+  }
+
+  /**
+   * Create default monthly periods for a fiscal year.
+   * Creates 12 periods (January to December) for the given year.
+   */
+  private void createDefaultPeriodsForYear(Long companyId, int year) {
+    DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+    
+    for (int month = 1; month <= 12; month++) {
+      YearMonth yearMonth = YearMonth.of(year, month);
+      LocalDate startDate = yearMonth.atDay(1);
+      LocalDate endDate = yearMonth.atEndOfMonth();
+      
+      AccountingPeriod period = new AccountingPeriod();
+      period.setCompanyId(companyId);
+      period.setFiscalYear(year);
+      period.setPeriodNumber(month);
+      period.setPeriodName(startDate.format(monthFormatter));
+      period.setStartDate(startDate);
+      period.setEndDate(endDate);
+      period.setStatus(PeriodStatus.OPEN);
+      
+      periodRepository.save(period);
+      logger.debug("Created period: {} for company {}", period.getPeriodName(), companyId);
+    }
+    
+    logger.info("Created 12 monthly periods for year {} for company {}", year, companyId);
   }
 }

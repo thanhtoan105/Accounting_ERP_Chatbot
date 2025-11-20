@@ -68,6 +68,10 @@ public class UpdateCompanySettingsRequest {
   @Min(0)
   private Integer auditRetentionPeriodDays;
 
+  // Approval Workflow section
+  @Min(0)
+  private java.math.BigDecimal approvalThresholdAmount;
+
   // Numbering section
   private String numberingConfig; // JSON string
 
@@ -215,6 +219,14 @@ public class UpdateCompanySettingsRequest {
 
   public void setAuditRetentionPeriodDays(Integer auditRetentionPeriodDays) {
     this.auditRetentionPeriodDays = auditRetentionPeriodDays;
+  }
+
+  public java.math.BigDecimal getApprovalThresholdAmount() {
+    return approvalThresholdAmount;
+  }
+
+  public void setApprovalThresholdAmount(java.math.BigDecimal approvalThresholdAmount) {
+    this.approvalThresholdAmount = approvalThresholdAmount;
   }
 
   public String getNumberingConfig() {

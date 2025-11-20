@@ -168,6 +168,9 @@ public class CompanySettingsServiceImpl implements CompanySettingsService {
     if (request.getAuditRetentionPeriodDays() != null) {
       existing.setAuditRetentionPeriodDays(request.getAuditRetentionPeriodDays());
     }
+    if (request.getApprovalThresholdAmount() != null) {
+      existing.setApprovalThresholdAmount(request.getApprovalThresholdAmount());
+    }
     if (request.getNumberingConfig() != null) {
       existing.setNumberingConfig(request.getNumberingConfig());
     }
@@ -222,6 +225,7 @@ public class CompanySettingsServiceImpl implements CompanySettingsService {
     dto.setTaxRoundingMode(entity.getTaxRoundingMode());
     dto.setEInvoiceEnabled(entity.getEInvoiceEnabled());
     dto.setAuditRetentionPeriodDays(entity.getAuditRetentionPeriodDays());
+    dto.setApprovalThresholdAmount(entity.getApprovalThresholdAmount());
     dto.setNumberingConfig(entity.getNumberingConfig());
     dto.setBankReconciliationEnabled(entity.getBankReconciliationEnabled());
     dto.setExportFormatDefault(entity.getExportFormatDefault());

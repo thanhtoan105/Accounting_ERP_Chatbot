@@ -1,0 +1,49 @@
+@startuml Accounting System Use Case Diagram (Simple)
+
+' Set theme and styling
+title Accounting System - Use Case Diagram
+skinparam backgroundColor #f9fbff
+skinparam usecaseBackgroundColor #e3f2fd
+skinparam usecaseBorderColor #1976d2
+skinparam actorBackgroundColor #e3f2fd
+skinparam actorBorderColor #1976d2
+
+' System boundary
+rectangle "Accounting System" {
+    ' Core accounting use cases
+    usecase "Manage Vouchers" as UC1
+    usecase "User Management" as UC2
+    usecase "Company Settings" as UC3
+    usecase "Financial Reports" as UC4
+    usecase "Period Management" as UC5
+    usecase "Chart of Accounts" as UC6
+    usecase "Purchase Bills" as UC7
+    usecase "Payments" as UC8
+    usecase "Audit Trail" as UC9
+}
+
+' Define actors
+actor "System Administrator" as Admin
+actor "Finance Manager" as Manager
+actor "Accountant" as Accountant
+actor "Auditor" as Auditor
+actor "Supplier Portal" as Supplier
+
+' Actor inheritance (hierarchical roles)
+Admin <|-- Manager
+Manager <|-- Accountant
+
+' Connections between actors and use cases
+Admin --> UC2 : manages
+Admin --> UC3 : configures
+Manager --> UC4 : generates
+Manager --> UC5 : controls
+Accountant --> UC1 : creates/edits
+Accountant --> UC6 : maintains
+Accountant --> UC7 : processes
+Accountant --> UC8 : handles
+Auditor --> UC9 : reviews
+Supplier --> UC7 : submits
+Supplier --> UC8 : receives
+
+@enduml

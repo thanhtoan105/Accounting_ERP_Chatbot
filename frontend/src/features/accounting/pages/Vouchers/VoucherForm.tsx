@@ -21,7 +21,6 @@ import {
   Sparkles,
   FileText,
   CheckCircle,
-  XCircle,
   RotateCcw,
   ArrowLeftRight,
 } from 'lucide-react'
@@ -33,7 +32,6 @@ import {
   type VoucherEntryLine,
   VoucherTemplateSelector,
   VoucherAttachmentDropzone,
-  type AttachmentFile,
   VoucherHistoryView,
   VoucherAttachmentManagementModal,
 } from '@/components/voucher'
@@ -51,6 +49,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
@@ -58,6 +57,7 @@ import { Calendar } from '@/components/ui/calendar'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -93,8 +93,8 @@ import { getPostableAccounts } from '@/services/chartOfAccounts'
 import type { ChartOfAccount } from '@/types/chartOfAccount'
 
 const formSchema = z.object({
-  voucherDate: z.string({ required_error: 'Ngày chứng từ bắt buộc' }),
-  description: z.string().max(500, 'Mô tả tối đa 500 ký tự').optional().or(z.literal('')),
+  voucherDate: z.string().min(1, 'Voucher date is required'),
+  description: z.string().max(500, 'Description can be up to 500 characters').optional().or(z.literal('')),
 })
 
 type VoucherFormValues = z.infer<typeof formSchema>
@@ -281,7 +281,7 @@ export default function VoucherForm() {
   const voucherId = params.voucherId && params.voucherId !== 'new' ? params.voucherId : undefined
   const isEditing = Boolean(voucherId)
   const { user } = useAuth()
-  const { hasAnyRole, isChiefAccountant } = useRole()
+  const { hasAnyRole } = useRole()
   const { company } = useCompany()
   const currentUserId = user?.id ? String(user.id) : 'anonymous'
   const companyId = getCompanyId()
@@ -401,7 +401,7 @@ export default function VoucherForm() {
         if (!mounted) return
         setAccounts(mapAccountsToSummaries(response))
       } catch (err: any) {
-        toast.error('Không thể tải danh mục tài khoản', {
+        toast.error('Cannot load account categories', {
           description: err?.message,
         })
       } finally {
@@ -458,7 +458,7 @@ export default function VoucherForm() {
       } catch (error: any) {
         console.error('Failed to save draft', error)
         setAutoSaveStatus('error')
-        setAutoSaveError(error?.message || 'Không thể lưu nháp')
+        setAutoSaveError(error?.message || 'Cannot save draft')
       }
     },
     [currentUserId, draftStorageKey, isEditing, isLocked, user?.fullName],
@@ -535,7 +535,7 @@ export default function VoucherForm() {
       })
       .catch((error) => {
         console.error(error)
-        toast.error('Không thể tải chứng từ để chỉnh sửa')
+        toast.error('Cannot load voucher to edit')
       })
       .finally(() => {
         if (mounted) setLoadingVoucher(false)
@@ -561,15 +561,15 @@ export default function VoucherForm() {
         setValidationMap(result.errors || {})
         if (!silent) {
           if (result.valid) {
-            toast.success('Tất cả dòng chứng từ hợp lệ')
+            toast.success('All voucher lines are valid')
           } else {
-            toast.warning('Một số dòng cần kiểm tra lại')
+            toast.warning('Some lines need to be reviewed')
           }
         }
       } catch (err: any) {
         // Silently fail for real-time validation, only show errors for manual validation
         if (!silent) {
-          toast.error('Không thể xác thực chứng từ', { description: err?.message })
+            toast.error('Cannot validate voucher', { description: err?.message })
         }
       } finally {
         setValidating(false)
@@ -599,7 +599,7 @@ export default function VoucherForm() {
     return () => clearTimeout(timeout)
   }, [lines, isEditing, loadingAccounts, loadingVoucher, performRealTimeValidation])
 
-  async function handleValidate(values: VoucherFormValues) {
+  async function handleValidate() {
     await performRealTimeValidation(false) // Manual validation with toast messages
   }
 
@@ -611,7 +611,7 @@ export default function VoucherForm() {
         isEditing && voucherId
           ? await updateVoucher(voucherId, payload)
           : await createVoucher(payload)
-      toast.success(isEditing ? 'Đã cập nhật chứng từ' : 'Đã lưu nháp chứng từ', {
+      toast.success(isEditing ? 'Voucher updated' : 'Draft saved', {
         description: `Mã chứng từ: ${response.voucherNumber}`,
       })
       if (!isEditing) {
@@ -625,7 +625,7 @@ export default function VoucherForm() {
         setEditingVoucher(updated)
       }
     } catch (err: any) {
-      toast.error('Không thể lưu chứng từ', { description: err?.message })
+      toast.error('Cannot save voucher', { description: err?.message })
     } finally {
       setSaving(false)
     }
@@ -634,14 +634,14 @@ export default function VoucherForm() {
   async function handlePost() {
     if (!voucherId || !editingVoucher) return
     if (editingVoucher.status !== 'draft') {
-      toast.error('Chỉ có thể ghi sổ phiếu ở trạng thái nháp')
+      toast.error('Can only post voucher in draft status')
       return
     }
     try {
       setPosting(true)
       const response = await postVoucher(voucherId)
-      toast.success('Đã ghi sổ chứng từ thành công', {
-        description: `Đã tạo ${response.journalEntries.length} bút toán`,
+      toast.success('Voucher posted successfully', {
+        description: `Created ${response.journalEntries.length} journal entries`,
       })
       // Reload voucher to get updated status
       const updated = await getVoucherById(voucherId)
@@ -652,7 +652,7 @@ export default function VoucherForm() {
         setPostingErrors(err.validationErrors)
         setPostingErrorModalOpen(true)
       } else {
-        toast.error('Không thể ghi sổ chứng từ', {
+        toast.error('Cannot post voucher', {
           description: err?.message || err?.error?.message,
         })
       }
@@ -664,20 +664,20 @@ export default function VoucherForm() {
   async function handleUnpost() {
     if (!voucherId || !editingVoucher) return
     if (!unpostReason.trim()) {
-      toast.error('Vui lòng nhập lý do hủy ghi sổ')
+      toast.error('Please enter the reason for unposting')
       return
     }
     try {
       setUnposting(true)
       await unpostVoucher(voucherId, unpostReason.trim())
-      toast.success('Đã hủy ghi sổ chứng từ')
+      toast.success('Voucher unposted successfully')
       setUnpostDialogOpen(false)
       setUnpostReason('')
       // Reload voucher to get updated status
       const updated = await getVoucherById(voucherId)
       setEditingVoucher(updated)
     } catch (err: any) {
-      toast.error('Không thể hủy ghi sổ chứng từ', {
+      toast.error('Cannot unpost voucher', {
         description: err?.message || err?.error?.message,
       })
     } finally {
@@ -688,7 +688,7 @@ export default function VoucherForm() {
   async function handleReverse() {
     if (!voucherId || !editingVoucher) return
     if (!reverseDescription.trim() || !reverseReason.trim()) {
-      toast.error('Vui lòng nhập đầy đủ mô tả và lý do đảo ngược')
+      toast.error('Please enter the full description and reason for reversing')
       return
     }
     try {
@@ -698,8 +698,8 @@ export default function VoucherForm() {
         reverseDescription.trim(),
         reverseReason.trim(),
       )
-      toast.success('Đã đảo ngược chứng từ thành công', {
-        description: `Phiếu đảo ngược: ${response.reversal.voucherNumber}`,
+          toast.success('Voucher reversed successfully', {
+        description: `Reversed voucher: ${response.reversal.voucherNumber}`,
       })
       setReverseDialogOpen(false)
       setReverseDescription('')
@@ -708,7 +708,7 @@ export default function VoucherForm() {
       const updated = await getVoucherById(voucherId)
       setEditingVoucher(updated)
     } catch (err: any) {
-      toast.error('Không thể đảo ngược chứng từ', {
+      toast.error('Cannot reverse voucher', {
         description: err?.message || err?.error?.message,
       })
     } finally {
@@ -757,16 +757,16 @@ export default function VoucherForm() {
 
   async function handleTemplateApplied(template: VoucherTemplateDTO) {
     if (isEditing) {
-      toast.info('Chỉ có thể áp dụng mẫu khi tạo phiếu mới.')
+      toast.info('Can only apply template when creating a new voucher.')
       return
     }
     if (!accounts.length) {
-      toast.error('Chưa tải xong danh mục tài khoản, vui lòng thử lại.')
+      toast.error('Account categories not loaded, please try again.')
       return
     }
     const voucherDate = form.getValues('voucherDate')
     if (!voucherDate) {
-      toast.error('Vui lòng chọn ngày chứng từ trước khi áp dụng mẫu.')
+      toast.error('Please select the voucher date before applying the template.')
       return
     }
     setApplyingTemplate(true)
@@ -784,12 +784,12 @@ export default function VoucherForm() {
       } else {
         applyTemplateLines(appliedTemplate)
       }
-      toast.success(`Đã áp dụng mẫu ${appliedTemplate.name}`)
+      toast.success(`Template ${appliedTemplate.name} applied`)
       setTemplateDialogOpen(false)
     } catch (error: any) {
       console.error('Failed to apply template via API', error)
-      toast.error('Không thể áp dụng mẫu từ máy chủ', {
-        description: error?.message || error?.code || 'Vui lòng thử lại sau.',
+      toast.error('Cannot apply template', {
+        description: error?.message || error?.code || 'Please try again later.',
       })
       applyTemplateLines(template)
       setTemplateDialogOpen(false)
@@ -810,38 +810,6 @@ export default function VoucherForm() {
     )
     return { errorCount, totalErrors }
   }, [validationMap])
-  const isDateDisabled = useCallback(
-    async (date: Date): Promise<boolean> => {
-      // Allow currently selected date
-      if (selectedDate && isSameDay(date, selectedDate)) return false
-
-      // Basic range check (fallback)
-      if (isBefore(date, openPeriodRange.openStart)) return true
-      if (isAfter(date, openPeriodRange.openEnd)) return true
-
-      // Check period API validation (async check, cache results)
-      const dateStr = format(date, 'yyyy-MM-dd')
-      if (dateValidationCache.has(dateStr)) {
-        return !dateValidationCache.get(dateStr)!
-      }
-
-      try {
-        const isValid = await periodService.checkDateInOpenPeriod(dateStr)
-        setDateValidationCache((prev) => new Map(prev).set(dateStr, isValid))
-        if (!isValid) {
-          setPeriodValidationError(`Date ${dateStr} is not in an open period`)
-        } else {
-          setPeriodValidationError(null)
-        }
-        return !isValid
-      } catch (error) {
-        console.error('Failed to validate date with period API:', error)
-        // Fallback to basic range check
-        return false
-      }
-    },
-    [openPeriodRange.openEnd, openPeriodRange.openStart, selectedDate, dateValidationCache],
-  )
 
   // Synchronous version for Calendar component (uses cached results)
   const isDateDisabledSync = useCallback(
@@ -886,9 +854,9 @@ export default function VoucherForm() {
     <div className="space-y-6">
       {isLocked && draftLock ? (
         <Alert variant="destructive">
-          <AlertTitle>Phiếu đang bị khóa</AlertTitle>
+          <AlertTitle>Voucher is locked</AlertTitle>
           <AlertDescription className="flex flex-wrap items-center gap-2 text-sm">
-            {draftLock.ownerName || 'Người dùng khác'} đang chỉnh sửa bản nháp này. Khóa sẽ hết hạn
+            {draftLock.ownerName || 'Other user'} is editing this draft. Lock will expire in
             sau <span className="font-semibold">{lockCountdown ?? '—'}</span>.
             <Button
               size="sm"
@@ -896,7 +864,7 @@ export default function VoucherForm() {
               disabled={Boolean(lockCountdown) && lockCountdown !== '00:00'}
               onClick={claimLock}
             >
-              Yêu cầu quyền chỉnh sửa
+              Request edit permission
             </Button>
           </AlertDescription>
         </Alert>
@@ -906,7 +874,7 @@ export default function VoucherForm() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold">
-              {isEditing ? 'Chỉnh sửa phiếu kế toán' : 'Tạo phiếu kế toán'}
+              {isEditing ? 'Edit accounting voucher' : 'Create accounting voucher'}
             </h1>
             {editingVoucher?.status ? (
               <Badge variant="outline" className="uppercase">
@@ -950,7 +918,7 @@ export default function VoucherForm() {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Nhập nhanh bằng bàn phím, áp dụng mẫu có sẵn và tự động kiểm tra trước khi ghi sổ.
+            Quickly enter by keyboard, apply templates and automatically validate before posting.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -961,7 +929,7 @@ export default function VoucherForm() {
             disabled={loadingAccounts || formDisabled || isEditing}
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            Áp dụng mẫu
+            Apply template
           </Button>
           <Button
             variant="outline"
@@ -974,7 +942,7 @@ export default function VoucherForm() {
             ) : (
               <ShieldAlert className="mr-2 h-4 w-4" />
             )}
-            Kiểm tra
+            Validate
           </Button>
           <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={formDisabled}>
             {saving ? (
@@ -982,7 +950,7 @@ export default function VoucherForm() {
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}
-            Lưu nháp
+            Save draft
           </Button>
           {isEditing && editingVoucher && hasAnyRole(['admin', 'chief_accountant', 'cfo']) && (
             <>
@@ -998,7 +966,7 @@ export default function VoucherForm() {
                   ) : (
                     <CheckCircle className="mr-2 h-4 w-4" />
                   )}
-                  Ghi sổ
+                  Post
                 </Button>
               )}
               {editingVoucher.status === 'posted' && (
@@ -1014,7 +982,7 @@ export default function VoucherForm() {
                     ) : (
                       <RotateCcw className="mr-2 h-4 w-4" />
                     )}
-                    Hủy ghi sổ
+                    Unpost
                   </Button>
                   {!editingVoucher.reversedByVoucherId && (
                     <Button
@@ -1028,7 +996,7 @@ export default function VoucherForm() {
                       ) : (
                         <ArrowLeftRight className="mr-2 h-4 w-4" />
                       )}
-                      Đảo ngược
+                        Reverse
                     </Button>
                   )}
                 </>
@@ -1039,14 +1007,14 @@ export default function VoucherForm() {
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="text-xs text-muted-foreground">
-          {autoSaveStatus === 'saving' && 'Đang lưu nháp...'}
+          {autoSaveStatus === 'saving' && 'Saving draft...'}
           {autoSaveStatus === 'saved' &&
             lastSavedAt &&
-            `Đã lưu nháp lúc ${formatDistanceToNow(lastSavedAt, { addSuffix: true })}`}
+            `Draft saved at ${formatDistanceToNow(lastSavedAt, { addSuffix: true })}`}
           {autoSaveStatus === 'error' && (
             <span className="text-destructive flex items-center gap-1">
               <AlertCircle className="h-3 w-3" />
-              {autoSaveError || 'Không thể lưu nháp'}
+              {autoSaveError || 'Cannot save draft'}
             </span>
           )}
         </div>
@@ -1059,7 +1027,7 @@ export default function VoucherForm() {
             className="text-destructive border-destructive"
           >
             <AlertCircle className="mr-2 h-4 w-4" />
-            {validationSummary.errorCount} dòng có lỗi ({validationSummary.totalErrors} lỗi)
+            {validationSummary.errorCount} lines with errors ({validationSummary.totalErrors} errors)
           </Button>
         )}
       </div>
@@ -1067,13 +1035,13 @@ export default function VoucherForm() {
       {/* Period Selector */}
       <div className="bg-gray-50 p-4 rounded-lg">
         <div className="flex items-center gap-3">
-          <label className="text-sm font-medium">Kỳ kế toán</label>
+          <label className="text-sm font-medium">Accounting period</label>
           <div className="flex-1 max-w-md">
             <PeriodSelector
               selectedPeriod={selectedPeriod}
               onPeriodChange={handlePeriodChange}
               showSummary={true}
-              placeholder="Select period..."
+              placeholder="Select accounting period..."
               disabled={formDisabled}
             />
           </div>
@@ -1084,7 +1052,7 @@ export default function VoucherForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Thông tin chung</CardTitle>
+              <CardTitle>General information</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <FormField
@@ -1092,7 +1060,7 @@ export default function VoucherForm() {
                 name="voucherDate"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Ngày chứng từ</FormLabel>
+                    <FormLabel>Voucher date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -1103,7 +1071,7 @@ export default function VoucherForm() {
                           >
                             {field.value
                               ? format(new Date(field.value), 'dd/MM/yyyy')
-                              : 'Chọn ngày'}
+                              : 'Select date'}
                             <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
@@ -1153,7 +1121,7 @@ export default function VoucherForm() {
                       </PopoverContent>
                     </Popover>
                     <FormDescription>
-                      Chỉ được chọn ngày trong khoảng{' '}
+                      Only dates between{' '}
                       {format(openPeriodRange.openStart, 'dd/MM/yyyy')} –{' '}
                       {format(openPeriodRange.openEnd, 'dd/MM/yyyy')}.
                     </FormDescription>
@@ -1172,11 +1140,11 @@ export default function VoucherForm() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mô tả chung</FormLabel>
+                    <FormLabel>General description</FormLabel>
                     <FormControl>
                       <Textarea
                         rows={3}
-                        placeholder="VD: Thu tiền mặt của khách hàng..."
+                        placeholder="Example: Received cash from customer..."
                         {...field}
                         disabled={formDisabled}
                       />
@@ -1190,7 +1158,7 @@ export default function VoucherForm() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Dòng định khoản</CardTitle>
+              <CardTitle>Entry lines</CardTitle>
             </CardHeader>
             <CardContent>
               {loadingAccounts ? (
@@ -1221,7 +1189,7 @@ export default function VoucherForm() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Đính kèm</CardTitle>
+              <CardTitle>Attachments</CardTitle>
             </CardHeader>
             <CardContent>
               <VoucherAttachmentDropzone
@@ -1229,7 +1197,7 @@ export default function VoucherForm() {
                 disabled={formDisabled}
                 onUploadSuccess={(attachmentFile) => {
                   setAttachmentCount((prev) => prev + 1)
-                  toast.success(`Đã tải lên: ${attachmentFile.file.name}`)
+                  toast.success(`Uploaded: ${attachmentFile.file.name}`)
                   // Reload voucher to get updated attachment count
                   if (voucherId) {
                     getVoucherById(voucherId)
@@ -1242,7 +1210,7 @@ export default function VoucherForm() {
                   }
                 }}
                 onUploadError={(attachmentFile, error) => {
-                  toast.error(`Không thể tải lên ${attachmentFile.file.name}`, {
+                  toast.error(`Cannot upload ${attachmentFile.file.name}`, {
                     description: error,
                   })
                 }}
@@ -1268,16 +1236,16 @@ export default function VoucherForm() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-destructive" />
-              Tóm tắt lỗi xác thực
+              Validation error summary
             </DialogTitle>
             <DialogDescription>
-              Có {validationSummary.errorCount} dòng với {validationSummary.totalErrors} lỗi cần xử
+              There are {validationSummary.errorCount} lines with {validationSummary.totalErrors} errors that need to be reviewed
               lý
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {Object.entries(validationMap).length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">Không có lỗi xác thực</div>
+              <div className="text-center py-8 text-muted-foreground">No validation errors</div>
             ) : (
               <div className="space-y-3">
                 {Object.entries(validationMap)
@@ -1288,9 +1256,9 @@ export default function VoucherForm() {
                       className="rounded-lg border border-destructive/50 bg-destructive/5 p-4"
                     >
                       <div className="font-semibold text-destructive mb-3 flex items-center gap-2">
-                        <span>Dòng {lineNum}:</span>
+                            <span>Line {lineNum}:</span>
                         <Badge variant="destructive" className="text-xs">
-                          {Object.values(fieldErrors).flat().length} lỗi
+                          {Object.values(fieldErrors).flat().length} errors
                         </Badge>
                       </div>
                       <div className="space-y-2 ml-4">
@@ -1298,15 +1266,20 @@ export default function VoucherForm() {
                           <div key={field} className="text-sm">
                             <span className="font-medium text-muted-foreground capitalize">
                               {field === 'debitAccount'
-                                ? 'Tài khoản Nợ'
+                                ? 'Debit account'
                                 : field === 'creditAccount'
-                                  ? 'Tài khoản Có'
+                                  ? 'Credit account'
                                   : field === 'amount'
-                                    ? 'Số tiền'
+                                    ? 'Amount'
                                     : field === 'dimensions'
                                       ? 'Dimensions'
-                                      : field}
-                              :
+                                      : field === 'voucherDate'
+                                        ? 'Voucher date'
+                                        : field === 'description'
+                                          ? 'Description'
+                                          : field === 'attachmentCount'
+                                            ? 'Attachment count'
+                                            : field}
                             </span>{' '}
                             <span className="text-destructive">
                               {Array.isArray(errors) ? errors.join(', ') : String(errors)}

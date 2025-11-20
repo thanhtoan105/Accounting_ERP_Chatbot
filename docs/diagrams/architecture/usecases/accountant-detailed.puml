@@ -1,0 +1,137 @@
+@startuml Accountant - Detailed Use Cases
+
+' Accountant Use Case Diagram
+title Accountant - Detailed Use Cases
+skinparam backgroundColor #f9fbff
+skinparam usecaseBackgroundColor #e8f5e9
+skinparam usecaseBorderColor #388e3c
+skinparam actorBackgroundColor #e3f2fd
+skinparam actorBorderColor #1976d2
+
+' Accountant actor
+actor "Accountant" as Accountant
+
+' System boundary for Accountant functions
+rectangle "Daily Accounting Operations Module" {
+    ' Voucher Management Use Cases
+    usecase "Create Sales Voucher" as CreateSalesVoucher
+    usecase "Create Purchase Voucher" as CreatePurchaseVoucher
+    usecase "Create Journal Entry" as CreateJournal
+    usecase "Edit Draft Voucher" as EditVoucher
+    usecase "Delete Draft Voucher" as DeleteVoucher
+    usecase "Post Voucher" as PostVoucher
+    usecase "Unpost Voucher" as UnpostVoucher
+    usecase "Reverse Voucher" as ReverseVoucher
+
+    ' Chart of Accounts Use Cases
+    usecase "View Chart of Accounts" as ViewCOA
+    usecase "Search Account Codes" as SearchAccount
+    usecase "View Account Details" as AccountDetails
+    usecase "View Account Balance" as AccountBalance
+    usecase "Generate Account Statements" as AccountStatements
+
+    ' Purchase Bill Management Use Cases
+    usecase "Create Purchase Bill" as CreateBill
+    usecase "Upload Bill Attachments" as UploadAttachments
+    usecase "Validate Bill Details" as ValidateBill
+    usecase "Submit Bill for Approval" as SubmitBill
+    usecase "Track Bill Status" as TrackBill
+    usecase "Record Bill Payments" as RecordPayments
+
+    ' Payment Processing Use Cases
+    usecase "Create Payment Voucher" as CreatePayment
+    usecase "Process Supplier Payments" as ProcessPayment
+    usecase "Record Customer Receipts" as RecordReceipts
+    usecase "Reconcile Bank Transactions" as ReconcileBank
+    usecase "Manage Payment Methods" as PaymentMethods
+    usecase "Generate Payment Reports" as PaymentReports
+
+    ' Reporting and Analysis Use Cases
+    usecase "Generate Trial Balance" as TrialBalance
+    usecase "View Account Ledger" as AccountLedger
+    usecase "Generate Transaction Reports" as TransactionReports
+    usecase "Create Bank Reconciliation Statement" as BankReconciliation
+    usecase "Generate Aging Reports" as AgingReports
+
+    ' Data Management Use Cases
+    usecase "Import Transactions" as ImportTransactions
+    usecase "Export Transaction Data" as ExportData
+    usecase "Backup Voucher Data" as BackupData
+    usecase "Manage Transaction Templates" as ManageTemplates
+}
+
+' Connections
+Accountant --> CreateSalesVoucher
+Accountant --> CreatePurchaseVoucher
+Accountant --> CreateJournal
+Accountant --> EditVoucher
+Accountant --> DeleteVoucher
+Accountant --> PostVoucher
+Accountant --> UnpostVoucher
+Accountant --> ReverseVoucher
+
+Accountant --> ViewCOA
+Accountant --> SearchAccount
+Accountant --> AccountDetails
+Accountant --> AccountBalance
+Accountant --> AccountStatements
+
+Accountant --> CreateBill
+Accountant --> UploadAttachments
+Accountant --> ValidateBill
+Accountant --> SubmitBill
+Accountant --> TrackBill
+Accountant --> RecordPayments
+
+Accountant --> CreatePayment
+Accountant --> ProcessPayment
+Accountant --> RecordReceipts
+Accountant --> ReconcileBank
+Accountant --> PaymentMethods
+Accountant --> PaymentReports
+
+Accountant --> TrialBalance
+Accountant --> AccountLedger
+Accountant --> TransactionReports
+Accountant --> BankReconciliation
+Accountant --> AgingReports
+
+Accountant --> ImportTransactions
+Accountant --> ExportData
+Accountant --> BackupData
+Accountant --> ManageTemplates
+
+' Include relationships (complex operations include basic ones)
+PostVoucher ..> ValidateBill : <<include>>
+PostVoucher ..> "Validate Double Entry" : <<include>>
+CreateBill ..> UploadAttachments : <<include>>
+ProcessPayment ..> ValidateBill : <<include>>
+BankReconciliation ..> ReconcileBank : <<include>>
+TrialBalance ..> AccountLedger : <<include>>
+
+' Extension relationships
+CreateSalesVoucher ..> "Create Recurring Voucher" : <<extend>>
+CreatePurchaseVoucher ..> "Create Bill from PO" : <<extend>>
+TransactionReports ..> "Schedule Report" : <<extend>>
+AccountStatements ..> "Email Statement" : <<extend>>
+
+' Notes for clarity
+note right of Accountant
+  **Accountant**
+  - Daily operations
+  - Transaction processing
+  - Data entry and validation
+  - Basic reporting
+end note
+
+note bottom of PostVoucher
+  Requires double-entry validation
+  and period checking
+end note
+
+note bottom of ProcessPayment
+  Includes bank reconciliation
+  and payment method validation
+end note
+
+@enduml
