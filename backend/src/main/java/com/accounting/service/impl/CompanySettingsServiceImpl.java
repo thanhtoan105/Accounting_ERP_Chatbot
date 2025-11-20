@@ -21,7 +21,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Implementation of CompanySettingsService for advanced company settings operations.
+ * Implementation of CompanySettingsService for advanced company settings
+ * operations.
  * Handles tax, currency, localization, numbering, and compliance settings.
  */
 @Service
@@ -42,8 +43,7 @@ public class CompanySettingsServiceImpl implements CompanySettingsService {
    * Get current HTTP request from RequestContextHolder.
    */
   private HttpServletRequest getCurrentRequest() {
-    ServletRequestAttributes attributes =
-        (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+    ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
     return attributes != null ? attributes.getRequest() : null;
   }
 
@@ -171,6 +171,10 @@ public class CompanySettingsServiceImpl implements CompanySettingsService {
     if (request.getApprovalThresholdAmount() != null) {
       existing.setApprovalThresholdAmount(request.getApprovalThresholdAmount());
     }
+    if (request.getSalesInvoiceApprovalThresholdAmount() != null) {
+      existing.setSalesInvoiceApprovalThresholdAmount(
+          request.getSalesInvoiceApprovalThresholdAmount());
+    }
     if (request.getNumberingConfig() != null) {
       existing.setNumberingConfig(request.getNumberingConfig());
     }
@@ -226,6 +230,7 @@ public class CompanySettingsServiceImpl implements CompanySettingsService {
     dto.setEInvoiceEnabled(entity.getEInvoiceEnabled());
     dto.setAuditRetentionPeriodDays(entity.getAuditRetentionPeriodDays());
     dto.setApprovalThresholdAmount(entity.getApprovalThresholdAmount());
+    dto.setSalesInvoiceApprovalThresholdAmount(entity.getSalesInvoiceApprovalThresholdAmount());
     dto.setNumberingConfig(entity.getNumberingConfig());
     dto.setBankReconciliationEnabled(entity.getBankReconciliationEnabled());
     dto.setExportFormatDefault(entity.getExportFormatDefault());
@@ -263,6 +268,14 @@ public class CompanySettingsServiceImpl implements CompanySettingsService {
         entity.getAuditRetentionPeriodDays() == null
             ? null
             : entity.getAuditRetentionPeriodDays().toString());
+    values.put("approvalThresholdAmount",
+        entity.getApprovalThresholdAmount() == null
+            ? null
+            : entity.getApprovalThresholdAmount().toString());
+    values.put("salesInvoiceApprovalThresholdAmount",
+        entity.getSalesInvoiceApprovalThresholdAmount() == null
+            ? null
+            : entity.getSalesInvoiceApprovalThresholdAmount().toString());
     values.put("numberingConfig", entity.getNumberingConfig());
     values.put("bankReconciliationEnabled",
         entity.getBankReconciliationEnabled() == null
@@ -272,4 +285,3 @@ public class CompanySettingsServiceImpl implements CompanySettingsService {
     return values;
   }
 }
-

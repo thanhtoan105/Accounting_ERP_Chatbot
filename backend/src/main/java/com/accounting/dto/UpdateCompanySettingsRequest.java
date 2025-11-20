@@ -72,6 +72,9 @@ public class UpdateCompanySettingsRequest {
   @Min(0)
   private java.math.BigDecimal approvalThresholdAmount;
 
+  @Min(0)
+  private java.math.BigDecimal salesInvoiceApprovalThresholdAmount;
+
   // Numbering section
   private String numberingConfig; // JSON string
 
@@ -227,6 +230,15 @@ public class UpdateCompanySettingsRequest {
 
   public void setApprovalThresholdAmount(java.math.BigDecimal approvalThresholdAmount) {
     this.approvalThresholdAmount = approvalThresholdAmount;
+  }
+
+  public java.math.BigDecimal getSalesInvoiceApprovalThresholdAmount() {
+    return salesInvoiceApprovalThresholdAmount;
+  }
+
+  public void setSalesInvoiceApprovalThresholdAmount(
+      java.math.BigDecimal salesInvoiceApprovalThresholdAmount) {
+    this.salesInvoiceApprovalThresholdAmount = salesInvoiceApprovalThresholdAmount;
   }
 
   public String getNumberingConfig() {

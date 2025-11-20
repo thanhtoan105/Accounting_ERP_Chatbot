@@ -79,7 +79,7 @@ development_status:
 
   epic-5: contexted
   5-1-sales-invoice-entry-edit-and-draft-management: done
-  5-2-invoice-approval-workflow-maker-checker: backlog
+  5-2-invoice-approval-workflow-maker-checker: in-progress
   5-3-customer-payment-receipts-linked-receivables-standalone-entry: backlog
   5-4-ar-aging-report-and-overdue-alerts: backlog
   5-5-customer-statement-reconciliation: backlog
