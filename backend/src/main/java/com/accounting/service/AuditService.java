@@ -201,10 +201,10 @@ public interface AuditService {
          * Log voucher posting. Records voucher ID, voucher number, user who posted,
          * timestamp, and IP address.
          *
-         * @param voucherId       voucher ID that was posted
-         * @param voucherNumber   voucher number for reference
+         * @param voucherId      voucher ID that was posted
+         * @param voucherNumber  voucher number for reference
          * @param postedByUserId ID of user who posted the voucher
-         * @param request         HTTP request for IP address and user agent
+         * @param request        HTTP request for IP address and user agent
          */
         void logVoucherPosted(
                         java.util.UUID voucherId,
@@ -213,14 +213,15 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
-         * Log voucher unposting. Records voucher ID, voucher number, reason, user who unposted,
+         * Log voucher unposting. Records voucher ID, voucher number, reason, user who
+         * unposted,
          * timestamp, and IP address.
          *
-         * @param voucherId         voucher ID that was unposted
-         * @param voucherNumber     voucher number for reference
-         * @param reason            unposting reason (required)
-         * @param unpostedByUserId  ID of user who unposted the voucher
-         * @param request           HTTP request for IP address and user agent
+         * @param voucherId        voucher ID that was unposted
+         * @param voucherNumber    voucher number for reference
+         * @param reason           unposting reason (required)
+         * @param unpostedByUserId ID of user who unposted the voucher
+         * @param request          HTTP request for IP address and user agent
          */
         void logVoucherUnposted(
                         java.util.UUID voucherId,
@@ -233,13 +234,13 @@ public interface AuditService {
          * Log voucher reversal. Records original voucher ID, reversal voucher ID,
          * voucher numbers, reason, user who reversed, timestamp, and IP address.
          *
-         * @param originalVoucherId  original voucher ID that was reversed
+         * @param originalVoucherId     original voucher ID that was reversed
          * @param originalVoucherNumber original voucher number
-         * @param reversalVoucherId  reversal voucher ID
+         * @param reversalVoucherId     reversal voucher ID
          * @param reversalVoucherNumber reversal voucher number
-         * @param reason             reversal reason (required)
-         * @param reversedByUserId   ID of user who reversed the voucher
-         * @param request            HTTP request for IP address and user agent
+         * @param reason                reversal reason (required)
+         * @param reversedByUserId      ID of user who reversed the voucher
+         * @param request               HTTP request for IP address and user agent
          */
         void logVoucherReversed(
                         java.util.UUID originalVoucherId,
@@ -281,29 +282,29 @@ public interface AuditService {
          * Log AP aging report view event with applied filters.
          *
          * @param companyId company id
-         * @param userId user performing the action
-         * @param filters filters applied to the report
+         * @param userId    user performing the action
+         * @param filters   filters applied to the report
          */
         void logAgingReportViewed(Long companyId, Long userId, java.util.Map<String, Object> filters);
 
         /**
          * Log AP aging drill-down view event.
          *
-         * @param companyId company id
-         * @param userId user performing the action
+         * @param companyId  company id
+         * @param userId     user performing the action
          * @param supplierId supplier being drilled down
-         * @param bucket bucket requested
+         * @param bucket     bucket requested
          */
         void logAgingDrilldownViewed(Long companyId, Long userId, Long supplierId, String bucket);
 
         /**
          * Log VAT report generation event.
          *
-         * @param companyId company id
-         * @param userId user performing the action
-         * @param reportId generated report id
+         * @param companyId  company id
+         * @param userId     user performing the action
+         * @param reportId   generated report id
          * @param reportType report type (e.g., INPUT_VAT)
-         * @param filters filters applied when generating the report
+         * @param filters    filters applied when generating the report
          */
         void logVatReportGenerated(
                         Long companyId,
@@ -339,11 +340,11 @@ public interface AuditService {
          * Log VAT rate override event. Records company, actual rate, default rate,
          * user, timestamp, and IP address.
          *
-         * @param companyId    company ID
-         * @param userId       user who overrode the VAT rate
-         * @param actualRate   actual VAT rate used (overridden)
-         * @param defaultRate  company default VAT rate
-         * @param request      HTTP request for IP address and user agent
+         * @param companyId   company ID
+         * @param userId      user who overrode the VAT rate
+         * @param actualRate  actual VAT rate used (overridden)
+         * @param defaultRate company default VAT rate
+         * @param request     HTTP request for IP address and user agent
          */
         void logVatRateOverride(
                         Long companyId,
@@ -356,13 +357,13 @@ public interface AuditService {
          * Log VAT sum validation failure event. Records company, bill ID, line VAT sum,
          * document VAT, difference, user, timestamp, and IP address.
          *
-         * @param companyId    company ID
-         * @param userId       user who triggered the validation
-         * @param billId       purchase bill ID
-         * @param lineVATSum   sum of line-level VAT amounts
-         * @param documentVAT  document-level VAT total
-         * @param difference   difference between line sum and document total
-         * @param request      HTTP request for IP address and user agent
+         * @param companyId   company ID
+         * @param userId      user who triggered the validation
+         * @param billId      purchase bill ID
+         * @param lineVATSum  sum of line-level VAT amounts
+         * @param documentVAT document-level VAT total
+         * @param difference  difference between line sum and document total
+         * @param request     HTTP request for IP address and user agent
          */
         void logVatSumValidationFailure(
                         Long companyId,
@@ -377,13 +378,14 @@ public interface AuditService {
          * Log VAT ratio block event. Records company, amount, VAT amount, ratio,
          * reason, user, timestamp, and IP address.
          *
-         * @param companyId  company ID
-         * @param userId     user who attempted the blocked action
-         * @param amount     base amount
-         * @param vatAmount  VAT amount
-         * @param ratio      calculated VAT ratio (percentage)
-         * @param reason     reason for blocking (e.g., "Negative ratio", "Over 100% ratio")
-         * @param request    HTTP request for IP address and user agent
+         * @param companyId company ID
+         * @param userId    user who attempted the blocked action
+         * @param amount    base amount
+         * @param vatAmount VAT amount
+         * @param ratio     calculated VAT ratio (percentage)
+         * @param reason    reason for blocking (e.g., "Negative ratio", "Over 100%
+         *                  ratio")
+         * @param request   HTTP request for IP address and user agent
          */
         void logVatRatioBlock(
                         Long companyId,
@@ -397,12 +399,12 @@ public interface AuditService {
         /**
          * Log supplier statement generation event.
          *
-         * @param companyId company id
-         * @param userId user who generated the statement
-         * @param statementId statement ID
-         * @param supplierId supplier ID
+         * @param companyId     company id
+         * @param userId        user who generated the statement
+         * @param statementId   statement ID
+         * @param supplierId    supplier ID
          * @param statementType statement type (SUMMARY/DETAILED)
-         * @param request HTTP request for IP address and user agent
+         * @param request       HTTP request for IP address and user agent
          */
         void logStatementGenerated(
                         Long companyId,
@@ -415,11 +417,11 @@ public interface AuditService {
         /**
          * Log supplier statement export event.
          *
-         * @param companyId company id
-         * @param userId user who exported the statement
+         * @param companyId   company id
+         * @param userId      user who exported the statement
          * @param statementId statement ID
-         * @param format export format (PDF/EXCEL)
-         * @param request HTTP request for IP address and user agent
+         * @param format      export format (PDF/EXCEL)
+         * @param request     HTTP request for IP address and user agent
          */
         void logStatementExported(
                         Long companyId,
@@ -431,11 +433,11 @@ public interface AuditService {
         /**
          * Log supplier statement email sent event.
          *
-         * @param companyId company id
-         * @param userId user who sent the statement
-         * @param statementId statement ID
+         * @param companyId      company id
+         * @param userId         user who sent the statement
+         * @param statementId    statement ID
          * @param recipientCount number of recipients
-         * @param request HTTP request for IP address and user agent
+         * @param request        HTTP request for IP address and user agent
          */
         void logStatementSent(
                         Long companyId,
@@ -447,12 +449,12 @@ public interface AuditService {
         /**
          * Log supplier statement import event.
          *
-         * @param companyId company id
-         * @param userId user who imported the statement
-         * @param supplierId supplier ID
-         * @param itemCount total items imported
+         * @param companyId     company id
+         * @param userId        user who imported the statement
+         * @param supplierId    supplier ID
+         * @param itemCount     total items imported
          * @param mismatchCount number of mismatches found
-         * @param request HTTP request for IP address and user agent
+         * @param request       HTTP request for IP address and user agent
          */
         void logStatementImported(
                         Long companyId,
@@ -465,11 +467,11 @@ public interface AuditService {
         /**
          * Log supplier statement reconciliation saved event.
          *
-         * @param companyId company id
-         * @param userId user who saved the reconciliation
-         * @param supplierId supplier ID
+         * @param companyId    company id
+         * @param userId       user who saved the reconciliation
+         * @param supplierId   supplier ID
          * @param disputeCount number of disputes created
-         * @param request HTTP request for IP address and user agent
+         * @param request      HTTP request for IP address and user agent
          */
         void logReconciliationSaved(
                         Long companyId,
@@ -482,11 +484,11 @@ public interface AuditService {
          * Log supplier statement dispute update event.
          *
          * @param companyId company id
-         * @param userId user who updated the dispute
+         * @param userId    user who updated the dispute
          * @param disputeId dispute ID
          * @param oldStatus previous dispute status
          * @param newStatus new dispute status
-         * @param request HTTP request for IP address and user agent
+         * @param request   HTTP request for IP address and user agent
          */
         void logDisputeUpdated(
                         Long companyId,
@@ -869,16 +871,18 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
-         * Log fraud detection event. Records user, account, line number, attempted amount,
+         * Log fraud detection event. Records user, account, line number, attempted
+         * amount,
          * fraud type, timestamp, and IP address.
          *
-         * @param userId         ID of user who attempted the fraudulent action
-         * @param accountId      account ID involved in the fraud attempt
-         * @param accountCode    account code for reference
-         * @param lineNumber     line number in voucher where fraud was detected
+         * @param userId          ID of user who attempted the fraudulent action
+         * @param accountId       account ID involved in the fraud attempt
+         * @param accountCode     account code for reference
+         * @param lineNumber      line number in voucher where fraud was detected
          * @param attemptedAmount attempted amount (negative value)
-         * @param fraudType      type of fraud (e.g., NEGATIVE_AMOUNT, NEGATIVE_DEBIT, NEGATIVE_CREDIT)
-         * @param request        HTTP request for IP address and user agent
+         * @param fraudType       type of fraud (e.g., NEGATIVE_AMOUNT, NEGATIVE_DEBIT,
+         *                        NEGATIVE_CREDIT)
+         * @param request         HTTP request for IP address and user agent
          */
         void logFraudDetection(
                         Long userId,
@@ -890,16 +894,19 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
-         * Log blocked validation attempt. Records user, account, line number, field name,
+         * Log blocked validation attempt. Records user, account, line number, field
+         * name,
          * reason, attempt type, timestamp, and IP address.
          *
          * @param userId      ID of user who attempted the blocked action
          * @param accountId   account ID involved in the blocked attempt
          * @param accountCode account code for reference
          * @param lineNumber  line number in voucher where attempt was blocked
-         * @param fieldName   field name where the attempt occurred (e.g., debitAccount, creditAccount)
+         * @param fieldName   field name where the attempt occurred (e.g., debitAccount,
+         *                    creditAccount)
          * @param reason      reason for blocking (error message)
-         * @param attemptType type of blocked attempt (e.g., NON_POSTABLE_ACCOUNT, NON_LEAF_ACCOUNT)
+         * @param attemptType type of blocked attempt (e.g., NON_POSTABLE_ACCOUNT,
+         *                    NON_LEAF_ACCOUNT)
          * @param request     HTTP request for IP address and user agent
          */
         void logBlockedAttempt(
@@ -915,59 +922,62 @@ public interface AuditService {
         /**
          * Log purchase bill operation failure.
          *
-         * @param billId purchase bill ID (if available)
+         * @param billId     purchase bill ID (if available)
          * @param billNumber purchase bill number (if available)
-         * @param action action type (e.g. PURCHASE_BILL_CREATE_FAILED)
-         * @param reason failure reason
-         * @param request HTTP request for IP address and user agent
+         * @param action     action type (e.g. PURCHASE_BILL_CREATE_FAILED)
+         * @param reason     failure reason
+         * @param request    HTTP request for IP address and user agent
          */
         void logPurchaseBillOperationFailed(
-                UUID billId,
-                String billNumber,
-                String action,
-                String reason,
-                HttpServletRequest request);
+                        UUID billId,
+                        String billNumber,
+                        String action,
+                        String reason,
+                        HttpServletRequest request);
 
         /**
          * Log payment operation failure.
          *
-         * @param paymentId payment ID (if available)
+         * @param paymentId     payment ID (if available)
          * @param paymentNumber payment number (if available)
-         * @param action action type (e.g. PAYMENT_CREATE_FAILED)
-         * @param reason failure reason
-         * @param request HTTP request for IP address and user agent
+         * @param action        action type (e.g. PAYMENT_CREATE_FAILED)
+         * @param reason        failure reason
+         * @param request       HTTP request for IP address and user agent
          */
         void logPaymentOperationFailed(
-                UUID paymentId,
-                String paymentNumber,
-                String action,
-                String reason,
-                HttpServletRequest request);
+                        UUID paymentId,
+                        String paymentNumber,
+                        String action,
+                        String reason,
+                        HttpServletRequest request);
 
         /**
          * Log delete attempt failure.
          *
          * @param entityType entity type (e.g. PURCHASE_BILL, PAYMENT)
-         * @param entityId entity ID
-         * @param reason failure reason
-         * @param request HTTP request for IP address and user agent
+         * @param entityId   entity ID
+         * @param reason     failure reason
+         * @param request    HTTP request for IP address and user agent
          */
         void logDeleteAttemptFailed(
-                String entityType,
-                String entityId,
-                String reason,
-                HttpServletRequest request);
+                        String entityType,
+                        String entityId,
+                        String reason,
+                        HttpServletRequest request);
 
         /**
          * Log voucher lifecycle event with JSON snapshots and SHA-256 diff hash.
          * Records before/after snapshots, cryptographic hash, user ID/role, device/IP.
          *
-         * @param voucherId       voucher ID
-         * @param voucherNumber   voucher number for reference
-         * @param action          action type (e.g., VOUCHER_CREATED, VOUCHER_UPDATED, VOUCHER_POSTED)
-         * @param beforeSnapshot  JSON snapshot of voucher before the change (null for create)
-         * @param afterSnapshot   JSON snapshot of voucher after the change
-         * @param diffHash        SHA-256 hash of the JSON diff between before/after snapshots
+         * @param voucherId      voucher ID
+         * @param voucherNumber  voucher number for reference
+         * @param action         action type (e.g., VOUCHER_CREATED, VOUCHER_UPDATED,
+         *                       VOUCHER_POSTED)
+         * @param beforeSnapshot JSON snapshot of voucher before the change (null for
+         *                       create)
+         * @param afterSnapshot  JSON snapshot of voucher after the change
+         * @param diffHash       SHA-256 hash of the JSON diff between before/after
+         *                       snapshots
          * @param request        HTTP request for IP address and user agent
          */
         void logVoucherEvent(
@@ -981,20 +991,25 @@ public interface AuditService {
 
         /**
          * Log batch/mass voucher action with aggregated entry.
-         * Records voucher IDs list, action stats (success/failure counts), start/end timestamp, summary.
+         * Records voucher IDs list, action stats (success/failure counts), start/end
+         * timestamp, summary.
          *
-         * <p><b>Note:</b> This method is implemented and ready for use, but batch voucher operations
-         * (e.g., bulk posting, bulk import, bulk delete) are deferred to post-MVP. When batch
-         * operations are implemented, they should call this method to log aggregated audit entries
+         * <p>
+         * <b>Note:</b> This method is implemented and ready for use, but batch voucher
+         * operations
+         * (e.g., bulk posting, bulk import, bulk delete) are deferred to post-MVP. When
+         * batch
+         * operations are implemented, they should call this method to log aggregated
+         * audit entries
          * as required by AC2 (Story 3.5).
          *
-         * @param voucherIds  list of voucher IDs involved in the batch action
-         * @param action      action type (e.g., BATCH_POST, BATCH_DELETE, BATCH_IMPORT)
-         * @param stats       batch action statistics (success/failure counts)
-         * @param startTime   start timestamp of the batch operation
-         * @param endTime     end timestamp of the batch operation
-         * @param summary     summary description of the batch action
-         * @param request     HTTP request for IP address and user agent
+         * @param voucherIds list of voucher IDs involved in the batch action
+         * @param action     action type (e.g., BATCH_POST, BATCH_DELETE, BATCH_IMPORT)
+         * @param stats      batch action statistics (success/failure counts)
+         * @param startTime  start timestamp of the batch operation
+         * @param endTime    end timestamp of the batch operation
+         * @param summary    summary description of the batch action
+         * @param request    HTTP request for IP address and user agent
          */
         void logBatchVoucherAction(
                         java.util.List<UUID> voucherIds,
@@ -1011,7 +1026,8 @@ public interface AuditService {
          *
          * @param periodId   period ID that was closed
          * @param reason     close reason provided by user
-         * @param hashDigest SHA-256 hash of the period snapshot for integrity verification
+         * @param hashDigest SHA-256 hash of the period snapshot for integrity
+         *                   verification
          */
         void logPeriodClosed(UUID periodId, String reason, String hashDigest);
 
@@ -1022,8 +1038,10 @@ public interface AuditService {
          *
          * @param periodId         period ID that was reopened
          * @param reason           reopen reason provided by user
-         * @param approvalMetadata approval metadata (approver, approval reference, etc.)
-         * @param hashDigest       SHA-256 hash of the period snapshot for integrity verification
+         * @param approvalMetadata approval metadata (approver, approval reference,
+         *                         etc.)
+         * @param hashDigest       SHA-256 hash of the period snapshot for integrity
+         *                         verification
          */
         void logPeriodReopened(UUID periodId, String reason, String approvalMetadata, String hashDigest);
 
@@ -1031,23 +1049,25 @@ public interface AuditService {
          * Log period validation blocked attempt.
          * Records user, period, operation, reason, timestamp for audit trail.
          *
-         * @param periodId period ID where operation was blocked
-         * @param operation operation that was blocked (e.g., VOUCHER_CREATE, VOUCHER_POST)
-         * @param reason   reason for blocking (e.g., PERIOD_CLOSED, PERIOD_FUTURE)
+         * @param periodId  period ID where operation was blocked
+         * @param operation operation that was blocked (e.g., VOUCHER_CREATE,
+         *                  VOUCHER_POST)
+         * @param reason    reason for blocking (e.g., PERIOD_CLOSED, PERIOD_FUTURE)
          */
         void logPeriodValidationBlocked(UUID periodId, String operation, String reason);
 
         /**
-         * Log attachment download event. Records attachment ID, voucher ID, file metadata,
+         * Log attachment download event. Records attachment ID, voucher ID, file
+         * metadata,
          * user ID, timestamp, and IP address.
          *
-         * @param attachmentId attachment ID that was downloaded
-         * @param voucherId voucher ID that the attachment belongs to
-         * @param fileName file name of the attachment
-         * @param fileSize file size in bytes
-         * @param mimeType MIME type of the file
+         * @param attachmentId       attachment ID that was downloaded
+         * @param voucherId          voucher ID that the attachment belongs to
+         * @param fileName           file name of the attachment
+         * @param fileSize           file size in bytes
+         * @param mimeType           MIME type of the file
          * @param downloadedByUserId ID of user who downloaded the attachment
-         * @param request HTTP request for IP address and user agent
+         * @param request            HTTP request for IP address and user agent
          */
         void logAttachmentDownload(
                         UUID attachmentId,
@@ -1059,16 +1079,17 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
-         * Log attachment view/preview event. Records attachment ID, voucher ID, file metadata,
+         * Log attachment view/preview event. Records attachment ID, voucher ID, file
+         * metadata,
          * user ID, timestamp, and IP address.
          *
-         * @param attachmentId attachment ID that was viewed
-         * @param voucherId voucher ID that the attachment belongs to
-         * @param fileName file name of the attachment
-         * @param fileSize file size in bytes
-         * @param mimeType MIME type of the file
+         * @param attachmentId   attachment ID that was viewed
+         * @param voucherId      voucher ID that the attachment belongs to
+         * @param fileName       file name of the attachment
+         * @param fileSize       file size in bytes
+         * @param mimeType       MIME type of the file
          * @param viewedByUserId ID of user who viewed the attachment
-         * @param request HTTP request for IP address and user agent
+         * @param request        HTTP request for IP address and user agent
          */
         void logAttachmentView(
                         UUID attachmentId,
@@ -1080,17 +1101,18 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
-         * Log attachment delete event. Records attachment ID, voucher ID, file metadata,
+         * Log attachment delete event. Records attachment ID, voucher ID, file
+         * metadata,
          * deletion reason, user ID, timestamp, and IP address.
          *
-         * @param attachmentId attachment ID that was deleted
-         * @param voucherId voucher ID that the attachment belongs to
-         * @param fileName file name of the attachment
-         * @param fileSize file size in bytes
-         * @param mimeType MIME type of the file
-         * @param reason deletion reason (required for audit)
+         * @param attachmentId    attachment ID that was deleted
+         * @param voucherId       voucher ID that the attachment belongs to
+         * @param fileName        file name of the attachment
+         * @param fileSize        file size in bytes
+         * @param mimeType        MIME type of the file
+         * @param reason          deletion reason (required for audit)
          * @param deletedByUserId ID of user who deleted the attachment
-         * @param request HTTP request for IP address and user agent
+         * @param request         HTTP request for IP address and user agent
          */
         void logAttachmentDelete(
                         UUID attachmentId,
@@ -1108,10 +1130,14 @@ public interface AuditService {
          *
          * @param billId         purchase bill ID
          * @param billNumber     bill number for reference
-         * @param action         action type (e.g., PURCHASE_BILL_CREATED, PURCHASE_BILL_UPDATED, PURCHASE_BILL_DELETED, PURCHASE_BILL_DRAFT_SAVED, PURCHASE_BILL_IMPORTED)
-         * @param beforeSnapshot JSON snapshot of purchase bill before the change (null for create)
+         * @param action         action type (e.g., PURCHASE_BILL_CREATED,
+         *                       PURCHASE_BILL_UPDATED, PURCHASE_BILL_DELETED,
+         *                       PURCHASE_BILL_DRAFT_SAVED, PURCHASE_BILL_IMPORTED)
+         * @param beforeSnapshot JSON snapshot of purchase bill before the change (null
+         *                       for create)
          * @param afterSnapshot  JSON snapshot of purchase bill after the change
-         * @param diffHash       SHA-256 hash of the JSON diff between before/after snapshots
+         * @param diffHash       SHA-256 hash of the JSON diff between before/after
+         *                       snapshots
          * @param request        HTTP request for IP address and user agent
          */
         void logPurchaseBillEvent(
@@ -1124,14 +1150,15 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
-         * Log purchase bill deletion. Records bill ID, bill number, deletion reason, user who deleted,
+         * Log purchase bill deletion. Records bill ID, bill number, deletion reason,
+         * user who deleted,
          * timestamp, and IP address.
          *
-         * @param billId         purchase bill ID that was deleted
-         * @param billNumber     bill number for reference
-         * @param reason         deletion reason (required)
+         * @param billId          purchase bill ID that was deleted
+         * @param billNumber      bill number for reference
+         * @param reason          deletion reason (required)
          * @param deletedByUserId ID of user who deleted the purchase bill
-         * @param request        HTTP request for IP address and user agent
+         * @param request         HTTP request for IP address and user agent
          */
         void logPurchaseBillDeleted(
                         UUID billId,
@@ -1141,58 +1168,63 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
-         * Log purchase bill import. Records import details, user, timestamp, and IP address.
+         * Log purchase bill import. Records import details, user, timestamp, and IP
+         * address.
          *
          * @param importedCount    number of purchase bills imported successfully
          * @param errorCount       number of errors encountered
          * @param importedByUserId user who performed the import
          * @param request          HTTP request for IP address and user agent
          */
-        void logPurchaseBillImport(int importedCount, int errorCount, Long importedByUserId, HttpServletRequest request);
+        void logPurchaseBillImport(int importedCount, int errorCount, Long importedByUserId,
+                        HttpServletRequest request);
 
         /**
          * Log when a purchase bill is submitted for approval.
          */
         void logPurchaseBillSubmittedForApproval(
-                Long companyId,
-                Long submittedByUserId,
-                UUID billId,
-                java.math.BigDecimal billAmount,
-                java.math.BigDecimal thresholdAmount);
+                        Long companyId,
+                        Long submittedByUserId,
+                        UUID billId,
+                        java.math.BigDecimal billAmount,
+                        java.math.BigDecimal thresholdAmount);
 
         /**
          * Log when a purchase bill is approved.
          */
         void logPurchaseBillApproved(
-                Long companyId, Long approvedByUserId, UUID billId, String approvalReason);
+                        Long companyId, Long approvedByUserId, UUID billId, String approvalReason);
 
         /**
          * Log when a purchase bill is rejected.
          */
         void logPurchaseBillRejected(
-                Long companyId, Long rejectedByUserId, UUID billId, String rejectionReason);
+                        Long companyId, Long rejectedByUserId, UUID billId, String rejectionReason);
 
         /**
          * Log when a purchase bill is auto-approved (below threshold).
          */
         void logPurchaseBillAutoApproved(
-                Long companyId,
-                Long userId,
-                UUID billId,
-                java.math.BigDecimal billAmount,
-                java.math.BigDecimal thresholdAmount);
+                        Long companyId,
+                        Long userId,
+                        UUID billId,
+                        java.math.BigDecimal billAmount,
+                        java.math.BigDecimal thresholdAmount);
 
         /**
          * Log payment lifecycle event with JSON snapshots and SHA-256 diff hash.
          * Records before/after snapshots, cryptographic hash, user ID/role, device/IP.
          *
-         * @param paymentId       payment ID
-         * @param paymentNumber   payment number for reference
-         * @param action          action type (e.g., PAYMENT_CREATED, PAYMENT_POSTED, PAYMENT_ALLOCATED, PAYMENT_CANCELLED)
-         * @param beforeSnapshot  JSON snapshot of payment before the change (null for create)
-         * @param afterSnapshot   JSON snapshot of payment after the change
-         * @param diffHash        SHA-256 hash of the JSON diff between before/after snapshots
-         * @param request         HTTP request for IP address and user agent
+         * @param paymentId      payment ID
+         * @param paymentNumber  payment number for reference
+         * @param action         action type (e.g., PAYMENT_CREATED, PAYMENT_POSTED,
+         *                       PAYMENT_ALLOCATED, PAYMENT_CANCELLED)
+         * @param beforeSnapshot JSON snapshot of payment before the change (null for
+         *                       create)
+         * @param afterSnapshot  JSON snapshot of payment after the change
+         * @param diffHash       SHA-256 hash of the JSON diff between before/after
+         *                       snapshots
+         * @param request        HTTP request for IP address and user agent
          */
         void logPaymentEvent(
                         UUID paymentId,
@@ -1234,19 +1266,20 @@ public interface AuditService {
          * Log aging reminder sent event.
          *
          * @param supplierId supplier ID (optional)
-         * @param billIds list of bill IDs (optional)
+         * @param billIds    list of bill IDs (optional)
          * @param recipients list of recipient emails/identifiers
-         * @param companyId company ID
+         * @param companyId  company ID
          */
         void logAgingReminderSent(
-                        Long supplierId, java.util.List<java.util.UUID> billIds, java.util.List<String> recipients, Long companyId);
+                        Long supplierId, java.util.List<java.util.UUID> billIds, java.util.List<String> recipients,
+                        Long companyId);
 
         /**
          * Log batch aging reminder sent event.
          *
          * @param supplierIds list of supplier IDs
-         * @param recipients list of recipient emails/identifiers
-         * @param companyId company ID
+         * @param recipients  list of recipient emails/identifiers
+         * @param companyId   company ID
          */
         void logAgingBatchReminderSent(
                         java.util.List<Long> supplierIds, java.util.List<String> recipients, Long companyId);
@@ -1254,11 +1287,82 @@ public interface AuditService {
         /**
          * Purge audit logs based on criteria (GDPR compliance).
          *
-         * @param companyId company ID
-         * @param userId user ID (optional)
-         * @param beforeDate purge logs before this date
+         * @param companyId   company ID
+         * @param userId      user ID (optional)
+         * @param beforeDate  purge logs before this date
          * @param adminUserId ID of admin performing the purge
          * @return number of records purged
          */
         int purgeAuditLogs(Long companyId, Long userId, java.time.Instant beforeDate, Long adminUserId);
+
+        /**
+         * Log sales invoice lifecycle event with JSON snapshots and SHA-256 diff hash.
+         * Records before/after snapshots, cryptographic hash, user ID/role, device/IP.
+         *
+         * @param invoiceId      sales invoice ID
+         * @param invoiceNumber  invoice number for reference
+         * @param action         action type (e.g., SALES_INVOICE_CREATED,
+         *                       SALES_INVOICE_UPDATED, SALES_INVOICE_DELETED,
+         *                       SALES_INVOICE_DRAFT_SAVED, SALES_INVOICE_IMPORTED)
+         * @param beforeSnapshot JSON snapshot of sales invoice before the change (null
+         *                       for create)
+         * @param afterSnapshot  JSON snapshot of sales invoice after the change
+         * @param diffHash       SHA-256 hash of the JSON diff between before/after
+         *                       snapshots
+         * @param request        HTTP request for IP address and user agent
+         */
+        void logSalesInvoiceEvent(
+                        UUID invoiceId,
+                        String invoiceNumber,
+                        String action,
+                        com.fasterxml.jackson.databind.JsonNode beforeSnapshot,
+                        com.fasterxml.jackson.databind.JsonNode afterSnapshot,
+                        String diffHash,
+                        HttpServletRequest request);
+
+        /**
+         * Log sales invoice deletion. Records invoice ID, invoice number, deletion
+         * reason, user who deleted,
+         * timestamp, and IP address.
+         *
+         * @param invoiceId       sales invoice ID that was deleted
+         * @param invoiceNumber   invoice number for reference
+         * @param reason          deletion reason (required)
+         * @param deletedByUserId ID of user who deleted the sales invoice
+         * @param request         HTTP request for IP address and user agent
+         */
+        void logSalesInvoiceDeleted(
+                        UUID invoiceId,
+                        String invoiceNumber,
+                        String reason,
+                        Long deletedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log sales invoice import. Records import details, user, timestamp, and IP
+         * address.
+         *
+         * @param importedCount    number of sales invoices imported successfully
+         * @param errorCount       number of errors encountered
+         * @param importedByUserId user who performed the import
+         * @param request          HTTP request for IP address and user agent
+         */
+        void logSalesInvoiceImport(int importedCount, int errorCount, Long importedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log sales invoice operation failure.
+         *
+         * @param invoiceId     sales invoice ID (optional)
+         * @param invoiceNumber invoice number (optional)
+         * @param action        action type
+         * @param reason        failure reason
+         * @param request       HTTP request for IP address and user agent
+         */
+        void logSalesInvoiceOperationFailed(
+                        UUID invoiceId,
+                        String invoiceNumber,
+                        String action,
+                        String reason,
+                        HttpServletRequest request);
 }
