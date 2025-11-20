@@ -1365,4 +1365,64 @@ public interface AuditService {
                         String action,
                         String reason,
                         HttpServletRequest request);
+
+        /**
+         * Log sales invoice submitted for approval.
+         *
+         * @param companyId       company ID
+         * @param submitterId     user ID who submitted for approval
+         * @param invoiceId       sales invoice ID
+         * @param invoiceAmount   invoice total amount
+         * @param thresholdAmount approval threshold amount
+         */
+        void logSalesInvoiceSubmittedForApproval(
+                        Long companyId,
+                        Long submitterId,
+                        UUID invoiceId,
+                        java.math.BigDecimal invoiceAmount,
+                        java.math.BigDecimal thresholdAmount);
+
+        /**
+         * Log sales invoice approved.
+         *
+         * @param companyId  company ID
+         * @param approverId user ID who approved
+         * @param invoiceId  sales invoice ID
+         * @param reason     optional approval reason
+         */
+        void logSalesInvoiceApproved(
+                        Long companyId,
+                        Long approverId,
+                        UUID invoiceId,
+                        String reason);
+
+        /**
+         * Log sales invoice rejected.
+         *
+         * @param companyId  company ID
+         * @param approverId user ID who rejected
+         * @param invoiceId  sales invoice ID
+         * @param reason     rejection reason (mandatory)
+         */
+        void logSalesInvoiceRejected(
+                        Long companyId,
+                        Long approverId,
+                        UUID invoiceId,
+                        String reason);
+
+        /**
+         * Log sales invoice auto-approved.
+         *
+         * @param companyId       company ID
+         * @param submitterId     user ID who created the invoice
+         * @param invoiceId       sales invoice ID
+         * @param invoiceAmount   invoice total amount
+         * @param thresholdAmount approval threshold amount
+         */
+        void logSalesInvoiceAutoApproved(
+                        Long companyId,
+                        Long submitterId,
+                        UUID invoiceId,
+                        java.math.BigDecimal invoiceAmount,
+                        java.math.BigDecimal thresholdAmount);
 }

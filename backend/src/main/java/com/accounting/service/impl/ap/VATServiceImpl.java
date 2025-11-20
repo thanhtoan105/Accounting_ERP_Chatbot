@@ -14,6 +14,7 @@ import com.accounting.entity.VATReportHistory;
 import com.accounting.entity.VatRate;
 import com.accounting.repository.PurchaseBillLineRepository;
 import com.accounting.repository.PurchaseBillRepository;
+import com.accounting.repository.SalesInvoiceLineRepository;
 import com.accounting.repository.SupplierRepository;
 import com.accounting.repository.VATCorrectionRepository;
 import com.accounting.repository.VATReportHistoryRepository;
@@ -90,13 +91,16 @@ public class VATServiceImpl implements VATService {
   private static final String ALL_VAT_CLASSES_LABEL = "All VAT Classes";
 
   // Default VAT rate for company
-  // TODO: Read from CompanySettings.defaultVatRate field when available (requires adding field to CompanySettings entity)
+  // TODO: Read from CompanySettings.defaultVatRate field when available (requires
+  // adding field to CompanySettings entity)
   // For now, default to 10% (most common in Vietnam)
-  // Note: This is a known limitation - company-specific default VAT rates should be configurable per company
+  // Note: This is a known limitation - company-specific default VAT rates should
+  // be configurable per company
   private static final VatRate DEFAULT_VAT_RATE = VatRate.TEN;
 
   private final PurchaseBillLineRepository purchaseBillLineRepository;
   private final PurchaseBillRepository purchaseBillRepository;
+  private final SalesInvoiceLineRepository salesInvoiceLineRepository;
   private final SupplierRepository supplierRepository;
   private final VATCorrectionRepository vatCorrectionRepository;
   private final VATReportHistoryRepository vatReportHistoryRepository;
@@ -108,6 +112,7 @@ public class VATServiceImpl implements VATService {
   public VATServiceImpl(
       PurchaseBillLineRepository purchaseBillLineRepository,
       PurchaseBillRepository purchaseBillRepository,
+      SalesInvoiceLineRepository salesInvoiceLineRepository,
       SupplierRepository supplierRepository,
       VATCorrectionRepository vatCorrectionRepository,
       VATReportHistoryRepository vatReportHistoryRepository,
@@ -116,6 +121,7 @@ public class VATServiceImpl implements VATService {
       ObjectMapper objectMapper) {
     this.purchaseBillLineRepository = purchaseBillLineRepository;
     this.purchaseBillRepository = purchaseBillRepository;
+    this.salesInvoiceLineRepository = salesInvoiceLineRepository;
     this.supplierRepository = supplierRepository;
     this.vatCorrectionRepository = vatCorrectionRepository;
     this.vatReportHistoryRepository = vatReportHistoryRepository;
@@ -148,8 +154,10 @@ public class VATServiceImpl implements VATService {
     result.setValidatedRate(rate);
 
     // Check against company default VAT rate (if different, add warning)
-    // TODO: Read from CompanySettings.defaultVatRate field when available (requires adding field to CompanySettings entity)
-    // This is a known limitation - company-specific default VAT rates should be configurable per company
+    // TODO: Read from CompanySettings.defaultVatRate field when available (requires
+    // adding field to CompanySettings entity)
+    // This is a known limitation - company-specific default VAT rates should be
+    // configurable per company
     VatRate companyDefault = DEFAULT_VAT_RATE;
     if (rate != companyDefault) {
       result.addWarning(
@@ -214,6 +222,62 @@ public class VATServiceImpl implements VATService {
           String.format(
               "VAT sum difference of %s is within tolerance but not exact. Consider reviewing.",
               difference));
+    }
+
+    return result;
+  }
+
+  @Override
+  @PreAuthorize("isAuthenticated()")
+  public VATValidationResultDTO validateVATSum(com.accounting.entity.SalesInvoice invoice) {
+    VATValidationResultDTO result = new VATValidationResultDTO(true);
+
+    if (invoice == null) {
+      result.addError("Sales invoice is required");
+      return result;
+    }
+
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      result.addError("Missing company context");
+      return result;
+    }
+
+    // Get all line items for the invoice
+    List<com.accounting.entity.SalesInvoiceLine> lines = salesInvoiceLineRepository
+        .findBySalesInvoiceIdOrderByLineNumberAsc(invoice.getId());
+
+    // Calculate sum of line-level VAT amounts
+    BigDecimal lineVATSum = lines.stream()
+        .map(com.accounting.entity.SalesInvoiceLine::getVatAmount)
+        .filter(java.util.Objects::nonNull)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    // Get document-level VAT total
+    BigDecimal documentVAT = invoice.getVatAmount() != null ? invoice.getVatAmount() : BigDecimal.ZERO;
+
+    result.setCalculatedVATAmount(lineVATSum);
+    result.setDocumentVATAmount(documentVAT);
+
+    // Calculate difference
+    BigDecimal difference = lineVATSum.subtract(documentVAT).abs();
+    result.setDifference(difference);
+
+    // Validate: mismatch >1,000₫ blocks post
+    if (difference.compareTo(VAT_SUM_TOLERANCE) > 0) {
+      result.addError(
+          String.format(
+              "VAT sum mismatch: Line-level VAT sum (%s) differs from document VAT (%s) by %s, exceeding tolerance of %s. Posting is blocked.",
+              lineVATSum, documentVAT, difference, VAT_SUM_TOLERANCE));
+
+      // Log validation failure to audit
+      logVATSumValidationFailure(companyId, invoice.getId(), lineVATSum, documentVAT, difference);
+    } else if (difference.compareTo(BigDecimal.ZERO) > 0) {
+      // Within tolerance but not exact - add warning
+      result.addWarning(
+          String.format(
+              "VAT sum difference: Line-level VAT sum (%s) differs from document VAT (%s) by %s (within tolerance).",
+              lineVATSum, documentVAT, difference));
     }
 
     return result;
@@ -305,7 +369,7 @@ public class VATServiceImpl implements VATService {
         exportFormat,
         report);
     persistReportHistory(history);
-    
+
     // Set the generated ID on the report DTO
     report.setReportId(history.getId());
 

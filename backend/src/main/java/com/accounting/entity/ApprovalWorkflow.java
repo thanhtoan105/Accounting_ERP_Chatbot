@@ -10,21 +10,20 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Entity representing an approval workflow for purchase bills.
+ * Entity representing an approval workflow for purchase bills and sales
+ * invoices.
  * Implements maker-checker pattern with approver ≠ creator constraint.
  * Tracks approval lifecycle, threshold validation, and audit history.
+ * Supports both AP (purchase bills) and AR (sales invoices) workflows.
  */
 @Entity
-@Table(
-    name = "approval_workflows",
-    indexes = {
-      @Index(name = "idx_approval_workflows_company_id", columnList = "company_id"),
-      @Index(name = "idx_approval_workflows_purchase_bill_id", columnList = "purchase_bill_id"),
-      @Index(name = "idx_approval_workflows_status", columnList = "status"),
-      @Index(
-          name = "idx_approval_workflows_company_status",
-          columnList = "company_id,status")
-    })
+@Table(name = "approval_workflows", indexes = {
+    @Index(name = "idx_approval_workflows_company_id", columnList = "company_id"),
+    @Index(name = "idx_approval_workflows_purchase_bill_id", columnList = "purchase_bill_id"),
+    @Index(name = "idx_approval_workflows_sales_invoice_id", columnList = "sales_invoice_id"),
+    @Index(name = "idx_approval_workflows_status", columnList = "status"),
+    @Index(name = "idx_approval_workflows_company_status", columnList = "company_id,status")
+})
 public class ApprovalWorkflow implements CompanyScopedEntity {
 
   @Id
@@ -35,9 +34,11 @@ public class ApprovalWorkflow implements CompanyScopedEntity {
   @Column(name = "company_id", nullable = false)
   private Long companyId;
 
-  @NotNull
-  @Column(name = "purchase_bill_id", nullable = false)
+  @Column(name = "purchase_bill_id")
   private UUID purchaseBillId;
+
+  @Column(name = "sales_invoice_id")
+  private UUID salesInvoiceId;
 
   @NotNull
   @Column(name = "created_by_id", nullable = false)
@@ -94,6 +95,10 @@ public class ApprovalWorkflow implements CompanyScopedEntity {
   private PurchaseBill purchaseBill;
 
   @ManyToOne
+  @JoinColumn(name = "sales_invoice_id", insertable = false, updatable = false)
+  private SalesInvoice salesInvoice;
+
+  @ManyToOne
   @JoinColumn(name = "created_by_id", insertable = false, updatable = false)
   private User createdBy;
 
@@ -136,6 +141,14 @@ public class ApprovalWorkflow implements CompanyScopedEntity {
 
   public void setPurchaseBillId(UUID purchaseBillId) {
     this.purchaseBillId = purchaseBillId;
+  }
+
+  public UUID getSalesInvoiceId() {
+    return salesInvoiceId;
+  }
+
+  public void setSalesInvoiceId(UUID salesInvoiceId) {
+    this.salesInvoiceId = salesInvoiceId;
   }
 
   public Long getCreatedById() {
@@ -249,6 +262,14 @@ public class ApprovalWorkflow implements CompanyScopedEntity {
 
   public void setPurchaseBill(PurchaseBill purchaseBill) {
     this.purchaseBill = purchaseBill;
+  }
+
+  public SalesInvoice getSalesInvoice() {
+    return salesInvoice;
+  }
+
+  public void setSalesInvoice(SalesInvoice salesInvoice) {
+    this.salesInvoice = salesInvoice;
   }
 
   public User getCreatedBy() {

@@ -17,8 +17,8 @@ import com.accounting.repository.CustomerRepository;
 import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
-// import com.accounting.service.ApprovalWorkflowService; // Not needed for sales invoices
 import com.accounting.service.AuditService;
+import com.accounting.service.SalesInvoiceApprovalService;
 import com.accounting.service.SalesInvoiceService;
 import com.accounting.service.SalesInvoiceValidationService;
 import com.accounting.service.util.SalesInvoiceAuditHelper;
@@ -65,8 +65,7 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
   private final AuditService auditService;
   private final SalesInvoiceValidationService salesInvoiceValidationService;
   private final SalesInvoiceAuditHelper salesInvoiceAuditHelper;
-  // private final ApprovalWorkflowService approvalWorkflowService; // Not needed
-  // for sales invoices
+  private final SalesInvoiceApprovalService salesInvoiceApprovalService;
 
   @PersistenceContext
   private EntityManager entityManager;
@@ -78,7 +77,8 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
       UserRepository userRepository,
       AuditService auditService,
       SalesInvoiceValidationService salesInvoiceValidationService,
-      SalesInvoiceAuditHelper salesInvoiceAuditHelper) {
+      SalesInvoiceAuditHelper salesInvoiceAuditHelper,
+      SalesInvoiceApprovalService salesInvoiceApprovalService) {
     this.salesInvoiceRepository = salesInvoiceRepository;
     this.salesInvoiceLineRepository = salesInvoiceLineRepository;
     this.customerRepository = customerRepository;
@@ -86,6 +86,7 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
     this.auditService = auditService;
     this.salesInvoiceValidationService = salesInvoiceValidationService;
     this.salesInvoiceAuditHelper = salesInvoiceAuditHelper;
+    this.salesInvoiceApprovalService = salesInvoiceApprovalService;
   }
 
   @Override
@@ -264,6 +265,47 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
         lines.add(line);
       }
       salesInvoiceLineRepository.saveAll(lines);
+
+      // Check if approval is required and route accordingly
+      boolean requiresApproval = salesInvoiceApprovalService.checkApprovalRequired(invoice);
+      if (requiresApproval) {
+        // Submit for approval - this will set status to PENDING_APPROVAL
+        try {
+          salesInvoiceApprovalService.submitForApproval(invoice.getId(), createdById);
+          logger.info(
+              "Sales invoice {} submitted for approval (amount: {}, threshold check passed)",
+              invoice.getInvoiceNumber(),
+              invoice.getTotalAmount());
+        } catch (Exception e) {
+          logger.error(
+              "Failed to submit sales invoice {} for approval: {}",
+              invoice.getInvoiceNumber(),
+              e.getMessage(),
+              e);
+          // Don't fail the entire creation - invoice is saved as DRAFT
+        }
+      } else {
+        // Auto-approve and post immediately
+        try {
+          salesInvoiceApprovalService.autoApprove(invoice, createdById);
+          // Auto-approve will handle posting the voucher and setting status to POSTED
+          logger.info(
+              "Sales invoice {} auto-approved and posted (amount: {} below threshold)",
+              invoice.getInvoiceNumber(),
+              invoice.getTotalAmount());
+        } catch (Exception e) {
+          logger.error(
+              "Failed to auto-approve sales invoice {}: {}",
+              invoice.getInvoiceNumber(),
+              e.getMessage(),
+              e);
+          // Don't fail the entire creation - invoice remains as DRAFT
+        }
+      }
+
+      // Reload invoice to get updated status from approval workflow
+      invoice = salesInvoiceRepository.findById(invoice.getId())
+          .orElseThrow(() -> new IllegalStateException("Invoice not found after creation"));
 
       // Log audit event for sales invoice creation
       try {

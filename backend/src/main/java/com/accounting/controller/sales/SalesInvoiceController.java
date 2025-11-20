@@ -1,5 +1,6 @@
 package com.accounting.controller.sales;
 
+import com.accounting.dto.ApprovalWorkflowDTO;
 import com.accounting.dto.ImportResultDTO;
 import com.accounting.dto.SalesInvoiceAttachmentDTO;
 import com.accounting.dto.SalesInvoiceCreateRequest;
@@ -8,6 +9,7 @@ import com.accounting.dto.SalesInvoiceListDTO;
 import com.accounting.dto.SalesInvoiceValidationResult;
 import com.accounting.entity.SalesInvoiceStatus;
 // import com.accounting.service.SalesInvoiceImportService; // TODO: Implement in future story
+import com.accounting.service.SalesInvoiceApprovalService;
 import com.accounting.service.SalesInvoiceService;
 import com.accounting.service.SalesInvoiceValidationService;
 // import com.accounting.service.sales.SalesInvoiceAttachmentService; // TODO: Implement in future story
@@ -48,6 +50,7 @@ public class SalesInvoiceController {
 
   private final SalesInvoiceService salesInvoiceService;
   private final SalesInvoiceValidationService salesInvoiceValidationService;
+  private final SalesInvoiceApprovalService salesInvoiceApprovalService;
   // private final SalesInvoiceImportService salesInvoiceImportService; // TODO:
   // Implement
   // private final SalesInvoiceAttachmentService salesInvoiceAttachmentService; //
@@ -55,12 +58,14 @@ public class SalesInvoiceController {
 
   public SalesInvoiceController(
       SalesInvoiceService salesInvoiceService,
-      SalesInvoiceValidationService salesInvoiceValidationService) {
+      SalesInvoiceValidationService salesInvoiceValidationService,
+      SalesInvoiceApprovalService salesInvoiceApprovalService) {
     // SalesInvoiceImportService salesInvoiceImportService, // TODO: Implement
     // SalesInvoiceAttachmentService salesInvoiceAttachmentService) { // TODO:
     // Implement
     this.salesInvoiceService = salesInvoiceService;
     this.salesInvoiceValidationService = salesInvoiceValidationService;
+    this.salesInvoiceApprovalService = salesInvoiceApprovalService;
     // this.salesInvoiceImportService = salesInvoiceImportService; // TODO:
     // Implement
     // this.salesInvoiceAttachmentService = salesInvoiceAttachmentService; // TODO:
@@ -463,4 +468,100 @@ public class SalesInvoiceController {
    * return ResponseEntity.noContent().build();
    * }
    */
+
+  /**
+   * Submit sales invoice for approval.
+   * Requires Accountant+ role.
+   *
+   * @param id sales invoice ID
+   * @return approval workflow DTO
+   */
+  @PostMapping("/{id}/submit-for-approval")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<ApprovalWorkflowDTO> submitForApproval(@PathVariable UUID id) {
+    Long submitterId = com.accounting.security.SecurityUtils.getCurrentUserId();
+    ApprovalWorkflowDTO workflow = salesInvoiceApprovalService.submitForApproval(id, submitterId);
+    return ResponseEntity.ok(workflow);
+  }
+
+  /**
+   * Approve a pending sales invoice.
+   * Requires Chief Accountant or CFO role.
+   *
+   * @param workflowId approval workflow ID
+   * @param request    approval request with optional reason
+   * @return updated approval workflow DTO
+   */
+  @PostMapping("/approvals/{workflowId}/approve")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<ApprovalWorkflowDTO> approve(
+      @PathVariable UUID workflowId,
+      @RequestBody(required = false) Map<String, String> request) {
+    Long approverId = com.accounting.security.SecurityUtils.getCurrentUserId();
+    String reason = request != null ? request.get("reason") : null;
+    ApprovalWorkflowDTO workflow = salesInvoiceApprovalService.approve(workflowId, approverId, reason);
+    return ResponseEntity.ok(workflow);
+  }
+
+  /**
+   * Reject a pending sales invoice.
+   * Requires Chief Accountant or CFO role.
+   *
+   * @param workflowId approval workflow ID
+   * @param request    rejection request with mandatory reason
+   * @return updated approval workflow DTO
+   */
+  @PostMapping("/approvals/{workflowId}/reject")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<ApprovalWorkflowDTO> reject(
+      @PathVariable UUID workflowId,
+      @RequestBody Map<String, String> request) {
+    Long approverId = com.accounting.security.SecurityUtils.getCurrentUserId();
+    String reason = request != null ? request.get("reason") : null;
+    if (reason == null || reason.trim().isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rejection reason is mandatory");
+    }
+    ApprovalWorkflowDTO workflow = salesInvoiceApprovalService.reject(workflowId, approverId, reason);
+    return ResponseEntity.ok(workflow);
+  }
+
+  /**
+   * Get all pending approval workflows for sales invoices.
+   * Requires Chief Accountant or CFO role.
+   *
+   * @return list of pending approval workflows
+   */
+  @GetMapping("/approvals/pending")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<List<ApprovalWorkflowDTO>> getPendingApprovals() {
+    List<ApprovalWorkflowDTO> workflows = salesInvoiceApprovalService.getPendingApprovals();
+    return ResponseEntity.ok(workflows);
+  }
+
+  /**
+   * Get approval history for a specific sales invoice.
+   * Requires Accountant+ role.
+   *
+   * @param id sales invoice ID
+   * @return list of approval workflows for the invoice
+   */
+  @GetMapping("/{id}/approval-history")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<List<ApprovalWorkflowDTO>> getApprovalHistory(@PathVariable UUID id) {
+    List<ApprovalWorkflowDTO> workflows = salesInvoiceApprovalService.getApprovalHistory(id);
+    return ResponseEntity.ok(workflows);
+  }
+
+  /**
+   * Get count of pending approvals for sales invoices.
+   * Requires Chief Accountant or CFO role.
+   *
+   * @return count of pending approvals
+   */
+  @GetMapping("/approvals/pending/count")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Map<String, Long>> getPendingApprovalsCount() {
+    long count = salesInvoiceApprovalService.getPendingApprovalsCount();
+    return ResponseEntity.ok(Map.of("count", count));
+  }
 }

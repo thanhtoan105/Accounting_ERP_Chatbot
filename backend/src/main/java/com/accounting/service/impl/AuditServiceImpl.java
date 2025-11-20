@@ -2460,4 +2460,105 @@ public class AuditServiceImpl implements AuditService {
             logger.error("Failed to log sales invoice operation failure: {}", e.getMessage(), e);
         }
     }
+
+    @Override
+    public void logSalesInvoiceSubmittedForApproval(
+            Long companyId,
+            Long submitterId,
+            UUID invoiceId,
+            java.math.BigDecimal invoiceAmount,
+            java.math.BigDecimal thresholdAmount) {
+        try {
+            AuditLog log = startLog("SALES_INVOICE_SUBMITTED_FOR_APPROVAL", null);
+            log.setEventType("SALES_INVOICE");
+            log.setCompanyId(companyId);
+            log.setUserId(submitterId);
+            assignEntity(log, "SALES_INVOICE", invoiceId, null);
+
+            ObjectNode metadata = buildMetadata();
+            metadata.put("invoiceAmount", invoiceAmount.toString());
+            metadata.put("thresholdAmount", thresholdAmount.toString());
+            metadata.put("requiresApproval", true);
+            log.setMetadata(metadata);
+
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log sales invoice submitted for approval: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logSalesInvoiceApproved(
+            Long companyId,
+            Long approverId,
+            UUID invoiceId,
+            String reason) {
+        try {
+            AuditLog log = startLog("SALES_INVOICE_APPROVED", null);
+            log.setEventType("SALES_INVOICE");
+            log.setCompanyId(companyId);
+            log.setUserId(approverId);
+            assignEntity(log, "SALES_INVOICE", invoiceId, null);
+
+            ObjectNode metadata = buildMetadata();
+            if (reason != null && !reason.trim().isEmpty()) {
+                metadata.put("approvalReason", reason);
+            }
+            log.setMetadata(metadata);
+
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log sales invoice approved: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logSalesInvoiceRejected(
+            Long companyId,
+            Long approverId,
+            UUID invoiceId,
+            String reason) {
+        try {
+            AuditLog log = startLog("SALES_INVOICE_REJECTED", null);
+            log.setEventType("SALES_INVOICE");
+            log.setCompanyId(companyId);
+            log.setUserId(approverId);
+            assignEntity(log, "SALES_INVOICE", invoiceId, null);
+
+            ObjectNode metadata = buildMetadata();
+            metadata.put("rejectionReason", reason);
+            log.setMetadata(metadata);
+
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log sales invoice rejected: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logSalesInvoiceAutoApproved(
+            Long companyId,
+            Long submitterId,
+            UUID invoiceId,
+            java.math.BigDecimal invoiceAmount,
+            java.math.BigDecimal thresholdAmount) {
+        try {
+            AuditLog log = startLog("SALES_INVOICE_AUTO_APPROVED", null);
+            log.setEventType("SALES_INVOICE");
+            log.setCompanyId(companyId);
+            log.setUserId(submitterId);
+            assignEntity(log, "SALES_INVOICE", invoiceId, null);
+
+            ObjectNode metadata = buildMetadata();
+            metadata.put("invoiceAmount", invoiceAmount.toString());
+            metadata.put("thresholdAmount", thresholdAmount.toString());
+            metadata.put("autoApproved", true);
+            metadata.put("reason", "Amount below threshold and not marked sensitive");
+            log.setMetadata(metadata);
+
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log sales invoice auto-approved: {}", e.getMessage(), e);
+        }
+    }
 }

@@ -19,7 +19,7 @@ public interface VATService {
   /**
    * Validate VAT rate for a line item.
    *
-   * @param rate VAT rate to validate
+   * @param rate      VAT rate to validate
    * @param companyId company ID for default VAT rate check
    * @return validation result with warnings if override
    */
@@ -34,9 +34,17 @@ public interface VATService {
   VATValidationResultDTO validateVATSum(PurchaseBill bill);
 
   /**
+   * Validate VAT sum on sales invoice matches sum of line-level VAT.
+   *
+   * @param invoice sales invoice to validate
+   * @return validation result with error if mismatch >1,000₫
+   */
+  VATValidationResultDTO validateVATSum(com.accounting.entity.SalesInvoice invoice);
+
+  /**
    * Validate VAT ratio (vatAmount / amount) is between 0% and 100%.
    *
-   * @param amount base amount
+   * @param amount    base amount
    * @param vatAmount VAT amount
    * @return validation result with error if ratio is negative or over 100%
    */
@@ -53,10 +61,10 @@ public interface VATService {
   /**
    * Generate input VAT report by period/supplier/class.
    *
-   * @param periodId period ID (optional)
+   * @param periodId   period ID (optional)
    * @param supplierId supplier ID (optional)
-   * @param vatClass VAT class filter (optional)
-   * @param filters additional filters
+   * @param vatClass   VAT class filter (optional)
+   * @param filters    additional filters
    * @return report DTO with aggregated VAT data
    */
   InputVATReportDTO generateInputVATReport(
@@ -66,7 +74,7 @@ public interface VATService {
    * Export input VAT report to PDF or Excel format.
    *
    * @param reportId report ID
-   * @param format export format (PDF or EXCEL)
+   * @param format   export format (PDF or EXCEL)
    * @return byte array of exported file
    */
   byte[] exportInputVATReport(UUID reportId, String format);
@@ -74,11 +82,11 @@ public interface VATService {
   /**
    * Create manual VAT correction.
    *
-   * @param billId bill ID
+   * @param billId     bill ID
    * @param lineItemId line item ID (nullable for bill-level correction)
-   * @param oldAmount old VAT amount
-   * @param newAmount new VAT amount
-   * @param reason correction reason
+   * @param oldAmount  old VAT amount
+   * @param newAmount  new VAT amount
+   * @param reason     correction reason
    * @return correction DTO
    */
   VATCorrectionDTO createVATCorrection(VATCorrectionCreateRequest request);
@@ -87,7 +95,7 @@ public interface VATService {
    * Approve VAT correction.
    *
    * @param correctionId correction ID
-   * @param approverId approver user ID
+   * @param approverId   approver user ID
    * @return correction DTO
    */
   VATCorrectionDTO approveVATCorrection(UUID correctionId, Long approverId);
@@ -95,10 +103,9 @@ public interface VATService {
   /**
    * Get VAT corrections for a bill with filters.
    *
-   * @param billId bill ID
+   * @param billId  bill ID
    * @param filters filter parameters
    * @return list of correction DTOs
    */
   List<VATCorrectionDTO> getVATCorrections(UUID billId, Map<String, Object> filters);
 }
-
