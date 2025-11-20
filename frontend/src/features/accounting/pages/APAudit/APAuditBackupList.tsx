@@ -75,19 +75,17 @@ export function APAuditBackupList() {
             <Archive className="h-6 w-6 text-blue-500" />
             Disaster Recovery Backups
           </h1>
-          <p className="text-muted-foreground">
-            Manage automated and manual audit log archives.
-          </p>
+          <p className="text-muted-foreground">Manage automated and manual audit log archives.</p>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline" onClick={loadData}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-            </Button>
-            <Button onClick={handleCreateBackup} disabled={creating}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Backup
-            </Button>
+          <Button variant="outline" onClick={loadData}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button onClick={handleCreateBackup} disabled={creating}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Backup
+          </Button>
         </div>
       </div>
 
@@ -110,22 +108,31 @@ export function APAuditBackupList() {
                     {format(new Date(backup.backupDate), 'dd/MM/yyyy HH:mm:ss')}
                   </TableCell>
                   <TableCell>
-                    <Badge 
-                        variant={backup.status === 'COMPLETED' ? 'default' : backup.status === 'FAILED' ? 'destructive' : 'outline'}
+                    <Badge
+                      variant={
+                        backup.status === 'COMPLETED'
+                          ? 'default'
+                          : backup.status === 'FAILED'
+                            ? 'destructive'
+                            : 'outline'
+                      }
                     >
-                        {backup.status}
+                      {backup.status}
                     </Badge>
                   </TableCell>
                   <TableCell>{backup.recordCount ?? '-'}</TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground max-w-[200px] truncate" title={backup.hash}>
+                  <TableCell
+                    className="font-mono text-xs text-muted-foreground max-w-[200px] truncate"
+                    title={backup.hash}
+                  >
                     {backup.hash}
                   </TableCell>
                   <TableCell className="text-right">
                     {backup.status === 'COMPLETED' && (
-                        <Button variant="ghost" size="sm" onClick={() => handleDownload(backup.id)}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDownload(backup.id)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
                     )}
                   </TableCell>
                 </TableRow>

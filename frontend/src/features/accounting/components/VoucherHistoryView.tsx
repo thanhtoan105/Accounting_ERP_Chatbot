@@ -102,7 +102,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
   // Get unique actions and users for filters
   const uniqueActions = Array.from(new Set(history.map((e) => e.action))).sort()
   const uniqueUsers = Array.from(
-    new Set(history.map((e) => e.userEmail).filter((email): email is string => Boolean(email)))
+    new Set(history.map((e) => e.userEmail).filter((email): email is string => Boolean(email))),
   ).sort()
 
   const getActionBadgeVariant = (action: string) => {
@@ -172,7 +172,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-                placeholder="Search..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
@@ -285,7 +285,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
                                 )}
                                 {diff.changeType === 'REMOVED' && (
                                   <div className="mt-1">
-                                        <span className="font-semibold">Removed:</span>{' '}
+                                    <span className="font-semibold">Removed:</span>{' '}
                                     {String(diff.beforeValue)}
                                   </div>
                                 )}
@@ -296,7 +296,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
                                       {String(diff.beforeValue)}
                                     </div>
                                     <div>
-                                        <span className="font-semibold">To:</span>{' '}
+                                      <span className="font-semibold">To:</span>{' '}
                                       {String(diff.afterValue)}
                                     </div>
                                   </div>

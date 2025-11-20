@@ -574,10 +574,7 @@ export default function VoucherList() {
           </label>
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left font-normal"
-              >
+              <Button variant="outline" className="w-full justify-start text-left font-normal">
                 {dateFrom ? format(new Date(dateFrom), 'dd/MM/yyyy') : 'Select date'}
                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
               </Button>
@@ -607,10 +604,7 @@ export default function VoucherList() {
           </label>
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left font-normal"
-              >
+              <Button variant="outline" className="w-full justify-start text-left font-normal">
                 {dateTo ? format(new Date(dateTo), 'dd/MM/yyyy') : 'Select date'}
                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
               </Button>

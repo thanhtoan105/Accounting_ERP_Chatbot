@@ -10,7 +10,7 @@ import {
   AlertTriangle,
   ShieldAlert,
   Archive,
-  Trash2
+  Trash2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -83,7 +83,7 @@ export function APAuditTimeline() {
           endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
         },
         page,
-        pageSize
+        pageSize,
       )
       setItems(response.content)
       setTotalElements(response.totalElements)
@@ -181,7 +181,7 @@ export function APAuditTimeline() {
         ),
       },
     ],
-    []
+    [],
   )
 
   const table = useReactTable({
@@ -208,83 +208,92 @@ export function APAuditTimeline() {
           </p>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/accounting/ap-audit/abuse')}>
-                <ShieldAlert className="mr-2 h-4 w-4 text-orange-500" />
-                Abuse Detection
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/accounting/ap-audit/backups')}>
-                <Archive className="mr-2 h-4 w-4 text-blue-500" />
-                Backups
-            </Button>
-            <Button variant="outline" onClick={loadData}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-            </Button>
-            <Button onClick={handleExport}>
-                <Download className="mr-2 h-4 w-4" />
-                Export PDF
-            </Button>
+          <Button variant="outline" onClick={() => navigate('/accounting/ap-audit/abuse')}>
+            <ShieldAlert className="mr-2 h-4 w-4 text-orange-500" />
+            Abuse Detection
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/accounting/ap-audit/backups')}>
+            <Archive className="mr-2 h-4 w-4 text-blue-500" />
+            Backups
+          </Button>
+          <Button variant="outline" onClick={loadData}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Export PDF
+          </Button>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 items-end">
         <div className="space-y-2">
-            <label className="text-sm font-medium">Search Action</label>
-            <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                    placeholder="e.g. CREATE, DELETE..." 
-                    value={actionFilter}
-                    onChange={(e) => setActionFilter(e.target.value)}
-                    className="pl-8 w-[200px]"
-                />
-            </div>
-        </div>
-        <div className="space-y-2">
-            <label className="text-sm font-medium">User ID</label>
-            <Input 
-                placeholder="User ID" 
-                value={userIdFilter}
-                onChange={(e) => setUserIdFilter(e.target.value)}
-                className="w-[100px]"
+          <label className="text-sm font-medium">Search Action</label>
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="e.g. CREATE, DELETE..."
+              value={actionFilter}
+              onChange={(e) => setActionFilter(e.target.value)}
+              className="pl-8 w-[200px]"
             />
+          </div>
         </div>
         <div className="space-y-2">
-            <label className="text-sm font-medium">Date Range</label>
-            <div className="flex gap-2">
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" className={`w-[140px] justify-start text-left font-normal ${!startDate && 'text-muted-foreground'}`}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {startDate ? format(startDate, 'dd/MM/yyyy') : 'Start Date'}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
-                    </PopoverContent>
-                </Popover>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" className={`w-[140px] justify-start text-left font-normal ${!endDate && 'text-muted-foreground'}`}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {endDate ? format(endDate, 'dd/MM/yyyy') : 'End Date'}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
-                    </PopoverContent>
-                </Popover>
-            </div>
+          <label className="text-sm font-medium">User ID</label>
+          <Input
+            placeholder="User ID"
+            value={userIdFilter}
+            onChange={(e) => setUserIdFilter(e.target.value)}
+            className="w-[100px]"
+          />
         </div>
-        <Button variant="ghost" onClick={() => {
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Date Range</label>
+          <div className="flex gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={`w-[140px] justify-start text-left font-normal ${!startDate && 'text-muted-foreground'}`}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startDate ? format(startDate, 'dd/MM/yyyy') : 'Start Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={`w-[140px] justify-start text-left font-normal ${!endDate && 'text-muted-foreground'}`}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {endDate ? format(endDate, 'dd/MM/yyyy') : 'End Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={() => {
             setActionFilter('')
             setUserIdFilter('')
             setStartDate(undefined)
             setEndDate(undefined)
             setPage(0)
-        }}>
-            Reset
+          }}
+        >
+          Reset
         </Button>
       </div>
 
@@ -298,10 +307,7 @@ export function APAuditTimeline() {
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -313,10 +319,7 @@ export function APAuditTimeline() {
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -335,28 +338,28 @@ export function APAuditTimeline() {
       {/* Pagination */}
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-            Showing {items.length} of {totalElements} events.
+          Showing {items.length} of {totalElements} events.
         </div>
         <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Rows per page</p>
-            <Select
-                value={`${pageSize}`}
-                onValueChange={(value) => {
-                    setPageSize(Number(value))
-                    setPage(0)
-                }}
-            >
-                <SelectTrigger className="h-8 w-[70px]">
-                    <SelectValue placeholder={pageSize} />
-                </SelectTrigger>
-                <SelectContent side="top">
-                    {PAGE_SIZE_OPTIONS.map((pageSize) => (
-                        <SelectItem key={pageSize} value={`${pageSize}`}>
-                            {pageSize}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+          <p className="text-sm font-medium">Rows per page</p>
+          <Select
+            value={`${pageSize}`}
+            onValueChange={(value) => {
+              setPageSize(Number(value))
+              setPage(0)
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue placeholder={pageSize} />
+            </SelectTrigger>
+            <SelectContent side="top">
+              {PAGE_SIZE_OPTIONS.map((pageSize) => (
+                <SelectItem key={pageSize} value={`${pageSize}`}>
+                  {pageSize}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-x-2">
           <Button

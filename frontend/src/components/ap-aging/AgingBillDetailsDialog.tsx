@@ -13,12 +13,7 @@ import {
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -142,9 +137,7 @@ export function AgingBillDetailsDialog({
       {
         id: 'paymentCount',
         header: 'Payments',
-        cell: ({ row }) => (
-          <div className="text-center">{row.original.paymentHistory.length}</div>
-        ),
+        cell: ({ row }) => <div className="text-center">{row.original.paymentHistory.length}</div>,
       },
     ],
     [],
@@ -230,7 +223,10 @@ export function AgingBillDetailsDialog({
                   ))
                 ) : bills.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={columns.length}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No bills found in this bucket
                     </TableCell>
                   </TableRow>
@@ -282,4 +278,3 @@ export function AgingBillDetailsDialog({
     </Dialog>
   )
 }
-

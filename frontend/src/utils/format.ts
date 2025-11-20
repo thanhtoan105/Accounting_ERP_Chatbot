@@ -30,4 +30,3 @@ export function formatNumber(value: number | string | null | undefined): string 
   }
   return new Intl.NumberFormat('vi-VN').format(numValue)
 }
-

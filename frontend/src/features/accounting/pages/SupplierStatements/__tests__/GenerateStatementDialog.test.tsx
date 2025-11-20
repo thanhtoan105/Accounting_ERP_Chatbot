@@ -103,7 +103,7 @@ describe('GenerateStatementDialog', () => {
           statementType: 'SUMMARY',
           startDate: expect.any(String),
           endDate: expect.any(String),
-        })
+        }),
       )
     })
 
@@ -132,7 +132,7 @@ describe('GenerateStatementDialog', () => {
       expect(mockGenerateStatement).toHaveBeenCalledWith(
         expect.objectContaining({
           statementType: 'DETAILED',
-        })
+        }),
       )
     })
   })
@@ -173,4 +173,3 @@ describe('GenerateStatementDialog', () => {
     // Implementation may vary based on form validation
   })
 })
-

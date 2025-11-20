@@ -24,7 +24,14 @@ import {
 } from '@/components/ui/select'
 import { DatePickerWithRange } from '@/components/ui/date-picker'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { vatService } from '@/services/vat'
 import type {
   InputVATReportDTO,
@@ -185,7 +192,10 @@ export function GenerateVATReportDialog({
             </div>
             <div className="space-y-2">
               <Label>Export Format</Label>
-              <Select value={formatSelection} onValueChange={(value: VATExportFormat) => setFormatSelection(value)}>
+              <Select
+                value={formatSelection}
+                onValueChange={(value: VATExportFormat) => setFormatSelection(value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Choose format" />
                 </SelectTrigger>
@@ -262,14 +272,15 @@ export function GenerateVATReportDialog({
                           <TableCell>{item.billNumber ?? item.billId.slice(0, 8)}</TableCell>
                           <TableCell>{format(new Date(item.billDate), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>{item.vatRate}</TableCell>
-                          <TableCell className="text-right font-mono">
-                            {item.vatAmount}
-                          </TableCell>
+                          <TableCell className="text-right font-mono">{item.vatAmount}</TableCell>
                         </TableRow>
                       ))}
                       {report.items.length > 10 && (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground text-xs">
+                          <TableCell
+                            colSpan={5}
+                            className="text-center text-muted-foreground text-xs"
+                          >
                             {report.items.length - 10} more rows...
                           </TableCell>
                         </TableRow>
@@ -295,5 +306,3 @@ export function GenerateVATReportDialog({
     </Dialog>
   )
 }
-
-

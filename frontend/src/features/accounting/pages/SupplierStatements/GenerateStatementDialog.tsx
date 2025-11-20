@@ -111,10 +111,7 @@ export function GenerateStatementDialog({
       const statement = await supplierStatementService.generateStatement(formData)
 
       // Export the statement
-      const blob = await supplierStatementService.exportStatement(
-        statement.id,
-        formData.format
-      )
+      const blob = await supplierStatementService.exportStatement(statement.id, formData.format)
 
       // Download the file
       const url = URL.createObjectURL(blob)
@@ -172,9 +169,7 @@ export function GenerateStatementDialog({
             <Label>Supplier *</Label>
             <Select
               value={formData.supplierId.toString()}
-              onValueChange={(value) =>
-                setFormData({ ...formData, supplierId: parseInt(value) })
-              }
+              onValueChange={(value) => setFormData({ ...formData, supplierId: parseInt(value) })}
               disabled={loadingSuppliers || generating}
             >
               <SelectTrigger>
@@ -217,9 +212,7 @@ export function GenerateStatementDialog({
               <Input
                 type="date"
                 value={formData.startDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, startDate: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 disabled={generating}
               />
             </div>
@@ -228,9 +221,7 @@ export function GenerateStatementDialog({
               <Input
                 type="date"
                 value={formData.endDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, endDate: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                 disabled={generating}
               />
             </div>
@@ -241,9 +232,7 @@ export function GenerateStatementDialog({
             <Label>Export Format *</Label>
             <Select
               value={formData.format}
-              onValueChange={(value) =>
-                setFormData({ ...formData, format: value as ExportFormat })
-              }
+              onValueChange={(value) => setFormData({ ...formData, format: value as ExportFormat })}
               disabled={generating}
             >
               <SelectTrigger>
@@ -268,7 +257,10 @@ export function GenerateStatementDialog({
           >
             {previewing ? 'Previewing...' : 'Preview'}
           </Button>
-          <Button onClick={handleGenerate} disabled={generating || previewing || !formData.supplierId}>
+          <Button
+            onClick={handleGenerate}
+            disabled={generating || previewing || !formData.supplierId}
+          >
             {generating ? (
               <>
                 <Download className="mr-2 h-4 w-4 animate-spin" />
@@ -286,4 +278,3 @@ export function GenerateStatementDialog({
     </Dialog>
   )
 }
-

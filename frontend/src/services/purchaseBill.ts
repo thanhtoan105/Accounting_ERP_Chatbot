@@ -183,7 +183,9 @@ export async function uploadPurchaseBillAttachment(
     xhr.addEventListener('load', () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
-          const response = JSON.parse(xhr.responseText) as import('../types/attachment').PurchaseBillAttachmentUploadResponse
+          const response = JSON.parse(
+            xhr.responseText,
+          ) as import('../types/attachment').PurchaseBillAttachmentUploadResponse
           resolve(response.data)
         } catch (error) {
           reject(new Error('Failed to parse response'))
@@ -224,11 +226,15 @@ export async function getPurchaseBillAttachments(
     const error = await res.json().catch(() => ({ message: 'Failed to load attachments' }))
     throw error
   }
-  const payload = await handleJsonResponse<import('../types/attachment').PurchaseBillAttachmentListResponse>(res)
+  const payload =
+    await handleJsonResponse<import('../types/attachment').PurchaseBillAttachmentListResponse>(res)
   return payload.data
 }
 
-export async function downloadPurchaseBillAttachment(billId: string, attachmentId: string): Promise<void> {
+export async function downloadPurchaseBillAttachment(
+  billId: string,
+  attachmentId: string,
+): Promise<void> {
   const res = await fetchWithAuth(
     `${API_BASE}/purchase-bills/${billId}/attachments/${attachmentId}/download`,
     {
@@ -363,7 +369,9 @@ export async function downloadPurchaseBillImportTemplate(): Promise<void> {
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = res.headers.get('Content-Disposition')?.split('filename=')[1] || 'purchase_bill_import_template.xlsx'
+  a.download =
+    res.headers.get('Content-Disposition')?.split('filename=')[1] ||
+    'purchase_bill_import_template.xlsx'
   document.body.appendChild(a)
   a.click()
   window.URL.revokeObjectURL(url)
@@ -462,4 +470,3 @@ export async function getPendingApprovalsCount(): Promise<number> {
   const payload = await handleJsonResponse<number>(res)
   return payload
 }
-
