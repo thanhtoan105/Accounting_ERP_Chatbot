@@ -14,25 +14,33 @@ interface ApprovalWorkflowHistoryProps {
 function getStatusBadge(status: string) {
   switch (status) {
     case 'PENDING':
-      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-        <Clock className="mr-1 h-3 w-3" />
-        Pending
-      </Badge>
+      return (
+        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+          <Clock className="mr-1 h-3 w-3" />
+          Pending
+        </Badge>
+      )
     case 'APPROVED':
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-        <CheckCircle className="mr-1 h-3 w-3" />
-        Approved
-      </Badge>
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <CheckCircle className="mr-1 h-3 w-3" />
+          Approved
+        </Badge>
+      )
     case 'REJECTED':
-      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-        <XCircle className="mr-1 h-3 w-3" />
-        Rejected
-      </Badge>
+      return (
+        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+          <XCircle className="mr-1 h-3 w-3" />
+          Rejected
+        </Badge>
+      )
     case 'AUTO_APPROVED':
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-        <Shield className="mr-1 h-3 w-3" />
-        Auto-Approved
-      </Badge>
+      return (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          <Shield className="mr-1 h-3 w-3" />
+          Auto-Approved
+        </Badge>
+      )
     default:
       return <Badge variant="outline">{status}</Badge>
   }
@@ -120,7 +128,10 @@ export function ApprovalWorkflowHistory({ billId }: ApprovalWorkflowHistoryProps
                 <div className="flex items-center gap-2">
                   {getStatusBadge(workflow.status)}
                   {workflow.isSensitive && (
-                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                    <Badge
+                      variant="outline"
+                      className="bg-orange-50 text-orange-700 border-orange-200"
+                    >
                       <AlertCircle className="mr-1 h-3 w-3" />
                       Sensitive
                     </Badge>

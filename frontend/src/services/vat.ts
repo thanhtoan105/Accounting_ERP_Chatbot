@@ -26,9 +26,7 @@ export const vatService = {
   },
 
   async exportInputReport(reportId: string, format: VATExportFormat): Promise<Blob> {
-    const response = await fetchWithAuth(
-      `${API_BASE}/reports/${reportId}/export?format=${format}`,
-    )
+    const response = await fetchWithAuth(`${API_BASE}/reports/${reportId}/export?format=${format}`)
 
     if (!response.ok) {
       throw new Error(`Failed to export VAT report: ${response.statusText}`)
@@ -113,5 +111,3 @@ export const vatService = {
     return response.json()
   },
 }
-
-

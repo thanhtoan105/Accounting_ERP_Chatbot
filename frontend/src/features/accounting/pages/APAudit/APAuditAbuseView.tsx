@@ -76,22 +76,29 @@ export function APAuditAbuseView() {
                   detections.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        <Badge 
-                            variant={item.severity === 'HIGH' ? 'destructive' : item.severity === 'MEDIUM' ? 'default' : 'secondary'}
+                        <Badge
+                          variant={
+                            item.severity === 'HIGH'
+                              ? 'destructive'
+                              : item.severity === 'MEDIUM'
+                                ? 'default'
+                                : 'secondary'
+                          }
                         >
-                            {item.severity}
+                          {item.severity}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                            <span className="font-medium">{item.userName}</span>
-                            <span className="text-xs text-muted-foreground">{item.userEmail}</span>
+                          <span className="font-medium">{item.userName}</span>
+                          <span className="text-xs text-muted-foreground">{item.userEmail}</span>
                         </div>
                       </TableCell>
                       <TableCell>{item.patternType}</TableCell>
                       <TableCell>{item.eventCount}</TableCell>
                       <TableCell className="text-xs">
-                        {format(new Date(item.firstEventTime), 'HH:mm:ss')} - {format(new Date(item.lastEventTime), 'HH:mm:ss')}
+                        {format(new Date(item.firstEventTime), 'HH:mm:ss')} -{' '}
+                        {format(new Date(item.lastEventTime), 'HH:mm:ss')}
                       </TableCell>
                       <TableCell className="max-w-md truncate" title={item.description}>
                         {item.description}

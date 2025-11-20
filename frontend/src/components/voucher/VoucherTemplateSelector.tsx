@@ -1,14 +1,8 @@
-  import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Loader2, RefreshCw, Search, ShieldCheck } from 'lucide-react'
 
-import {
-  getVoucherTemplateById,
-  getVoucherTemplates,
-} from '@/services/voucher'
-import type {
-  VoucherTemplateDTO,
-  VoucherTemplateSummaryDTO,
-} from '@/types/voucher'
+import { getVoucherTemplateById, getVoucherTemplates } from '@/services/voucher'
+import type { VoucherTemplateDTO, VoucherTemplateSummaryDTO } from '@/types/voucher'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -95,7 +89,8 @@ export function VoucherTemplateSelector({
         <DialogHeader>
           <DialogTitle>Apply voucher template</DialogTitle>
           <DialogDescription>
-            Select available template to automatically fill accounts and descriptions for accounting vouchers.
+            Select available template to automatically fill accounts and descriptions for accounting
+            vouchers.
           </DialogDescription>
         </DialogHeader>
 
@@ -138,7 +133,7 @@ export function VoucherTemplateSelector({
               }}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh
+              Refresh
             </Button>
           </div>
 
@@ -147,7 +142,9 @@ export function VoucherTemplateSelector({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-md border">
               <div className="flex items-center justify-between border-b px-4 py-2">
-                <p className="text-sm font-semibold">Available templates ({filteredTemplates.length})</p>
+                <p className="text-sm font-semibold">
+                  Available templates ({filteredTemplates.length})
+                </p>
                 {loading ? <span className="text-xs text-muted-foreground">Loading…</span> : null}
               </div>
               <ScrollArea className="h-[360px]">
@@ -175,7 +172,7 @@ export function VoucherTemplateSelector({
                       >
                         <p className="font-semibold text-sm">{template.name}</p>
                         <p className="text-xs text-muted-foreground line-clamp-2">
-                          {template.description || 'No description'}  
+                          {template.description || 'No description'}
                         </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                           {template.isActive ? (
@@ -239,8 +236,8 @@ export function VoucherTemplateSelector({
                             className="rounded-md border p-3 text-xs leading-relaxed"
                           >
                             <p className="font-semibold">
-                              Line {line.lineNumber}: Debit {line.debitAccountCode || '---'} / Credit{' '}
-                              {line.creditAccountCode || '---'}
+                              Line {line.lineNumber}: Debit {line.debitAccountCode || '---'} /
+                              Credit {line.creditAccountCode || '---'}
                             </p>
                             {line.defaultDescription ? (
                               <p className="text-muted-foreground">{line.defaultDescription}</p>
@@ -253,7 +250,7 @@ export function VoucherTemplateSelector({
                                 <Badge variant="outline">Requires supplier</Badge>
                               ) : null}
                               {line.requiresCostCenter ? (
-                                  <Badge variant="outline">Requires cost center</Badge>
+                                <Badge variant="outline">Requires cost center</Badge>
                               ) : null}
                               {line.lockAccounts ? (
                                 <Badge variant="destructive">Lock accounts</Badge>
@@ -281,7 +278,7 @@ export function VoucherTemplateSelector({
                   </>
                 ) : (
                   <div className="text-sm text-muted-foreground">
-                      Select a template from the list on the left to view details and apply.
+                    Select a template from the list on the left to view details and apply.
                   </div>
                 )}
               </div>

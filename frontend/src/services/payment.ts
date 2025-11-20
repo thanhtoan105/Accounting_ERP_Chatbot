@@ -114,9 +114,12 @@ export async function allocateFIFO(
   queryParams.append('paymentAmount', String(paymentAmount))
   queryParams.append('supplierId', String(supplierId))
 
-  const res = await fetchWithAuth(`${API_BASE}/ap-payments/allocate-fifo?${queryParams.toString()}`, {
-    method: 'POST',
-  })
+  const res = await fetchWithAuth(
+    `${API_BASE}/ap-payments/allocate-fifo?${queryParams.toString()}`,
+    {
+      method: 'POST',
+    },
+  )
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: 'Request failed' }))
     throw error
@@ -183,4 +186,3 @@ export async function downloadPaymentImportTemplate(): Promise<Blob> {
   }
   return await res.blob()
 }
-

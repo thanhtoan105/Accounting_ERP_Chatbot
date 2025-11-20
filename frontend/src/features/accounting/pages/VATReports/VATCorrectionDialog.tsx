@@ -260,5 +260,3 @@ export function VATCorrectionDialog({
     </Dialog>
   )
 }
-
-

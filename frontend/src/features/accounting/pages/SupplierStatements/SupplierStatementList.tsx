@@ -49,7 +49,9 @@ export function SupplierStatementList() {
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
   const [selectedStatementId, setSelectedStatementId] = useState<string>('')
   const [selectedSupplierName, setSelectedSupplierName] = useState<string>('')
-  const [reconciliationResult, setReconciliationResult] = useState<ReconciliationResult | null>(null)
+  const [reconciliationResult, setReconciliationResult] = useState<ReconciliationResult | null>(
+    null,
+  )
   const [reconciliationSupplierId, setReconciliationSupplierId] = useState<number>(0)
 
   const loadStatements = useCallback(async () => {
@@ -95,9 +97,10 @@ export function SupplierStatementList() {
     }
   }
 
-  const filteredStatements = statements.filter((s) =>
-    s.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.supplierCode.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredStatements = statements.filter(
+    (s) =>
+      s.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.supplierCode.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   return (
@@ -156,13 +159,27 @@ export function SupplierStatementList() {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[200px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[80px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[150px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[120px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[60px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[80px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[100px]" />
+                  </TableCell>
                 </TableRow>
               ))
             ) : filteredStatements.length === 0 ? (
@@ -184,7 +201,8 @@ export function SupplierStatementList() {
                     <Badge variant="outline">{statement.statementType}</Badge>
                   </TableCell>
                   <TableCell className="text-sm">
-                    {format(new Date(statement.startDate), 'dd/MM/yyyy')} - {format(new Date(statement.endDate), 'dd/MM/yyyy')}
+                    {format(new Date(statement.startDate), 'dd/MM/yyyy')} -{' '}
+                    {format(new Date(statement.endDate), 'dd/MM/yyyy')}
                   </TableCell>
                   <TableCell className="text-sm">
                     <div>{format(new Date(statement.generationDate), 'dd/MM/yyyy HH:mm')}</div>
@@ -309,4 +327,3 @@ export function SupplierStatementList() {
     </div>
   )
 }
-

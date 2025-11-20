@@ -76,9 +76,7 @@ describe('ImportStatementDialog', () => {
     await user.upload(fileInput, invalidFile)
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith(
-        expect.stringContaining('Invalid file type')
-      )
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Invalid file type'))
     })
   })
 
@@ -87,7 +85,9 @@ describe('ImportStatementDialog', () => {
     render(<ImportStatementDialog open={true} onOpenChange={vi.fn()} />)
 
     const fileInput = screen.getByLabelText(/Select File/i) as HTMLInputElement
-    const validFile = new File(['content'], 'statement.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const validFile = new File(['content'], 'statement.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
 
     await user.upload(fileInput, validFile)
 
@@ -103,7 +103,7 @@ describe('ImportStatementDialog', () => {
         open={true}
         onOpenChange={vi.fn()}
         onReconciliationComplete={onReconciliationComplete}
-      />
+      />,
     )
 
     await waitFor(() => {
@@ -117,7 +117,9 @@ describe('ImportStatementDialog', () => {
 
     // Upload file
     const fileInput = screen.getByLabelText(/Select File/i) as HTMLInputElement
-    const validFile = new File(['content'], 'statement.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const validFile = new File(['content'], 'statement.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
     await user.upload(fileInput, validFile)
 
     // Import
@@ -139,7 +141,9 @@ describe('ImportStatementDialog', () => {
     render(<ImportStatementDialog open={true} onOpenChange={vi.fn()} />)
 
     const fileInput = screen.getByLabelText(/Select File/i) as HTMLInputElement
-    const validFile = new File(['content'], 'statement.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const validFile = new File(['content'], 'statement.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
     await user.upload(fileInput, validFile)
 
     const importButton = screen.getByRole('button', { name: /Import/i })
@@ -167,7 +171,9 @@ describe('ImportStatementDialog', () => {
 
     // Try to import without selecting supplier
     const fileInput = screen.getByLabelText(/Select File/i) as HTMLInputElement
-    const validFile = new File(['content'], 'statement.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const validFile = new File(['content'], 'statement.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
     await user.upload(fileInput, validFile)
 
     const importButton = screen.getByRole('button', { name: /Import/i })
@@ -179,4 +185,3 @@ describe('ImportStatementDialog', () => {
     })
   })
 })
-

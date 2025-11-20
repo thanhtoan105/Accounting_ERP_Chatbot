@@ -17,7 +17,13 @@ vi.mock('sonner', () => ({
 }))
 
 vi.mock('../GenerateStatementDialog', () => ({
-  GenerateStatementDialog: ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => (
+  GenerateStatementDialog: ({
+    open,
+    onOpenChange,
+  }: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+  }) => (
     <div data-testid="generate-dialog">
       {open && <button onClick={() => onOpenChange(false)}>Close Generate</button>}
     </div>
@@ -25,7 +31,13 @@ vi.mock('../GenerateStatementDialog', () => ({
 }))
 
 vi.mock('../ImportStatementDialog', () => ({
-  ImportStatementDialog: ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => (
+  ImportStatementDialog: ({
+    open,
+    onOpenChange,
+  }: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+  }) => (
     <div data-testid="import-dialog">
       {open && <button onClick={() => onOpenChange(false)}>Close Import</button>}
     </div>
@@ -33,7 +45,13 @@ vi.mock('../ImportStatementDialog', () => ({
 }))
 
 vi.mock('../ReconciliationResultsDialog', () => ({
-  ReconciliationResultsDialog: ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => (
+  ReconciliationResultsDialog: ({
+    open,
+    onOpenChange,
+  }: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+  }) => (
     <div data-testid="reconciliation-dialog">
       {open && <button onClick={() => onOpenChange(false)}>Close Reconciliation</button>}
     </div>
@@ -41,7 +59,13 @@ vi.mock('../ReconciliationResultsDialog', () => ({
 }))
 
 vi.mock('@/components/supplier-statements', () => ({
-  SendStatementDialog: ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => (
+  SendStatementDialog: ({
+    open,
+    onOpenChange,
+  }: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+  }) => (
     <div data-testid="send-dialog">
       {open && <button onClick={() => onOpenChange(false)}>Close Send</button>}
     </div>
@@ -215,7 +239,7 @@ describe('SupplierStatementList', () => {
       expect.objectContaining({
         page: 0,
         size: 20,
-      })
+      }),
     )
   })
 
@@ -235,4 +259,3 @@ describe('SupplierStatementList', () => {
     // Note: Implementation may use different loading indicators
   })
 })
-

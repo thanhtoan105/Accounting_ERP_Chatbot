@@ -136,7 +136,9 @@ export function DisputeLogTable({ supplierId }: DisputeLogTableProps) {
     }
   }
 
-  const getStatusVariant = (status: DisputeStatus): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  const getStatusVariant = (
+    status: DisputeStatus,
+  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
       case 'OPEN':
         return 'outline'
@@ -155,7 +157,7 @@ export function DisputeLogTable({ supplierId }: DisputeLogTableProps) {
     (d) =>
       !searchTerm ||
       d.billNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.disputeReason.toLowerCase().includes(searchTerm.toLowerCase())
+      d.disputeReason.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   return (
@@ -206,15 +208,33 @@ export function DisputeLogTable({ supplierId }: DisputeLogTableProps) {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[100px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[200px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[80px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[100px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[120px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[100px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[120px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[100px]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[80px]" />
+                  </TableCell>
                 </TableRow>
               ))
             ) : filteredDisputes.length === 0 ? (
@@ -229,7 +249,10 @@ export function DisputeLogTable({ supplierId }: DisputeLogTableProps) {
                   <TableCell className="font-medium">{dispute.billNumber || '-'}</TableCell>
                   <TableCell className="max-w-[300px] truncate">{dispute.disputeReason}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(dispute.status)} className="flex items-center gap-1 w-fit">
+                    <Badge
+                      variant={getStatusVariant(dispute.status)}
+                      className="flex items-center gap-1 w-fit"
+                    >
                       {getStatusIcon(dispute.status)}
                       {dispute.status}
                     </Badge>
@@ -243,15 +266,13 @@ export function DisputeLogTable({ supplierId }: DisputeLogTableProps) {
                   <TableCell>{format(new Date(dispute.createdAt), 'dd/MM/yyyy HH:mm')}</TableCell>
                   <TableCell>{dispute.resolvedByName || '-'}</TableCell>
                   <TableCell>
-                    {dispute.resolvedAt ? format(new Date(dispute.resolvedAt), 'dd/MM/yyyy HH:mm') : '-'}
+                    {dispute.resolvedAt
+                      ? format(new Date(dispute.resolvedAt), 'dd/MM/yyyy HH:mm')
+                      : '-'}
                   </TableCell>
                   <TableCell className="text-right">
                     {dispute.status !== 'RESOLVED' && dispute.status !== 'REJECTED' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleResolve(dispute)}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => handleResolve(dispute)}>
                         Resolve
                       </Button>
                     )}
@@ -311,9 +332,7 @@ export function DisputeLogTable({ supplierId }: DisputeLogTableProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Resolve Dispute</DialogTitle>
-            <DialogDescription>
-              Update dispute status and add resolution notes
-            </DialogDescription>
+            <DialogDescription>Update dispute status and add resolution notes</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -328,11 +347,7 @@ export function DisputeLogTable({ supplierId }: DisputeLogTableProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDialogOpen(false)}
-              disabled={updating}
-            >
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={updating}>
               Cancel
             </Button>
             <Button
@@ -342,10 +357,7 @@ export function DisputeLogTable({ supplierId }: DisputeLogTableProps) {
             >
               Reject
             </Button>
-            <Button
-              onClick={() => handleUpdateStatus('RESOLVED')}
-              disabled={updating}
-            >
+            <Button onClick={() => handleUpdateStatus('RESOLVED')} disabled={updating}>
               {updating ? 'Updating...' : 'Resolve'}
             </Button>
           </DialogFooter>
@@ -354,4 +366,3 @@ export function DisputeLogTable({ supplierId }: DisputeLogTableProps) {
     </div>
   )
 }
-

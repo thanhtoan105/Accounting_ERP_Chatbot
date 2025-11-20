@@ -135,11 +135,7 @@ export function APAgingBadge({
           </div>
         )}
 
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={handleViewAgingReport}
-        >
+        <Button variant="outline" className="w-full" onClick={handleViewAgingReport}>
           View Full Report
           <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
@@ -147,4 +143,3 @@ export function APAgingBadge({
     </Card>
   )
 }
-

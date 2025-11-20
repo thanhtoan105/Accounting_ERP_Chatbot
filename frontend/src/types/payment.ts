@@ -147,4 +147,3 @@ export interface PurchaseBillDTO {
   remainingBalance?: number
   status: string
 }
-

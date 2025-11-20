@@ -20,7 +20,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { toast } from 'sonner'
 
-import { PaymentAllocationGrid, type PaymentAllocation } from '@/components/payment/PaymentAllocationGrid'
+import {
+  PaymentAllocationGrid,
+  type PaymentAllocation,
+} from '@/components/payment/PaymentAllocationGrid'
 import { AccountBalanceDisplay } from '@/components/payment/AccountBalanceDisplay'
 import { SupplierPicker } from '@/components/purchase/SupplierPicker'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -84,7 +87,11 @@ const formSchema = z.object({
   reference: z.string().max(100, 'Reference must be 100 characters or less').optional().nullable(),
   paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'CHECK', 'OTHER']).default('BANK_TRANSFER'),
   payee: z.string().max(200, 'Payee must be 200 characters or less').optional().nullable(),
-  paymentProofUrl: z.string().max(500, 'Payment proof URL must be 500 characters or less').optional().nullable(),
+  paymentProofUrl: z
+    .string()
+    .max(500, 'Payment proof URL must be 500 characters or less')
+    .optional()
+    .nullable(),
   isStandalone: z.boolean().default(false),
 })
 
@@ -335,9 +342,10 @@ export default function PaymentForm() {
         return
       }
 
-      const response = isEditing && paymentId
-        ? await updatePayment(paymentId, payload)
-        : await createPayment(payload)
+      const response =
+        isEditing && paymentId
+          ? await updatePayment(paymentId, payload)
+          : await createPayment(payload)
 
       toast.success(isEditing ? 'Payment updated' : 'Payment created', {
         description: `Payment Number: ${response.paymentNumber}`,
@@ -353,7 +361,7 @@ export default function PaymentForm() {
     } catch (err: any) {
       const errorMessage = err?.error?.message || err?.message || 'Failed to save payment'
       toast.error('Failed to save payment', { description: errorMessage })
-      
+
       // Parse field errors if available
       if (err?.error?.details) {
         setFormErrors(err.error.details)
@@ -398,7 +406,8 @@ export default function PaymentForm() {
   }
 
   const isReadOnly = editingPayment?.status === 'POSTED' || editingPayment?.status === 'CANCELLED'
-  const canPost = editingPayment?.status === 'DRAFT' || editingPayment?.status === 'PENDING_APPROVAL'
+  const canPost =
+    editingPayment?.status === 'DRAFT' || editingPayment?.status === 'PENDING_APPROVAL'
   const canCancel = editingPayment?.status === 'DRAFT'
 
   const cashAccounts = useMemo(
@@ -502,7 +511,9 @@ export default function PaymentForm() {
                                   disabled={isReadOnly}
                                 >
                                   <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value ? format(parseISO(field.value), 'PPP') : 'Pick a date'}
+                                  {field.value
+                                    ? format(parseISO(field.value), 'PPP')
+                                    : 'Pick a date'}
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-0" align="start">
@@ -708,14 +719,18 @@ export default function PaymentForm() {
                           </FormControl>
                         </div>
                         {field.value && (
-                          <Alert variant="destructive" className="border-orange-500 bg-orange-50 dark:bg-orange-950/20">
+                          <Alert
+                            variant="destructive"
+                            className="border-orange-500 bg-orange-50 dark:bg-orange-950/20"
+                          >
                             <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                             <AlertTitle className="text-orange-900 dark:text-orange-100">
                               Standalone Payment Warning
                             </AlertTitle>
                             <AlertDescription className="text-orange-800 dark:text-orange-200">
-                              This is a standalone payment (advance/ad hoc transaction) not linked to specific bills.
-                              Admin role required. This payment will still generate proper journal entries (Dr AP 331, Cr cash/bank 111/112).
+                              This is a standalone payment (advance/ad hoc transaction) not linked
+                              to specific bills. Admin role required. This payment will still
+                              generate proper journal entries (Dr AP 331, Cr cash/bank 111/112).
                             </AlertDescription>
                           </Alert>
                         )}
@@ -737,7 +752,9 @@ export default function PaymentForm() {
                           variant="outline"
                           size="sm"
                           onClick={handleFIFOAllocation}
-                          disabled={allocatingFIFO || !watchedValues?.supplierId || !watchedValues?.amount}
+                          disabled={
+                            allocatingFIFO || !watchedValues?.supplierId || !watchedValues?.amount
+                          }
                         >
                           {allocatingFIFO ? (
                             <>
@@ -898,4 +915,3 @@ export default function PaymentForm() {
     </div>
   )
 }
-

@@ -469,14 +469,16 @@ export function VoucherLineGrid({
                           updateLine(actualIndex, { description: event.target.value })
                         }
                         disabled={readOnly || loading}
-                          placeholder="Line description"
+                        placeholder="Line description"
                       />
                     </TableCell>
                     <TableCell>
                       <MoneyInput
                         value={line.amount ?? null}
                         onFocus={() => setActiveRowIndex(actualIndex)}
-                        onChange={(value: number | null) => updateLine(actualIndex, { amount: value ?? null })}
+                        onChange={(value: number | null) =>
+                          updateLine(actualIndex, { amount: value ?? null })
+                        }
                         onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
                           if (
                             event.key === 'Tab' &&
@@ -510,7 +512,7 @@ export function VoucherLineGrid({
                           required={requireCustomer}
                           error={
                             requireCustomer && !(line.customerId || line.customer?.id)
-                                ? 'Customer is required'
+                              ? 'Customer is required'
                               : null
                           }
                         />
@@ -651,7 +653,7 @@ export function VoucherLineGrid({
         <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3 text-sm md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-4">
             <span>
-                Total amount: <strong>{totals.amount.toLocaleString('vi-VN')}</strong>
+              Total amount: <strong>{totals.amount.toLocaleString('vi-VN')}</strong>
             </span>
             <span className="text-muted-foreground">Number of lines: {lines.length}</span>
           </div>

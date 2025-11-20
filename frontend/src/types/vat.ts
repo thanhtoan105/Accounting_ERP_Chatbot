@@ -90,5 +90,3 @@ export interface VATCorrectionCreateRequest {
   newVatAmount: string
   reason: string
 }
-
-

@@ -154,7 +154,10 @@ export function PurchaseBillLineGrid({
       }
 
       // Auto-calculate VAT amount
-      if (updated.amount !== null && (patch.vatRate !== undefined || updated.amount !== line.amount)) {
+      if (
+        updated.amount !== null &&
+        (patch.vatRate !== undefined || updated.amount !== line.amount)
+      ) {
         const vatCalc = onCalculateVAT || calculateVAT
         updated.vatAmount = vatCalc(updated.amount, updated.vatRate)
       }
@@ -476,4 +479,3 @@ export function PurchaseBillLineGrid({
     </div>
   )
 }
-

@@ -14,7 +14,9 @@ vi.mock('@/components/payment/PaymentAllocationGrid', () => ({
 
 vi.mock('@/components/payment/AccountBalanceDisplay', () => ({
   AccountBalanceDisplay: ({ accountId }: { accountId?: number | null }) => (
-    <div data-testid="account-balance-display">{accountId ? `Account ${accountId}` : 'No account'}</div>
+    <div data-testid="account-balance-display">
+      {accountId ? `Account ${accountId}` : 'No account'}
+    </div>
   ),
 }))
 
@@ -184,4 +186,3 @@ describe('PaymentForm', () => {
     })
   })
 })
-

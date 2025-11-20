@@ -84,9 +84,7 @@ export function ApproveVATCorrectionDialog({
             </div>
             <div>
               <span className="font-semibold text-foreground">Line:</span>{' '}
-              <span className="font-mono">
-                {correction.purchaseBillLineId ?? 'Bill total'}
-              </span>
+              <span className="font-mono">{correction.purchaseBillLineId ?? 'Bill total'}</span>
             </div>
             <div className="grid grid-cols-2 gap-4 rounded border p-3">
               <div>
@@ -188,5 +186,3 @@ export function ApproveVATCorrectionDialog({
     </Dialog>
   )
 }
-
-

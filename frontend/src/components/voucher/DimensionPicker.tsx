@@ -20,7 +20,7 @@ import { getSuppliers } from '@/features/suppliers/services/supplier'
 type DimensionType = 'customer' | 'supplier' | 'costCenter'
 
 const costCenterOptions: VoucherDimensionOption[] = [
-    { id: 'CC-OPS', code: 'OPS', name: 'Operations' },
+  { id: 'CC-OPS', code: 'OPS', name: 'Operations' },
   { id: 'CC-SALES', code: 'SAL', name: 'Sales' },
   { id: 'CC-MKT', code: 'MKT', name: 'Marketing' },
   { id: 'CC-RND', code: 'RND', name: 'Research & Development' },
@@ -194,7 +194,7 @@ export function DimensionPicker({
                     </div>
                     {value?.id === option.id ? (
                       <Badge variant="secondary" className="ml-auto">
-                          Selected
+                        Selected
                       </Badge>
                     ) : null}
                   </CommandItem>

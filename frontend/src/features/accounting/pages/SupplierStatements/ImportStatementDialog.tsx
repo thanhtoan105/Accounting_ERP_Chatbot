@@ -98,7 +98,7 @@ export function ImportStatementDialog({
       const result = await supplierStatementService.importStatement(
         supplierId,
         selectedFile,
-        format
+        format,
       )
 
       toast.success('Statement imported successfully', {
@@ -194,11 +194,7 @@ export function ImportStatementDialog({
           {/* Format Selection */}
           <div className="space-y-2">
             <Label>File Format *</Label>
-            <Select
-              value={format}
-              onValueChange={setFormat}
-              disabled={importing || !selectedFile}
-            >
+            <Select value={format} onValueChange={setFormat} disabled={importing || !selectedFile}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -214,10 +210,7 @@ export function ImportStatementDialog({
           <Button variant="outline" onClick={handleClose} disabled={importing}>
             Cancel
           </Button>
-          <Button
-            onClick={handleImport}
-            disabled={importing || !supplierId || !selectedFile}
-          >
+          <Button onClick={handleImport} disabled={importing || !supplierId || !selectedFile}>
             {importing ? (
               <>
                 <Upload className="mr-2 h-4 w-4 animate-spin" />
@@ -235,4 +228,3 @@ export function ImportStatementDialog({
     </Dialog>
   )
 }
-

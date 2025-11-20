@@ -147,11 +147,7 @@ export function ReminderDialog({
                   onChange={(e) => handleRecipientChange(index, e.target.value)}
                 />
                 {recipients.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveRecipient(index)}
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => handleRemoveRecipient(index)}>
                     <X className="h-4 w-4" />
                   </Button>
                 )}
@@ -226,4 +222,3 @@ export function ReminderDialog({
     </Dialog>
   )
 }
-

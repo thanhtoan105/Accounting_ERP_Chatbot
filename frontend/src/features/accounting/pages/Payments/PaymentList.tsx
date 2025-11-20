@@ -42,7 +42,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -351,7 +358,10 @@ export default function PaymentList() {
           <div className="flex items-center gap-2">
             <span>{row.original.supplierName || row.original.supplierCode || '-'}</span>
             {row.original.isStandalone && (
-              <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 bg-orange-50 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-400">
+              <Badge
+                variant="outline"
+                className="text-xs border-orange-500 text-orange-700 bg-orange-50 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-400"
+              >
                 <AlertTriangle className="mr-1 h-3 w-3" />
                 Standalone
               </Badge>
@@ -394,7 +404,9 @@ export default function PaymentList() {
         cell: ({ row }) => {
           const count = row.original.allocationCount || 0
           return count > 0 ? (
-            <Badge variant="outline">{count} bill{count !== 1 ? 's' : ''}</Badge>
+            <Badge variant="outline">
+              {count} bill{count !== 1 ? 's' : ''}
+            </Badge>
           ) : (
             <span className="text-muted-foreground">-</span>
           )
@@ -506,7 +518,8 @@ export default function PaymentList() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Wallet className="h-6 w-6 text-primary" />
-            AP Payments <span className="text-muted-foreground text-lg">/ Thanh toán nhà cung cấp</span>
+            AP Payments{' '}
+            <span className="text-muted-foreground text-lg">/ Thanh toán nhà cung cấp</span>
           </h1>
           <p className="text-muted-foreground">
             View, search, and manage supplier payments with server-side pagination.
@@ -671,8 +684,8 @@ export default function PaymentList() {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Are you sure you want to post payment{' '}
-              <strong>{paymentToPost?.paymentNumber}</strong>? This will:
+              Are you sure you want to post payment <strong>{paymentToPost?.paymentNumber}</strong>?
+              This will:
             </p>
             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
               <li>Generate a voucher (Dr AP 331, Cr cash/bank)</li>
@@ -859,4 +872,3 @@ export default function PaymentList() {
     </div>
   )
 }
-
