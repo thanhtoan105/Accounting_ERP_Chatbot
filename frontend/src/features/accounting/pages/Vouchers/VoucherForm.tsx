@@ -94,7 +94,11 @@ import type { ChartOfAccount } from '@/types/chartOfAccount'
 
 const formSchema = z.object({
   voucherDate: z.string().min(1, 'Voucher date is required'),
-  description: z.string().max(500, 'Description can be up to 500 characters').optional().or(z.literal('')),
+  description: z
+    .string()
+    .max(500, 'Description can be up to 500 characters')
+    .optional()
+    .or(z.literal('')),
 })
 
 type VoucherFormValues = z.infer<typeof formSchema>
@@ -569,7 +573,7 @@ export default function VoucherForm() {
       } catch (err: any) {
         // Silently fail for real-time validation, only show errors for manual validation
         if (!silent) {
-            toast.error('Cannot validate voucher', { description: err?.message })
+          toast.error('Cannot validate voucher', { description: err?.message })
         }
       } finally {
         setValidating(false)
@@ -698,7 +702,7 @@ export default function VoucherForm() {
         reverseDescription.trim(),
         reverseReason.trim(),
       )
-          toast.success('Voucher reversed successfully', {
+      toast.success('Voucher reversed successfully', {
         description: `Reversed voucher: ${response.reversal.voucherNumber}`,
       })
       setReverseDialogOpen(false)
@@ -856,8 +860,8 @@ export default function VoucherForm() {
         <Alert variant="destructive">
           <AlertTitle>Voucher is locked</AlertTitle>
           <AlertDescription className="flex flex-wrap items-center gap-2 text-sm">
-            {draftLock.ownerName || 'Other user'} is editing this draft. Lock will expire in
-            sau <span className="font-semibold">{lockCountdown ?? '—'}</span>.
+            {draftLock.ownerName || 'Other user'} is editing this draft. Lock will expire in sau{' '}
+            <span className="font-semibold">{lockCountdown ?? '—'}</span>.
             <Button
               size="sm"
               variant="outline"
@@ -996,7 +1000,7 @@ export default function VoucherForm() {
                       ) : (
                         <ArrowLeftRight className="mr-2 h-4 w-4" />
                       )}
-                        Reverse
+                      Reverse
                     </Button>
                   )}
                 </>
@@ -1027,7 +1031,8 @@ export default function VoucherForm() {
             className="text-destructive border-destructive"
           >
             <AlertCircle className="mr-2 h-4 w-4" />
-            {validationSummary.errorCount} lines with errors ({validationSummary.totalErrors} errors)
+            {validationSummary.errorCount} lines with errors ({validationSummary.totalErrors}{' '}
+            errors)
           </Button>
         )}
       </div>
@@ -1121,8 +1126,7 @@ export default function VoucherForm() {
                       </PopoverContent>
                     </Popover>
                     <FormDescription>
-                      Only dates between{' '}
-                      {format(openPeriodRange.openStart, 'dd/MM/yyyy')} –{' '}
+                      Only dates between {format(openPeriodRange.openStart, 'dd/MM/yyyy')} –{' '}
                       {format(openPeriodRange.openEnd, 'dd/MM/yyyy')}.
                     </FormDescription>
                     {periodValidationError && (
@@ -1239,8 +1243,8 @@ export default function VoucherForm() {
               Validation error summary
             </DialogTitle>
             <DialogDescription>
-              There are {validationSummary.errorCount} lines with {validationSummary.totalErrors} errors that need to be reviewed
-              lý
+              There are {validationSummary.errorCount} lines with {validationSummary.totalErrors}{' '}
+              errors that need to be reviewed lý
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1256,7 +1260,7 @@ export default function VoucherForm() {
                       className="rounded-lg border border-destructive/50 bg-destructive/5 p-4"
                     >
                       <div className="font-semibold text-destructive mb-3 flex items-center gap-2">
-                            <span>Line {lineNum}:</span>
+                        <span>Line {lineNum}:</span>
                         <Badge variant="destructive" className="text-xs">
                           {Object.values(fieldErrors).flat().length} errors
                         </Badge>

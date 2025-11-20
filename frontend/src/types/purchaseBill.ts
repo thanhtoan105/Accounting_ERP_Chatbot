@@ -118,4 +118,3 @@ export interface ImportResult {
   errors: ImportRowError[]
   errorReportId?: string
 }
-

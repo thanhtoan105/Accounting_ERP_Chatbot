@@ -16,7 +16,9 @@ vi.mock('sonner', () => ({
 }))
 
 vi.mock('@/components/ui/select', () => {
-  const Select = ({ children }: { children: ReactNode }) => <div data-testid="select">{children}</div>
+  const Select = ({ children }: { children: ReactNode }) => (
+    <div data-testid="select">{children}</div>
+  )
   const SelectTrigger = ({ children }: { children: ReactNode }) => <button>{children}</button>
   const SelectContent = ({ children }: { children: ReactNode }) => <div>{children}</div>
   const SelectItem = ({ children }: { children: ReactNode }) => <button>{children}</button>
@@ -74,7 +76,10 @@ describe('DisputeLogTable', () => {
 
   beforeEach(() => {
     mockListDisputes.mockResolvedValue(sampleResponse)
-    mockUpdateDispute.mockResolvedValue({ message: 'Dispute updated successfully', status: 'RESOLVED' })
+    mockUpdateDispute.mockResolvedValue({
+      message: 'Dispute updated successfully',
+      status: 'RESOLVED',
+    })
     toast.error.mockReset()
     toast.success.mockReset()
   })
@@ -153,7 +158,7 @@ describe('DisputeLogTable', () => {
         expect.objectContaining({
           status: 'RESOLVED',
           resolutionNotes: 'Resolved by adjusting amount',
-        })
+        }),
       )
     })
 
@@ -210,8 +215,7 @@ describe('DisputeLogTable', () => {
       expect.objectContaining({
         page: 0,
         size: 20,
-      })
+      }),
     )
   })
 })
-

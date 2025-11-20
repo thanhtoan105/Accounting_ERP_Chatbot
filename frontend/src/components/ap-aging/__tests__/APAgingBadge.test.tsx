@@ -80,5 +80,3 @@ describe('APAgingBadge', () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalled())
   })
 })
-
-

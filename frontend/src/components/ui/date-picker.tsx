@@ -7,11 +7,7 @@ import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Input } from '@/components/ui/input'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
 interface DatePickerProps {
@@ -30,12 +26,10 @@ export function DatePicker({
   id,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
-  const [date, setDate] = React.useState<Date | undefined>(
-    value ? new Date(value) : undefined
-  )
+  const [date, setDate] = React.useState<Date | undefined>(value ? new Date(value) : undefined)
   const [month, setMonth] = React.useState<Date | undefined>(date || new Date())
   const [inputValue, setInputValue] = React.useState(
-    value ? format(new Date(value), 'MMM dd, yyyy') : ''
+    value ? format(new Date(value), 'MMM dd, yyyy') : '',
   )
 
   // Update date when value prop changes
@@ -71,7 +65,7 @@ export function DatePicker({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputVal = e.target.value
     setInputValue(inputVal)
-    
+
     // Try to parse the date from various formats
     if (inputVal) {
       const parsedDate = new Date(inputVal)
@@ -135,4 +129,3 @@ export function DatePicker({
     </div>
   )
 }
-

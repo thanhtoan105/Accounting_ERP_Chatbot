@@ -46,10 +46,7 @@ export function PurchaseBillImportDialog({
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
         'application/vnd.ms-excel', // .xls
       ]
-      if (
-        !validTypes.includes(selectedFile.type) &&
-        !selectedFile.name.match(/\.(xlsx|xls)$/i)
-      ) {
+      if (!validTypes.includes(selectedFile.type) && !selectedFile.name.match(/\.(xlsx|xls)$/i)) {
         toast.error('Invalid file type', {
           description: 'Please select an Excel file (.xlsx or .xls).',
         })
@@ -99,8 +96,7 @@ export function PurchaseBillImportDialog({
         })
       }
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to import purchase bills'
+      const errorMessage = err?.error?.message || err?.message || 'Failed to import purchase bills'
       setError(errorMessage)
       toast.error('Failed to import purchase bills', { description: errorMessage })
     } finally {
@@ -192,9 +188,7 @@ export function PurchaseBillImportDialog({
                 <p className="text-sm text-muted-foreground mb-2">
                   Click to upload or drag and drop
                 </p>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Excel (.xlsx, .xls) files only
-                </p>
+                <p className="text-xs text-muted-foreground mb-4">Excel (.xlsx, .xls) files only</p>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -266,9 +260,7 @@ export function PurchaseBillImportDialog({
             <div className="space-y-4">
               <Alert
                 variant={importResult.errorCount === 0 ? 'default' : 'destructive'}
-                className={
-                  importResult.errorCount === 0 ? 'bg-green-50 border-green-200' : ''
-                }
+                className={importResult.errorCount === 0 ? 'bg-green-50 border-green-200' : ''}
               >
                 <AlertDescription>
                   <div className="flex items-center gap-2">
@@ -348,4 +340,3 @@ export function PurchaseBillImportDialog({
     </Dialog>
   )
 }
-

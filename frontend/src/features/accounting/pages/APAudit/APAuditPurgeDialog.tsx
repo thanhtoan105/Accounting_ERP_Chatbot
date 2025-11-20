@@ -62,19 +62,15 @@ export function APAuditPurgeDialog() {
             GDPR Data Purge
           </DialogTitle>
           <DialogDescription>
-            Permanently delete audit logs for compliance. This action cannot be undone.
-            Ensure you have a backup before proceeding.
+            Permanently delete audit logs for compliance. This action cannot be undone. Ensure you
+            have a backup before proceeding.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Purge logs before date</Label>
-            <Input
-              type="date"
-              value={beforeDate}
-              onChange={(e) => setBeforeDate(e.target.value)}
-            />
+            <Input type="date" value={beforeDate} onChange={(e) => setBeforeDate(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label>Specific User ID (Optional)</Label>
@@ -85,9 +81,7 @@ export function APAuditPurgeDialog() {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-destructive font-semibold">
-              Type "DELETE" to confirm
-            </Label>
+            <Label className="text-destructive font-semibold">Type "DELETE" to confirm</Label>
             <Input
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
@@ -100,9 +94,9 @@ export function APAuditPurgeDialog() {
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button 
-            variant="destructive" 
-            onClick={handlePurge} 
+          <Button
+            variant="destructive"
+            onClick={handlePurge}
             disabled={loading || confirmText !== 'DELETE' || !beforeDate}
           >
             {loading ? 'Purging...' : 'Purge Data'}

@@ -93,8 +93,15 @@ const formSchema = z.object({
   billNumber: z.string().min(1, 'Bill number is required'),
   billDate: z.string({ required_error: 'Bill date is required' }),
   dueDate: z.string({ required_error: 'Due date is required' }),
-  reference: z.string().min(1, 'Reference is required').max(100, 'Reference must be 100 characters or less'),
-  description: z.string().max(500, 'Description must be 500 characters or less').optional().or(z.literal('')),
+  reference: z
+    .string()
+    .min(1, 'Reference is required')
+    .max(100, 'Reference must be 100 characters or less'),
+  description: z
+    .string()
+    .max(500, 'Description must be 500 characters or less')
+    .optional()
+    .or(z.literal('')),
 })
 
 type PurchaseBillFormValues = z.infer<typeof formSchema>
@@ -218,12 +225,14 @@ function isLockedByOther(lock: DraftLock | null, ownerId: string) {
 }
 
 function calculateVAT(amount: number, rate: VatRate): number {
-  const rateValue =
-    rate === 'FIVE' ? 0.05 : rate === 'TEN' ? 0.1 : rate === 'EXEMPT' ? 0 : 0
+  const rateValue = rate === 'FIVE' ? 0.05 : rate === 'TEN' ? 0.1 : rate === 'EXEMPT' ? 0 : 0
   return amount * rateValue
 }
 
-function calculateDueDate(billDate: string, paymentTermsDays: number = DEFAULT_PAYMENT_TERMS_DAYS): string {
+function calculateDueDate(
+  billDate: string,
+  paymentTermsDays: number = DEFAULT_PAYMENT_TERMS_DAYS,
+): string {
   const date = parseISO(billDate)
   const dueDate = addDays(date, paymentTermsDays)
   return format(dueDate, 'yyyy-MM-dd')
@@ -285,7 +294,9 @@ export default function PurchaseBillForm() {
   const [validating, setValidating] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loadingAccounts, setLoadingAccounts] = useState(true)
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(
+    'idle',
+  )
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(
     initialState.updatedAt ? new Date(initialState.updatedAt) : null,
   )
@@ -298,7 +309,9 @@ export default function PurchaseBillForm() {
   const [autoSaveError, setAutoSaveError] = useState<string | null>(null)
   const [attachmentCount, setAttachmentCount] = useState(0)
   const [attachmentModalOpen, setAttachmentModalOpen] = useState(false)
-  const [approvalDialogAction, setApprovalDialogAction] = useState<'approve' | 'reject' | null>(null)
+  const [approvalDialogAction, setApprovalDialogAction] = useState<'approve' | 'reject' | null>(
+    null,
+  )
   const [submittingForApproval, setSubmittingForApproval] = useState(false)
   const [vatCorrections, setVatCorrections] = useState<VATCorrectionDTO[]>([])
   const [vatCorrectionsLoading, setVatCorrectionsLoading] = useState(false)
@@ -376,53 +389,53 @@ export default function PurchaseBillForm() {
     }))
   }, [lines])
 
-const vatIssues = useMemo<VatIssue[]>(() => {
-  const issues: VatIssue[] = []
-  lines.forEach((line, index) => {
-    const lineNumber = index + 1
-    const baseAmount = typeof line.amount === 'number' ? line.amount : 0
-    const vatAmount = typeof line.vatAmount === 'number' ? line.vatAmount : 0
-    const rate = line.vatRate ?? 'ZERO'
-    if (rate !== COMPANY_DEFAULT_VAT_RATE) {
-      issues.push({
-        severity: 'warning',
-        message: `Line ${lineNumber} uses VAT rate ${rate}, which differs from company default ${COMPANY_DEFAULT_VAT_RATE}.`,
-      })
-    }
-    const expectedVat = baseAmount * VAT_RATE_MAP[rate]
-    const diff = Math.abs(vatAmount - expectedVat)
-    if (diff > VAT_SUM_TOLERANCE) {
-      issues.push({
-        severity: 'error',
-        message: `Line ${lineNumber} VAT differs from expected by ${Intl.NumberFormat('vi-VN').format(
-          Math.round(diff),
-        )}₫ (tolerance 1,000₫).`,
-      })
-    }
-    if (baseAmount > 0) {
-      const ratio = (vatAmount / baseAmount) * 100
-      if (ratio < -0.01) {
+  const vatIssues = useMemo<VatIssue[]>(() => {
+    const issues: VatIssue[] = []
+    lines.forEach((line, index) => {
+      const lineNumber = index + 1
+      const baseAmount = typeof line.amount === 'number' ? line.amount : 0
+      const vatAmount = typeof line.vatAmount === 'number' ? line.vatAmount : 0
+      const rate = line.vatRate ?? 'ZERO'
+      if (rate !== COMPANY_DEFAULT_VAT_RATE) {
         issues.push({
-          severity: 'error',
-          message: `Line ${lineNumber} has negative VAT ratio (${ratio.toFixed(2)}%).`,
-        })
-      } else if (ratio > 100.1) {
-        issues.push({
-          severity: 'error',
-          message: `Line ${lineNumber} exceeds 100% VAT ratio (${ratio.toFixed(2)}%).`,
+          severity: 'warning',
+          message: `Line ${lineNumber} uses VAT rate ${rate}, which differs from company default ${COMPANY_DEFAULT_VAT_RATE}.`,
         })
       }
-    } else if (vatAmount > VAT_SUM_TOLERANCE) {
-      issues.push({
-        severity: 'error',
-        message: `Line ${lineNumber} has VAT amount without base amount.`,
-      })
-    }
-  })
-  return issues
-}, [lines])
+      const expectedVat = baseAmount * VAT_RATE_MAP[rate]
+      const diff = Math.abs(vatAmount - expectedVat)
+      if (diff > VAT_SUM_TOLERANCE) {
+        issues.push({
+          severity: 'error',
+          message: `Line ${lineNumber} VAT differs from expected by ${Intl.NumberFormat(
+            'vi-VN',
+          ).format(Math.round(diff))}₫ (tolerance 1,000₫).`,
+        })
+      }
+      if (baseAmount > 0) {
+        const ratio = (vatAmount / baseAmount) * 100
+        if (ratio < -0.01) {
+          issues.push({
+            severity: 'error',
+            message: `Line ${lineNumber} has negative VAT ratio (${ratio.toFixed(2)}%).`,
+          })
+        } else if (ratio > 100.1) {
+          issues.push({
+            severity: 'error',
+            message: `Line ${lineNumber} exceeds 100% VAT ratio (${ratio.toFixed(2)}%).`,
+          })
+        }
+      } else if (vatAmount > VAT_SUM_TOLERANCE) {
+        issues.push({
+          severity: 'error',
+          message: `Line ${lineNumber} has VAT amount without base amount.`,
+        })
+      }
+    })
+    return issues
+  }, [lines])
 
-const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error')
+  const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error')
 
   const loadVatCorrections = useCallback(async () => {
     if (!billId) return
@@ -615,9 +628,10 @@ const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error
     try {
       setSaving(true)
       const payload = buildRequest(values)
-      const response = isEditing && billId
-        ? await updatePurchaseBill(billId, payload)
-        : await createPurchaseBill(payload)
+      const response =
+        isEditing && billId
+          ? await updatePurchaseBill(billId, payload)
+          : await createPurchaseBill(payload)
       toast.success(isEditing ? 'Purchase bill updated' : 'Purchase bill created', {
         description: `Bill Number: ${response.billNumber}`,
       })
@@ -758,11 +772,7 @@ const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error
             </Button>
           )}
           {isEditing && billId && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAttachmentModalOpen(true)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setAttachmentModalOpen(true)}>
               <FileText className="mr-2 h-4 w-4" />
               Attachments {attachmentCount > 0 && `(${attachmentCount})`}
             </Button>
@@ -900,7 +910,9 @@ const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error
                                 !field.value && 'text-muted-foreground',
                                 headerErrors.dueDate && 'border-destructive',
                               )}
-                              disabled={isReadOnly || (isEditing && editingBill?.status !== 'DRAFT')}
+                              disabled={
+                                isReadOnly || (isEditing && editingBill?.status !== 'DRAFT')
+                              }
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {field.value ? format(parseISO(field.value), 'PPP') : 'Pick a date'}
@@ -915,7 +927,12 @@ const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error
                                   field.onChange(format(date, 'yyyy-MM-dd'))
                                 }
                               }}
-                              disabled={(date) => isBefore(date, parseISO(watchedValues.billDate || format(today, 'yyyy-MM-dd')))}
+                              disabled={(date) =>
+                                isBefore(
+                                  date,
+                                  parseISO(watchedValues.billDate || format(today, 'yyyy-MM-dd')),
+                                )
+                              }
                               initialFocus
                             />
                           </PopoverContent>
@@ -1005,8 +1022,14 @@ const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={loadVatCorrections} disabled={vatCorrectionsLoading}>
-                    <RefreshCw className={`mr-2 h-4 w-4 ${vatCorrectionsLoading ? 'animate-spin' : ''}`} />
+                  <Button
+                    variant="outline"
+                    onClick={loadVatCorrections}
+                    disabled={vatCorrectionsLoading}
+                  >
+                    <RefreshCw
+                      className={`mr-2 h-4 w-4 ${vatCorrectionsLoading ? 'animate-spin' : ''}`}
+                    />
                     Refresh
                   </Button>
                   <Button variant="default" onClick={() => setCorrectionDialogOpen(true)}>
@@ -1048,7 +1071,10 @@ const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error
                             <TableCell className="font-mono text-xs">
                               {correction.purchaseBillLineId ?? 'Bill total'}
                             </TableCell>
-                            <TableCell className="max-w-xs truncate text-sm" title={correction.reason}>
+                            <TableCell
+                              className="max-w-xs truncate text-sm"
+                              title={correction.reason}
+                            >
                               {correction.reason}
                             </TableCell>
                             <TableCell className="text-right font-mono text-sm">
@@ -1072,8 +1098,8 @@ const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error
                                   correction.status === 'APPROVED'
                                     ? 'default'
                                     : correction.status === 'REJECTED'
-                                    ? 'destructive'
-                                    : 'outline'
+                                      ? 'destructive'
+                                      : 'outline'
                                 }
                               >
                                 {correction.status}
@@ -1174,9 +1200,7 @@ const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error
           {vatIssues.length > 0 && (
             <Alert variant={hasBlockingVatIssues ? 'destructive' : 'default'}>
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>
-                VAT {hasBlockingVatIssues ? 'Issues' : 'Warnings'}
-              </AlertTitle>
+              <AlertTitle>VAT {hasBlockingVatIssues ? 'Issues' : 'Warnings'}</AlertTitle>
               <AlertDescription>
                 <ul className="list-disc list-inside">
                   {vatIssues.map((issue, idx) => (
@@ -1371,4 +1395,3 @@ const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error
     </div>
   )
 }
-

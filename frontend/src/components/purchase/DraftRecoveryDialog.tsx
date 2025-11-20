@@ -146,9 +146,7 @@ export function DraftRecoveryDialog({ open, onOpenChange }: DraftRecoveryDialogP
                     <TableCell className="font-medium">
                       {draft.billNumber || '(No bill number)'}
                     </TableCell>
-                    <TableCell>
-                      {draft.supplierName || draft.supplierCode || '-'}
-                    </TableCell>
+                    <TableCell>{draft.supplierName || draft.supplierCode || '-'}</TableCell>
                     <TableCell>
                       {draft.billDate ? format(new Date(draft.billDate), 'yyyy-MM-dd') : '-'}
                     </TableCell>
@@ -157,9 +155,7 @@ export function DraftRecoveryDialog({ open, onOpenChange }: DraftRecoveryDialogP
                     </TableCell>
                     <TableCell>{formatCurrency(draft.totalAmount)}</TableCell>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(draft.status)}>
-                        {draft.status}
-                      </Badge>
+                      <Badge variant={getStatusBadgeVariant(draft.status)}>{draft.status}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -203,4 +199,3 @@ export function DraftRecoveryDialog({ open, onOpenChange }: DraftRecoveryDialogP
     </Dialog>
   )
 }
-

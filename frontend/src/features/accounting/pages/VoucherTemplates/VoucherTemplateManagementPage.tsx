@@ -332,7 +332,7 @@ export default function VoucherTemplateManagementPage() {
       return false
     }
     if (formState.lines.some((line) => !line.debitAccount || !line.creditAccount)) {
-        setFormError('Each line must select both debit and credit accounts.')
+      setFormError('Each line must select both debit and credit accounts.')
       return false
     }
     setFormError(null)
@@ -427,7 +427,7 @@ export default function VoucherTemplateManagementPage() {
         <TableRow>
           <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
             <Loader2 className="mx-auto mb-3 h-5 w-5 animate-spin" />
-              Loading voucher template list...
+            Loading voucher template list...
           </TableCell>
         </TableRow>
       )
@@ -577,7 +577,7 @@ export default function VoucherTemplateManagementPage() {
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                      Refresh
+                  Refresh
                 </>
               )}
             </Button>
@@ -685,7 +685,7 @@ export default function VoucherTemplateManagementPage() {
           <DialogHeader>
             <DialogTitle>
               {formMode === 'edit'
-                  ? 'Edit voucher template'
+                ? 'Edit voucher template'
                 : formMode === 'duplicate'
                   ? 'Duplicate voucher template'
                   : 'Create voucher template'}
@@ -747,7 +747,7 @@ export default function VoucherTemplateManagementPage() {
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                    <p className="font-semibold text-sm">Template line accounts</p>
+                <p className="font-semibold text-sm">Template line accounts</p>
                 <p className="text-xs text-muted-foreground">
                   Each line must have 1 debit account + 1 credit account and required conditions.
                 </p>
@@ -832,7 +832,7 @@ export default function VoucherTemplateManagementPage() {
                             updateLine(line.id, { requiresCostCenter: Boolean(checked) })
                           }
                         />
-                            Requires cost center
+                        Requires cost center
                       </Label>
                       <Label className="flex items-center justify-between gap-2 text-sm font-medium">
                         <Checkbox
@@ -841,7 +841,7 @@ export default function VoucherTemplateManagementPage() {
                             updateLine(line.id, { lockAccounts: Boolean(checked) })
                           }
                         />
-                          Lock accounts
+                        Lock accounts
                       </Label>
                     </div>
                   </div>

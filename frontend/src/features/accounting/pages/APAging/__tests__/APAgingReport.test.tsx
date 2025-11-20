@@ -25,7 +25,9 @@ vi.mock('@/components/ap-aging/ReminderDialog', () => ({
 }))
 
 vi.mock('@/components/ui/select', () => {
-  const Select = ({ children }: { children: ReactNode }) => <div data-testid="select">{children}</div>
+  const Select = ({ children }: { children: ReactNode }) => (
+    <div data-testid="select">{children}</div>
+  )
   const SelectTrigger = ({ children }: { children: ReactNode }) => <button>{children}</button>
   const SelectContent = ({ children }: { children: ReactNode }) => <div>{children}</div>
   const SelectItem = ({ children }: { children: ReactNode }) => <button>{children}</button>
@@ -117,5 +119,3 @@ describe('APAgingReport', () => {
     expect(await screen.findByText('boom')).toBeInTheDocument()
   })
 })
-
-

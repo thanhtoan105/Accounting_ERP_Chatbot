@@ -63,10 +63,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import {
-  getPurchaseBills,
-  deletePurchaseBill,
-} from '@/services/purchaseBill'
+import { getPurchaseBills, deletePurchaseBill } from '@/services/purchaseBill'
 import { PurchaseBillImportDialog, DraftRecoveryDialog } from '@/components/purchase'
 import type {
   PurchaseBillListDTO,
@@ -272,7 +269,8 @@ export default function PurchaseBillList() {
       setTotalElements(response.data.totalElements)
       setTotalPages(response.data.totalPages)
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || 'Unable to load purchase bills'
+      const message =
+        err?.response?.data?.message || err?.message || 'Unable to load purchase bills'
       setError(message)
       toast.error('Failed to load purchase bills', {
         description: message,
@@ -311,7 +309,8 @@ export default function PurchaseBillList() {
       // Refresh data
       await loadBills()
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || 'Failed to delete purchase bill'
+      const message =
+        err?.response?.data?.message || err?.message || 'Failed to delete purchase bill'
       toast.error('Failed to delete purchase bill', { description: message })
     } finally {
       setDeleting(false)
@@ -765,4 +764,3 @@ export default function PurchaseBillList() {
     </div>
   )
 }
-
