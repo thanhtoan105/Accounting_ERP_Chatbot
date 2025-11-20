@@ -15,6 +15,8 @@ import {
   AccountControls,
   PurchaseBillList,
   PurchaseBillForm,
+  SalesInvoiceList,
+  SalesInvoiceForm,
   PaymentList,
   PaymentForm,
   APAgingReport,
@@ -146,6 +148,36 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
               <PurchaseBillForm />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/sales-invoices"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <SalesInvoiceList />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/sales-invoices/new"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <SalesInvoiceForm />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/sales-invoices/:invoiceId"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <SalesInvoiceForm />
             </RoleGuard>
           </ProtectedLayout>
         }

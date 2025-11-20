@@ -11,6 +11,7 @@ import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,197 +49,198 @@ public class AuditServiceImpl implements AuditService {
         this.objectMapper = objectMapper;
     }
 
-  private AuditLog startLog(String action, HttpServletRequest request) {
+    private AuditLog startLog(String action, HttpServletRequest request) {
         AuditLog log = new AuditLog();
-    log.setAction(action);
-    log.setEventType(resolveEventType(action));
-    log.setCompanyId(CompanyContext.getCompanyId());
-    log.setCreatedAt(Instant.now());
-    log.setSuccess(Boolean.TRUE);
-    if (request != null) {
-        log.setIpAddress(request.getRemoteAddr());
-        log.setUserAgent(request.getHeader("User-Agent"));
-      String traceId = resolveTraceId(request);
-      if (traceId != null) {
-        log.setTraceId(traceId);
-      }
+        log.setAction(action);
+        log.setEventType(resolveEventType(action));
+        log.setCompanyId(CompanyContext.getCompanyId());
+        log.setCreatedAt(Instant.now());
+        log.setSuccess(Boolean.TRUE);
+        if (request != null) {
+            log.setIpAddress(request.getRemoteAddr());
+            log.setUserAgent(request.getHeader("User-Agent"));
+            String traceId = resolveTraceId(request);
+            if (traceId != null) {
+                log.setTraceId(traceId);
+            }
+        }
+        return log;
     }
-    return log;
-  }
 
-  private void assignActor(AuditLog log, User user) {
-    if (user == null) {
-      return;
-    }
-    log.setUserId(user.getId());
-    log.setEmail(user.getEmail());
-    if (StringUtils.hasText(user.getRole())) {
-      log.setActorRole(user.getRole());
-    }
-  }
-
-  private void assignActor(AuditLog log, Long userId, String fallbackEmail) {
-    if (userId != null) {
-      log.setUserId(userId);
-      Optional<User> userOpt = userRepository.findById(userId);
-      if (userOpt.isPresent()) {
-        User user = userOpt.get();
+    private void assignActor(AuditLog log, User user) {
+        if (user == null) {
+            return;
+        }
+        log.setUserId(user.getId());
         log.setEmail(user.getEmail());
         if (StringUtils.hasText(user.getRole())) {
-          log.setActorRole(user.getRole());
+            log.setActorRole(user.getRole());
         }
-        return;
-      }
     }
-    if (StringUtils.hasText(fallbackEmail) && !StringUtils.hasText(log.getEmail())) {
-      log.setEmail(fallbackEmail);
-    }
-  }
 
-  private void assignEntity(AuditLog log, String entityType, Object entityId, String display) {
-    log.setEntityType(entityType);
-    if (entityId != null) {
-      log.setEntityId(entityId.toString());
+    private void assignActor(AuditLog log, Long userId, String fallbackEmail) {
+        if (userId != null) {
+            log.setUserId(userId);
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                log.setEmail(user.getEmail());
+                if (StringUtils.hasText(user.getRole())) {
+                    log.setActorRole(user.getRole());
+                }
+                return;
+            }
+        }
+        if (StringUtils.hasText(fallbackEmail) && !StringUtils.hasText(log.getEmail())) {
+            log.setEmail(fallbackEmail);
+        }
     }
-    if (StringUtils.hasText(display)) {
-      log.setEntityDisplay(display);
-    }
-  }
 
-  private ObjectNode buildChangePayload(Map<String, String> oldValues, Map<String, String> newValues) {
-    ObjectNode root = objectMapper.createObjectNode();
-    if (oldValues != null && !oldValues.isEmpty()) {
-      ObjectNode before = objectMapper.createObjectNode();
-      oldValues.forEach(before::put);
-      root.set("before", before);
+    private void assignEntity(AuditLog log, String entityType, Object entityId, String display) {
+        log.setEntityType(entityType);
+        if (entityId != null) {
+            log.setEntityId(entityId.toString());
+        }
+        if (StringUtils.hasText(display)) {
+            log.setEntityDisplay(display);
+        }
     }
-    if (newValues != null && !newValues.isEmpty()) {
-      ObjectNode after = objectMapper.createObjectNode();
-      newValues.forEach(after::put);
-      root.set("after", after);
-    }
-    return root.isEmpty() ? null : root;
-  }
 
-  private ObjectNode buildMetadata() {
-    return objectMapper.createObjectNode();
-  }
+    private ObjectNode buildChangePayload(Map<String, String> oldValues, Map<String, String> newValues) {
+        ObjectNode root = objectMapper.createObjectNode();
+        if (oldValues != null && !oldValues.isEmpty()) {
+            ObjectNode before = objectMapper.createObjectNode();
+            oldValues.forEach(before::put);
+            root.set("before", before);
+        }
+        if (newValues != null && !newValues.isEmpty()) {
+            ObjectNode after = objectMapper.createObjectNode();
+            newValues.forEach(after::put);
+            root.set("after", after);
+        }
+        return root.isEmpty() ? null : root;
+    }
 
-  private String resolveEventType(String action) {
-    if (!StringUtils.hasText(action)) {
-      return "GENERAL";
+    private ObjectNode buildMetadata() {
+        return objectMapper.createObjectNode();
     }
-    if (action.startsWith("CUSTOMER") || action.startsWith("SUPPLIER") || action.startsWith("BANK_ACCOUNT")
-            || action.startsWith("COMPANY_SETTINGS") || action.startsWith("DATA_INTEGRITY")) {
-      return "MASTER_DATA";
-    }
-    if (action.startsWith("LOGIN") || action.startsWith("PASSWORD") || action.startsWith("ROLE")
-            || action.startsWith("INVITATION") || action.startsWith("AUDIT_USER")) {
-      return "SECURITY";
-    }
-    if (action.startsWith("REPORT") || action.startsWith("AUDIT_EXPORT")) {
-      return "COMPLIANCE";
-    }
-    return "GENERAL";
-  }
 
-  private String resolveTraceId(HttpServletRequest request) {
-    if (request == null) {
-      return null;
+    private String resolveEventType(String action) {
+        if (!StringUtils.hasText(action)) {
+            return "GENERAL";
+        }
+        if (action.startsWith("CUSTOMER") || action.startsWith("SUPPLIER") || action.startsWith("BANK_ACCOUNT")
+                || action.startsWith("COMPANY_SETTINGS") || action.startsWith("DATA_INTEGRITY")) {
+            return "MASTER_DATA";
+        }
+        if (action.startsWith("LOGIN") || action.startsWith("PASSWORD") || action.startsWith("ROLE")
+                || action.startsWith("INVITATION") || action.startsWith("AUDIT_USER")) {
+            return "SECURITY";
+        }
+        if (action.startsWith("REPORT") || action.startsWith("AUDIT_EXPORT")) {
+            return "COMPLIANCE";
+        }
+        return "GENERAL";
     }
-    String traceId = request.getHeader("X-Request-Id");
-    if (!StringUtils.hasText(traceId)) {
-      traceId = request.getHeader("X-Correlation-Id");
+
+    private String resolveTraceId(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String traceId = request.getHeader("X-Request-Id");
+        if (!StringUtils.hasText(traceId)) {
+            traceId = request.getHeader("X-Correlation-Id");
+        }
+        return StringUtils.hasText(traceId) ? traceId : null;
     }
-    return StringUtils.hasText(traceId) ? traceId : null;
-  }
 
-  @SuppressWarnings("null")
-  private void persist(AuditLog log) {
-      // Calculate chain hash before saving
-      try {
-          if (log.getCompanyId() != null) {
-              Optional<AuditLog> previousLog = auditLogRepository
-                  .findFirstByCompanyIdOrderByCreatedAtDesc(log.getCompanyId());
-              
-              String previousHash = previousLog.map(AuditLog::getChainHash).orElse("GENESIS");
-              
-              // Calculate hash of current log content
-              String content = log.getAction() + 
-                             (log.getEntityId() != null ? log.getEntityId() : "") + 
-                             log.getCreatedAt().toString() + 
-                             (log.getUserId() != null ? log.getUserId().toString() : "") +
-                             (log.getMetadata() != null ? log.getMetadata().toString() : "");
-                             
-              String currentHash = calculateSha256(previousHash + content);
-              log.setChainHash(currentHash);
-          }
-      } catch (Exception e) {
-          logger.error("Failed to calculate chain hash", e);
-          log.setChainHash("HASH_CALC_FAILED");
-      }
-      
-      auditLogRepository.save(log);
-  }
+    @SuppressWarnings("null")
+    private void persist(AuditLog log) {
+        // Calculate chain hash before saving
+        try {
+            if (log.getCompanyId() != null) {
+                Optional<AuditLog> previousLog = auditLogRepository
+                        .findFirstByCompanyIdOrderByCreatedAtDesc(log.getCompanyId());
 
-  private String calculateSha256(String input) {
-      try {
-          java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-          byte[] hash = digest.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-          StringBuilder hexString = new StringBuilder();
-          for (byte b : hash) {
-              String hex = Integer.toHexString(0xff & b);
-              if (hex.length() == 1) hexString.append('0');
-              hexString.append(hex);
-          }
-          return hexString.toString();
-      } catch (Exception e) {
-          throw new RuntimeException("SHA-256 not supported", e);
-      }
-  }
+                String previousHash = previousLog.map(AuditLog::getChainHash).orElse("GENESIS");
 
-  private String trimReason(String value) {
-    if (!StringUtils.hasText(value)) {
-      return value;
+                // Calculate hash of current log content
+                String content = log.getAction() +
+                        (log.getEntityId() != null ? log.getEntityId() : "") +
+                        log.getCreatedAt().toString() +
+                        (log.getUserId() != null ? log.getUserId().toString() : "") +
+                        (log.getMetadata() != null ? log.getMetadata().toString() : "");
+
+                String currentHash = calculateSha256(previousHash + content);
+                log.setChainHash(currentHash);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to calculate chain hash", e);
+            log.setChainHash("HASH_CALC_FAILED");
+        }
+
+        auditLogRepository.save(log);
     }
-    return value.length() > 50 ? value.substring(0, 47) + "..." : value;
-  }
+
+    private String calculateSha256(String input) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1)
+                    hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("SHA-256 not supported", e);
+        }
+    }
+
+    private String trimReason(String value) {
+        if (!StringUtils.hasText(value)) {
+            return value;
+        }
+        return value.length() > 50 ? value.substring(0, 47) + "..." : value;
+    }
 
     @Override
     public void logLoginSuccess(User user, HttpServletRequest request) {
-    AuditLog log = startLog("LOGIN_SUCCESS", request);
-    assignActor(log, user);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("LOGIN_SUCCESS", request);
+        assignActor(log, user);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logLoginFailure(User user, String email, String reason, HttpServletRequest request) {
-    AuditLog log = startLog("LOGIN_FAILURE", request);
+        AuditLog log = startLog("LOGIN_FAILURE", request);
         if (user != null) {
-      assignActor(log, user);
+            assignActor(log, user);
         } else {
-      assignActor(log, (Long) null, email);
+            assignActor(log, (Long) null, email);
         }
-    log.setFailureReason(reason);
-    log.setSuccess(Boolean.FALSE);
-    persist(log);
+        log.setFailureReason(reason);
+        log.setSuccess(Boolean.FALSE);
+        persist(log);
     }
 
     @Override
     public void logPasswordResetRequest(User user, HttpServletRequest request) {
-    AuditLog log = startLog("PASSWORD_RESET_REQUESTED", request);
-    assignActor(log, user);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("PASSWORD_RESET_REQUESTED", request);
+        assignActor(log, user);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logPasswordResetCompleted(User user, HttpServletRequest request) {
-    AuditLog log = startLog("PASSWORD_RESET_COMPLETED", request);
-    assignActor(log, user);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("PASSWORD_RESET_COMPLETED", request);
+        assignActor(log, user);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
@@ -619,7 +621,8 @@ public class AuditServiceImpl implements AuditService {
                     .ifPresent(user -> log.setEmail(user.getEmail()));
         }
         log.setAction("VOUCHER_REVERSED");
-        // Store original and reversal voucher IDs/numbers, and reason (truncate to fit VARCHAR(50))
+        // Store original and reversal voucher IDs/numbers, and reason (truncate to fit
+        // VARCHAR(50))
         String reasonText = String.format("original:%s,reversal:%s", originalVoucherId, reversalVoucherId);
         if (reason != null && !reason.isBlank()) {
             // Include reason, but truncate if too long
@@ -644,690 +647,690 @@ public class AuditServiceImpl implements AuditService {
             java.util.Map<String, String> oldValues,
             java.util.Map<String, String> newValues,
             HttpServletRequest request) {
-    AuditLog log = startLog("COMPANY_SETTINGS_UPDATED", request);
-    assignActor(log, updatedByUserId, null);
-    assignEntity(log, "COMPANY", companyId, companyId != null ? companyId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("companyId", companyId != null ? companyId : -1);
-    log.setMetadata(metadata);
-    ObjectNode changes = buildChangePayload(oldValues, newValues);
-    if (changes != null) {
-      log.setChanges(changes);
-    }
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("COMPANY_SETTINGS_UPDATED", request);
+        assignActor(log, updatedByUserId, null);
+        assignEntity(log, "COMPANY", companyId, companyId != null ? companyId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("companyId", companyId != null ? companyId : -1);
+        log.setMetadata(metadata);
+        ObjectNode changes = buildChangePayload(oldValues, newValues);
+        if (changes != null) {
+            log.setChanges(changes);
+        }
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logReportExport(Long companyId, Long userId, String format, HttpServletRequest request) {
-    AuditLog log = startLog("REPORT_EXPORT", request);
-    assignActor(log, userId, null);
-    assignEntity(log, "COMPANY", companyId, companyId != null ? companyId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
+        AuditLog log = startLog("REPORT_EXPORT", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "COMPANY", companyId, companyId != null ? companyId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
         }
-    metadata.put("format", format);
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        metadata.put("format", format);
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
-
-  @Override
-  public void logAgingReportViewed(Long companyId, Long userId, java.util.Map<String, Object> filters) {
-    AuditLog log = startLog("AGING_REPORT_VIEWED", null);
-    assignActor(log, userId, null);
-    assignEntity(log, "COMPANY", companyId, companyId != null ? companyId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (filters != null && !filters.isEmpty()) {
-      metadata.set("filters", objectMapper.valueToTree(filters));
-    }
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logAgingDrilldownViewed(Long companyId, Long userId, Long supplierId, String bucket) {
-    AuditLog log = startLog("AGING_DRILLDOWN_VIEWED", null);
-    assignActor(log, userId, null);
-    assignEntity(log, "SUPPLIER", supplierId, supplierId != null ? supplierId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (bucket != null) {
-      metadata.put("bucket", bucket);
-    }
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logVatReportGenerated(
-      Long companyId,
-      Long userId,
-      UUID reportId,
-      String reportType,
-      Map<String, Object> filters) {
-    AuditLog log = startLog("VAT_REPORT_GENERATED", null);
-    assignActor(log, userId, null);
-    assignEntity(log, "VAT_REPORT", reportId, reportId != null ? reportId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (reportType != null) {
-      metadata.put("reportType", reportType);
-    }
-    if (filters != null && !filters.isEmpty()) {
-      metadata.set("filters", objectMapper.valueToTree(filters));
-    }
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logVatCorrectionCreated(
-      Long companyId,
-      Long userId,
-      UUID correctionId,
-      UUID billId,
-      BigDecimal oldAmount,
-      BigDecimal newAmount,
-      String reason) {
-    AuditLog log = startLog("VAT_CORRECTION_CREATED", null);
-    assignActor(log, userId, null);
-    assignEntity(log, "VAT_CORRECTION", correctionId, correctionId != null ? correctionId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (billId != null) {
-      metadata.put("purchaseBillId", billId.toString());
-    }
-    metadata.put("oldVatAmount", oldAmount != null ? oldAmount.toPlainString() : "0");
-    metadata.put("newVatAmount", newAmount != null ? newAmount.toPlainString() : "0");
-    if (reason != null) {
-      metadata.put("reason", reason);
-    }
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logVatCorrectionApproved(
-      Long companyId,
-      Long userId,
-      UUID correctionId,
-      UUID billId,
-      BigDecimal oldAmount,
-      BigDecimal newAmount) {
-    AuditLog log = startLog("VAT_CORRECTION_APPROVED", null);
-    assignActor(log, userId, null);
-    assignEntity(log, "VAT_CORRECTION", correctionId, correctionId != null ? correctionId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (billId != null) {
-      metadata.put("purchaseBillId", billId.toString());
-    }
-    metadata.put("oldVatAmount", oldAmount != null ? oldAmount.toPlainString() : "0");
-    metadata.put("newVatAmount", newAmount != null ? newAmount.toPlainString() : "0");
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logVatRateOverride(
-      Long companyId,
-      Long userId,
-      String actualRate,
-      String defaultRate,
-      HttpServletRequest request) {
-    AuditLog log = startLog("VAT_RATE_OVERRIDE", request);
-    assignActor(log, userId, null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (actualRate != null) {
-      metadata.put("actualRate", actualRate);
-    }
-    if (defaultRate != null) {
-      metadata.put("defaultRate", defaultRate);
-    }
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logVatSumValidationFailure(
-      Long companyId,
-      Long userId,
-      UUID billId,
-      BigDecimal lineVATSum,
-      BigDecimal documentVAT,
-      BigDecimal difference,
-      HttpServletRequest request) {
-    AuditLog log = startLog("VAT_SUM_VALIDATION_FAILURE", request);
-    assignActor(log, userId, null);
-    if (billId != null) {
-      assignEntity(log, "PURCHASE_BILL", billId, billId.toString());
-    }
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (lineVATSum != null) {
-      metadata.put("lineVATSum", lineVATSum.toPlainString());
-    }
-    if (documentVAT != null) {
-      metadata.put("documentVAT", documentVAT.toPlainString());
-    }
-    if (difference != null) {
-      metadata.put("difference", difference.toPlainString());
-    }
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.FALSE); // Validation failure
-    persist(log);
-  }
-
-  @Override
-  public void logVatRatioBlock(
-      Long companyId,
-      Long userId,
-      BigDecimal amount,
-      BigDecimal vatAmount,
-      BigDecimal ratio,
-      String reason,
-      HttpServletRequest request) {
-    AuditLog log = startLog("VAT_RATIO_BLOCK", request);
-    assignActor(log, userId, null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (amount != null) {
-      metadata.put("amount", amount.toPlainString());
-    }
-    if (vatAmount != null) {
-      metadata.put("vatAmount", vatAmount.toPlainString());
-    }
-    if (ratio != null) {
-      metadata.put("ratio", ratio.toPlainString());
-    }
-    if (reason != null) {
-      metadata.put("reason", reason);
-    }
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.FALSE); // Blocked attempt
-    persist(log);
-  }
-
-  @Override
-  public void logStatementGenerated(
-      Long companyId,
-      Long userId,
-      java.util.UUID statementId,
-      Long supplierId,
-      String statementType,
-      HttpServletRequest request) {
-    AuditLog log = startLog("STATEMENT_GENERATED", request);
-    assignActor(log, userId, null);
-    assignEntity(log, "SUPPLIER_STATEMENT", statementId, statementId != null ? statementId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (supplierId != null) {
-      metadata.put("supplierId", supplierId);
-    }
-    if (statementType != null) {
-      metadata.put("statementType", statementType);
-    }
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logStatementExported(
-      Long companyId,
-      Long userId,
-      java.util.UUID statementId,
-      String format,
-      HttpServletRequest request) {
-    AuditLog log = startLog("STATEMENT_EXPORTED", request);
-    assignActor(log, userId, null);
-    assignEntity(log, "SUPPLIER_STATEMENT", statementId, statementId != null ? statementId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (format != null) {
-      metadata.put("format", format);
-    }
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logStatementSent(
-      Long companyId,
-      Long userId,
-      java.util.UUID statementId,
-      int recipientCount,
-      HttpServletRequest request) {
-    AuditLog log = startLog("STATEMENT_SENT", request);
-    assignActor(log, userId, null);
-    assignEntity(log, "SUPPLIER_STATEMENT", statementId, statementId != null ? statementId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    metadata.put("recipientCount", recipientCount);
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logStatementImported(
-      Long companyId,
-      Long userId,
-      Long supplierId,
-      int itemCount,
-      int mismatchCount,
-      HttpServletRequest request) {
-    AuditLog log = startLog("STATEMENT_IMPORTED", request);
-    assignActor(log, userId, null);
-    assignEntity(log, "SUPPLIER", supplierId, supplierId != null ? supplierId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    metadata.put("itemCount", itemCount);
-    metadata.put("mismatchCount", mismatchCount);
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logReconciliationSaved(
-      Long companyId,
-      Long userId,
-      Long supplierId,
-      int disputeCount,
-      HttpServletRequest request) {
-    AuditLog log = startLog("RECONCILIATION_SAVED", request);
-    assignActor(log, userId, null);
-    assignEntity(log, "SUPPLIER", supplierId, supplierId != null ? supplierId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    metadata.put("disputeCount", disputeCount);
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
-
-  @Override
-  public void logDisputeUpdated(
-      Long companyId,
-      Long userId,
-      java.util.UUID disputeId,
-      String oldStatus,
-      String newStatus,
-      HttpServletRequest request) {
-    AuditLog log = startLog("DISPUTE_UPDATED", request);
-    assignActor(log, userId, null);
-    assignEntity(log, "SUPPLIER_STATEMENT_DISPUTE", disputeId, disputeId != null ? disputeId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (companyId != null) {
-      metadata.put("companyId", companyId);
-    }
-    if (oldStatus != null) {
-      metadata.put("oldStatus", oldStatus);
-    }
-    if (newStatus != null) {
-      metadata.put("newStatus", newStatus);
-    }
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
-  }
 
     @Override
-  public void logCustomerCreated(
-          Long customerId,
-          String customerCode,
-          Long createdByUserId,
-          Map<String, String> newValues,
-            HttpServletRequest request) {
-    AuditLog log = startLog("CUSTOMER_CREATED", request);
-    assignActor(log, createdByUserId, null);
-    assignEntity(log, "CUSTOMER", customerId, customerCode);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("code", customerCode);
-    log.setMetadata(metadata);
-    ObjectNode changes = buildChangePayload(null, newValues);
-    if (changes != null) {
-      log.setChanges(changes);
+    public void logAgingReportViewed(Long companyId, Long userId, java.util.Map<String, Object> filters) {
+        AuditLog log = startLog("AGING_REPORT_VIEWED", null);
+        assignActor(log, userId, null);
+        assignEntity(log, "COMPANY", companyId, companyId != null ? companyId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (filters != null && !filters.isEmpty()) {
+            metadata.set("filters", objectMapper.valueToTree(filters));
+        }
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+
+    @Override
+    public void logAgingDrilldownViewed(Long companyId, Long userId, Long supplierId, String bucket) {
+        AuditLog log = startLog("AGING_DRILLDOWN_VIEWED", null);
+        assignActor(log, userId, null);
+        assignEntity(log, "SUPPLIER", supplierId, supplierId != null ? supplierId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (bucket != null) {
+            metadata.put("bucket", bucket);
+        }
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logVatReportGenerated(
+            Long companyId,
+            Long userId,
+            UUID reportId,
+            String reportType,
+            Map<String, Object> filters) {
+        AuditLog log = startLog("VAT_REPORT_GENERATED", null);
+        assignActor(log, userId, null);
+        assignEntity(log, "VAT_REPORT", reportId, reportId != null ? reportId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (reportType != null) {
+            metadata.put("reportType", reportType);
+        }
+        if (filters != null && !filters.isEmpty()) {
+            metadata.set("filters", objectMapper.valueToTree(filters));
+        }
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logVatCorrectionCreated(
+            Long companyId,
+            Long userId,
+            UUID correctionId,
+            UUID billId,
+            BigDecimal oldAmount,
+            BigDecimal newAmount,
+            String reason) {
+        AuditLog log = startLog("VAT_CORRECTION_CREATED", null);
+        assignActor(log, userId, null);
+        assignEntity(log, "VAT_CORRECTION", correctionId, correctionId != null ? correctionId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (billId != null) {
+            metadata.put("purchaseBillId", billId.toString());
+        }
+        metadata.put("oldVatAmount", oldAmount != null ? oldAmount.toPlainString() : "0");
+        metadata.put("newVatAmount", newAmount != null ? newAmount.toPlainString() : "0");
+        if (reason != null) {
+            metadata.put("reason", reason);
+        }
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logVatCorrectionApproved(
+            Long companyId,
+            Long userId,
+            UUID correctionId,
+            UUID billId,
+            BigDecimal oldAmount,
+            BigDecimal newAmount) {
+        AuditLog log = startLog("VAT_CORRECTION_APPROVED", null);
+        assignActor(log, userId, null);
+        assignEntity(log, "VAT_CORRECTION", correctionId, correctionId != null ? correctionId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (billId != null) {
+            metadata.put("purchaseBillId", billId.toString());
+        }
+        metadata.put("oldVatAmount", oldAmount != null ? oldAmount.toPlainString() : "0");
+        metadata.put("newVatAmount", newAmount != null ? newAmount.toPlainString() : "0");
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logVatRateOverride(
+            Long companyId,
+            Long userId,
+            String actualRate,
+            String defaultRate,
+            HttpServletRequest request) {
+        AuditLog log = startLog("VAT_RATE_OVERRIDE", request);
+        assignActor(log, userId, null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (actualRate != null) {
+            metadata.put("actualRate", actualRate);
+        }
+        if (defaultRate != null) {
+            metadata.put("defaultRate", defaultRate);
+        }
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logVatSumValidationFailure(
+            Long companyId,
+            Long userId,
+            UUID billId,
+            BigDecimal lineVATSum,
+            BigDecimal documentVAT,
+            BigDecimal difference,
+            HttpServletRequest request) {
+        AuditLog log = startLog("VAT_SUM_VALIDATION_FAILURE", request);
+        assignActor(log, userId, null);
+        if (billId != null) {
+            assignEntity(log, "PURCHASE_BILL", billId, billId.toString());
+        }
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (lineVATSum != null) {
+            metadata.put("lineVATSum", lineVATSum.toPlainString());
+        }
+        if (documentVAT != null) {
+            metadata.put("documentVAT", documentVAT.toPlainString());
+        }
+        if (difference != null) {
+            metadata.put("difference", difference.toPlainString());
+        }
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.FALSE); // Validation failure
+        persist(log);
+    }
+
+    @Override
+    public void logVatRatioBlock(
+            Long companyId,
+            Long userId,
+            BigDecimal amount,
+            BigDecimal vatAmount,
+            BigDecimal ratio,
+            String reason,
+            HttpServletRequest request) {
+        AuditLog log = startLog("VAT_RATIO_BLOCK", request);
+        assignActor(log, userId, null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (amount != null) {
+            metadata.put("amount", amount.toPlainString());
+        }
+        if (vatAmount != null) {
+            metadata.put("vatAmount", vatAmount.toPlainString());
+        }
+        if (ratio != null) {
+            metadata.put("ratio", ratio.toPlainString());
+        }
+        if (reason != null) {
+            metadata.put("reason", reason);
+        }
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.FALSE); // Blocked attempt
+        persist(log);
+    }
+
+    @Override
+    public void logStatementGenerated(
+            Long companyId,
+            Long userId,
+            java.util.UUID statementId,
+            Long supplierId,
+            String statementType,
+            HttpServletRequest request) {
+        AuditLog log = startLog("STATEMENT_GENERATED", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "SUPPLIER_STATEMENT", statementId, statementId != null ? statementId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (supplierId != null) {
+            metadata.put("supplierId", supplierId);
+        }
+        if (statementType != null) {
+            metadata.put("statementType", statementType);
+        }
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logStatementExported(
+            Long companyId,
+            Long userId,
+            java.util.UUID statementId,
+            String format,
+            HttpServletRequest request) {
+        AuditLog log = startLog("STATEMENT_EXPORTED", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "SUPPLIER_STATEMENT", statementId, statementId != null ? statementId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (format != null) {
+            metadata.put("format", format);
+        }
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logStatementSent(
+            Long companyId,
+            Long userId,
+            java.util.UUID statementId,
+            int recipientCount,
+            HttpServletRequest request) {
+        AuditLog log = startLog("STATEMENT_SENT", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "SUPPLIER_STATEMENT", statementId, statementId != null ? statementId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        metadata.put("recipientCount", recipientCount);
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logStatementImported(
+            Long companyId,
+            Long userId,
+            Long supplierId,
+            int itemCount,
+            int mismatchCount,
+            HttpServletRequest request) {
+        AuditLog log = startLog("STATEMENT_IMPORTED", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "SUPPLIER", supplierId, supplierId != null ? supplierId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        metadata.put("itemCount", itemCount);
+        metadata.put("mismatchCount", mismatchCount);
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logReconciliationSaved(
+            Long companyId,
+            Long userId,
+            Long supplierId,
+            int disputeCount,
+            HttpServletRequest request) {
+        AuditLog log = startLog("RECONCILIATION_SAVED", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "SUPPLIER", supplierId, supplierId != null ? supplierId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        metadata.put("disputeCount", disputeCount);
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logDisputeUpdated(
+            Long companyId,
+            Long userId,
+            java.util.UUID disputeId,
+            String oldStatus,
+            String newStatus,
+            HttpServletRequest request) {
+        AuditLog log = startLog("DISPUTE_UPDATED", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "SUPPLIER_STATEMENT_DISPUTE", disputeId, disputeId != null ? disputeId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (companyId != null) {
+            metadata.put("companyId", companyId);
+        }
+        if (oldStatus != null) {
+            metadata.put("oldStatus", oldStatus);
+        }
+        if (newStatus != null) {
+            metadata.put("newStatus", newStatus);
+        }
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logCustomerCreated(
+            Long customerId,
+            String customerCode,
+            Long createdByUserId,
+            Map<String, String> newValues,
+            HttpServletRequest request) {
+        AuditLog log = startLog("CUSTOMER_CREATED", request);
+        assignActor(log, createdByUserId, null);
+        assignEntity(log, "CUSTOMER", customerId, customerCode);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("code", customerCode);
+        log.setMetadata(metadata);
+        ObjectNode changes = buildChangePayload(null, newValues);
+        if (changes != null) {
+            log.setChanges(changes);
+        }
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logCustomerUpdated(Long customerId, String customerCode, Long updatedByUserId,
             java.util.Map<String, String> oldValues, java.util.Map<String, String> newValues,
             HttpServletRequest request) {
-    AuditLog log = startLog("CUSTOMER_UPDATED", request);
-    assignActor(log, updatedByUserId, null);
-    assignEntity(log, "CUSTOMER", customerId, customerCode);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("code", customerCode);
-    log.setMetadata(metadata);
-    ObjectNode changes = buildChangePayload(oldValues, newValues);
-    if (changes != null) {
-      log.setChanges(changes);
-    }
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("CUSTOMER_UPDATED", request);
+        assignActor(log, updatedByUserId, null);
+        assignEntity(log, "CUSTOMER", customerId, customerCode);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("code", customerCode);
+        log.setMetadata(metadata);
+        ObjectNode changes = buildChangePayload(oldValues, newValues);
+        if (changes != null) {
+            log.setChanges(changes);
+        }
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logCustomerDeleted(Long customerId, String customerCode, String reason, Long deletedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("CUSTOMER_DELETED", request);
-    assignActor(log, deletedByUserId, null);
-    assignEntity(log, "CUSTOMER", customerId, customerCode);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("code", customerCode);
-    metadata.put("reason", reason);
-    log.setMetadata(metadata);
-    log.setReason(trimReason(String.format("id:%s,code:%s", customerId, customerCode)));
-    log.setSuccess(Boolean.FALSE);
-    log.setFailureReason(reason);
-    persist(log);
+        AuditLog log = startLog("CUSTOMER_DELETED", request);
+        assignActor(log, deletedByUserId, null);
+        assignEntity(log, "CUSTOMER", customerId, customerCode);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("code", customerCode);
+        metadata.put("reason", reason);
+        log.setMetadata(metadata);
+        log.setReason(trimReason(String.format("id:%s,code:%s", customerId, customerCode)));
+        log.setSuccess(Boolean.FALSE);
+        log.setFailureReason(reason);
+        persist(log);
     }
 
     @Override
     public void logCustomerActivated(Long customerId, String customerCode, Long activatedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("CUSTOMER_ACTIVATED", request);
-    assignActor(log, activatedByUserId, null);
-    assignEntity(log, "CUSTOMER", customerId, customerCode);
-    log.setMetadata(buildMetadata().put("code", customerCode).put("status", "ACTIVE"));
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("CUSTOMER_ACTIVATED", request);
+        assignActor(log, activatedByUserId, null);
+        assignEntity(log, "CUSTOMER", customerId, customerCode);
+        log.setMetadata(buildMetadata().put("code", customerCode).put("status", "ACTIVE"));
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logCustomerDeactivated(Long customerId, String customerCode, Long deactivatedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("CUSTOMER_DEACTIVATED", request);
-    assignActor(log, deactivatedByUserId, null);
-    assignEntity(log, "CUSTOMER", customerId, customerCode);
-    log.setMetadata(buildMetadata().put("code", customerCode).put("status", "INACTIVE"));
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("CUSTOMER_DEACTIVATED", request);
+        assignActor(log, deactivatedByUserId, null);
+        assignEntity(log, "CUSTOMER", customerId, customerCode);
+        log.setMetadata(buildMetadata().put("code", customerCode).put("status", "INACTIVE"));
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logCustomerImport(int importedCount, int errorCount, Long importedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("CUSTOMER_IMPORTED", request);
-    assignActor(log, importedByUserId, null);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("imported", importedCount);
-    metadata.put("errors", errorCount);
-    log.setMetadata(metadata);
-    log.setSuccess(errorCount == 0);
-    if (errorCount > 0) {
-      log.setFailureReason("Import completed with errors");
-    }
-    persist(log);
+        AuditLog log = startLog("CUSTOMER_IMPORTED", request);
+        assignActor(log, importedByUserId, null);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("imported", importedCount);
+        metadata.put("errors", errorCount);
+        log.setMetadata(metadata);
+        log.setSuccess(errorCount == 0);
+        if (errorCount > 0) {
+            log.setFailureReason("Import completed with errors");
+        }
+        persist(log);
     }
 
     @Override
     public void logCustomerExport(int exportedCount, String format, Long exportedByUserId, HttpServletRequest request) {
-    AuditLog log = startLog("CUSTOMER_EXPORTED", request);
-    assignActor(log, exportedByUserId, null);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("count", exportedCount);
-    metadata.put("format", format);
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("CUSTOMER_EXPORTED", request);
+        assignActor(log, exportedByUserId, null);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("count", exportedCount);
+        metadata.put("format", format);
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
-  public void logSupplierCreated(
-          Long supplierId,
-          String supplierCode,
-          Long createdByUserId,
-          Map<String, String> newValues,
+    public void logSupplierCreated(
+            Long supplierId,
+            String supplierCode,
+            Long createdByUserId,
+            Map<String, String> newValues,
             HttpServletRequest request) {
-    AuditLog log = startLog("SUPPLIER_CREATED", request);
-    assignActor(log, createdByUserId, null);
-    assignEntity(log, "SUPPLIER", supplierId, supplierCode);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("code", supplierCode);
-    log.setMetadata(metadata);
-    ObjectNode changes = buildChangePayload(null, newValues);
-    if (changes != null) {
-      log.setChanges(changes);
-    }
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("SUPPLIER_CREATED", request);
+        assignActor(log, createdByUserId, null);
+        assignEntity(log, "SUPPLIER", supplierId, supplierCode);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("code", supplierCode);
+        log.setMetadata(metadata);
+        ObjectNode changes = buildChangePayload(null, newValues);
+        if (changes != null) {
+            log.setChanges(changes);
+        }
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logSupplierUpdated(Long supplierId, String supplierCode, Long updatedByUserId,
             java.util.Map<String, String> oldValues, java.util.Map<String, String> newValues,
             HttpServletRequest request) {
-    AuditLog log = startLog("SUPPLIER_UPDATED", request);
-    assignActor(log, updatedByUserId, null);
-    assignEntity(log, "SUPPLIER", supplierId, supplierCode);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("code", supplierCode);
-    log.setMetadata(metadata);
-    ObjectNode changes = buildChangePayload(oldValues, newValues);
-    if (changes != null) {
-      log.setChanges(changes);
-    }
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("SUPPLIER_UPDATED", request);
+        assignActor(log, updatedByUserId, null);
+        assignEntity(log, "SUPPLIER", supplierId, supplierCode);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("code", supplierCode);
+        log.setMetadata(metadata);
+        ObjectNode changes = buildChangePayload(oldValues, newValues);
+        if (changes != null) {
+            log.setChanges(changes);
+        }
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     @org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void logSupplierDeleted(Long supplierId, String supplierCode, String reason, Long deletedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("SUPPLIER_DELETED", request);
-    assignActor(log, deletedByUserId, null);
-    assignEntity(log, "SUPPLIER", supplierId, supplierCode);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("code", supplierCode);
-    metadata.put("reason", reason);
-    log.setMetadata(metadata);
-    log.setReason(trimReason(String.format("id:%s,code:%s", supplierId, supplierCode)));
-    log.setSuccess(Boolean.FALSE);
-    log.setFailureReason(reason);
-    persist(log);
+        AuditLog log = startLog("SUPPLIER_DELETED", request);
+        assignActor(log, deletedByUserId, null);
+        assignEntity(log, "SUPPLIER", supplierId, supplierCode);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("code", supplierCode);
+        metadata.put("reason", reason);
+        log.setMetadata(metadata);
+        log.setReason(trimReason(String.format("id:%s,code:%s", supplierId, supplierCode)));
+        log.setSuccess(Boolean.FALSE);
+        log.setFailureReason(reason);
+        persist(log);
     }
 
     @Override
     public void logSupplierActivated(Long supplierId, String supplierCode, Long activatedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("SUPPLIER_ACTIVATED", request);
-    assignActor(log, activatedByUserId, null);
-    assignEntity(log, "SUPPLIER", supplierId, supplierCode);
-    log.setMetadata(buildMetadata().put("code", supplierCode).put("status", "ACTIVE"));
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("SUPPLIER_ACTIVATED", request);
+        assignActor(log, activatedByUserId, null);
+        assignEntity(log, "SUPPLIER", supplierId, supplierCode);
+        log.setMetadata(buildMetadata().put("code", supplierCode).put("status", "ACTIVE"));
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logSupplierDeactivated(Long supplierId, String supplierCode, Long deactivatedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("SUPPLIER_DEACTIVATED", request);
-    assignActor(log, deactivatedByUserId, null);
-    assignEntity(log, "SUPPLIER", supplierId, supplierCode);
-    log.setMetadata(buildMetadata().put("code", supplierCode).put("status", "INACTIVE"));
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("SUPPLIER_DEACTIVATED", request);
+        assignActor(log, deactivatedByUserId, null);
+        assignEntity(log, "SUPPLIER", supplierId, supplierCode);
+        log.setMetadata(buildMetadata().put("code", supplierCode).put("status", "INACTIVE"));
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logSupplierImport(int importedCount, int errorCount, Long importedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("SUPPLIER_IMPORTED", request);
-    assignActor(log, importedByUserId, null);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("imported", importedCount);
-    metadata.put("errors", errorCount);
-    log.setMetadata(metadata);
-    log.setSuccess(errorCount == 0);
-    if (errorCount > 0) {
-      log.setFailureReason("Import completed with errors");
-    }
-    persist(log);
+        AuditLog log = startLog("SUPPLIER_IMPORTED", request);
+        assignActor(log, importedByUserId, null);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("imported", importedCount);
+        metadata.put("errors", errorCount);
+        log.setMetadata(metadata);
+        log.setSuccess(errorCount == 0);
+        if (errorCount > 0) {
+            log.setFailureReason("Import completed with errors");
+        }
+        persist(log);
     }
 
     @Override
     public void logSupplierExport(int exportedCount, String format, Long exportedByUserId, HttpServletRequest request) {
-    AuditLog log = startLog("SUPPLIER_EXPORTED", request);
-    assignActor(log, exportedByUserId, null);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("count", exportedCount);
-    metadata.put("format", format);
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("SUPPLIER_EXPORTED", request);
+        assignActor(log, exportedByUserId, null);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("count", exportedCount);
+        metadata.put("format", format);
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
-  public void logBankAccountCreated(
-          Long bankAccountId,
-          String accountNumber,
-          Long createdByUserId,
-          Map<String, String> newValues,
+    public void logBankAccountCreated(
+            Long bankAccountId,
+            String accountNumber,
+            Long createdByUserId,
+            Map<String, String> newValues,
             HttpServletRequest request) {
-    AuditLog log = startLog("BANK_ACCOUNT_CREATED", request);
-    assignActor(log, createdByUserId, null);
-    assignEntity(log, "BANK_ACCOUNT", bankAccountId, accountNumber);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("accountNumber", accountNumber);
-    log.setMetadata(metadata);
-    ObjectNode changes = buildChangePayload(null, newValues);
-    if (changes != null) {
-      log.setChanges(changes);
-    }
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("BANK_ACCOUNT_CREATED", request);
+        assignActor(log, createdByUserId, null);
+        assignEntity(log, "BANK_ACCOUNT", bankAccountId, accountNumber);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("accountNumber", accountNumber);
+        log.setMetadata(metadata);
+        ObjectNode changes = buildChangePayload(null, newValues);
+        if (changes != null) {
+            log.setChanges(changes);
+        }
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logBankAccountUpdated(Long bankAccountId, String accountNumber, Long updatedByUserId,
             java.util.Map<String, String> oldValues, java.util.Map<String, String> newValues, String reason,
             HttpServletRequest request) {
-    AuditLog log = startLog("BANK_ACCOUNT_UPDATED", request);
-    assignActor(log, updatedByUserId, null);
-    assignEntity(log, "BANK_ACCOUNT", bankAccountId, accountNumber);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("accountNumber", accountNumber);
-    if (StringUtils.hasText(reason)) {
-      metadata.put("reason", reason);
+        AuditLog log = startLog("BANK_ACCOUNT_UPDATED", request);
+        assignActor(log, updatedByUserId, null);
+        assignEntity(log, "BANK_ACCOUNT", bankAccountId, accountNumber);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("accountNumber", accountNumber);
+        if (StringUtils.hasText(reason)) {
+            metadata.put("reason", reason);
         }
-    log.setMetadata(metadata);
-    ObjectNode changes = buildChangePayload(oldValues, newValues);
-    if (changes != null) {
-      log.setChanges(changes);
-    }
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        log.setMetadata(metadata);
+        ObjectNode changes = buildChangePayload(oldValues, newValues);
+        if (changes != null) {
+            log.setChanges(changes);
+        }
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logBankAccountDeleted(Long bankAccountId, String accountNumber, String reason, Long deletedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("BANK_ACCOUNT_DELETED", request);
-    assignActor(log, deletedByUserId, null);
-    assignEntity(log, "BANK_ACCOUNT", bankAccountId, accountNumber);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("accountNumber", accountNumber);
-    metadata.put("reason", reason);
-    log.setMetadata(metadata);
-    log.setReason(trimReason(String.format("id:%s,acc:%s", bankAccountId, accountNumber)));
-    log.setSuccess(Boolean.FALSE);
-    log.setFailureReason(reason);
-    persist(log);
+        AuditLog log = startLog("BANK_ACCOUNT_DELETED", request);
+        assignActor(log, deletedByUserId, null);
+        assignEntity(log, "BANK_ACCOUNT", bankAccountId, accountNumber);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("accountNumber", accountNumber);
+        metadata.put("reason", reason);
+        log.setMetadata(metadata);
+        log.setReason(trimReason(String.format("id:%s,acc:%s", bankAccountId, accountNumber)));
+        log.setSuccess(Boolean.FALSE);
+        log.setFailureReason(reason);
+        persist(log);
     }
 
     @Override
     public void logBankAccountActivated(Long bankAccountId, String accountNumber, Long activatedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("BANK_ACCOUNT_ACTIVATED", request);
-    assignActor(log, activatedByUserId, null);
-    assignEntity(log, "BANK_ACCOUNT", bankAccountId, accountNumber);
-    log.setMetadata(buildMetadata().put("accountNumber", accountNumber).put("status", "ACTIVE"));
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("BANK_ACCOUNT_ACTIVATED", request);
+        assignActor(log, activatedByUserId, null);
+        assignEntity(log, "BANK_ACCOUNT", bankAccountId, accountNumber);
+        log.setMetadata(buildMetadata().put("accountNumber", accountNumber).put("status", "ACTIVE"));
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logBankAccountDeactivated(Long bankAccountId, String accountNumber, Long deactivatedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("BANK_ACCOUNT_DEACTIVATED", request);
-    assignActor(log, deactivatedByUserId, null);
-    assignEntity(log, "BANK_ACCOUNT", bankAccountId, accountNumber);
-    log.setMetadata(buildMetadata().put("accountNumber", accountNumber).put("status", "INACTIVE"));
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("BANK_ACCOUNT_DEACTIVATED", request);
+        assignActor(log, deactivatedByUserId, null);
+        assignEntity(log, "BANK_ACCOUNT", bankAccountId, accountNumber);
+        log.setMetadata(buildMetadata().put("accountNumber", accountNumber).put("status", "INACTIVE"));
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logBankAccountExport(int exportedCount, String format, Long exportedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("BANK_ACCOUNT_EXPORTED", request);
-    assignActor(log, exportedByUserId, null);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("count", exportedCount);
-    metadata.put("format", format);
-    log.setMetadata(metadata);
-    log.setSuccess(Boolean.TRUE);
-    persist(log);
+        AuditLog log = startLog("BANK_ACCOUNT_EXPORTED", request);
+        assignActor(log, exportedByUserId, null);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("count", exportedCount);
+        metadata.put("format", format);
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
     }
 
     @Override
     public void logBankAccountImport(int importedCount, int errorCount, Long importedByUserId,
             HttpServletRequest request) {
-    AuditLog log = startLog("BANK_ACCOUNT_IMPORTED", request);
-    assignActor(log, importedByUserId, null);
-    ObjectNode metadata = buildMetadata();
-    metadata.put("imported", importedCount);
-    metadata.put("errors", errorCount);
-    log.setMetadata(metadata);
-    log.setSuccess(errorCount == 0);
-    if (errorCount > 0) {
-      log.setFailureReason("Import completed with errors");
-    }
-    persist(log);
+        AuditLog log = startLog("BANK_ACCOUNT_IMPORTED", request);
+        assignActor(log, importedByUserId, null);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("imported", importedCount);
+        metadata.put("errors", errorCount);
+        log.setMetadata(metadata);
+        log.setSuccess(errorCount == 0);
+        if (errorCount > 0) {
+            log.setFailureReason("Import completed with errors");
+        }
+        persist(log);
     }
 
     @Override
@@ -1385,20 +1388,20 @@ public class AuditServiceImpl implements AuditService {
             String format,
             String contentHash,
             HttpServletRequest request) {
-    AuditLog log = startLog("AUDIT_EXPORT", request);
-    log.setCompanyId(companyId != null ? companyId : CompanyContext.getCompanyId());
-    assignActor(log, userId, null);
-    assignEntity(log, "AUDIT_LOG", null, "Audit Log Export");
-    ObjectNode metadata = buildMetadata();
-    metadata.put("count", recordCount);
-    if (format != null) {
-      metadata.put("format", format);
-    }
-    if (contentHash != null) {
-      metadata.put("hash", contentHash);
-    }
-    log.setMetadata(metadata);
-    persist(log);
+        AuditLog log = startLog("AUDIT_EXPORT", request);
+        log.setCompanyId(companyId != null ? companyId : CompanyContext.getCompanyId());
+        assignActor(log, userId, null);
+        assignEntity(log, "AUDIT_LOG", null, "Audit Log Export");
+        ObjectNode metadata = buildMetadata();
+        metadata.put("count", recordCount);
+        if (format != null) {
+            metadata.put("format", format);
+        }
+        if (contentHash != null) {
+            metadata.put("hash", contentHash);
+        }
+        log.setMetadata(metadata);
+        persist(log);
     }
 
     @Override
@@ -1409,25 +1412,25 @@ public class AuditServiceImpl implements AuditService {
             int findingsCount,
             boolean throttled,
             HttpServletRequest request) {
-    AuditLog log = startLog("DATA_INTEGRITY_SCAN", request);
-    log.setCompanyId(companyId != null ? companyId : CompanyContext.getCompanyId());
-    assignActor(log, userId, null);
-    assignEntity(log, "DATA_INTEGRITY_JOB", jobId, jobId != null ? jobId.toString() : null);
-    ObjectNode metadata = buildMetadata();
-    if (jobId != null) {
-      metadata.put("jobId", jobId.toString());
-    }
-    metadata.put("findings", findingsCount);
-    metadata.put("status", throttled ? "THROTTLED" : (findingsCount == 0 ? "CLEAN" : "FINDINGS"));
-    log.setMetadata(metadata);
-    if (throttled) {
-      log.setSuccess(Boolean.FALSE);
-      log.setFailureReason("THROTTLED");
-    } else if (findingsCount > 0) {
-      log.setSuccess(Boolean.FALSE);
-      log.setFailureReason("FINDINGS_REPORTED");
-    }
-    persist(log);
+        AuditLog log = startLog("DATA_INTEGRITY_SCAN", request);
+        log.setCompanyId(companyId != null ? companyId : CompanyContext.getCompanyId());
+        assignActor(log, userId, null);
+        assignEntity(log, "DATA_INTEGRITY_JOB", jobId, jobId != null ? jobId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        if (jobId != null) {
+            metadata.put("jobId", jobId.toString());
+        }
+        metadata.put("findings", findingsCount);
+        metadata.put("status", throttled ? "THROTTLED" : (findingsCount == 0 ? "CLEAN" : "FINDINGS"));
+        log.setMetadata(metadata);
+        if (throttled) {
+            log.setSuccess(Boolean.FALSE);
+            log.setFailureReason("THROTTLED");
+        } else if (findingsCount > 0) {
+            log.setSuccess(Boolean.FALSE);
+            log.setFailureReason("FINDINGS_REPORTED");
+        }
+        persist(log);
     }
 
     @Override
@@ -1445,15 +1448,15 @@ public class AuditServiceImpl implements AuditService {
         assignEntity(log, "ACCOUNT", accountId, accountCode);
         log.setSuccess(Boolean.FALSE);
         log.setFailureReason("POSSIBLE_FRAUD");
-        
+
         // Build reason field (truncate to fit VARCHAR(50))
-        String reason = String.format("type:%s,line:%d,amt:%s", 
-            fraudType, lineNumber, attemptedAmount != null ? attemptedAmount.toString() : "N/A");
+        String reason = String.format("type:%s,line:%d,amt:%s",
+                fraudType, lineNumber, attemptedAmount != null ? attemptedAmount.toString() : "N/A");
         if (reason.length() > 50) {
             reason = reason.substring(0, 47) + "...";
         }
         log.setReason(reason);
-        
+
         // Build metadata with full details
         ObjectNode metadata = buildMetadata();
         metadata.put("fraudType", fraudType);
@@ -1468,7 +1471,7 @@ public class AuditServiceImpl implements AuditService {
             metadata.put("accountCode", accountCode);
         }
         log.setMetadata(metadata);
-        
+
         persist(log);
     }
 
@@ -1488,10 +1491,10 @@ public class AuditServiceImpl implements AuditService {
         assignEntity(log, "ACCOUNT", accountId, accountCode);
         log.setSuccess(Boolean.FALSE);
         log.setFailureReason(attemptType);
-        
+
         // Build reason field (truncate to fit VARCHAR(50))
-        String reasonText = String.format("type:%s,line:%d,field:%s", 
-            attemptType, lineNumber, fieldName != null ? fieldName : "N/A");
+        String reasonText = String.format("type:%s,line:%d,field:%s",
+                attemptType, lineNumber, fieldName != null ? fieldName : "N/A");
         if (reason != null && !reason.isBlank()) {
             String fullReason = reasonText + ",msg:" + reason;
             if (fullReason.length() > 50) {
@@ -1502,7 +1505,7 @@ public class AuditServiceImpl implements AuditService {
             reasonText = reasonText.substring(0, 47) + "...";
         }
         log.setReason(reasonText);
-        
+
         // Build metadata with full details
         ObjectNode metadata = buildMetadata();
         metadata.put("attemptType", attemptType);
@@ -1520,7 +1523,7 @@ public class AuditServiceImpl implements AuditService {
             metadata.put("accountCode", accountCode);
         }
         log.setMetadata(metadata);
-        
+
         persist(log);
     }
 
@@ -1537,13 +1540,13 @@ public class AuditServiceImpl implements AuditService {
             AuditLog log = startLog(action, request);
             log.setEventType("VOUCHER");
             assignEntity(log, "VOUCHER", voucherId, voucherNumber);
-            
+
             // Get current user from SecurityContext
             Long userId = getCurrentUserId();
             if (userId != null) {
                 assignActor(log, userId, null);
             }
-            
+
             // Build changes JSON with before/after snapshots
             ObjectNode changes = objectMapper.createObjectNode();
             if (beforeSnapshot != null) {
@@ -1555,7 +1558,7 @@ public class AuditServiceImpl implements AuditService {
             if (!changes.isEmpty()) {
                 log.setChanges(changes);
             }
-            
+
             // Build metadata with diff hash and summary
             ObjectNode metadata = buildMetadata();
             if (diffHash != null) {
@@ -1564,13 +1567,13 @@ public class AuditServiceImpl implements AuditService {
             metadata.put("voucherId", voucherId.toString());
             metadata.put("voucherNumber", voucherNumber);
             log.setMetadata(metadata);
-            
+
             log.setSuccess(Boolean.TRUE);
             persist(log);
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log voucher event for voucher {}: {}", voucherId, e.getMessage(), e);
+                    .error("Failed to log voucher event for voucher {}: {}", voucherId, e.getMessage(), e);
         }
     }
 
@@ -1586,18 +1589,18 @@ public class AuditServiceImpl implements AuditService {
         try {
             AuditLog log = startLog(action, request);
             log.setEventType("VOUCHER_BATCH");
-            
+
             // Get current user from SecurityContext
             Long userId = getCurrentUserId();
             if (userId != null) {
                 assignActor(log, userId, null);
             }
-            
+
             // Build metadata with batch action details
             ObjectNode metadata = buildMetadata();
             metadata.put("action", action);
             metadata.put("summary", summary != null ? summary : "");
-            
+
             // Add voucher IDs list
             com.fasterxml.jackson.databind.node.ArrayNode voucherIdsArray = objectMapper.createArrayNode();
             if (voucherIds != null) {
@@ -1606,7 +1609,7 @@ public class AuditServiceImpl implements AuditService {
                 }
             }
             metadata.set("voucherIds", voucherIdsArray);
-            
+
             // Add statistics
             if (stats != null) {
                 ObjectNode statsNode = objectMapper.createObjectNode();
@@ -1615,7 +1618,7 @@ public class AuditServiceImpl implements AuditService {
                 statsNode.put("totalCount", stats.getTotalCount());
                 metadata.set("stats", statsNode);
             }
-            
+
             // Add timestamps
             if (startTime != null) {
                 metadata.put("startTime", startTime.toString());
@@ -1627,18 +1630,18 @@ public class AuditServiceImpl implements AuditService {
                 long durationMs = java.time.Duration.between(startTime, endTime).toMillis();
                 metadata.put("durationMs", durationMs);
             }
-            
+
             log.setMetadata(metadata);
             log.setSuccess(stats != null && stats.getFailureCount() == 0);
             if (stats != null && stats.getFailureCount() > 0) {
                 log.setFailureReason(String.format("Batch action completed with %d failures", stats.getFailureCount()));
             }
-            
+
             persist(log);
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log batch voucher action: {}", e.getMessage(), e);
+                    .error("Failed to log batch voucher action: {}", e.getMessage(), e);
         }
     }
 
@@ -1668,7 +1671,7 @@ public class AuditServiceImpl implements AuditService {
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log period close for period {}: {}", periodId, e.getMessage(), e);
+                    .error("Failed to log period close for period {}: {}", periodId, e.getMessage(), e);
         }
     }
 
@@ -1699,7 +1702,7 @@ public class AuditServiceImpl implements AuditService {
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log period reopen for period {}: {}", periodId, e.getMessage(), e);
+                    .error("Failed to log period reopen for period {}: {}", periodId, e.getMessage(), e);
         }
     }
 
@@ -1730,7 +1733,7 @@ public class AuditServiceImpl implements AuditService {
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log period validation block for period {}: {}", periodId, e.getMessage(), e);
+                    .error("Failed to log period validation block for period {}: {}", periodId, e.getMessage(), e);
         }
     }
 
@@ -1748,21 +1751,21 @@ public class AuditServiceImpl implements AuditService {
             AuditLog log = startLog("ATTACHMENT_DOWNLOAD", request);
             assignActor(log, downloadedByUserId, null);
             assignEntity(log, "VOUCHER_ATTACHMENT", attachmentId != null ? attachmentId.toString() : null, fileName);
-            
+
             ObjectNode metadata = buildMetadata();
             metadata.put("attachmentId", attachmentId != null ? attachmentId.toString() : "");
             metadata.put("voucherId", voucherId != null ? voucherId.toString() : "");
             metadata.put("fileName", fileName != null ? fileName : "");
             metadata.put("fileSize", fileSize != null ? fileSize : 0);
             metadata.put("mimeType", mimeType != null ? mimeType : "");
-            
+
             log.setMetadata(metadata);
             log.setSuccess(true);
             persist(log);
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log attachment download for attachment {}: {}", attachmentId, e.getMessage(), e);
+                    .error("Failed to log attachment download for attachment {}: {}", attachmentId, e.getMessage(), e);
         }
     }
 
@@ -1780,21 +1783,21 @@ public class AuditServiceImpl implements AuditService {
             AuditLog log = startLog("ATTACHMENT_VIEW", request);
             assignActor(log, viewedByUserId, null);
             assignEntity(log, "VOUCHER_ATTACHMENT", attachmentId != null ? attachmentId.toString() : null, fileName);
-            
+
             ObjectNode metadata = buildMetadata();
             metadata.put("attachmentId", attachmentId != null ? attachmentId.toString() : "");
             metadata.put("voucherId", voucherId != null ? voucherId.toString() : "");
             metadata.put("fileName", fileName != null ? fileName : "");
             metadata.put("fileSize", fileSize != null ? fileSize : 0);
             metadata.put("mimeType", mimeType != null ? mimeType : "");
-            
+
             log.setMetadata(metadata);
             log.setSuccess(true);
             persist(log);
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log attachment view for attachment {}: {}", attachmentId, e.getMessage(), e);
+                    .error("Failed to log attachment view for attachment {}: {}", attachmentId, e.getMessage(), e);
         }
     }
 
@@ -1813,7 +1816,7 @@ public class AuditServiceImpl implements AuditService {
             AuditLog log = startLog("ATTACHMENT_DELETE", request);
             assignActor(log, deletedByUserId, null);
             assignEntity(log, "VOUCHER_ATTACHMENT", attachmentId != null ? attachmentId.toString() : null, fileName);
-            
+
             ObjectNode metadata = buildMetadata();
             metadata.put("attachmentId", attachmentId != null ? attachmentId.toString() : "");
             metadata.put("voucherId", voucherId != null ? voucherId.toString() : "");
@@ -1821,7 +1824,7 @@ public class AuditServiceImpl implements AuditService {
             metadata.put("fileSize", fileSize != null ? fileSize : 0);
             metadata.put("mimeType", mimeType != null ? mimeType : "");
             metadata.put("reason", reason != null ? reason : "");
-            
+
             log.setMetadata(metadata);
             log.setReason(trimReason(reason));
             log.setSuccess(true);
@@ -1829,7 +1832,7 @@ public class AuditServiceImpl implements AuditService {
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log attachment delete for attachment {}: {}", attachmentId, e.getMessage(), e);
+                    .error("Failed to log attachment delete for attachment {}: {}", attachmentId, e.getMessage(), e);
         }
     }
 
@@ -1845,18 +1848,20 @@ public class AuditServiceImpl implements AuditService {
             log.setEventType("PURCHASE_BILL");
             log.setSuccess(Boolean.FALSE);
             log.setFailureReason(trimReason(reason));
-            
+
             if (billId != null) {
                 assignEntity(log, "PURCHASE_BILL", billId, billNumber);
             }
-            
+
             assignActor(log, getCurrentUserId(), null);
-            
+
             ObjectNode metadata = buildMetadata();
-            if (billId != null) metadata.put("billId", billId.toString());
-            if (billNumber != null) metadata.put("billNumber", billNumber);
+            if (billId != null)
+                metadata.put("billId", billId.toString());
+            if (billNumber != null)
+                metadata.put("billNumber", billNumber);
             log.setMetadata(metadata);
-            
+
             persist(log);
         } catch (Exception e) {
             logger.error("Failed to log purchase bill operation failure: {}", e.getMessage());
@@ -1875,18 +1880,20 @@ public class AuditServiceImpl implements AuditService {
             log.setEventType("PAYMENT");
             log.setSuccess(Boolean.FALSE);
             log.setFailureReason(trimReason(reason));
-            
+
             if (paymentId != null) {
                 assignEntity(log, "PAYMENT", paymentId, paymentNumber);
             }
-            
+
             assignActor(log, getCurrentUserId(), null);
-            
+
             ObjectNode metadata = buildMetadata();
-            if (paymentId != null) metadata.put("paymentId", paymentId.toString());
-            if (paymentNumber != null) metadata.put("paymentNumber", paymentNumber);
+            if (paymentId != null)
+                metadata.put("paymentId", paymentId.toString());
+            if (paymentNumber != null)
+                metadata.put("paymentNumber", paymentNumber);
             log.setMetadata(metadata);
-            
+
             persist(log);
         } catch (Exception e) {
             logger.error("Failed to log payment operation failure: {}", e.getMessage());
@@ -1904,10 +1911,10 @@ public class AuditServiceImpl implements AuditService {
             log.setEventType(entityType);
             log.setSuccess(Boolean.FALSE);
             log.setFailureReason(trimReason(reason));
-            
+
             assignEntity(log, entityType, entityId, null);
             assignActor(log, getCurrentUserId(), null);
-            
+
             persist(log);
         } catch (Exception e) {
             logger.error("Failed to log delete attempt failure: {}", e.getMessage());
@@ -1927,13 +1934,13 @@ public class AuditServiceImpl implements AuditService {
             AuditLog log = startLog(action, request);
             log.setEventType("PURCHASE_BILL");
             assignEntity(log, "PURCHASE_BILL", billId, billNumber);
-            
+
             // Get current user from SecurityContext
             Long userId = getCurrentUserId();
             if (userId != null) {
                 assignActor(log, userId, null);
             }
-            
+
             // Build changes JSON with before/after snapshots
             ObjectNode changes = objectMapper.createObjectNode();
             if (beforeSnapshot != null) {
@@ -1945,7 +1952,7 @@ public class AuditServiceImpl implements AuditService {
             if (!changes.isEmpty()) {
                 log.setChanges(changes);
             }
-            
+
             // Build metadata with diff hash and summary
             ObjectNode metadata = buildMetadata();
             if (diffHash != null) {
@@ -1954,13 +1961,13 @@ public class AuditServiceImpl implements AuditService {
             metadata.put("billId", billId.toString());
             metadata.put("billNumber", billNumber);
             log.setMetadata(metadata);
-            
+
             log.setSuccess(Boolean.TRUE);
             persist(log);
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log purchase bill event for bill {}: {}", billId, e.getMessage(), e);
+                    .error("Failed to log purchase bill event for bill {}: {}", billId, e.getMessage(), e);
         }
     }
 
@@ -1977,13 +1984,13 @@ public class AuditServiceImpl implements AuditService {
             AuditLog log = startLog(action, request);
             log.setEventType("PAYMENT");
             assignEntity(log, "PAYMENT", paymentId, paymentNumber);
-            
+
             // Get current user from SecurityContext
             Long userId = getCurrentUserId();
             if (userId != null) {
                 assignActor(log, userId, null);
             }
-            
+
             // Build changes JSON with before/after snapshots
             ObjectNode changes = objectMapper.createObjectNode();
             if (beforeSnapshot != null) {
@@ -1995,7 +2002,7 @@ public class AuditServiceImpl implements AuditService {
             if (!changes.isEmpty()) {
                 log.setChanges(changes);
             }
-            
+
             // Build metadata with diff hash and summary
             ObjectNode metadata = buildMetadata();
             if (diffHash != null) {
@@ -2004,13 +2011,13 @@ public class AuditServiceImpl implements AuditService {
             metadata.put("paymentId", paymentId.toString());
             metadata.put("paymentNumber", paymentNumber);
             log.setMetadata(metadata);
-            
+
             log.setSuccess(Boolean.TRUE);
             persist(log);
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log payment event for payment {}: {}", paymentId, e.getMessage(), e);
+                    .error("Failed to log payment event for payment {}: {}", paymentId, e.getMessage(), e);
         }
     }
 
@@ -2026,7 +2033,7 @@ public class AuditServiceImpl implements AuditService {
             log.setEventType("PURCHASE_BILL");
             assignEntity(log, "PURCHASE_BILL", billId, billNumber);
             assignActor(log, deletedByUserId, null);
-            
+
             // Build metadata
             ObjectNode metadata = buildMetadata();
             metadata.put("billId", billId.toString());
@@ -2035,7 +2042,7 @@ public class AuditServiceImpl implements AuditService {
                 metadata.put("reason", reason);
             }
             log.setMetadata(metadata);
-            
+
             // Store reason in reason field (truncate to fit VARCHAR(50))
             String reasonText = String.format("bill:%s,number:%s", billId, billNumber);
             if (reason != null && !reason.isBlank()) {
@@ -2047,18 +2054,19 @@ public class AuditServiceImpl implements AuditService {
                 }
             }
             log.setReason(reasonText.length() > 50 ? reasonText.substring(0, 47) + "..." : reasonText);
-            
+
             log.setSuccess(Boolean.TRUE);
             persist(log);
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log purchase bill deletion for bill {}: {}", billId, e.getMessage(), e);
+                    .error("Failed to log purchase bill deletion for bill {}: {}", billId, e.getMessage(), e);
         }
     }
 
     @Override
-    public void logPurchaseBillImport(int importedCount, int errorCount, Long importedByUserId, HttpServletRequest request) {
+    public void logPurchaseBillImport(int importedCount, int errorCount, Long importedByUserId,
+            HttpServletRequest request) {
         try {
             AuditLog log = startLog("PURCHASE_BILL_IMPORT", request);
             log.setEventType("PURCHASE_BILL_IMPORT");
@@ -2080,7 +2088,7 @@ public class AuditServiceImpl implements AuditService {
         } catch (Exception e) {
             // Non-blocking: log error but don't break main flow
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log purchase bill import: {}", e.getMessage(), e);
+                    .error("Failed to log purchase bill import: {}", e.getMessage(), e);
         }
     }
 
@@ -2107,7 +2115,7 @@ public class AuditServiceImpl implements AuditService {
             persist(log);
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log purchase bill submitted for approval: {}", e.getMessage(), e);
+                    .error("Failed to log purchase bill submitted for approval: {}", e.getMessage(), e);
         }
     }
 
@@ -2131,7 +2139,7 @@ public class AuditServiceImpl implements AuditService {
             persist(log);
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log purchase bill approved: {}", e.getMessage(), e);
+                    .error("Failed to log purchase bill approved: {}", e.getMessage(), e);
         }
     }
 
@@ -2153,7 +2161,7 @@ public class AuditServiceImpl implements AuditService {
             persist(log);
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log purchase bill rejected: {}", e.getMessage(), e);
+                    .error("Failed to log purchase bill rejected: {}", e.getMessage(), e);
         }
     }
 
@@ -2180,13 +2188,14 @@ public class AuditServiceImpl implements AuditService {
             persist(log);
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(AuditServiceImpl.class)
-                .error("Failed to log purchase bill auto-approved: {}", e.getMessage(), e);
+                    .error("Failed to log purchase bill auto-approved: {}", e.getMessage(), e);
         }
     }
 
     @Override
     public void logAgingReminderSent(
-            Long supplierId, java.util.List<java.util.UUID> billIds, java.util.List<String> recipients, Long companyId) {
+            Long supplierId, java.util.List<java.util.UUID> billIds, java.util.List<String> recipients,
+            Long companyId) {
         try {
             AuditLog log = startLog("AGING_REMINDER_SENT", null);
             assignActor(log, getCurrentUserId(), null);
@@ -2238,22 +2247,25 @@ public class AuditServiceImpl implements AuditService {
     @Override
     public int purgeAuditLogs(Long companyId, Long userId, Instant beforeDate, Long adminUserId) {
         // Only allow if admin
-        // (Permission check should be done by caller or via annotations, but service logic here)
-        
+        // (Permission check should be done by caller or via annotations, but service
+        // logic here)
+
         // NOTE: In a real production system, we would archive before deleting.
         // For this implementation, we assume backup has been run separately.
-        
+
         // Find logs to purge
-        // Since JPA Spec deletion is tricky, we'll use direct repository delete or list then delete
+        // Since JPA Spec deletion is tricky, we'll use direct repository delete or list
+        // then delete
         // Direct delete by spec isn't standard in JpaSpecificationExecutor
-        
+
         // We'll use a custom delete logic
         // WARNING: Deleting large number of rows might be slow. Batching recommended.
         // For MVP, simplistic delete.
-        
-        // Since we can't use Specification for delete easily without custom repo method,
+
+        // Since we can't use Specification for delete easily without custom repo
+        // method,
         // let's find IDs then delete.
-        
+
         // Construct Specification for filtering
         org.springframework.data.jpa.domain.Specification<AuditLog> spec = (root, query, cb) -> {
             java.util.List<jakarta.persistence.criteria.Predicate> predicates = new java.util.ArrayList<>();
@@ -2266,13 +2278,13 @@ public class AuditServiceImpl implements AuditService {
             }
             return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
-        
+
         java.util.List<AuditLog> logsToDelete = auditLogRepository.findAll(spec);
         int count = logsToDelete.size();
-        
+
         if (count > 0) {
             auditLogRepository.deleteAll(logsToDelete);
-            
+
             // Log the purge event (this must NOT be purged!)
             AuditLog purgeLog = startLog("AUDIT_LOG_PURGE", null);
             purgeLog.setCompanyId(companyId);
@@ -2283,26 +2295,30 @@ public class AuditServiceImpl implements AuditService {
                 purgeLog.setEmail(u.getEmail());
                 purgeLog.setActorRole(u.getRole());
             });
-            
+
             ObjectNode metadata = buildMetadata();
             metadata.put("purgedCount", count);
-            if (userId != null) metadata.put("targetUserId", userId);
-            if (beforeDate != null) metadata.put("beforeDate", beforeDate.toString());
+            if (userId != null)
+                metadata.put("targetUserId", userId);
+            if (beforeDate != null)
+                metadata.put("beforeDate", beforeDate.toString());
             purgeLog.setMetadata(metadata);
             purgeLog.setReason("GDPR Purge: " + count + " records");
             purgeLog.setSuccess(true);
-            
+
             // Persist explicitly to bypass chain hash if we deleted previous link?
-            // Actually, purging breaks the chain! 
-            // This is expected in GDPR purge. The new log starts a new chain or continues from whatever is left.
-            persist(purgeLog); 
+            // Actually, purging breaks the chain!
+            // This is expected in GDPR purge. The new log starts a new chain or continues
+            // from whatever is left.
+            persist(purgeLog);
         }
-        
+
         return count;
     }
 
     /**
      * Get current user ID from SecurityContext.
+     * 
      * @return user ID or null if not available
      */
     private Long getCurrentUserId() {
@@ -2311,6 +2327,137 @@ public class AuditServiceImpl implements AuditService {
         } catch (Exception e) {
             // Non-blocking: return null if user ID cannot be determined
             return null;
+        }
+    }
+
+    @Override
+    public void logSalesInvoiceEvent(
+            UUID invoiceId,
+            String invoiceNumber,
+            String action,
+            JsonNode beforeSnapshot,
+            JsonNode afterSnapshot,
+            String diffHash,
+            HttpServletRequest request) {
+        try {
+            AuditLog log = startLog(action, request);
+            log.setEventType("SALES_INVOICE");
+            assignEntity(log, "SALES_INVOICE", invoiceId, invoiceNumber);
+
+            // Get current user from SecurityContext
+            Long userId = getCurrentUserId();
+            if (userId != null) {
+                assignActor(log, userId, null);
+            }
+
+            // Build changes JSON with before/after snapshots
+            ObjectNode changes = objectMapper.createObjectNode();
+            if (beforeSnapshot != null) {
+                changes.set("before", beforeSnapshot);
+            }
+            if (afterSnapshot != null) {
+                changes.set("after", afterSnapshot);
+            }
+            if (!changes.isEmpty()) {
+                log.setChanges(changes);
+            }
+
+            // Build metadata with diff hash and summary
+            ObjectNode metadata = buildMetadata();
+            if (diffHash != null) {
+                metadata.put("diffHash", diffHash);
+            }
+            metadata.put("invoiceId", invoiceId.toString());
+            metadata.put("invoiceNumber", invoiceNumber);
+            log.setMetadata(metadata);
+
+            log.setSuccess(Boolean.TRUE);
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log sales invoice event for invoice {}: {}", invoiceId, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logSalesInvoiceDeleted(
+            UUID invoiceId,
+            String invoiceNumber,
+            String reason,
+            Long deletedByUserId,
+            HttpServletRequest request) {
+        try {
+            AuditLog log = startLog("SALES_INVOICE_DELETED", request);
+            log.setEventType("SALES_INVOICE");
+            assignEntity(log, "SALES_INVOICE", invoiceId, invoiceNumber);
+
+            // Assign actor
+            if (deletedByUserId != null) {
+                assignActor(log, deletedByUserId, null);
+            }
+
+            ObjectNode metadata = buildMetadata();
+            metadata.put("invoiceId", invoiceId.toString());
+            metadata.put("invoiceNumber", invoiceNumber);
+            log.setMetadata(metadata);
+
+            log.setReason(reason);
+            log.setSuccess(Boolean.TRUE);
+
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log sales invoice deletion for invoice {}: {}", invoiceId, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logSalesInvoiceImport(int importedCount, int errorCount, Long importedByUserId,
+            HttpServletRequest request) {
+        try {
+            AuditLog log = startLog("SALES_INVOICE_IMPORTED", request);
+            log.setEventType("SALES_INVOICE_BATCH");
+
+            if (importedByUserId != null) {
+                assignActor(log, importedByUserId, null);
+            }
+
+            ObjectNode metadata = buildMetadata();
+            metadata.put("importedCount", importedCount);
+            metadata.put("errorCount", errorCount);
+            log.setMetadata(metadata);
+
+            log.setSuccess(Boolean.TRUE);
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log sales invoice import: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logSalesInvoiceOperationFailed(
+            UUID invoiceId,
+            String invoiceNumber,
+            String action,
+            String reason,
+            HttpServletRequest request) {
+        try {
+            AuditLog log = startLog(action, request);
+            log.setEventType("SALES_INVOICE");
+            if (invoiceId != null) {
+                assignEntity(log, "SALES_INVOICE", invoiceId, invoiceNumber);
+            }
+
+            ObjectNode metadata = buildMetadata();
+            if (invoiceNumber != null) {
+                metadata.put("invoiceNumber", invoiceNumber);
+            }
+            log.setMetadata(metadata);
+
+            log.setFailureReason(reason);
+            log.setSuccess(Boolean.FALSE);
+
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log sales invoice operation failure: {}", e.getMessage(), e);
         }
     }
 }

@@ -1,0 +1,259 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>epic-5</epicId>
+    <storyId>5.1</storyId>
+    <title>Story 5.1: Sales Invoice Entry, Edit, and Draft Management</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-20T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow (manual execution via Cascade)</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/5-1-sales-invoice-entry-edit-and-draft-management.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As an accountant</asA>
+    <iWant>I want to create and edit sales invoices with strict validations and attachments</iWant>
+    <soThat>so that revenue recognition and receivables are accurate and auditable.</soThat>
+    <tasks>
+- Backend: SalesInvoice and ARInvoiceLine data model (AC: #2, #3, #5, #7, #10, #12)
+  - Implement `SalesInvoice` entity implementing `CompanyScopedEntity` with fields and constraints from tech spec (status enum, totals, VAT, soft delete fields).
+  - Implement `ARInvoiceLine` entity with quantity, unitPrice, VAT rate, revenue account code, and computed totals.
+  - Add Flyway migrations for `sales_invoices` and `ar_invoice_lines`, including unique constraint on `(company_id, customer_id, invoice_number, invoice_date)` and indexes on `(company_id, status, invoice_date)`.
+- Backend: Validation service for invoice creation and updates (AC: #3, #4, #5, #10, #11)
+  - Implement `SalesInvoiceValidator` to validate leaf-only accounts, positive amounts, VAT header vs. lines, and duplicate prevention.
+  - Return structured field-level error maps for both header and line errors.
+- Backend: SalesInvoiceService and repository (AC: #1–#7, #10, #12)
+  - Expose methods for draft create/update/delete with creator-only checks and company scoping.
+  - Implement search, filter, and pagination APIs aligned with `/api/v1/sales-invoices` contract.
+  - Integrate autosave semantics (draft save endpoint) and soft delete.
+- Backend: Import endpoint and batch processing (AC: #9, #10, #12)
+  - Implement `/api/v1/sales-invoices/import` using streaming CSV/Excel parsing, template validation, and atomic batch behavior.
+  - Return detailed error map with row numbers and field names when validation fails.
+- Backend: Audit logging integration (AC: #7, #8, #12)
+  - Use shared `AuditService` and `AuditLog` entity patterns from Epic 4 to log all invoice mutations and import attempts with deterministic `eventHash` and company scoping.
+- Frontend: Sales invoice list page (AC: #1, #2, #6, #7, #12)
+  - Implement `SalesInvoices` list view following data-table pattern (search, filter by status/customer/date, pagination, count, refresh).
+  - Surface status badges for DRAFT/PENDING_APPROVAL/POSTED and expose actions to open, edit, or delete drafts.
+- Frontend: Sales invoice form + line items grid (AC: #1–#6, #11)
+  - Build a form with customer picker, invoice/due dates, reference text, and totals summary.
+  - Implement `InvoiceLineGrid` component with inline validation, VAT calculation, and leaf-only account picker reusing COA UI patterns.
+  - Implement autosave with undo/redo for at least the last 10 edits.
+- Frontend: Attachments UI (AC: #8)
+  - Reuse attachment dropzone and preview components established in Epic 3/4 stories, wired to `/api/v1/sales-invoices/{id}/attachments` endpoints.
+- Frontend: Import dialog (AC: #9)
+  - Create import modal for uploading CSV/Excel, showing progress and error map results.
+- Testing: Backend and frontend coverage (AC: #1–#12)
+  - Add unit tests for validation rules (customer selection, account leaf enforcement, VAT totals, duplicate detection).
+  - Add integration tests for invoice create/update/delete/import and audit logging.
+  - Add component and E2E tests for core UI flows (basic create, autosave, attachment upload, import with errors).
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+(AC23-001) Invoice form provides a typeahead/searchable dropdown to select an existing customer; "Add New Customer" is not available. When a customer is selected, the form displays the customer tax code and address in read-only fields pulled from master data.
+(AC23-002) On save, the system auto-generates an invoice number with format `INV-{YYYY}-{seq}` where the sequence increments per customer per calendar year; duplicate `(customerID, invoiceNumber, invoiceDate)` combinations are blocked.
+(AC23-003) Line items support one or more rows with description, quantity > 0, unitPrice > 0, VAT% (0, 5, 10, EXEMPT), revenue account (leaf-only), and optional item/service; system computes line totals and VAT per tech spec.
+(AC23-004) Revenue account selection enforces leaf-only accounts; non-postable/parent accounts from `chart_of_accounts` are rejected with inline error and prevent save.
+(AC23-005) Header totals are computed in real time; header VAT must match sum of line VAT within ±1 VND tolerance; mismatches beyond tolerance block save/post.
+(AC23-006) User can save a draft invoice at any time even if required fields are incomplete; autosave runs every 30 seconds; undo/redo stack keeps at least the last 10 edits client-side.
+(AC23-007) Only the invoice creator or an Admin can edit or delete drafts; other users receive HTTP 403 with message "Insufficient permissions"; delete is soft-delete via `isDeleted` and `deletedAt`.
+(AC23-008) Invoice form supports file attachments via drag-and-drop or file picker with allowed types {pdf, xlsx, xls, jpg, png, jpeg}, max 5MB/file and 20MB/invoice; attachments editable only in draft and audit-logged.
+(AC23-009) `/api/v1/sales-invoices/import` accepts multipart CSV/Excel files using the documented template; validates headers and up to 1000 rows; any row failure rejects the entire batch and returns an error map `(rowNumber, field, message)`.
+(AC23-010) The system prevents creating an invoice if `(customerID, invoiceNumber, invoiceDate)` already exists with `isDeleted = false`, returning HTTP 409 with descriptive message; duplicate checks are consistent across UI, import, and API.
+(AC23-011) Inline validation provides immediate feedback as the user types; negative values and missing required fields show inline errors; save button disabled while any validation error is present for required fields.
+(AC23-012) Every invoice create, edit, and delete attempt logs an immutable audit record including before/after snapshots, actor, timestamp, device IP, user agent, and deterministic `eventHash = SHA256(...)`.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      - path: docs/epics/epic-5-accounts-receivable-ar-module.md
+        title: Epic 5: Accounts Receivable (AR) Module
+        section: Story 5.1: Sales Invoice Entry, Edit, and Draft Management
+        snippet: "FR23 (Sales Invoice Creation) covers full invoice entry form, customer selection, line items, draft/posted statuses, import (CSV/Excel), and duplicate prevention." (lines 22–28)
+
+      - path: docs/sprint-artifacts/tech-spec-epic-5.md
+        title: Epic Technical Specification: Sales Invoice Entry & AR Management
+        section: FR23: Sales Invoice Creation
+        snippet: "Full invoice entry form with customer selection, line items (qty, price, VAT rate), auto-calculated totals, draft/posted statuses, import (CSV/Excel), and duplicate prevention." (lines 22–28, 533–548)
+
+      - path: docs/architecture/data-architecture.md
+        title: Data Architecture
+        section: Multi-Tenancy Strategy; AP/AR Entities
+        snippet: Describes row-level filtering via `company_id`, Spring Data JPA filtering, and core entities including `sales_invoices` and AR-related tables for multi-tenant safety (lines 3–8, 35–39).
+
+      - path: docs/architecture/security-architecture.md
+        title: Security Architecture
+        section: Authentication & Authorization
+        snippet: Defines JWT-based auth, RBAC roles (Admin, Accountant, Chief Accountant, CFO), API-level permission checks, and audit trail requirements with cryptographic hashing (lines 3–23).
+
+      - path: docs/architecture/epic-to-architecture-mapping.md
+        title: Epic to Architecture Mapping
+        section: Epic 5: AR Module
+        snippet: Maps Epic 5 to backend `controller/sales/`, frontend `pages/SalesInvoices.tsx`, and database tables `sales_invoices`, `ar_receipts`, confirming placement for this story (lines 3–10).
+
+      - path: docs/ux-journey-ar-sales-invoice.html
+        title: User Journey — AR Sales Invoice
+        section: Sales invoice list, create flow, validation panel, success, and behavior notes
+        snippet: Visual HTML journey showing list view with search/filters, create sheet with header + lines + totals, validation checklist, success toast, and behavior notes for posting and attachments (lines 33–121).
+
+      - path: docs/ux-design-specification.md
+        title: accounting UX Design Specification
+        section: Journeys & Component Library (Sales Invoice, VoucherLineGrid, DataTablePro, AccountPicker, AttachmentDropzone)
+        snippet: Defines critical Sales Invoice user journey (create→post→share), DataTablePro list patterns, VoucherLineGrid keyboard-first interactions, AccountPicker leaf-only enforcement, and AttachmentDropzone UX (lines 141–187, 225–233, 381–460).
+
+      - path: docs/sprint-artifacts/stories/4-7-audit-trail-and-compliance-for-all-ap-activities.md
+        title: Story 4.7: Audit Trail and Compliance for All AP Activities
+        section: Architecture Patterns and Dev Notes
+        snippet: Documents `AuditService` patterns, chain hashing, company-scoped audit logs, timeline views, backup strategy, and frontend audit components that AR invoices should reuse for auditability (lines 30–80, 268–343, 399–441).
+    </docs>
+
+    <code>
+      - path: backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java
+        kind: base-entity-interface
+        symbol: CompanyScopedEntity
+        lines: n/a
+        reason: Base contract for all tenant-scoped entities; `SalesInvoice` and `ARInvoiceLine` must implement this to enforce row-level security via `company_id`.
+
+      - path: backend/src/main/java/com/accounting/controller/purchase/PurchaseBillController.java
+        kind: controller
+        symbol: PurchaseBillController
+        lines: 45-501
+        reason: Reference implementation for list/search, create/update, validate-only endpoint, draft autosave, attachments, and batch import patterns to mirror in `SalesInvoiceController`.
+
+      - path: backend/src/main/java/com/accounting/service/impl/purchase/PurchaseBillServiceImpl.java
+        kind: service
+        symbol: PurchaseBillServiceImpl
+        lines: 50-410
+        reason: Implements AP bill lifecycle with company scoping, totals/VAT calculation, maker-checker integration, and detailed audit logging; AR invoice service should follow the same patterns.
+
+      - path: backend/src/main/java/com/accounting/service/impl/voucher/VoucherValidationServiceImpl.java
+        kind: service
+        symbol: VoucherValidationServiceImpl
+        lines: key methods validate voucher lines
+        reason: Central validation for voucher double-entry, leaf-only accounts, and dimension rules reused by AR posting; SalesInvoice posting should ultimately call into this engine.
+
+      - path: backend/src/main/java/com/accounting/service/impl/voucher/VoucherPostingServiceImpl.java
+        kind: service
+        symbol: VoucherPostingServiceImpl
+        lines: 40-234
+        reason: Handles atomic posting of vouchers with period checks, validation, journal entry generation, and audit logging; AR posting should align with this pipeline.
+
+      - path: backend/src/main/java/com/accounting/entity/AuditLog.java
+        kind: entity
+        symbol: AuditLog
+        lines: n/a
+        reason: Shared audit log entity with company scoping, event hash, before/after snapshots, and chain hashing; SalesInvoice audit entries should be written here via `AuditService`.
+
+      - path: backend/src/main/java/com/accounting/service/AuditService.java
+        kind: service-interface
+        symbol: AuditService
+        lines: 1-104+
+        reason: Interface for logging security and business events (login, role changes, purchase bills, payments, period validation, etc.); extend or reuse for AR invoice create/update/delete/import events.
+
+      - path: backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java
+        kind: service
+        symbol: AuditServiceImpl
+        lines: key log* methods
+        reason: Concrete audit implementation including SHA-256 hashing and chain-hash support introduced in Story 4.7; AR events should follow the same conventions.
+
+      - path: frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx
+        kind: frontend-page
+        symbol: VoucherForm
+        lines: n/a
+        reason: Voucher form UI with VoucherLineGrid, inline validation, and posting workflow; informs layout and interactions for Sales Invoice form.
+
+      - path: frontend/src/features/accounting/pages/PurchaseBills/PurchaseBillForm.tsx
+        kind: frontend-page
+        symbol: PurchaseBillForm
+        lines: 1-436+
+        reason: AP bill form including SupplierPicker, autosave with undo/redo, VAT validation, attachment dropzone, draft lock, and integration with server-side validation; Sales Invoice form should reuse these patterns with customer-focused variants.
+
+      - path: frontend/src/features/accounting/pages/PurchaseBills/PurchaseBillList.tsx
+        kind: frontend-page
+        symbol: PurchaseBillList
+        lines: 330-451
+        reason: Data table implementation with search, filters, pagination, status badges, and attachment counts; template for Sales Invoice list page behavior.
+    </code>
+
+    <dependencies>
+      backend:
+        framework: Spring Boot 3.5.7 (Java 21)
+        persistence: Spring Data JPA, PostgreSQL 42.7.4, Flyway 11.10.0
+        security: Spring Security 6, jjwt 0.12.5
+        caching: Spring Data Redis, spring-boot-starter-cache
+        reporting: JasperReports 6.21.3, DynamicReports 6.20.1, Apache POI 5.3.0
+
+      frontend:
+        framework: React 19 + React Router 7 + Vite 7
+        state-and-data: TanStack React Query, Axios
+        forms-and-validation: react-hook-form, @hookform/resolvers, zod
+        ui-and-theming: shadcn/ui stack (Radix UI primitives, Tailwind CSS 4, tailwind-merge, lucide-react icons)
+        layout-and-components: Radix dialog/sheet/table primitives, custom DataTablePro, AccountPicker, AttachmentDropzone
+        testing: Vitest, @testing-library/react, @testing-library/user-event, @testing-library/jest-dom
+
+      e2e:
+        runner: Playwright (configured in root package.json and playwright.config.ts for API and browser E2E tests)
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- Multi-tenancy: All AR entities, including `SalesInvoice` and `ARInvoiceLine`, must implement `CompanyScopedEntity` and be filtered by `company_id` in repositories and services, consistent with `CompanyContext` and data architecture.
+- RBAC and security: Endpoints under `/api/v1/sales-invoices` must enforce JWT authentication and RBAC roles (Admin, Accountant, Chief Accountant, CFO). Only creator or Admin may edit/delete drafts; approval endpoints restricted to Chief Accountant as per FR26 for follow-on stories.
+- Endpoint placement: Controllers for this story live under `backend/src/main/java/com/accounting/controller/sales/` and expose `/api/v1/sales-invoices` and related endpoints, consistent with epic-to-architecture mapping.
+- Validation alignment: Posting and validation rules (leaf-only accounts, open period checks, double-entry invariants) must align with Voucher Engine services (`VoucherValidationServiceImpl`, `VoucherPostingServiceImpl`) to keep AR behavior consistent with GL.
+- Audit trail: All invoice lifecycle events (create/edit/delete/import/post/approval in later stories) must be logged via `AuditService` to `AuditLog` with company scoping and chain hashing, reusing patterns from Story 4.7.
+- Frontend structure: Implement feature-first pages under `frontend/src/features/accounting/pages/SalesInvoices/` and shared AR components (line grid, import dialog, attachments) under appropriate shared component namespaces (`components/ar/`, `components/account/`, `components/common/`).
+- API contracts: Follow standard response envelope `{ data, meta, error }` and status codes (`400 VALIDATION_ERROR`, `403 INSUFFICIENT_PERMISSION`, `409` for duplicates), consistent with tech spec and existing PurchaseBill APIs.
+  </constraints>
+
+  <interfaces>
+    - name: GET /api/v1/sales-invoices
+      kind: REST endpoint
+      signature: GET /api/v1/sales-invoices?page=&size=&status=&dateFrom=&dateTo=&customerID=&search= → { data: { content: [SalesInvoice], totalElements, totalPages }, meta }
+      path: backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java (to be created)
+
+    - name: POST /api/v1/sales-invoices
+      kind: REST endpoint
+      signature: POST /api/v1/sales-invoices { customerID, invoiceDate, dueDate, referenceText, lines: [...], attachments: [...] } → { data: { id, invoiceNumber, status }, meta }
+      path: backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java
+
+    - name: GET /api/v1/sales-invoices/{id}
+      kind: REST endpoint
+      signature: GET /api/v1/sales-invoices/{id} → full SalesInvoice DTO with lines, customer snapshot, and remaining balance
+      path: backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java
+
+    - name: PUT /api/v1/sales-invoices/{id}
+      kind: REST endpoint
+      signature: PUT /api/v1/sales-invoices/{id} { dueDate, referenceText, lines: [...], attachments: [...] } → { data: { id, invoiceNumber, status }, meta }
+      path: backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java
+
+    - name: DELETE /api/v1/sales-invoices/{id}
+      kind: REST endpoint
+      signature: DELETE /api/v1/sales-invoices/{id} → 204 No Content (soft delete)
+      path: backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java
+
+    - name: POST /api/v1/sales-invoices/import
+      kind: REST endpoint
+      signature: POST /api/v1/sales-invoices/import (multipart/form-data) → { data: { importedCount, errorMap }, meta }
+      path: backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java
+
+    - name: POST /api/v1/sales-invoices/{id}/attachments
+      kind: REST endpoint
+      signature: POST /api/v1/sales-invoices/{id}/attachments (multipart) → AttachmentDTO
+      path: backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java
+
+    - name: POST /api/v1/sales-invoices/{id}/validate
+      kind: REST endpoint
+      signature: POST /api/v1/sales-invoices/{id}/validate → { data: { isValid, errors }, meta }
+      path: backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java
+  </interfaces>
+
+  <testing>
+    - unit: SalesInvoiceValidatorTest.java (Validate business rules: leaf accounts, positive amounts, tax checks)
+    - unit: SalesInvoiceServiceTest.java (Test service methods for create, update, soft delete, and company scoping)
+    - unit: ImportServiceTest.java (Test CSV/Excel parsing and atomic batch validation logic)
+    - component: SalesInvoiceForm.test.tsx (Test form interactions, validation feedback, and autosave calls)
+    - component: InvoiceLineGrid.test.tsx (Test dynamic row addition, tax calculations, and keyboard navigation)
+    - integration: SalesInvoiceControllerIT.java (Full stack test with MockMvc and Flyway DB for all endpoints)
+    - e2e: sales-invoice-journey.spec.ts (Playwright test for full user journey: Login -> Create Invoice -> Add Lines -> Upload Attachment -> Save Draft -> Verify List)
+  </testing>
+</story-context>
