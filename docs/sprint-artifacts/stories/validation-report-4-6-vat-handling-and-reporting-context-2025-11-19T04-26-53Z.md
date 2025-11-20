@@ -1,0 +1,408 @@
+# Validation Report
+
+**Document:** docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.context.xml
+**Checklist:** .bmad/bmm/workflows/4-implementation/story-context/checklist.md
+**Date:** 2025-11-19T04:26:53Z
+
+## Summary
+- Overall: 10/10 passed (100%)
+- Critical Issues: 0
+
+## Section Results
+
+### Story Context Assembly Checklist
+Pass Rate: 10/10 (100%)
+
+✓ **Story fields (asA/iWant/soThat) captured**
+Evidence: Lines 13-15 of context XML contain:
+```13:15:docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.context.xml
+    <asA>an accountant/auditor</asA>
+    <iWant>accurate, validated VAT calculation, reporting, and audit for all AP bills and payments</iWant>
+    <soThat>statutory compliance is always maintained</soThat>
+```
+These match exactly with the story draft lines 7-9:
+```7:9:docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.md
+As an accountant/auditor,
+I want accurate, validated VAT calculation, reporting, and audit for all AP bills and payments,
+so that statutory compliance is always maintained.
+```
+
+✓ **Acceptance criteria list matches story draft exactly (no invention)**
+Evidence: Lines 31-39 of context XML contain 7 acceptance criteria that match exactly with story draft lines 76-90:
+```31:39:docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.context.xml
+    1. Each line item requires VAT rate (company default, override with warning/audit); supports 0/5/10/exempt only
+    2. Sum of VAT on doc must match total of line-level VAT; mismatch >1,000₫ blocks post
+    3. TT200 GL mapping: AP bills auto-book VAT 3331 leg; system ensures legs balance by template logic
+    4. Input VAT report by period/supplier/class; exports formatted to ND123 compliance
+    5. Admin screen for manual VAT corrections, with diff and reason audit
+    6. Negative or over-100% VAT ratio attempts blocked; triggers audit entry
+    7. All VAT-related actions: create, override, correct events are fully audit-tracked (who/when/IP/old/new)
+```
+Story draft lines 76-90 contain identical acceptance criteria with same numbering and wording. No invention detected.
+
+✓ **Tasks/subtasks captured as task list**
+Evidence: Lines 16-28 of context XML contain a comprehensive task list:
+```16:28:docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.context.xml
+    <tasks>
+      - Backend: Create VATService and VAT validation logic (AC: #1, #2, #6)
+      - Backend: TT200 GL mapping for VAT (AC: #3)
+      - Backend: Input VAT report generation (AC: #4)
+      - Backend: Manual VAT corrections (AC: #5, #7)
+      - Backend: VAT report controller and API (AC: #1-#7)
+      - Database: Flyway migrations for new entities (AC: #5)
+      - Frontend: VAT report list component (AC: #4)
+      - Frontend: Input VAT report generation and export (AC: #4)
+      - Frontend: VAT correction management (AC: #5, #7)
+      - Frontend: VAT validation integration (AC: #1, #2, #6)
+      - Testing: Unit and integration tests for VAT functionality (AC: #1-#7)
+    </tasks>
+```
+These tasks align with the detailed task breakdown in story draft lines 92-254, with proper AC references.
+
+✓ **Relevant docs (5-15) included with path and snippets**
+Evidence: Lines 42-91 contain 8 documentation artifacts, each with path, title, section, and snippet:
+```42:91:docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.context.xml
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Accounts Payable (AP) Module</title>
+        <section>Story 4.6: VAT Handling and Reporting</section>
+        <snippet>Detailed acceptance criteria for VAT rate validation (0/5/10/exempt with company default), VAT sum validation (tolerance 1,000₫), TT200 GL mapping (VAT 3331 leg), Input VAT report with ND123 compliance, manual VAT corrections with audit trail, and comprehensive audit logging for all VAT operations.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-4-accounts-payable-ap-module.md</path>
+        <title>Epic 4: Accounts Payable (AP) Module</title>
+        <section>Story 4.6: VAT Handling and Reporting</section>
+        <snippet>Business requirements for comprehensive VAT handling and reporting functionality, ensuring accurate VAT calculation, validation, and statutory compliance with TT200 standards for all AP bills and payments.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/data-architecture.md</path>
+        <title>Data Architecture</title>
+        <section>Multi-Tenancy Strategy and Core Entities</section>
+        <snippet>Row-level filtering via company_id on all tables, Spring Data JPA filter at repository level, API-level enforcement via security filter. PurchaseBill and PurchaseBillLine entities with VAT fields (vat_rate, vat_amount) available for VAT validation and reporting.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/security-architecture.md</path>
+        <title>Security Architecture</title>
+        <section>Authorization</section>
+        <snippet>Role-Based Access Control (RBAC) with roles: Admin, Accountant, Chief Accountant, CFO. Spring Security method-level security with @PreAuthorize annotations. Company-level data isolation for multi-tenancy.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-5-supplier-statement-reconciliation.md</path>
+        <title>Story 4.5: Supplier Statement &amp; Reconciliation</title>
+        <section>Export Functionality Patterns and Service Layer Patterns</section>
+        <snippet>Established patterns for Excel and PDF export with TT200-compliant formatting, hash generation, and audit logging using Apache POI. Service layer patterns with @Transactional, @Cacheable, and @PreAuthorize annotations. Vietnamese formatting patterns (currency: #,##0.00₫, dates: dd/MM/yyyy).</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-1-purchase-bills-entry-edit-and-draft-management.md</path>
+        <title>Story 4.1: Purchase Bills – Entry, Edit, and Draft Management</title>
+        <section>PurchaseBill Entity Foundation and VAT Rate Validation</section>
+        <snippet>PurchaseBill and PurchaseBillLine entities with VAT rate fields (vat_rate enum: 0/5/10/EXEMPT, vat_amount BigDecimal) available. Basic VAT rate validation (0/5/10/exempt) at line item level implemented. Story 4.6 should extend this with company default VAT rates, override warnings, and comprehensive sum validation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-3-cash-payments-linked-to-bills-standalone.md</path>
+        <title>Story 4.3: Cash Payments (Linked to Bills, Standalone)</title>
+        <section>Payment VAT Context</section>
+        <snippet>APPayment entities track payment history. VAT reports may need to reference payment-linked bills for complete VAT tracking and audit trail.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/1-3-testing-guide.md</path>
+        <title>Testing Guide: Story 1.3 - User Authentication &amp; Security</title>
+        <section>Testing Standards</section>
+        <snippet>Integration tests using TestContainers with PostgreSQL, unit tests with JUnit 5 and Mockito. Test patterns for service layer, controller layer, and audit logging. Backend test location: backend/src/test/java/com/accounting/</snippet>
+      </doc>
+    </docs>
+```
+Total: 8 docs (within 5-15 range). All include required fields: path, title, section, and snippet.
+
+✓ **Relevant code references included with reason and line hints**
+Evidence: Lines 93-192 contain 15 code artifacts, each with path, kind, symbol, lines, and reason:
+```93:192:docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.context.xml
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/PurchaseBill.java</path>
+        <kind>entity</kind>
+        <symbol>PurchaseBill</symbol>
+        <lines>29-288</lines>
+        <reason>PurchaseBill entity with vatAmount field (BigDecimal) and status field (POSTED status needed for VAT reporting). Implements CompanyScopedEntity for multi-tenancy. Contains supplier_id, bill_date, total_amount fields needed for VAT report generation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/PurchaseBillLine.java</path>
+        <kind>entity</kind>
+        <symbol>PurchaseBillLine</symbol>
+        <lines>28-252</lines>
+        <reason>PurchaseBillLine entity with vatRate (VatRate enum: ZERO, FIVE, TEN, EXEMPT) and vatAmount (BigDecimal) fields. Line-level VAT data needed for VAT sum validation, VAT ratio validation, and VAT report aggregation. Implements CompanyScopedEntity for multi-tenancy.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/VoucherService.java</path>
+        <kind>service</kind>
+        <symbol>VoucherService</symbol>
+        <lines>14-81</lines>
+        <reason>VoucherService interface for voucher posting. Story 4.6 needs to integrate VAT GL mapping (3331 leg) when posting purchase bills. The postBill() method should be extended or called from PurchaseBillService to include VAT leg generation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/VoucherServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>VoucherServiceImpl</symbol>
+        <lines>54-838</lines>
+        <reason>VoucherServiceImpl implementation with voucher posting logic. Need to extend or integrate VAT 3331 leg generation when posting purchase bills. Ensures all voucher legs balance (debit = credit) which is critical for VAT GL mapping.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PurchaseBillService.java</path>
+        <kind>service</kind>
+        <symbol>PurchaseBillService</symbol>
+        <lines>14-112</lines>
+        <reason>PurchaseBillService interface with bill CRUD operations. Need to integrate VAT validation (validateVATRate, validateVATSum, validateVATRatio) before posting bills. postBill() method should call VAT GL mapping to generate 3331 leg.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/purchase/PurchaseBillServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>PurchaseBillServiceImpl</symbol>
+        <lines>52-727</lines>
+        <reason>PurchaseBillServiceImpl with bill posting logic. Need to integrate VAT validation and VAT GL mapping. Query POSTED bills for VAT report generation. Company-scoped queries for multi-tenancy.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service</kind>
+        <symbol>AuditService</symbol>
+        <lines>10-1007</lines>
+        <reason>AuditService interface for comprehensive audit logging. Story 4.6 needs to log all VAT-related actions: VAT rate override, VAT sum validation failures, VAT ratio validation blocks, VAT corrections, VAT report generation, and VAT correction approvals.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>AuditServiceImpl</symbol>
+        <lines>28-1825</lines>
+        <reason>AuditServiceImpl with audit logging implementation. Use logEntityAction() or similar methods to log VAT operations with old/new values, user, timestamp, IP address, and action type for complete audit trail.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PurchaseBillValidationService.java</path>
+        <kind>service</kind>
+        <symbol>PurchaseBillValidationService</symbol>
+        <lines>14-85</lines>
+        <reason>PurchaseBillValidationService with existing validation logic. Story 4.1 implemented basic VAT rate validation. Story 4.6 should extend this service or create VATService to add comprehensive VAT validation (rate, sum, ratio) with company default support.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/purchase/PurchaseBillController.java</path>
+        <kind>controller</kind>
+        <symbol>PurchaseBillController</symbol>
+        <lines>44-501</lines>
+        <reason>PurchaseBillController with REST endpoints for bill operations. Need to integrate VAT validation endpoints or create separate VATController. postBill() endpoint should call VAT validation before posting.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/PurchaseBillRepository.java</path>
+        <kind>repository</kind>
+        <symbol>PurchaseBillRepository</symbol>
+        <lines>14-119</lines>
+        <reason>PurchaseBillRepository with company-scoped queries. Need to add queries for VAT report generation: find POSTED bills by period, supplier, VAT class with proper company filtering. Use JpaSpecificationExecutor for complex filtering.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/PurchaseBillLineRepository.java</path>
+        <kind>repository</kind>
+        <symbol>PurchaseBillLineRepository</symbol>
+        <lines>8-52</lines>
+        <reason>PurchaseBillLineRepository for querying bill lines. Need to query lines by bill_id for VAT sum validation and VAT report aggregation. Company-scoped queries for multi-tenancy.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/Vouchers/VoucherForm.tsx</path>
+        <kind>component</kind>
+        <symbol>VoucherForm</symbol>
+        <lines>1-500</lines>
+        <reason>VoucherForm component for voucher entry. Reference for form patterns, validation, and line item management. VAT correction dialog and VAT report components should follow similar patterns.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/services/voucher.ts</path>
+        <kind>service</kind>
+        <symbol>voucher service</symbol>
+        <lines>1-100</lines>
+        <reason>Voucher API service with axios calls. Reference for API service patterns. Create similar vat.ts service for VAT API endpoints (validate, generate report, export, corrections).</reason>
+      </artifact>
+    </code>
+```
+All 15 code artifacts include required fields: path, kind, symbol, lines, and reason. Line hints are specific and reasons are contextual.
+
+✓ **Interfaces/API contracts extracted if applicable**
+Evidence: Lines 257-299 contain 4 interface definitions:
+```257:299:docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.context.xml
+  <interfaces>
+    <interface>
+      <name>VATService</name>
+      <kind>Service Interface</kind>
+      <signature>public interface VATService {
+  VATValidationResult validateVATRate(VatRate rate, Long companyId);
+  VATValidationResult validateVATSum(PurchaseBill bill);
+  VATValidationResult validateVATRatio(BigDecimal amount, BigDecimal vatAmount);
+  void mapVATToGL(PurchaseBill bill);
+  InputVATReportDTO generateInputVATReport(Long periodId, Long supplierId, String vatClass, Map&lt;String, Object&gt; filters);
+  byte[] exportInputVATReport(UUID reportId, String format);
+  VATCorrectionDTO createVATCorrection(UUID billId, UUID lineItemId, BigDecimal oldAmount, BigDecimal newAmount, String reason);
+  VATCorrectionDTO approveVATCorrection(UUID correctionId, Long approverId);
+  List&lt;VATCorrectionDTO&gt; getVATCorrections(UUID billId, Map&lt;String, Object&gt; filters);
+}</signature>
+      <path>backend/src/main/java/com/accounting/service/VATService.java</path>
+    </interface>
+    <interface>
+      <name>VATController REST API</name>
+      <kind>REST Endpoints</kind>
+      <signature>POST /api/v1/vat/validate - Validate VAT rate and sum for bill
+GET /api/v1/vat/reports/input-vat - Generate input VAT report
+GET /api/v1/vat/reports/{id}/export - Export report to PDF/Excel
+GET /api/v1/vat/reports - List reports with pagination and filters
+POST /api/v1/vat/corrections - Create VAT correction
+PUT /api/v1/vat/corrections/{id}/approve - Approve correction
+GET /api/v1/vat/corrections - List corrections with filters
+GET /api/v1/vat/corrections/{id} - Get correction by ID</signature>
+      <path>backend/src/main/java/com/accounting/controller/ap/VATController.java</path>
+    </interface>
+    <interface>
+      <name>VoucherService.postBill()</name>
+      <kind>Method Signature</kind>
+      <signature>VoucherDTO postBill(UUID billId) - Post purchase bill as voucher with VAT 3331 leg</signature>
+      <path>backend/src/main/java/com/accounting/service/VoucherService.java</path>
+    </interface>
+    <interface>
+      <name>AuditService.logEntityAction()</name>
+      <kind>Method Signature</kind>
+      <signature>void logEntityAction(String entityType, UUID entityId, String action, Object oldValue, Object newValue, HttpServletRequest request) - Log VAT operations with audit trail</signature>
+      <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+    </interface>
+  </interfaces>
+```
+All interfaces include name, kind, signature, and path. Service interface, REST API endpoints, and method signatures are well-defined.
+
+✓ **Constraints include applicable dev rules and patterns**
+Evidence: Lines 214-255 contain 10 comprehensive constraints:
+```214:255:docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.context.xml
+  <constraints>
+    <constraint>
+      <name>Multi-Tenancy</name>
+      <description>All VAT entities (VATCorrection, VATReportHistory) must extend CompanyScopedEntity. All VAT queries must be company-scoped using CompanyContext and CompanyScopeAspect. Database queries filtered by company_id.</description>
+    </constraint>
+    <constraint>
+      <name>RBAC Enforcement</name>
+      <description>All authenticated users can view VAT reports (company-filtered). VAT corrections require Chief Accountant/CFO permissions. Use @PreAuthorize annotations for method-level security. Filter report history and corrections by user role and company context.</description>
+    </constraint>
+    <constraint>
+      <name>TT200 Compliance</name>
+      <description>VAT GL mapping must follow TT200 format requirements including automatic booking to account 3331 (Input VAT). Proper Vietnamese formatting (currency: #,##0.00₫, dates: dd/MM/yyyy). ND123-compliant report structure for Input VAT reports.</description>
+    </constraint>
+    <constraint>
+      <name>VAT Validation Rules</name>
+      <description>VAT rates must be one of: 0, 5, 10, EXEMPT. VAT sum validation tolerance: 1,000₫. VAT ratio must be between 0% and 100% (negative or over-100% blocked). Company default VAT rate support with override warnings.</description>
+    </constraint>
+    <constraint>
+      <name>Audit Trail</name>
+      <description>All VAT-related actions (create, override, correct, generate report, export) must be fully audit-tracked via AuditService with who/when/IP/old/new values. Audit entries must be immutable and include cryptographic hash for integrity.</description>
+    </constraint>
+    <constraint>
+      <name>Database Design</name>
+      <description>Create VATCorrection and VATReportHistory entities with proper indexes (bill_id, corrected_by, corrected_at, company_id). Foreign key constraints for referential integrity. Flyway migrations for schema changes.</description>
+    </constraint>
+    <constraint>
+      <name>API Patterns</name>
+      <description>Follow REST convention /api/v1/vat endpoints. Use standard error response format. Support query parameters for filtering (period, supplier, VAT class, report type). Return proper HTTP status codes: 200, 400, 403, 404.</description>
+    </constraint>
+    <constraint>
+      <name>Frontend Structure</name>
+      <description>Create new feature under features/accounting/pages/VATReports/ following feature-first structure. Reuse existing DataTablePro, export functionality, and dialog components. Follow shadcn/ui patterns for consistency.</description>
+    </constraint>
+    <constraint>
+      <name>Export Format</name>
+      <description>Excel export using Apache POI with TT200-compliant formatting. PDF export (text-based for MVP) with UTF-8 encoding for Vietnamese characters. Include document hash (SHA-256) and ND123 compliance footer.</description>
+    </constraint>
+    <constraint>
+      <name>Voucher Integration</name>
+      <description>VAT GL mapping must integrate with existing VoucherService.postBill() method. Ensure all voucher legs balance (debit = credit). VAT 3331 leg must match calculated VAT amount from bill lines.</description>
+    </constraint>
+  </constraints>
+```
+Constraints cover multi-tenancy, RBAC, TT200 compliance, validation rules, audit trail, database design, API patterns, frontend structure, export format, and voucher integration. All align with established dev rules and patterns from the story draft.
+
+✓ **Dependencies detected from manifests and frameworks**
+Evidence: Lines 194-211 contain dependencies section with Java and JavaScript packages:
+```194:211:docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.context.xml
+    <dependencies>
+      <java>
+        <package name="org.springframework.boot:spring-boot-starter-web" version="3.5.7"/>
+        <package name="org.springframework.boot:spring-boot-starter-data-jpa" version="3.5.7"/>
+        <package name="org.springframework.boot:spring-boot-starter-security" version="3.5.7"/>
+        <package name="org.apache.poi:poi-ooxml" version="5.3.0"/>
+        <package name="org.postgresql:postgresql" version="42.7.4"/>
+        <package name="org.flywaydb:flyway-core" version="11.10.0"/>
+      </java>
+      <javascript>
+        <package name="react" version="^19.1.1"/>
+        <package name="react-router-dom" version="^7.9.5"/>
+        <package name="axios" version="^1.7.9"/>
+        <package name="@tanstack/react-table" version="^8.21.3"/>
+        <package name="@radix-ui/react-dialog" version="^1.1.15"/>
+        <package name="date-fns" version="^4.1.0"/>
+      </javascript>
+    </dependencies>
+```
+Dependencies include Spring Boot (web, JPA, security), Apache POI for Excel export, PostgreSQL driver, Flyway for migrations, React ecosystem, and UI libraries. All are relevant to the story requirements.
+
+✓ **Testing standards and locations populated**
+Evidence: Lines 301-335 contain comprehensive testing section:
+```301:335:docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.context.xml
+  <tests>
+    <standards>
+      Follow testing patterns established in Stories 4.1, 4.3, 4.4, and 4.5. Use TestContainers with PostgreSQL for integration tests. Unit tests with JUnit 5 and Mockito. Component tests with Vitest, Testing Library, and jsdom for frontend. Target 70% coverage for service layer. Test RBAC filtering at service and API levels. Verify audit logging for all VAT operations. Test TT200 GL mapping with balance validation. Test ND123-compliant report formatting.
+    </standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/VATServiceTest.java</location>
+      <location>backend/src/test/java/com/accounting/controller/ap/VATControllerIntegrationTest.java</location>
+      <location>backend/src/test/java/com/accounting/repository/VATCorrectionRepositoryTest.java</location>
+      <location>frontend/src/features/accounting/pages/VATReports/__tests__/</location>
+      <location>frontend/src/components/vat/__tests__/</location>
+    </locations>
+    <ideas>
+      <test ac="1">
+        Test VAT rate validation: valid rates (0, 5, 10, EXEMPT), invalid rates rejected, company default VAT rate check, override warnings logged to audit
+      </test>
+      <test ac="2">
+        Test VAT sum validation: line-level VAT sum matches document VAT total, mismatch within tolerance (1,000₫) allowed, mismatch >1,000₫ blocks post, validation error returned
+      </test>
+      <test ac="3">
+        Test TT200 GL mapping: VAT 3331 leg generated correctly, all voucher legs balance (debit = credit), VAT leg matches calculated VAT amount, integration with VoucherService.postBill()
+      </test>
+      <test ac="4">
+        Test Input VAT report generation: query POSTED bills by period/supplier/VAT class, aggregate VAT amounts correctly, ND123-compliant formatting, Excel/PDF export with hash and footer
+      </test>
+      <test ac="5">
+        Test VAT corrections: create correction with old/new amounts and reason, approval workflow (Chief Accountant/CFO only), apply correction to bill, regenerate voucher if posted, full audit trail
+      </test>
+      <test ac="6">
+        Test VAT ratio validation: negative ratio blocked, over-100% ratio blocked, valid ratio (0-100%) allowed, blocked attempts trigger audit entry
+      </test>
+      <test ac="7">
+        Test audit logging: all VAT operations logged (rate override, sum validation failure, ratio block, correction creation, correction approval, report generation), includes who/when/IP/old/new values
+      </test>
+    </ideas>
+  </tests>
+```
+Testing section includes standards (TestContainers, JUnit 5, Mockito, Vitest), specific test file locations (5 locations), and test ideas mapped to each acceptance criterion (7 test ideas covering all ACs).
+
+✓ **XML structure follows story-context template format**
+Evidence: The XML structure matches the template exactly:
+- Root element: `<story-context>` with id and version (line 1)
+- `<metadata>` section with epicId, storyId, title, status, generatedAt, generator, sourceStoryPath (lines 2-10)
+- `<story>` section with asA, iWant, soThat, tasks (lines 12-29)
+- `<acceptanceCriteria>` section (lines 31-39)
+- `<artifacts>` section with docs, code, dependencies subsections (lines 41-212)
+- `<constraints>` section (lines 214-255)
+- `<interfaces>` section (lines 257-299)
+- `<tests>` section with standards, locations, ideas subsections (lines 301-335)
+All required elements from the template are present and properly structured.
+
+## Failed Items
+None
+
+## Partial Items
+None
+
+## Recommendations
+1. **Must Fix**: None - all checklist items passed
+2. **Should Improve**: None - document is comprehensive and well-structured
+3. **Consider**: The Story Context XML is production-ready and fully compliant with the checklist requirements. All 10 items passed validation with strong evidence. The document provides comprehensive context for developers including story fields, acceptance criteria, tasks, documentation references, code artifacts, interfaces, constraints, dependencies, and testing guidance.
+

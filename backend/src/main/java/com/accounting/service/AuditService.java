@@ -278,6 +278,225 @@ public interface AuditService {
         void logReportExport(Long companyId, Long userId, String format, HttpServletRequest request);
 
         /**
+         * Log AP aging report view event with applied filters.
+         *
+         * @param companyId company id
+         * @param userId user performing the action
+         * @param filters filters applied to the report
+         */
+        void logAgingReportViewed(Long companyId, Long userId, java.util.Map<String, Object> filters);
+
+        /**
+         * Log AP aging drill-down view event.
+         *
+         * @param companyId company id
+         * @param userId user performing the action
+         * @param supplierId supplier being drilled down
+         * @param bucket bucket requested
+         */
+        void logAgingDrilldownViewed(Long companyId, Long userId, Long supplierId, String bucket);
+
+        /**
+         * Log VAT report generation event.
+         *
+         * @param companyId company id
+         * @param userId user performing the action
+         * @param reportId generated report id
+         * @param reportType report type (e.g., INPUT_VAT)
+         * @param filters filters applied when generating the report
+         */
+        void logVatReportGenerated(
+                        Long companyId,
+                        Long userId,
+                        java.util.UUID reportId,
+                        String reportType,
+                        java.util.Map<String, Object> filters);
+
+        /**
+         * Log creation of a VAT correction request.
+         */
+        void logVatCorrectionCreated(
+                        Long companyId,
+                        Long userId,
+                        java.util.UUID correctionId,
+                        java.util.UUID billId,
+                        java.math.BigDecimal oldAmount,
+                        java.math.BigDecimal newAmount,
+                        String reason);
+
+        /**
+         * Log approval of a VAT correction.
+         */
+        void logVatCorrectionApproved(
+                        Long companyId,
+                        Long userId,
+                        java.util.UUID correctionId,
+                        java.util.UUID billId,
+                        java.math.BigDecimal oldAmount,
+                        java.math.BigDecimal newAmount);
+
+        /**
+         * Log VAT rate override event. Records company, actual rate, default rate,
+         * user, timestamp, and IP address.
+         *
+         * @param companyId    company ID
+         * @param userId       user who overrode the VAT rate
+         * @param actualRate   actual VAT rate used (overridden)
+         * @param defaultRate  company default VAT rate
+         * @param request      HTTP request for IP address and user agent
+         */
+        void logVatRateOverride(
+                        Long companyId,
+                        Long userId,
+                        String actualRate,
+                        String defaultRate,
+                        HttpServletRequest request);
+
+        /**
+         * Log VAT sum validation failure event. Records company, bill ID, line VAT sum,
+         * document VAT, difference, user, timestamp, and IP address.
+         *
+         * @param companyId    company ID
+         * @param userId       user who triggered the validation
+         * @param billId       purchase bill ID
+         * @param lineVATSum   sum of line-level VAT amounts
+         * @param documentVAT  document-level VAT total
+         * @param difference   difference between line sum and document total
+         * @param request      HTTP request for IP address and user agent
+         */
+        void logVatSumValidationFailure(
+                        Long companyId,
+                        Long userId,
+                        java.util.UUID billId,
+                        java.math.BigDecimal lineVATSum,
+                        java.math.BigDecimal documentVAT,
+                        java.math.BigDecimal difference,
+                        HttpServletRequest request);
+
+        /**
+         * Log VAT ratio block event. Records company, amount, VAT amount, ratio,
+         * reason, user, timestamp, and IP address.
+         *
+         * @param companyId  company ID
+         * @param userId     user who attempted the blocked action
+         * @param amount     base amount
+         * @param vatAmount  VAT amount
+         * @param ratio      calculated VAT ratio (percentage)
+         * @param reason     reason for blocking (e.g., "Negative ratio", "Over 100% ratio")
+         * @param request    HTTP request for IP address and user agent
+         */
+        void logVatRatioBlock(
+                        Long companyId,
+                        Long userId,
+                        java.math.BigDecimal amount,
+                        java.math.BigDecimal vatAmount,
+                        java.math.BigDecimal ratio,
+                        String reason,
+                        HttpServletRequest request);
+
+        /**
+         * Log supplier statement generation event.
+         *
+         * @param companyId company id
+         * @param userId user who generated the statement
+         * @param statementId statement ID
+         * @param supplierId supplier ID
+         * @param statementType statement type (SUMMARY/DETAILED)
+         * @param request HTTP request for IP address and user agent
+         */
+        void logStatementGenerated(
+                        Long companyId,
+                        Long userId,
+                        java.util.UUID statementId,
+                        Long supplierId,
+                        String statementType,
+                        HttpServletRequest request);
+
+        /**
+         * Log supplier statement export event.
+         *
+         * @param companyId company id
+         * @param userId user who exported the statement
+         * @param statementId statement ID
+         * @param format export format (PDF/EXCEL)
+         * @param request HTTP request for IP address and user agent
+         */
+        void logStatementExported(
+                        Long companyId,
+                        Long userId,
+                        java.util.UUID statementId,
+                        String format,
+                        HttpServletRequest request);
+
+        /**
+         * Log supplier statement email sent event.
+         *
+         * @param companyId company id
+         * @param userId user who sent the statement
+         * @param statementId statement ID
+         * @param recipientCount number of recipients
+         * @param request HTTP request for IP address and user agent
+         */
+        void logStatementSent(
+                        Long companyId,
+                        Long userId,
+                        java.util.UUID statementId,
+                        int recipientCount,
+                        HttpServletRequest request);
+
+        /**
+         * Log supplier statement import event.
+         *
+         * @param companyId company id
+         * @param userId user who imported the statement
+         * @param supplierId supplier ID
+         * @param itemCount total items imported
+         * @param mismatchCount number of mismatches found
+         * @param request HTTP request for IP address and user agent
+         */
+        void logStatementImported(
+                        Long companyId,
+                        Long userId,
+                        Long supplierId,
+                        int itemCount,
+                        int mismatchCount,
+                        HttpServletRequest request);
+
+        /**
+         * Log supplier statement reconciliation saved event.
+         *
+         * @param companyId company id
+         * @param userId user who saved the reconciliation
+         * @param supplierId supplier ID
+         * @param disputeCount number of disputes created
+         * @param request HTTP request for IP address and user agent
+         */
+        void logReconciliationSaved(
+                        Long companyId,
+                        Long userId,
+                        Long supplierId,
+                        int disputeCount,
+                        HttpServletRequest request);
+
+        /**
+         * Log supplier statement dispute update event.
+         *
+         * @param companyId company id
+         * @param userId user who updated the dispute
+         * @param disputeId dispute ID
+         * @param oldStatus previous dispute status
+         * @param newStatus new dispute status
+         * @param request HTTP request for IP address and user agent
+         */
+        void logDisputeUpdated(
+                        Long companyId,
+                        Long userId,
+                        java.util.UUID disputeId,
+                        String oldStatus,
+                        String newStatus,
+                        HttpServletRequest request);
+
+        /**
          * Log customer creation. Records customer details, creator, timestamp, and IP
          * address.
          *
@@ -694,6 +913,52 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
+         * Log purchase bill operation failure.
+         *
+         * @param billId purchase bill ID (if available)
+         * @param billNumber purchase bill number (if available)
+         * @param action action type (e.g. PURCHASE_BILL_CREATE_FAILED)
+         * @param reason failure reason
+         * @param request HTTP request for IP address and user agent
+         */
+        void logPurchaseBillOperationFailed(
+                UUID billId,
+                String billNumber,
+                String action,
+                String reason,
+                HttpServletRequest request);
+
+        /**
+         * Log payment operation failure.
+         *
+         * @param paymentId payment ID (if available)
+         * @param paymentNumber payment number (if available)
+         * @param action action type (e.g. PAYMENT_CREATE_FAILED)
+         * @param reason failure reason
+         * @param request HTTP request for IP address and user agent
+         */
+        void logPaymentOperationFailed(
+                UUID paymentId,
+                String paymentNumber,
+                String action,
+                String reason,
+                HttpServletRequest request);
+
+        /**
+         * Log delete attempt failure.
+         *
+         * @param entityType entity type (e.g. PURCHASE_BILL, PAYMENT)
+         * @param entityId entity ID
+         * @param reason failure reason
+         * @param request HTTP request for IP address and user agent
+         */
+        void logDeleteAttemptFailed(
+                String entityType,
+                String entityId,
+                String reason,
+                HttpServletRequest request);
+
+        /**
          * Log voucher lifecycle event with JSON snapshots and SHA-256 diff hash.
          * Records before/after snapshots, cryptographic hash, user ID/role, device/IP.
          *
@@ -838,6 +1103,107 @@ public interface AuditService {
                         HttpServletRequest request);
 
         /**
+         * Log purchase bill lifecycle event with JSON snapshots and SHA-256 diff hash.
+         * Records before/after snapshots, cryptographic hash, user ID/role, device/IP.
+         *
+         * @param billId         purchase bill ID
+         * @param billNumber     bill number for reference
+         * @param action         action type (e.g., PURCHASE_BILL_CREATED, PURCHASE_BILL_UPDATED, PURCHASE_BILL_DELETED, PURCHASE_BILL_DRAFT_SAVED, PURCHASE_BILL_IMPORTED)
+         * @param beforeSnapshot JSON snapshot of purchase bill before the change (null for create)
+         * @param afterSnapshot  JSON snapshot of purchase bill after the change
+         * @param diffHash       SHA-256 hash of the JSON diff between before/after snapshots
+         * @param request        HTTP request for IP address and user agent
+         */
+        void logPurchaseBillEvent(
+                        UUID billId,
+                        String billNumber,
+                        String action,
+                        com.fasterxml.jackson.databind.JsonNode beforeSnapshot,
+                        com.fasterxml.jackson.databind.JsonNode afterSnapshot,
+                        String diffHash,
+                        HttpServletRequest request);
+
+        /**
+         * Log purchase bill deletion. Records bill ID, bill number, deletion reason, user who deleted,
+         * timestamp, and IP address.
+         *
+         * @param billId         purchase bill ID that was deleted
+         * @param billNumber     bill number for reference
+         * @param reason         deletion reason (required)
+         * @param deletedByUserId ID of user who deleted the purchase bill
+         * @param request        HTTP request for IP address and user agent
+         */
+        void logPurchaseBillDeleted(
+                        UUID billId,
+                        String billNumber,
+                        String reason,
+                        Long deletedByUserId,
+                        HttpServletRequest request);
+
+        /**
+         * Log purchase bill import. Records import details, user, timestamp, and IP address.
+         *
+         * @param importedCount    number of purchase bills imported successfully
+         * @param errorCount       number of errors encountered
+         * @param importedByUserId user who performed the import
+         * @param request          HTTP request for IP address and user agent
+         */
+        void logPurchaseBillImport(int importedCount, int errorCount, Long importedByUserId, HttpServletRequest request);
+
+        /**
+         * Log when a purchase bill is submitted for approval.
+         */
+        void logPurchaseBillSubmittedForApproval(
+                Long companyId,
+                Long submittedByUserId,
+                UUID billId,
+                java.math.BigDecimal billAmount,
+                java.math.BigDecimal thresholdAmount);
+
+        /**
+         * Log when a purchase bill is approved.
+         */
+        void logPurchaseBillApproved(
+                Long companyId, Long approvedByUserId, UUID billId, String approvalReason);
+
+        /**
+         * Log when a purchase bill is rejected.
+         */
+        void logPurchaseBillRejected(
+                Long companyId, Long rejectedByUserId, UUID billId, String rejectionReason);
+
+        /**
+         * Log when a purchase bill is auto-approved (below threshold).
+         */
+        void logPurchaseBillAutoApproved(
+                Long companyId,
+                Long userId,
+                UUID billId,
+                java.math.BigDecimal billAmount,
+                java.math.BigDecimal thresholdAmount);
+
+        /**
+         * Log payment lifecycle event with JSON snapshots and SHA-256 diff hash.
+         * Records before/after snapshots, cryptographic hash, user ID/role, device/IP.
+         *
+         * @param paymentId       payment ID
+         * @param paymentNumber   payment number for reference
+         * @param action          action type (e.g., PAYMENT_CREATED, PAYMENT_POSTED, PAYMENT_ALLOCATED, PAYMENT_CANCELLED)
+         * @param beforeSnapshot  JSON snapshot of payment before the change (null for create)
+         * @param afterSnapshot   JSON snapshot of payment after the change
+         * @param diffHash        SHA-256 hash of the JSON diff between before/after snapshots
+         * @param request         HTTP request for IP address and user agent
+         */
+        void logPaymentEvent(
+                        UUID paymentId,
+                        String paymentNumber,
+                        String action,
+                        com.fasterxml.jackson.databind.JsonNode beforeSnapshot,
+                        com.fasterxml.jackson.databind.JsonNode afterSnapshot,
+                        String diffHash,
+                        HttpServletRequest request);
+
+        /**
          * DTO for batch action statistics.
          */
         class BatchActionStats {
@@ -863,4 +1229,36 @@ public interface AuditService {
                         return totalCount;
                 }
         }
+
+        /**
+         * Log aging reminder sent event.
+         *
+         * @param supplierId supplier ID (optional)
+         * @param billIds list of bill IDs (optional)
+         * @param recipients list of recipient emails/identifiers
+         * @param companyId company ID
+         */
+        void logAgingReminderSent(
+                        Long supplierId, java.util.List<java.util.UUID> billIds, java.util.List<String> recipients, Long companyId);
+
+        /**
+         * Log batch aging reminder sent event.
+         *
+         * @param supplierIds list of supplier IDs
+         * @param recipients list of recipient emails/identifiers
+         * @param companyId company ID
+         */
+        void logAgingBatchReminderSent(
+                        java.util.List<Long> supplierIds, java.util.List<String> recipients, Long companyId);
+
+        /**
+         * Purge audit logs based on criteria (GDPR compliance).
+         *
+         * @param companyId company ID
+         * @param userId user ID (optional)
+         * @param beforeDate purge logs before this date
+         * @param adminUserId ID of admin performing the purge
+         * @return number of records purged
+         */
+        int purgeAuditLogs(Long companyId, Long userId, java.time.Instant beforeDate, Long adminUserId);
 }

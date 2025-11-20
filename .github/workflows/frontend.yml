@@ -1,0 +1,48 @@
+name: frontend-ci
+
+on:
+  push:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install
+        working-directory: frontend
+        run: |
+          if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else npm install; fi
+      - name: Cache Vitest
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules/.vitest
+          key: vitest-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          restore-keys: |
+            vitest-${{ runner.os }}-
+      - name: Lint
+        working-directory: frontend
+        run: |
+          if [ -f pnpm-lock.yaml ]; then pnpm run lint; else npm run lint; fi
+      - name: Test
+        working-directory: frontend
+        run: |
+          if [ -f pnpm-lock.yaml ]; then pnpm test; else npm test; fi
+      - name: Build
+        working-directory: frontend
+        run: |
+          if [ -f pnpm-lock.yaml ]; then pnpm run build; else npm run build; fi

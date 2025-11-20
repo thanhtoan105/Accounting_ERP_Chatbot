@@ -597,6 +597,28 @@ Primary platform: Desktop web app (1920×1080, 1366×768). Tablet-friendly viewi
 
 Excellent work! Your UX Design Specification is complete.
 
+---
+
+## 10. Chatbot Experience Addendum (Story 9.0)
+
+### 10.1 Voucher-Focused RAG MVP Panel
+
+- **Entry point:** floating chatbot button pinned above the sidebar footer; badge “RAG beta” clarifies MVP scope.
+- **Panel layout:** split vertically — left: conversation thread with timestamps, right: “Citations” stack listing voucher/invoice IDs, amounts, and quick links (opens voucher drawer).
+- **Input zone:** Vietnamese placeholder (“Hỏi về công nợ, chứng từ...”), send button, shortcut hint (Ctrl+Enter).
+- **States:** loading shimmer between bubbles; error banner with retry; “Không đủ dữ liệu” empty message when Pinecone returns low confidence.
+
+### 10.2 Interaction & Guardrails
+
+- Questions hit `/chatbot/query`; UI shows streaming text (typewriter) and pins a confidence badge (High/Med/Low).
+- Each citation chip includes type (Voucher, Invoice), ID, amount, and posted status; clicking opens read-only drawer.
+- Audit note icon reveals “last indexed at {timestamp}” to teach users about MVP freshness.
+- Feature flag aware: when disabled, button shows tooltip “Chatbot đang bảo trì”.
+
+### 10.3 Future Alignment
+
+- Document makes clear this MVP satisfies Story 9.0 only; full widget (Story 9.1+) will add global availability, onboarding slides, privacy controls, and analytics per Epic 9.
+
 What we created together:
 
 - Design System: shadcn/ui with custom components (`VoucherLineGrid`, `DataTablePro`, `AccountPicker`, etc.)

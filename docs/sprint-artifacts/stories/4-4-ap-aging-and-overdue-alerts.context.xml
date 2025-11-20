@@ -1,0 +1,344 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4</storyId>
+    <title>AP Aging and Overdue Alerts</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-4-ap-aging-and-overdue-alerts.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>AP clerk or chief accountant</asA>
+    <iWant>to see a segmented AP aging report, spot overdue bills, and trigger follow-up</iWant>
+    <soThat>cashflow risk is controlled real-time</soThat>
+    <tasks>
+- Backend: Create APAgingService and aging calculation logic (AC: #1, #2, #9)
+- Backend: Redis caching implementation (AC: #1, #2)
+- Backend: Aging report controller and API (AC: #1, #2, #3, #4, #8, #10)
+- Backend: Drill-down to bill/payment history (AC: #3)
+- Backend: Export functionality (AC: #4, #10)
+- Backend: Reminder and alert service (AC: #6, #7, #10)
+- Frontend: Aging report component (AC: #1, #2, #3, #4, #8)
+- Frontend: Drill-down bill/payment history component (AC: #3)
+- Frontend: Dashboard badge component (AC: #5)
+- Frontend: Reminder and alert UI (AC: #6, #7)
+- Testing: Unit and integration tests for aging functionality (AC: #1-#10)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Aging buckets: Current, 1–30d, 31–60d, 61–90d, >90d; per supplier
+2. Lists/badges overdue suppliers and bill totals; sort/filter by segment
+3. Drill-down from bucket → bill/payment history; filters by status/period
+4. Exportable to Excel/PDF with applied snapshot filters/criteria
+5. Dashboard badge: count of overdue payables and top overdue suppliers
+6. "Remind" triggers in-app/email, with audit log; batch send for escalated/due payables
+7. Alerts auto-notify relevant roles per schedule/config
+8. RBAC: CFO/Chief see all; AP clerk limited to assigned/own. All API/UI filtered by permissions
+9. Do not display/aggregate deleted/reversed bills; partial payments shown remaining only
+10. All alert, view, export events logged with initiator/user
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic 4 Technical Specification - AP Aging Functionality</title>
+        <section>Story 4.4: AP Aging and Overdue Alerts</section>
+        <snippet>Aging buckets calculation: Current (dueDate >= asOfDate), 1-30d (asOfDate - 30 < dueDate < asOfDate), 31-60d (asOfDate - 60 < dueDate <= asOfDate - 30), 61-90d (asOfDate - 90 < dueDate <= asOfDate - 60), >90d (dueDate <= asOfDate - 90). Per-supplier aggregation with drill-down to bill/payment history. Redis caching with TTL: 5 minutes, invalidated on bill/payment post or period close. Exportable to Excel/PDF with applied filters. Dashboard badge: count of overdue payables and top overdue suppliers. "Remind" functionality triggers in-app/email notifications with audit logging. Batch send for escalated/due payables. Auto-notify relevant roles per schedule/config. RBAC: CFO/Chief see all; AP clerk limited to assigned/own. Exclude deleted/reversed bills from aging calculations. Partial payments shown as remaining balance only.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>AP Aging Calculation Flow Flowchart</title>
+        <section>Workflows and Sequencing - AP Aging Calculation Flow</section>
+        <snippet>Flowchart showing user requests AP aging report → check Redis cache → if cache miss, query posted bills from database → filter by supplier, period, asOfDate → calculate aging buckets (Current, 1-30d, 31-60d, 61-90d, >90d) → aggregate by supplier → store in Redis cache (TTL: 5 minutes) → return aging report. Cache invalidation on bill/payment post or period close.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-3-cash-payments-linked-to-bills-standalone.md</path>
+        <title>Story 4.3 - Payment and Bill Status Tracking (Prerequisite)</title>
+        <section>Completion Notes List</section>
+        <snippet>Payment and Bill Status Tracking: Story 4.3 created APPayment entity with status tracking and PaymentAllocation for bill allocations. Payment posting updates bill statuses (PAID/PARTIALLY_PAID) and remaining_balance - aging reports can leverage these fields to calculate outstanding balances accurately. Service Layer Patterns: PaymentService with company scoping, RBAC enforcement, and transaction management patterns established - follow same patterns for APAgingService. Frontend Component Patterns: PaymentList and PaymentForm components with shadcn/ui, TanStack Table, and filtering patterns established - extend these for aging report display and drill-down components. Redis Caching Patterns: Story 4.3 mentions Redis caching for performance - aging reports should implement Redis caching with TTL: 5 minutes, invalidated on bill/payment post or period close. Account Balance Calculation: AccountBalanceService established for real-time balance calculation - aging reports can leverage similar patterns for calculating outstanding balances from bills and payments.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-1-purchase-bills-entry-edit-and-draft-management.md</path>
+        <title>Story 4.1 - PurchaseBill Entity Foundation (Prerequisite)</title>
+        <section>Completion Notes List</section>
+        <snippet>PurchaseBill Entity Foundation: Story 4.1 created the PurchaseBill entity with due_date, remaining_balance, and status tracking (DRAFT, PENDING_APPROVAL, POSTED, REJECTED, PAID, PARTIALLY_PAID) - aging reports can query POSTED bills with remaining_balance > 0. Supplier Master Data: Supplier entity and SupplierService established - aging reports aggregate by supplier and filter by supplier assignments for RBAC.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-2-purchase-bill-approval-workflow-maker-checker.md</path>
+        <title>Story 4.2 - Approval Workflow Integration (Prerequisite)</title>
+        <section>Completion Notes List</section>
+        <snippet>Approval Workflow Integration: Story 4.2 established approval workflow patterns - aging reports should only include POSTED bills (not PENDING_APPROVAL or REJECTED).</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-4-accounts-payable-ap-module.md</path>
+        <title>Epic 4 - Accounts Payable Module Overview</title>
+        <section>Story 4.4: AP Aging and Overdue Alerts</section>
+        <snippet>As an AP clerk or chief, I want to see a segmented AP aging report, spot overdue bills, and trigger follow-up, so cashflow risk is controlled real-time. Includes all 10 acceptance criteria for aging buckets, overdue detection, drill-down, export, dashboard badges, reminder/alert system, RBAC filtering, and audit logging.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/data-architecture.md</path>
+        <title>Data Architecture - Purchase Bills and AP Payments Schema</title>
+        <section>AP/AR</section>
+        <snippet>purchase_bills table structure: id, bill_number, supplier_id, date, due_date, total, remaining_balance, status, company_id. ap_payments table structure: id, supplier_id, payment_date, amount, status, company_id. Payment allocations table for many-to-many relationship with purchase_bills. Multi-tenancy via company_id row-level filtering. Aging reports query POSTED bills with remaining_balance > 0, exclude deleted/reversed bills.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/security-architecture.md</path>
+        <title>Security Architecture - RBAC and Authentication</title>
+        <section>Authorization</section>
+        <snippet>Role-Based Access Control: Admin, Accountant, Chief Accountant, CFO roles. Spring Security method-level security with @PreAuthorize annotations. API-level permission checks and company-level data isolation. CFO and Chief Accountant can see all aging data. AP clerk limited to assigned/own suppliers (filter by supplier assignments). JWT authentication with access tokens and refresh tokens.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/performance-considerations.md</path>
+        <title>Performance Considerations - Caching Strategy</title>
+        <section>Caching Strategy</section>
+        <snippet>Redis caching for reports (Trial Balance, Aging, Financial Statements). Cache TTL: 1 hour (configurable). Manual invalidation: On GL post, period close. Spring Cache abstraction with Redis backend. For aging reports: TTL: 5 minutes, cache key pattern: ap-aging:{supplierId}:{periodId}:{asOfDate}, invalidated on bill/payment post or period close.</snippet>
+      </doc>
+      <doc>
+        <path>docs/ux-design-specification.md</path>
+        <title>UX Design Specification - Report Patterns</title>
+        <section>Design System Foundation</section>
+        <snippet>shadcn/ui (Tailwind + Radix primitives) for aging report components. DataTablePro patterns for aging report table with pagination, sorting, filtering. Export functionality with Excel/PDF formats. Dashboard badge components for overdue alerts. Drill-down dialogs for bill/payment history. Persistent left sidebar navigation pattern. Follow existing report patterns for consistency.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/PurchaseBill.java</path>
+        <kind>entity</kind>
+        <symbol>PurchaseBill</symbol>
+        <lines>31-276</lines>
+        <reason>Existing purchase bill entity with due_date, remaining_balance, and status tracking (DRAFT, PENDING_APPROVAL, POSTED, REJECTED, PAID, PARTIALLY_PAID). Aging reports query POSTED bills with remaining_balance > 0, exclude deleted/reversed bills (status != DELETED, status != REVERSED). Entity includes supplier_id, bill_date, due_date, total_amount, remaining_balance fields needed for aging bucket calculation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/APPayment.java</path>
+        <kind>entity</kind>
+        <symbol>APPayment</symbol>
+        <lines>31-200</lines>
+        <reason>Existing payment entity with status tracking and PaymentAllocation for bill allocations. Payment posting updates bill statuses (PAID/PARTIALLY_PAID) and remaining_balance. Aging reports use remaining_balance (not total amount) for bills with partial payments. Entity includes supplier_id, payment_date, amount, status fields needed for payment history drill-down.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PurchaseBillService.java</path>
+        <kind>service-interface</kind>
+        <symbol>PurchaseBillService</symbol>
+        <lines>14-112</lines>
+        <reason>Existing service with CRUD operations, company scoping, and RBAC patterns. Extend with getPostedBillsForAging(supplierId, periodId, asOfDate) method to return list of POSTED bills with remaining_balance > 0 for aging calculation. Filter out deleted/reversed bills. Support filtering by supplier, period, status for drill-down functionality.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PaymentService.java</path>
+        <kind>service-interface</kind>
+        <symbol>PaymentService</symbol>
+        <lines>N/A</lines>
+        <reason>Payment service from Story 4.3 with payment allocation and posting patterns. Extend with getPaymentHistoryForBill(billId) method to return payment history for drill-down functionality. Include payment number, date, amount, allocated amount for each payment allocation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/SupplierService.java</path>
+        <kind>service-interface</kind>
+        <symbol>SupplierService</symbol>
+        <lines>N/A</lines>
+        <reason>Supplier service from Epic 2 with supplier management and assignment patterns. Extend with getAssignedSuppliersForUser(userId) method to return list of suppliers assigned to AP clerk for RBAC filtering. CFO and Chief Accountant see all suppliers, AP clerk limited to assigned/own suppliers.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service-interface</kind>
+        <symbol>AuditService</symbol>
+        <lines>10-914</lines>
+        <reason>Comprehensive audit logging interface with methods for all entity operations. Add new methods: logAgingReportViewed, logAgingReportExported, logAgingReminderSent, logAgingAlertSent. Integrate with all aging report operations for complete audit trail (AC #10).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/util/PurchaseBillAuditHelper.java</path>
+        <kind>helper</kind>
+        <symbol>PurchaseBillAuditHelper</symbol>
+        <lines>17-86</lines>
+        <reason>Audit helper with JSON snapshot serialization and SHA-256 diff hash calculation. Create similar APAgingAuditHelper for aging report operations audit logging. Reuse pattern for aging report view, export, reminder, alert operations logging (AC #10).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/purchase/SupplierPicker.tsx</path>
+        <kind>component</kind>
+        <symbol>SupplierPicker</symbol>
+        <lines>20-100</lines>
+        <reason>Supplier picker component with typeahead search pattern. Reuse for aging report supplier filter. Extend with RBAC filtering: CFO/Chief see all suppliers, AP clerk limited to assigned/own suppliers (AC #8).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/PurchaseBills/PurchaseBillList.tsx</path>
+        <kind>component</kind>
+        <symbol>PurchaseBillList</symbol>
+        <lines>N/A</lines>
+        <reason>Purchase bill list component with TanStack Table, search, filters, pagination, status badges. Follow same patterns for APAgingReport component: DataTablePro with pagination, sorting, filtering (supplier, period, asOfDate, status, bucket), aging bucket columns (Current, 1-30d, 31-60d, 61-90d, >90d, Total), drill-down functionality, export buttons (Excel, PDF).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/voucher/VoucherLineItemGrid.tsx</path>
+        <kind>component</kind>
+        <symbol>VoucherLineItemGrid</symbol>
+        <lines>N/A</lines>
+        <reason>Voucher line item grid component with editable rows, validation, add/remove functionality. Create similar AgingBillDetailsGrid component: display bills in selected aging bucket with bill number, date, due date, total amount, remaining balance, status, payment history. Support filtering by status and period. Use pagination for large result sets.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <backend>
+        <dependency name="spring-boot-starter-web" version="3.5.7">REST API endpoints for aging report operations</dependency>
+        <dependency name="spring-boot-starter-data-jpa" version="3.5.7">Persistence for aging report queries on PurchaseBill and APPayment entities</dependency>
+        <dependency name="spring-boot-starter-security" version="3.5.7">RBAC enforcement (CFO/Chief see all, AP clerk limited to assigned/own)</dependency>
+        <dependency name="spring-boot-starter-data-redis" version="3.5.7">Redis caching for aging reports (TTL: 5 minutes)</dependency>
+        <dependency name="spring-boot-starter-cache" version="3.5.7">Spring Cache abstraction with Redis backend</dependency>
+        <dependency name="apache-poi" version="5.2.5">Excel export for aging reports</dependency>
+        <dependency name="itext7-core" version="8.0.2">PDF export for aging reports</dependency>
+        <dependency name="postgresql" version="42.7.4">Database for purchase_bills and ap_payments tables</dependency>
+        <dependency name="flyway-core" version="11.10.0">Database migration for aging report indexes</dependency>
+        <dependency name="jjwt" version="0.12.5">JWT token handling for user context</dependency>
+      </backend>
+      <frontend>
+        <dependency name="react" version="18+">UI components for aging report and dashboard badge</dependency>
+        <dependency name="@tanstack/react-table" version="latest">Aging report table and drill-down grid</dependency>
+        <dependency name="shadcn/ui" version="latest">Aging report components, badges, dialogs, export buttons</dependency>
+        <dependency name="axios" version="latest">API calls for aging report operations</dependency>
+        <dependency name="date-fns" version="latest">Date formatting for aging dates and timestamps</dependency>
+        <dependency name="react-query" version="latest">Server state management for aging report data and caching</dependency>
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Multi-tenancy: All aging report operations must be company-scoped via CompanyScopedEntity and CompanyContext. Database queries filtered by company_id. PurchaseBill and APPayment entities already implement CompanyScopedEntity interface.</constraint>
+    <constraint>RBAC: CFO and Chief Accountant roles can see all aging data (no filtering). AP clerk role limited to assigned/own suppliers (filter by supplier assignments). Use @PreAuthorize annotations for method-level security. Filter applied at database query level for performance.</constraint>
+    <constraint>Aging Bucket Calculation: Calculate aging buckets based on due_date and asOfDate (report date). Use remaining_balance (not total amount) for bills with partial payments. Only include POSTED bills with remaining_balance > 0. Exclude deleted/reversed bills (status != DELETED, status != REVERSED). Aggregate by supplier for summary view, support drill-down to individual bills.</constraint>
+    <constraint>Redis Caching Strategy: Implement Redis caching for aging reports to optimize performance. Cache key pattern: ap-aging:{supplierId}:{periodId}:{asOfDate}. TTL: 5 minutes. Invalidate cache on: bill post/update (status change to POSTED, remaining_balance update), payment post (remaining_balance update), period close (aging data changes). Use Spring Cache abstraction with @Cacheable and @CacheEvict annotations.</constraint>
+    <constraint>Database Optimization: Use indexes on purchase_bills.supplier_id, purchase_bills.bill_date, purchase_bills.due_date, purchase_bills.status, purchase_bills.company_id for efficient aging queries. Avoid N+1 queries using JPA @EntityGraph for supplier and payment data. Query optimization for complex aging calculations with multiple suppliers and date ranges.</constraint>
+    <constraint>Drill-Down Functionality: Support drill-down from aging bucket to bill/payment history. Display bills in selected bucket with payment allocation details. Support filtering by status and period. Use pagination for large result sets. Include bill details: bill number, date, due date, total amount, remaining balance, status. Include payment history: payment number, date, amount, allocated amount.</constraint>
+    <constraint>Export Functionality: Support Excel and PDF export with all applied filters and snapshot criteria. Include timestamp and user information in exported file. Log export events for audit compliance. Use Apache POI for Excel export, iText for PDF export. Include all aging bucket columns and supplier details in exported file.</constraint>
+    <constraint>Reminder and Alert System: Implement reminder functionality for manual follow-up and scheduled alerts for automated notifications. Support in-app and email notifications (if services available). Log all reminder/alert events for audit compliance. Support batch operations for efficiency. Reminder message includes bill details and aging information. Batch send for escalated/due payables. Auto-notify relevant roles per schedule/config.</constraint>
+    <constraint>Dashboard Badge: Display count of overdue payables and top overdue suppliers (limit: 5). Auto-refresh badge data every 5 minutes (or on dashboard refresh). Add click handler to navigate to aging report with overdue filter applied. Add loading state while fetching data. Badge shows visual indicator (red badge) for overdue count.</constraint>
+    <constraint>Period Validation: Reuse PeriodManagementService for asOfDate validation and period close checks. Support period selector in aging report UI. Filter aging data by selected period.</constraint>
+    <constraint>Audit Trail: All aging report operations (view, export, reminder, alert) logged with user/timestamp/IP. Append-only, immutable. Follow same audit patterns as other report operations (AC #10). Include filter criteria and export format in audit log.</constraint>
+    <constraint>Transaction Integrity: Aging report queries wrapped in @Transactional with read-only optimization. Cache operations use Redis with proper error handling and fallback to database on cache miss.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GET /api/v1/ap-aging</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/ap-aging?page=0&amp;size=20&amp;sort=supplierName,asc&amp;supplier={supplierId}&amp;period={periodId}&amp;asOfDate={date}&amp;status={status}&amp;bucket={bucket} - Response: Page&lt;APAgingReportDTO&gt; with pagination metadata, aging buckets per supplier</signature>
+      <path>backend/src/main/java/com/accounting/controller/ap/APAgingController.java (new)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/ap-aging/overdue</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/ap-aging/overdue?period={periodId}&amp;asOfDate={date}&amp;limit={limit} - Response: List&lt;OverdueSupplierDTO&gt; with top overdue suppliers for dashboard badge</signature>
+      <path>backend/src/main/java/com/accounting/controller/ap/APAgingController.java (new)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/ap-aging/overdue/count</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/ap-aging/overdue/count?period={periodId}&amp;asOfDate={date} - Response: OverdueCountDTO with count of overdue payables for dashboard badge</signature>
+      <path>backend/src/main/java/com/accounting/controller/ap/APAgingController.java (new)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/ap-aging/{supplierId}/bills</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/ap-aging/{supplierId}/bills?bucket={bucket}&amp;period={periodId}&amp;asOfDate={date}&amp;status={status}&amp;page=0&amp;size=20 - Response: Page&lt;AgingBillDetailsDTO&gt; with bill/payment history for drill-down</signature>
+      <path>backend/src/main/java/com/accounting/controller/ap/APAgingController.java (new)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/ap-aging/export</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/ap-aging/export?format={excel|pdf}&amp;supplier={supplierId}&amp;period={periodId}&amp;asOfDate={date}&amp;status={status}&amp;bucket={bucket} - Response: File download (Excel or PDF), @PreAuthorize("hasAnyRole('ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO', 'ADMIN')")</signature>
+      <path>backend/src/main/java/com/accounting/controller/ap/APAgingController.java (new)</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/ap-aging/remind</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/ap-aging/remind - Request: ReminderRequestDTO {supplierId?, billIds[], recipients[], message?}, Response: ReminderResultDTO, Triggers in-app/email notifications, audit logging</signature>
+      <path>backend/src/main/java/com/accounting/controller/ap/APAgingController.java (new)</path>
+    </interface>
+    <interface>
+      <name>POST /api/v1/ap-aging/remind/batch</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/ap-aging/remind/batch - Request: BatchReminderRequestDTO {supplierIds[], recipients[], message?}, Response: BatchReminderResultDTO, Batch send for escalated/due payables</signature>
+      <path>backend/src/main/java/com/accounting/controller/ap/APAgingController.java (new)</path>
+    </interface>
+    <interface>
+      <name>APAgingService.calculateAgingBuckets</name>
+      <kind>service method</kind>
+      <signature>APAgingBucketDTO calculateAgingBuckets(Long supplierId, LocalDate asOfDate, Long periodId) - Calculates aging buckets (Current, 1-30d, 31-60d, 61-90d, >90d) for supplier, uses remaining_balance, excludes deleted/reversed bills, cached with Redis</signature>
+      <path>backend/src/main/java/com/accounting/service/APAgingService.java (new)</path>
+    </interface>
+    <interface>
+      <name>APAgingService.getAgingReport</name>
+      <kind>service method</kind>
+      <signature>Page&lt;APAgingReportDTO&gt; getAgingReport(APAgingFilter filter, Pageable pageable) - Returns paginated aging report with filters (supplier, period, asOfDate, status, bucket), RBAC filtering applied, cached with Redis</signature>
+      <path>backend/src/main/java/com/accounting/service/APAgingService.java (new)</path>
+    </interface>
+    <interface>
+      <name>APAgingService.getOverdueSuppliers</name>
+      <kind>service method</kind>
+      <signature>List&lt;OverdueSupplierDTO&gt; getOverdueSuppliers(Long periodId, LocalDate asOfDate, Integer limit) - Returns top overdue suppliers for dashboard badge, RBAC filtering applied</signature>
+      <path>backend/src/main/java/com/accounting/service/APAgingService.java (new)</path>
+    </interface>
+    <interface>
+      <name>APAgingService.getOverdueCount</name>
+      <kind>service method</kind>
+      <signature>OverdueCountDTO getOverdueCount(Long periodId, LocalDate asOfDate) - Returns count of overdue payables for dashboard badge, RBAC filtering applied</signature>
+      <path>backend/src/main/java/com/accounting/service/APAgingService.java (new)</path>
+    </interface>
+    <interface>
+      <name>APAgingService.getAgingBillDetails</name>
+      <kind>service method</kind>
+      <signature>Page&lt;AgingBillDetailsDTO&gt; getAgingBillDetails(Long supplierId, String bucket, Long periodId, LocalDate asOfDate, AgingBillFilter filter, Pageable pageable) - Returns paginated bill/payment history for drill-down, includes bill details and payment history, RBAC filtering applied</signature>
+      <path>backend/src/main/java/com/accounting/service/APAgingService.java (new)</path>
+    </interface>
+    <interface>
+      <name>APAgingService.exportAgingReport</name>
+      <kind>service method</kind>
+      <signature>byte[] exportAgingReport(String format, APAgingFilter filter) - Exports aging report to Excel or PDF format, includes all applied filters and snapshot criteria, audit logging</signature>
+      <path>backend/src/main/java/com/accounting/service/APAgingService.java (new)</path>
+    </interface>
+    <interface>
+      <name>APAgingAlertService.sendReminder</name>
+      <kind>service method</kind>
+      <signature>ReminderResultDTO sendReminder(Long supplierId, List&lt;Long&gt; billIds, List&lt;String&gt; recipients, String message) - Sends reminder notification (in-app/email) with bill details and aging information, audit logging</signature>
+      <path>backend/src/main/java/com/accounting/service/APAgingAlertService.java (new)</path>
+    </interface>
+    <interface>
+      <name>APAgingAlertService.sendBatchReminders</name>
+      <kind>service method</kind>
+      <signature>BatchReminderResultDTO sendBatchReminders(List&lt;Long&gt; supplierIds, List&lt;String&gt; recipients, String message) - Sends batch reminders for escalated/due payables, audit logging</signature>
+      <path>backend/src/main/java/com/accounting/service/APAgingAlertService.java (new)</path>
+    </interface>
+    <interface>
+      <name>APAgingAlertService.scheduleAutoAlerts</name>
+      <kind>service method</kind>
+      <signature>void scheduleAutoAlerts(Long periodId, LocalDate asOfDate, List&lt;String&gt; roles) - Schedules auto-notifications for relevant roles per schedule/config, audit logging</signature>
+      <path>backend/src/main/java/com/accounting/service/APAgingAlertService.java (new)</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Follow testing patterns established in Stories 4.1, 4.2, and 4.3: Use TestContainers with PostgreSQL for integration tests. Mock Redis cache in unit tests, use real Redis in integration tests. Test aging bucket calculation with various scenarios (all buckets, edge cases, partial payments). Verify RBAC filtering at service and API levels. Test cache invalidation on bill/payment post and period close. Validate export functionality (Excel and PDF formats). Test reminder/alert functionality (manual and scheduled). Verify audit logging for all operations. Backend: JUnit 5 + Mockito + AssertJ. Frontend: Vitest + Testing Library. Target: 70% coverage for service layer, critical flows for integration tests.</standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/impl/ap/APAgingServiceImplTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/service/impl/ap/APAgingAlertServiceImplTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/controller/ap/APAgingControllerIntegrationTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/integration/APAgingCacheIntegrationTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/integration/APAgingRBACIntegrationTest.java (new)</location>
+      <location>backend/src/test/java/com/accounting/integration/APAgingExportIntegrationTest.java (new)</location>
+      <location>frontend/src/components/ap-aging/__tests__/APAgingReport.test.tsx (new)</location>
+      <location>frontend/src/components/ap-aging/__tests__/APAgingBadge.test.tsx (new)</location>
+      <location>frontend/src/components/ap-aging/__tests__/AgingBillDetailsDialog.test.tsx (new)</location>
+      <location>frontend/src/components/ap-aging/__tests__/ReminderDialog.test.tsx (new)</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test aging bucket calculation: Current (dueDate >= asOfDate), 1-30d (asOfDate - 30 < dueDate < asOfDate), 31-60d (asOfDate - 60 < dueDate <= asOfDate - 30), 61-90d (asOfDate - 90 < dueDate <= asOfDate - 60), >90d (dueDate <= asOfDate - 90). Test per-supplier aggregation. Test edge cases: bills on boundary dates, bills with no due date, bills with future due dates.</idea>
+      <idea ac="2">Test overdue suppliers list and badges display correctly. Test sort/filter by segment (bucket). Test bill totals aggregated correctly per supplier. Test overdue badges highlight suppliers with overdue amounts.</idea>
+      <idea ac="3">Test drill-down from bucket to bill/payment history. Test filters by status and period work correctly. Test pagination for large result sets. Test bill details include: bill number, date, due date, total amount, remaining balance, status. Test payment history includes: payment number, date, amount, allocated amount.</idea>
+      <idea ac="4">Test export to Excel and PDF formats. Test all applied filters included in exported file. Test snapshot criteria (timestamp, user, filters) included in exported file. Test export events logged via AuditService.</idea>
+      <idea ac="5">Test dashboard badge displays count of overdue payables correctly. Test top overdue suppliers list (limit: 5) displayed correctly. Test click handler navigates to aging report with overdue filter applied. Test auto-refresh badge data every 5 minutes. Test loading state while fetching data.</idea>
+      <idea ac="6">Test "Remind" functionality triggers in-app/email notifications. Test reminder message includes bill details and aging information. Test audit log entry created for reminder. Test batch send for escalated/due payables works correctly.</idea>
+      <idea ac="7">Test alerts auto-notify relevant roles per schedule/config. Test alert configuration UI (admin-only) for scheduled alerts. Test alert schedules (daily, weekly, monthly) work correctly. Test alert thresholds (days overdue, amount thresholds) work correctly. Test recipient roles configured correctly.</idea>
+      <idea ac="8">Test RBAC filtering: CFO/Chief see all aging data, AP clerk limited to assigned/own suppliers. Test API endpoints filtered by permissions. Test UI hides suppliers not assigned to AP clerk. Test supplier assignments checked at database query level.</idea>
+      <idea ac="9">Test deleted/reversed bills excluded from aging calculations. Test partial payments shown as remaining balance only (not total amount). Test only POSTED bills with remaining_balance > 0 included in aging report.</idea>
+      <idea ac="10">Test all alert, view, export events logged with initiator/user. Test audit log includes: action type, user ID, timestamp, IP address, filter criteria, export format. Test audit trail append-only and immutable.</idea>
+    </ideas>
+  </tests>
+</story-context>
+

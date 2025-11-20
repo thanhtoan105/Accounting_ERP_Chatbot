@@ -17,5 +17,13 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long>, JpaSp
      */
     List<AuditLog> findByEntityTypeAndEntityIdAndCompanyIdOrderByCreatedAtDesc(
             String entityType, String entityId, Long companyId);
+
+    /**
+     * Find the latest audit log for a company to calculate chain hash.
+     *
+     * @param companyId company ID
+     * @return optional latest audit log
+     */
+    java.util.Optional<AuditLog> findFirstByCompanyIdOrderByCreatedAtDesc(Long companyId);
 }
 

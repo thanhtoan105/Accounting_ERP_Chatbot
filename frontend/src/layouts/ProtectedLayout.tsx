@@ -56,24 +56,9 @@ const navItems: NavItem[] = [
     requiredRoles: ['admin', 'accountant', 'chief_accountant'],
   },
   {
-    path: '/voucher-templates',
-    label: 'Voucher Templates',
-    requiredRoles: ['admin', 'chief_accountant', 'cfo'],
-  },
-  {
-    path: '/voucher-types',
-    label: 'Voucher Types',
-    requiredRoles: ['admin', 'chief_accountant'],
-  },
-  {
-    path: '/chart-of-accounts',
-    label: 'Chart of Accounts',
-    requiredRoles: ['admin', 'chief_accountant'],
-  },
-  {
-    path: '/default-accounts',
-    label: 'Default Accounts',
-    requiredRoles: ['admin', 'chief_accountant'],
+    path: '/purchase-bills',
+    label: 'Purchase Bills',
+    requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
   },
   {
     path: '/customers',
@@ -92,7 +77,7 @@ const navItems: NavItem[] = [
   },
   {
     path: '/admin/audit-logs',
-    label: 'Audit Logs / Nhật ký kiểm toán',
+    label: 'Audit Logs',
     requiredRoles: ['admin', 'chief_accountant'],
   },
 ]
@@ -169,9 +154,63 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   })
 
   // Move Company Settings from main nav to user submenu in the sidebar footer
+  // Category items for sidebar menu
+  const categoryItems: Array<{
+    title: string
+    url: string
+    requiredRoles: Role[]
+  }> = [
+    {
+      title: 'Chart of Accounts',
+      url: '/chart-of-accounts',
+      requiredRoles: ['admin', 'chief_accountant'],
+    },
+    {
+      title: 'Voucher Templates',
+      url: '/voucher-templates',
+      requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+    },
+    {
+      title: 'Voucher Types',
+      url: '/voucher-types',
+      requiredRoles: ['admin', 'chief_accountant'],
+    },
+  ]
+
+  // Filter category items based on role
+  const visibleCategoryItems = categoryItems.filter((item) => {
+    if (!item.requiredRoles || item.requiredRoles.length === 0) {
+      return true
+    }
+    return hasAnyRole(item.requiredRoles)
+  })
+
+  // Build sidebar items with Purchase menu structure
   const sidebarItems = visibleNavItems
     .filter((i) => i.path !== '/company')
-    .map((i) => ({ title: i.label, url: i.path }))
+    .map((i) => {
+      // Check if this is Purchase Bills - create Purchase menu (without Category)
+      if (i.path === '/purchase-bills') {
+        return {
+          title: 'Purchase',
+          url: i.path,
+          items: [{ title: 'Purchase Bills', url: '/purchase-bills' }],
+        }
+      }
+      return { title: i.label, url: i.path }
+    })
+
+  // Add Category as a separate menu item if there are visible category items
+  if (visibleCategoryItems.length > 0) {
+    sidebarItems.push({
+      title: 'Category',
+      url: '#', // Not a clickable link, just a submenu trigger
+      items: visibleCategoryItems.map((cat) => ({
+        title: cat.title,
+        url: cat.url,
+      })),
+    })
+  }
 
   return (
     <SidebarProvider>

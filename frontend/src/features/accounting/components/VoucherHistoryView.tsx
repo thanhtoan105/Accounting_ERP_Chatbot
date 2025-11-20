@@ -5,7 +5,6 @@ import {
   ChevronDown,
   ChevronRight,
   Download,
-  Filter,
   Search,
   User,
   Calendar,
@@ -69,10 +68,10 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
       a.click()
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
-      toast.success(`Đã xuất lịch sử thành công (${format.toUpperCase()})`)
+      toast.success(`Exported successfully (${format.toUpperCase()})`)
     } catch (error) {
       console.error('Export failed:', error)
-      toast.error('Không thể xuất lịch sử')
+      toast.error('Cannot export voucher history')
     }
   }
 
@@ -102,7 +101,9 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
 
   // Get unique actions and users for filters
   const uniqueActions = Array.from(new Set(history.map((e) => e.action))).sort()
-  const uniqueUsers = Array.from(new Set(history.map((e) => e.userEmail).filter(Boolean))).sort()
+  const uniqueUsers = Array.from(
+    new Set(history.map((e) => e.userEmail).filter((email): email is string => Boolean(email)))
+  ).sort()
 
   const getActionBadgeVariant = (action: string) => {
     if (action.includes('CREATED')) return 'default'
@@ -171,7 +172,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Tìm kiếm..."
+                placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
@@ -179,10 +180,10 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
           </div>
           <Select value={actionFilter} onValueChange={setActionFilter}>
             <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Tất cả hành động" />
+              <SelectValue placeholder="All actions" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả hành động</SelectItem>
+              <SelectItem value="all">All actions</SelectItem>
               {uniqueActions.map((action) => (
                 <SelectItem key={action} value={action}>
                   {action.replace('VOUCHER_', '').replace('_', ' ')}
@@ -192,10 +193,10 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
           </Select>
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Tất cả người dùng" />
+              <SelectValue placeholder="All users" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả người dùng</SelectItem>
+              <SelectItem value="all">All users</SelectItem>
               {uniqueUsers.map((user) => (
                 <SelectItem key={user} value={user}>
                   {user}
@@ -207,7 +208,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
 
         {/* History entries */}
         {filteredHistory.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">Không có lịch sử nào</div>
+          <div className="text-center py-8 text-muted-foreground">No history found</div>
         ) : (
           <div className="space-y-3">
             {filteredHistory.map((entry) => {
@@ -237,13 +238,13 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
                         {entry.success === false && (
                           <Badge variant="destructive">
                             <XCircle className="h-3 w-3 mr-1" />
-                            Thất bại
+                            Failed
                           </Badge>
                         )}
                         {entry.success === true && (
                           <Badge variant="default" className="bg-green-600">
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            Thành công
+                            Success
                           </Badge>
                         )}
                       </div>
@@ -268,7 +269,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
                       {/* Field-level diff */}
                       {hasDiff && (
                         <div className="space-y-2">
-                          <h4 className="text-sm font-semibold">Thay đổi chi tiết:</h4>
+                          <h4 className="text-sm font-semibold">Change details:</h4>
                           <div className="space-y-1">
                             {Object.entries(entry.diff!).map(([field, diff]) => (
                               <div
@@ -278,24 +279,24 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
                                 <div className="font-medium">{field}:</div>
                                 {diff.changeType === 'ADDED' && (
                                   <div className="mt-1">
-                                    <span className="font-semibold">Thêm:</span>{' '}
+                                    <span className="font-semibold">Added:</span>{' '}
                                     {String(diff.afterValue)}
                                   </div>
                                 )}
                                 {diff.changeType === 'REMOVED' && (
                                   <div className="mt-1">
-                                    <span className="font-semibold">Xóa:</span>{' '}
+                                        <span className="font-semibold">Removed:</span>{' '}
                                     {String(diff.beforeValue)}
                                   </div>
                                 )}
                                 {diff.changeType === 'CHANGED' && (
                                   <div className="mt-1 space-y-1">
                                     <div>
-                                      <span className="font-semibold">Từ:</span>{' '}
+                                      <span className="font-semibold">From:</span>{' '}
                                       {String(diff.beforeValue)}
                                     </div>
                                     <div>
-                                      <span className="font-semibold">Sang:</span>{' '}
+                                        <span className="font-semibold">To:</span>{' '}
                                       {String(diff.afterValue)}
                                     </div>
                                   </div>
@@ -315,7 +316,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
                         )}
                         {entry.userRole && (
                           <div>
-                            <span className="font-medium">Vai trò:</span> {entry.userRole}
+                            <span className="font-medium">Role:</span> {entry.userRole}
                           </div>
                         )}
                         {entry.diffHash && (
@@ -327,7 +328,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
                         {entry.failureReason && (
                           <div className="col-span-2 text-red-600">
                             <AlertCircle className="h-3 w-3 inline mr-1" />
-                            <span className="font-medium">Lý do thất bại:</span>{' '}
+                            <span className="font-medium">Failure reason:</span>{' '}
                             {entry.failureReason}
                           </div>
                         )}
