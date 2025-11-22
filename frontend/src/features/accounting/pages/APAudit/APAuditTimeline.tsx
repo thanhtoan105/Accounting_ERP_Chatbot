@@ -15,9 +15,8 @@ import {
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
+import type { ColumnDef, SortingState } from '@tanstack/react-table'
 import {
-  ColumnDef,
-  SortingState,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
@@ -52,7 +51,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { apAuditService } from '@/services/apAudit'
-import { APAuditTimelineDTO } from '@/types/apAudit'
+import type { APAuditTimelineDTO } from '@/types/apAudit'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]
 

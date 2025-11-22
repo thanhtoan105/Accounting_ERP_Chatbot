@@ -19,6 +19,8 @@ import {
   SalesInvoiceForm,
   PaymentList,
   PaymentForm,
+  ReceiptList,
+  ReceiptForm,
   APAgingReport,
   VATReportList,
   VATCorrectionList,
@@ -178,6 +180,46 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
               <SalesInvoiceForm />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/receipts"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <ReceiptList />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/receipts/new"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant']}>
+              <ReceiptForm />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/receipts/:receiptId"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <ReceiptForm />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/receipts/:receiptId/edit"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant']}>
+              <ReceiptForm />
             </RoleGuard>
           </ProtectedLayout>
         }

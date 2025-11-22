@@ -23,8 +23,10 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * SalesInvoice entity representing customer invoices in the accounts receivable module.
- * Invoices can be in draft, pending approval, posted, rejected, paid, or partially paid status.
+ * SalesInvoice entity representing customer invoices in the accounts receivable
+ * module.
+ * Invoices can be in draft, pending approval, posted, rejected, paid, or
+ * partially paid status.
  */
 @Entity
 @Table(name = "sales_invoices")
@@ -77,6 +79,14 @@ public class SalesInvoice implements CompanyScopedEntity {
   @NotNull
   @Column(name = "vat_amount", nullable = false, precision = 19, scale = 2)
   private BigDecimal vatAmount = BigDecimal.ZERO;
+
+  @NotNull
+  @Column(name = "amount_paid", nullable = false, precision = 19, scale = 2)
+  private BigDecimal amountPaid = BigDecimal.ZERO;
+
+  @NotNull
+  @Column(name = "remaining_balance", nullable = false, precision = 19, scale = 2)
+  private BigDecimal remainingBalance = BigDecimal.ZERO;
 
   @NotNull
   @Column(name = "created_by_id", nullable = false)
@@ -220,6 +230,22 @@ public class SalesInvoice implements CompanyScopedEntity {
 
   public void setVatAmount(BigDecimal vatAmount) {
     this.vatAmount = vatAmount;
+  }
+
+  public BigDecimal getAmountPaid() {
+    return amountPaid;
+  }
+
+  public void setAmountPaid(BigDecimal amountPaid) {
+    this.amountPaid = amountPaid;
+  }
+
+  public BigDecimal getRemainingBalance() {
+    return remainingBalance;
+  }
+
+  public void setRemainingBalance(BigDecimal remainingBalance) {
+    this.remainingBalance = remainingBalance;
   }
 
   public Long getCreatedById() {

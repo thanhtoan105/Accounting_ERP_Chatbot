@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { apAuditService } from '@/services/apAudit'
-import { AbuseDetectionResultDTO } from '@/types/apAudit'
+import type { AbuseDetectionResultDTO } from '@/types/apAudit'
 import { format } from 'date-fns'
 
 export function APAuditAbuseView() {

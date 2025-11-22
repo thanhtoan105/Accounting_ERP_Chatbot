@@ -43,17 +43,17 @@ Object.defineProperty(global, 'localStorage', {
 
 // Mock ResizeObserver for tests (required by Radix UI components)
 global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() { }
+  unobserve() { }
+  disconnect() { }
 }
 
 // Mock pointer capture methods for Radix UI Select components
 if (typeof Element !== 'undefined') {
   Element.prototype.hasPointerCapture = Element.prototype.hasPointerCapture || (() => false)
-  Element.prototype.setPointerCapture = Element.prototype.setPointerCapture || (() => {})
-  Element.prototype.releasePointerCapture = Element.prototype.releasePointerCapture || (() => {})
-  Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {})
+  Element.prototype.setPointerCapture = Element.prototype.setPointerCapture || (() => { })
+  Element.prototype.releasePointerCapture = Element.prototype.releasePointerCapture || (() => { })
+  Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => { })
 }
 
 // Mock window.matchMedia for tests (required by use-mobile hook and useTheme hook)
@@ -70,3 +70,34 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn(),
   })),
 })
+
+// Global mock for useRole hook to provide default role functions
+// Individual tests can override these using vi.mocked()
+vi.mock('@/hooks/useRole', async () => {
+  return {
+    useRole: () => ({
+      role: 'ACCOUNTANT',
+      isAdmin: () => false,
+      isChiefAccountant: () => false,
+      canManageUsers: () => false,
+      canViewReports: () => true,
+      canCreateVouchers: () => true,
+      canApproveVouchers: () => false,
+      canChangeRoles: () => false,
+      getRoleDisplayName: () => 'Accountant',
+      hasRole: () => false,
+      hasAnyRole: () => false,
+      hasAllRoles: () => false,
+      isValidRole: () => true,
+    }),
+  }
+})
+
+// Global mock for useAuth hook
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: { id: 1, role: 'ACCOUNTANT', email: 'test@example.com', fullName: 'Test User' },
+    isAuthenticated: true,
+    loading: false,
+  }),
+}))

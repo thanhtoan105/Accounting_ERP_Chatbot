@@ -14,8 +14,8 @@ import {
   CheckCircle,
   XCircle,
   RotateCcw,
-  Plus,
   Send,
+  RefreshCw,
 } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
@@ -24,14 +24,8 @@ import { toast } from 'sonner'
 import {
   SalesInvoiceLineGrid,
   type SalesInvoiceLine,
-} from '@/components/purchase/SalesInvoiceLineGrid'
-import { CustomerPicker } from '@/components/purchase/CustomerPicker'
-import {
-  SalesInvoiceAttachmentDropzone,
-  SalesInvoiceAttachmentManagementModal,
-  ApprovalDecisionDialog,
-  ApprovalWorkflowHistory,
-} from '@/components/purchase'
+} from '@/components/sales/SalesInvoiceLineGrid'
+import { CustomerPicker } from '@/components/sales/CustomerPicker'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -50,7 +44,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Calendar } from '@/components/ui/calendar'
-import { Separator } from '@/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -60,6 +53,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
+import { SalesInvoiceApprovalDialog } from '@/components/sales/SalesInvoiceApprovalDialog'
+import { SalesInvoiceApprovalHistory } from '@/components/sales/SalesInvoiceApprovalHistory'
+import { useRole } from '@/hooks/useRole'
 
 import type { AccountSummary } from '@/components/account/AccountPicker'
 import useUndoRedo from '@/hooks/useUndoRedo'
@@ -68,8 +64,6 @@ import { getCompanyId } from '@/utils/axios'
 import type {
   SalesInvoiceDTO,
   SalesInvoiceCreateRequest,
-  SalesInvoiceStatus,
-  SalesInvoiceValidationResult,
   VatRate,
 } from '@/types/salesInvoice'
 import {
@@ -77,8 +71,8 @@ import {
   validateSalesInvoice,
   updateSalesInvoice,
   getSalesInvoiceById,
-  saveDraft,
   submitForApproval,
+  getPendingApprovals,
 } from '@/services/salesInvoice'
 import { getPostableAccounts } from '@/services/chartOfAccounts'
 import type { ChartOfAccount } from '@/types/chartOfAccount'
@@ -89,10 +83,10 @@ import { VATCorrectionDialog } from '../VATReports/VATCorrectionDialog'
 import { ApproveVATCorrectionDialog } from '../VATReports/ApproveVATCorrectionDialog'
 
 const formSchema = z.object({
-  customerId: z.number({ required_error: 'Customer is required' }),
+  customerId: z.number({ message: 'Customer is required' }),
   invoiceNumber: z.string().min(1, 'Invoice number is required'),
-  invoiceDate: z.string({ required_error: 'Invoice date is required' }),
-  dueDate: z.string({ required_error: 'Due date is required' }),
+  invoiceDate: z.string({ message: 'Invoice date is required' }),
+  dueDate: z.string({ message: 'Due date is required' }),
   reference: z
     .string()
     .min(1, 'Reference is required')
@@ -244,6 +238,7 @@ export default function SalesInvoiceForm() {
   const invoiceId = params.invoiceId && params.invoiceId !== 'new' ? params.invoiceId : undefined
   const isEditing = Boolean(invoiceId)
   const { user } = useAuth()
+  const { canApproveVouchers } = useRole()
   const currentUserId = user?.id ? String(user.id) : 'anonymous'
   const companyId = getCompanyId()
   const draftStorageKey = buildDraftKey(companyId, invoiceId)
@@ -307,8 +302,7 @@ export default function SalesInvoiceForm() {
   const [loadingInvoice, setLoadingInvoice] = useState(false)
   const [editingInvoice, setEditingInvoice] = useState<SalesInvoiceDTO | null>(null)
   const [autoSaveError, setAutoSaveError] = useState<string | null>(null)
-  const [attachmentCount, setAttachmentCount] = useState(0)
-  const [attachmentModalOpen, setAttachmentModalOpen] = useState(false)
+  const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null)
   const [approvalDialogAction, setApprovalDialogAction] = useState<'approve' | 'reject' | null>(
     null,
   )
@@ -369,11 +363,6 @@ export default function SalesInvoiceForm() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!invoiceId) return
-    loadVatCorrections()
-  }, [invoiceId, loadVatCorrections])
-
   const linePayload = useMemo(() => {
     return lines.map((line, index) => ({
       lineNumber: index + 1,
@@ -395,7 +384,7 @@ export default function SalesInvoiceForm() {
       const lineNumber = index + 1
       const baseAmount = typeof line.amount === 'number' ? line.amount : 0
       const vatAmount = typeof line.vatAmount === 'number' ? line.vatAmount : 0
-      const rate = line.vatRate ?? 'ZERO'
+      const rate: VatRate = line.vatRate ?? 'ZERO'
       if (rate !== COMPANY_DEFAULT_VAT_RATE) {
         issues.push({
           severity: 'warning',
@@ -441,7 +430,7 @@ export default function SalesInvoiceForm() {
     if (!invoiceId) return
     try {
       setVatCorrectionsLoading(true)
-      const list = await vatService.listCorrections({ invoiceId })
+      const list = await vatService.listCorrections({ billId: invoiceId })
       setVatCorrections(list)
     } catch (error) {
       toast.error(`Failed to load VAT corrections: ${String(error)}`)
@@ -449,6 +438,11 @@ export default function SalesInvoiceForm() {
       setVatCorrectionsLoading(false)
     }
   }, [invoiceId])
+
+  useEffect(() => {
+    if (!invoiceId) return
+    loadVatCorrections()
+  }, [invoiceId, loadVatCorrections])
 
   function buildRequest(values: SalesInvoiceFormValues): SalesInvoiceCreateRequest {
     return {
@@ -567,14 +561,13 @@ export default function SalesInvoiceForm() {
         }))
         resetLines(convertedLines.length > 0 ? convertedLines : createInitialLines())
         setEditingInvoice(invoice)
-        setAttachmentCount(invoice.attachmentCount || 0)
         setValidationMap({})
         setHeaderErrors({})
       })
       .catch((error) => {
         console.error(error)
         toast.error('Failed to load sales invoice')
-        navigate('/purchase-invoices')
+        navigate('/sales-invoices')
       })
       .finally(() => {
         if (mounted) setLoadingInvoice(false)
@@ -583,6 +576,39 @@ export default function SalesInvoiceForm() {
       mounted = false
     }
   }, [accounts, invoiceId, form, isEditing, loadingAccounts, navigate, resetLines])
+
+  // Load active approval workflow ID for pending-approval invoices
+  useEffect(() => {
+    if (!invoiceId || editingInvoice?.status !== 'PENDING_APPROVAL') {
+      setActiveWorkflowId(null)
+      return
+    }
+
+    let cancelled = false
+
+    async function loadActiveWorkflow() {
+      try {
+        const workflows = await getPendingApprovals()
+        if (cancelled) return
+        const workflow = workflows.find(
+          (w) => w.salesInvoiceId === invoiceId && w.status === 'PENDING',
+        )
+        setActiveWorkflowId(workflow ? workflow.id : null)
+      } catch (error: any) {
+        if (!cancelled) {
+          toast.error('Failed to load approval workflow', {
+            description: error?.message,
+          })
+        }
+      }
+    }
+
+    loadActiveWorkflow()
+
+    return () => {
+      cancelled = true
+    }
+  }, [invoiceId, editingInvoice?.status])
 
   const runServerValidation = useCallback(
     async (silent = true) => {
@@ -632,7 +658,7 @@ export default function SalesInvoiceForm() {
         isEditing && invoiceId
           ? await updateSalesInvoice(invoiceId, payload)
           : await createSalesInvoice(payload)
-      toast.success(isEditing ? 'Purchase invoice updated' : 'Purchase invoice created', {
+      toast.success(isEditing ? 'Sales invoice updated' : 'Sales invoice created', {
         description: `Invoice Number: ${response.invoiceNumber}`,
       })
       if (!isEditing) {
@@ -645,7 +671,7 @@ export default function SalesInvoiceForm() {
         const updated = await getSalesInvoiceById(invoiceId)
         setEditingInvoice(updated)
       } else {
-        navigate(`/purchase-invoices/${response.id}`)
+        navigate(`/sales-invoices/${response.id}`)
       }
     } catch (err: any) {
       toast.error('Failed to save sales invoice', { description: err?.message })
@@ -670,7 +696,7 @@ export default function SalesInvoiceForm() {
         return
       }
       await submitForApproval(invoiceId)
-      toast.success('Purchase invoice submitted for approval', {
+      toast.success('Sales invoice submitted for approval', {
         description: 'Chief Accountant/CFO will be notified',
       })
       // Reload invoice to update status
@@ -700,6 +726,8 @@ export default function SalesInvoiceForm() {
   }, [lines])
 
   const isReadOnly = editingInvoice?.status === 'POSTED' || editingInvoice?.status === 'PAID'
+  const canApprove = canApproveVouchers()
+  const attachmentCount = editingInvoice?.attachmentCount ?? 0
 
   if (loadingInvoice || loadingAccounts) {
     return (
@@ -714,7 +742,7 @@ export default function SalesInvoiceForm() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/purchase-invoices')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/sales-invoices')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -771,12 +799,7 @@ export default function SalesInvoiceForm() {
               Redo
             </Button>
           )}
-          {isEditing && invoiceId && (
-            <Button variant="outline" size="sm" onClick={() => setAttachmentModalOpen(true)}>
-              <FileText className="mr-2 h-4 w-4" />
-              Attachments {attachmentCount > 0 && `(${attachmentCount})`}
-            </Button>
-          )}
+          {/* Attachments management for sales invoices will be implemented in a future story */}
         </div>
       </div>
 
@@ -1071,7 +1094,7 @@ export default function SalesInvoiceForm() {
                         vatCorrections.map((correction) => (
                           <TableRow key={correction.id}>
                             <TableCell className="font-mono text-xs">
-                              {correction.salesInvoiceLineId ?? 'Invoice total'}
+                              {correction.purchaseBillLineId ?? 'Invoice total'}
                             </TableCell>
                             <TableCell
                               className="max-w-xs truncate text-sm"
@@ -1131,30 +1154,7 @@ export default function SalesInvoiceForm() {
             </Card>
           )}
 
-          {/* Attachments - only show if invoiceId exists (after first save) */}
-          {invoiceId && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Attachments</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SalesInvoiceAttachmentDropzone
-                  invoiceId={invoiceId}
-                  disabled={isReadOnly}
-                  maxSize={20 * 1024 * 1024} // 20MB
-                  maxFiles={10}
-                  existingCount={attachmentCount}
-                  onUploadSuccess={() => {
-                    setAttachmentCount((prev) => prev + 1)
-                    toast.success('Attachment uploaded successfully')
-                  }}
-                  onUploadError={(file, error) => {
-                    toast.error('Upload failed', { description: error })
-                  }}
-                />
-              </CardContent>
-            </Card>
-          )}
+          {/* Attachments upload for sales invoices will be implemented in a future story */}
 
           <Card>
             <CardHeader>
@@ -1238,7 +1238,7 @@ export default function SalesInvoiceForm() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate('/purchase-invoices')}
+              onClick={() => navigate('/sales-invoices')}
               disabled={saving}
             >
               Cancel
@@ -1299,8 +1299,11 @@ export default function SalesInvoiceForm() {
               </Button>
             )}
 
-            {/* Approve/Reject buttons - only show for PENDING_APPROVAL invoices */}
-            {isEditing && editingInvoice?.status === 'PENDING_APPROVAL' && (
+            {/* Approve/Reject buttons - only show for PENDING_APPROVAL invoices and approver roles */}
+            {isEditing &&
+              editingInvoice?.status === 'PENDING_APPROVAL' &&
+              canApprove &&
+              activeWorkflowId && (
               <>
                 <Button
                   type="button"
@@ -1331,7 +1334,7 @@ export default function SalesInvoiceForm() {
           <VATCorrectionDialog
             open={correctionDialogOpen}
             onOpenChange={setCorrectionDialogOpen}
-            defaultInvoiceId={invoiceId}
+            defaultBillId={invoiceId}
             onCreated={() => {
               loadVatCorrections()
             }}
@@ -1356,14 +1359,14 @@ export default function SalesInvoiceForm() {
       {/* Approval Workflow History - show for all editing invoices */}
       {isEditing && invoiceId && (
         <div className="mt-6">
-          <ApprovalWorkflowHistory invoiceId={invoiceId} />
+          <SalesInvoiceApprovalHistory invoiceId={invoiceId} />
         </div>
       )}
 
       {/* Approval Decision Dialog */}
-      {invoiceId && editingInvoice && (
-        <ApprovalDecisionDialog
-          invoiceId={invoiceId}
+      {invoiceId && editingInvoice && approvalDialogAction && activeWorkflowId && (
+        <SalesInvoiceApprovalDialog
+          workflowId={activeWorkflowId}
           invoiceNumber={editingInvoice.invoiceNumber || ''}
           action={approvalDialogAction}
           open={approvalDialogAction !== null}
@@ -1372,28 +1375,7 @@ export default function SalesInvoiceForm() {
         />
       )}
 
-      {/* Attachment Management Modal */}
-      {isEditing && invoiceId && (
-        <SalesInvoiceAttachmentManagementModal
-          invoiceId={invoiceId}
-          open={attachmentModalOpen}
-          onOpenChange={setAttachmentModalOpen}
-          canDelete={!isReadOnly && editingInvoice?.status === 'DRAFT'}
-          onAttachmentDeleted={() => {
-            setAttachmentCount((prev) => Math.max(0, prev - 1))
-            // Reload invoice to get updated attachment count
-            if (invoiceId) {
-              getSalesInvoiceById(invoiceId)
-                .then((invoice) => {
-                  setAttachmentCount(invoice.attachmentCount || 0)
-                })
-                .catch(() => {
-                  // Silently fail
-                })
-            }
-          }}
-        />
-      )}
+      {/* Attachment Management Modal for sales invoices will be implemented in a future story */}
     </div>
   )
 }
