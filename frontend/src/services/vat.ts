@@ -1,4 +1,4 @@
-import { fetchWithAuth } from '@/utils/api'
+import { fetchWithAuth } from '@/utils/axios'
 import type {
   InputVATReportDTO,
   InputVATReportRequest,

@@ -38,7 +38,7 @@ import type {
   VATExportFormat,
   VATReportHistoryItem,
 } from '@/types/vat'
-import { cn } from '@/utils/format'
+import { cn } from '@/lib/utils'
 import { GenerateVATReportDialog } from './GenerateVATReportDialog'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]

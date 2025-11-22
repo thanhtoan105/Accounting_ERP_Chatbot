@@ -126,7 +126,8 @@ public class ApprovalWorkflowServiceImplTest {
         testWorkflow.setUpdatedAt(Instant.now());
 
         lenient().when(periodManagementService.isDateInOpenPeriod(any())).thenReturn(true);
-        lenient().when(vatService.validateVATSum(any())).thenReturn(new com.accounting.dto.VATValidationResultDTO(true));
+        lenient().when(vatService.validateVATSum(any(com.accounting.entity.PurchaseBill.class)))
+                .thenReturn(new com.accounting.dto.VATValidationResultDTO(true));
     }
 
     // ==================== checkApprovalRequired Tests ====================
@@ -205,17 +206,14 @@ public class ApprovalWorkflowServiceImplTest {
         assertThat(result.getThresholdAmount()).isEqualByComparingTo(DEFAULT_THRESHOLD);
         assertThat(result.getBillAmount()).isEqualByComparingTo(testBill.getTotalAmount());
 
-        verify(purchaseBillRepository).save(argThat(bill ->
-            bill.getStatus() == PurchaseBillStatus.PENDING_APPROVAL
-        ));
+        verify(purchaseBillRepository).save(argThat(bill -> bill.getStatus() == PurchaseBillStatus.PENDING_APPROVAL));
         verify(approvalWorkflowRepository).save(any(ApprovalWorkflow.class));
         verify(auditService).logPurchaseBillSubmittedForApproval(
-            eq(COMPANY_ID),
-            eq(CREATOR_USER_ID),
-            eq(testBill.getId()),
-            eq(testBill.getTotalAmount()),
-            eq(DEFAULT_THRESHOLD)
-        );
+                eq(COMPANY_ID),
+                eq(CREATOR_USER_ID),
+                eq(testBill.getId()),
+                eq(testBill.getTotalAmount()),
+                eq(DEFAULT_THRESHOLD));
     }
 
     @Test
@@ -226,8 +224,8 @@ public class ApprovalWorkflowServiceImplTest {
 
         // When & Then
         assertThatThrownBy(() -> approvalWorkflowService.submitForApproval(nonExistentBillId, CREATOR_USER_ID))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Purchase bill not found");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Purchase bill not found");
     }
 
     // ==================== approve Tests ====================
@@ -239,16 +237,16 @@ public class ApprovalWorkflowServiceImplTest {
         when(purchaseBillRepository.findById(testBill.getId())).thenReturn(Optional.of(testBill));
         when(approvalWorkflowRepository.save(any(ApprovalWorkflow.class))).thenReturn(testWorkflow);
         when(purchaseBillLineRepository.findByCompanyIdAndPurchaseBillIdOrderByLineNumberAsc(
-            eq(COMPANY_ID), eq(testBill.getId())
-        )).thenReturn(List.of(createLine(1, new BigDecimal("1000000"), BigDecimal.ZERO, 610L)));
+                eq(COMPANY_ID), eq(testBill.getId())))
+                .thenReturn(List.of(createLine(1, new BigDecimal("1000000"), BigDecimal.ZERO, 610L)));
         ChartOfAccount apAccount = new ChartOfAccount();
         apAccount.setId(331L);
         ChartOfAccount vatAccount = new ChartOfAccount();
         vatAccount.setId(3331L);
         when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "331"))
-            .thenReturn(Optional.of(apAccount));
+                .thenReturn(Optional.of(apAccount));
         when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "3331"))
-            .thenReturn(Optional.of(vatAccount));
+                .thenReturn(Optional.of(vatAccount));
         VoucherDTO voucher = new VoucherDTO();
         voucher.setId(UUID.randomUUID());
         when(voucherService.create(any(VoucherCreateRequest.class))).thenReturn(voucher);
@@ -257,24 +255,19 @@ public class ApprovalWorkflowServiceImplTest {
 
         // When
         ApprovalWorkflowDTO result = approvalWorkflowService.approve(
-            testWorkflow.getId(), APPROVER_USER_ID, approvalReason
-        );
+                testWorkflow.getId(), APPROVER_USER_ID, approvalReason);
 
         // Then
         assertThat(result).isNotNull();
-        verify(approvalWorkflowRepository).save(argThat(workflow ->
-            workflow.getStatus() == ApprovalWorkflowStatus.APPROVED &&
-            workflow.getApprovedById().equals(APPROVER_USER_ID) &&
-            workflow.getApprovalReason().equals(approvalReason) &&
-            workflow.getApprovedAt() != null
-        ));
-        verify(purchaseBillRepository).save(argThat(bill ->
-            bill.getStatus() == PurchaseBillStatus.POSTED &&
-            bill.getApprovedById().equals(APPROVER_USER_ID)
-        ));
+        verify(approvalWorkflowRepository)
+                .save(argThat(workflow -> workflow.getStatus() == ApprovalWorkflowStatus.APPROVED &&
+                        workflow.getApprovedById().equals(APPROVER_USER_ID) &&
+                        workflow.getApprovalReason().equals(approvalReason) &&
+                        workflow.getApprovedAt() != null));
+        verify(purchaseBillRepository).save(argThat(bill -> bill.getStatus() == PurchaseBillStatus.POSTED &&
+                bill.getApprovedById().equals(APPROVER_USER_ID)));
         verify(auditService).logPurchaseBillApproved(
-            eq(COMPANY_ID), eq(APPROVER_USER_ID), eq(testBill.getId()), eq(approvalReason)
-        );
+                eq(COMPANY_ID), eq(APPROVER_USER_ID), eq(testBill.getId()), eq(approvalReason));
     }
 
     @Test
@@ -283,26 +276,24 @@ public class ApprovalWorkflowServiceImplTest {
         when(purchaseBillRepository.findById(testBill.getId())).thenReturn(Optional.of(testBill));
         when(approvalWorkflowRepository.save(any(ApprovalWorkflow.class))).thenReturn(testWorkflow);
         when(purchaseBillLineRepository.findByCompanyIdAndPurchaseBillIdOrderByLineNumberAsc(
-            eq(COMPANY_ID), eq(testBill.getId())
-        )).thenReturn(List.of(
-            createLine(1, new BigDecimal("1000000"), new BigDecimal("100000"), 610L),
-            createLine(2, new BigDecimal("500000"), BigDecimal.ZERO, 620L)
-        ));
+                eq(COMPANY_ID), eq(testBill.getId()))).thenReturn(List.of(
+                        createLine(1, new BigDecimal("1000000"), new BigDecimal("100000"), 610L),
+                        createLine(2, new BigDecimal("500000"), BigDecimal.ZERO, 620L)));
 
         ChartOfAccount apAccount = new ChartOfAccount();
         apAccount.setId(331L);
         ChartOfAccount vatAccount = new ChartOfAccount();
         vatAccount.setId(3331L);
         when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "331"))
-            .thenReturn(java.util.Optional.of(apAccount));
+                .thenReturn(java.util.Optional.of(apAccount));
         when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "3331"))
-            .thenReturn(java.util.Optional.of(vatAccount));
+                .thenReturn(java.util.Optional.of(vatAccount));
 
         VoucherDTO createdVoucher = new VoucherDTO();
         createdVoucher.setId(UUID.randomUUID());
         createdVoucher.setVoucherNumber("VN-001");
-        org.mockito.ArgumentCaptor<VoucherCreateRequest> captor =
-            org.mockito.ArgumentCaptor.forClass(VoucherCreateRequest.class);
+        org.mockito.ArgumentCaptor<VoucherCreateRequest> captor = org.mockito.ArgumentCaptor
+                .forClass(VoucherCreateRequest.class);
         when(voucherService.create(captor.capture())).thenReturn(createdVoucher);
 
         approvalWorkflowService.approve(testWorkflow.getId(), APPROVER_USER_ID, "VAT ok");
@@ -336,8 +327,8 @@ public class ApprovalWorkflowServiceImplTest {
 
         // When & Then
         assertThatThrownBy(() -> approvalWorkflowService.approve(nonExistentWorkflowId, APPROVER_USER_ID, null))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Approval workflow not found");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Approval workflow not found");
     }
 
     @Test
@@ -348,8 +339,8 @@ public class ApprovalWorkflowServiceImplTest {
 
         // When & Then
         assertThatThrownBy(() -> approvalWorkflowService.approve(testWorkflow.getId(), APPROVER_USER_ID, null))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("Workflow must be in PENDING status");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Workflow must be in PENDING status");
     }
 
     @Test
@@ -359,8 +350,8 @@ public class ApprovalWorkflowServiceImplTest {
 
         // When & Then
         assertThatThrownBy(() -> approvalWorkflowService.approve(testWorkflow.getId(), CREATOR_USER_ID, null))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Approver cannot be the same as creator");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Approver cannot be the same as creator");
     }
 
     // ==================== reject Tests ====================
@@ -377,39 +368,36 @@ public class ApprovalWorkflowServiceImplTest {
 
         // When
         ApprovalWorkflowDTO result = approvalWorkflowService.reject(
-            testWorkflow.getId(), APPROVER_USER_ID, rejectionReason
-        );
+                testWorkflow.getId(), APPROVER_USER_ID, rejectionReason);
 
         // Then
         assertThat(result).isNotNull();
-        verify(approvalWorkflowRepository).save(argThat(workflow ->
-            workflow.getStatus() == ApprovalWorkflowStatus.REJECTED &&
-            workflow.getApprovedById().equals(APPROVER_USER_ID) &&
-            workflow.getRejectionReason().equals(rejectionReason) &&
-            workflow.getRejectedAt() != null
-        ));
+        verify(approvalWorkflowRepository)
+                .save(argThat(workflow -> workflow.getStatus() == ApprovalWorkflowStatus.REJECTED &&
+                        workflow.getApprovedById().equals(APPROVER_USER_ID) &&
+                        workflow.getRejectionReason().equals(rejectionReason) &&
+                        workflow.getRejectedAt() != null));
         org.mockito.ArgumentCaptor<PurchaseBill> billCaptor = org.mockito.ArgumentCaptor.forClass(PurchaseBill.class);
         verify(purchaseBillRepository).save(billCaptor.capture());
         assertThat(billCaptor.getValue().getStatus()).isEqualTo(PurchaseBillStatus.REJECTED);
         verify(auditService).logPurchaseBillRejected(
-            eq(COMPANY_ID), eq(APPROVER_USER_ID), eq(testBill.getId()), eq(rejectionReason)
-        );
+                eq(COMPANY_ID), eq(APPROVER_USER_ID), eq(testBill.getId()), eq(rejectionReason));
     }
 
     @Test
     void reject_shouldThrowException_whenReasonIsNull() {
         // When & Then
         assertThatThrownBy(() -> approvalWorkflowService.reject(testWorkflow.getId(), APPROVER_USER_ID, null))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Rejection reason is mandatory");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Rejection reason is mandatory");
     }
 
     @Test
     void reject_shouldThrowException_whenReasonIsEmpty() {
         // When & Then
         assertThatThrownBy(() -> approvalWorkflowService.reject(testWorkflow.getId(), APPROVER_USER_ID, "   "))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Rejection reason is mandatory");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Rejection reason is mandatory");
     }
 
     @Test
@@ -419,10 +407,9 @@ public class ApprovalWorkflowServiceImplTest {
 
         // When & Then
         assertThatThrownBy(() -> approvalWorkflowService.reject(
-            testWorkflow.getId(), CREATOR_USER_ID, "Some reason"
-        ))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Approver cannot be the same as creator");
+                testWorkflow.getId(), CREATOR_USER_ID, "Some reason"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Approver cannot be the same as creator");
     }
 
     // ==================== autoApprove Tests ====================
@@ -439,20 +426,18 @@ public class ApprovalWorkflowServiceImplTest {
 
         // Then
         assertThat(result).isNotNull();
-        verify(approvalWorkflowRepository).save(argThat(workflow ->
-            workflow.getStatus() == ApprovalWorkflowStatus.AUTO_APPROVED &&
-            workflow.getCreatedById().equals(CREATOR_USER_ID) &&
-            workflow.getApprovedById().equals(CREATOR_USER_ID) &&
-            workflow.getApprovedAt() != null &&
-            workflow.getApprovalReason().contains("Auto-approved")
-        ));
+        verify(approvalWorkflowRepository)
+                .save(argThat(workflow -> workflow.getStatus() == ApprovalWorkflowStatus.AUTO_APPROVED &&
+                        workflow.getCreatedById().equals(CREATOR_USER_ID) &&
+                        workflow.getApprovedById().equals(CREATOR_USER_ID) &&
+                        workflow.getApprovedAt() != null &&
+                        workflow.getApprovalReason().contains("Auto-approved")));
         verify(auditService).logPurchaseBillAutoApproved(
-            eq(COMPANY_ID),
-            eq(CREATOR_USER_ID),
-            eq(testBill.getId()),
-            any(BigDecimal.class),
-            any(BigDecimal.class)
-        );
+                eq(COMPANY_ID),
+                eq(CREATOR_USER_ID),
+                eq(testBill.getId()),
+                any(BigDecimal.class),
+                any(BigDecimal.class));
     }
 
     // ==================== getPendingApprovals Tests ====================
@@ -463,7 +448,7 @@ public class ApprovalWorkflowServiceImplTest {
         ApprovalWorkflow workflow1 = createTestWorkflow(UUID.randomUUID(), "BILL-001");
         ApprovalWorkflow workflow2 = createTestWorkflow(UUID.randomUUID(), "BILL-002");
         when(approvalWorkflowRepository.findByStatus(ApprovalWorkflowStatus.PENDING))
-            .thenReturn(List.of(workflow1, workflow2));
+                .thenReturn(List.of(workflow1, workflow2));
         when(purchaseBillRepository.findById(any())).thenReturn(Optional.of(testBill));
 
         // When
@@ -487,7 +472,7 @@ public class ApprovalWorkflowServiceImplTest {
         approvedWorkflow.setStatus(ApprovalWorkflowStatus.APPROVED);
 
         when(approvalWorkflowRepository.findByPurchaseBillId(testBill.getId()))
-            .thenReturn(List.of(pendingWorkflow, approvedWorkflow));
+                .thenReturn(List.of(pendingWorkflow, approvedWorkflow));
         when(purchaseBillRepository.findById(testBill.getId())).thenReturn(Optional.of(testBill));
 
         // When
@@ -495,7 +480,8 @@ public class ApprovalWorkflowServiceImplTest {
 
         // Then
         assertThat(results).hasSize(2);
-        assertThat(results).extracting("status").containsExactlyInAnyOrder(ApprovalWorkflowStatus.PENDING, ApprovalWorkflowStatus.APPROVED);
+        assertThat(results).extracting("status").containsExactlyInAnyOrder(ApprovalWorkflowStatus.PENDING,
+                ApprovalWorkflowStatus.APPROVED);
         verify(approvalWorkflowRepository).findByPurchaseBillId(testBill.getId());
     }
 

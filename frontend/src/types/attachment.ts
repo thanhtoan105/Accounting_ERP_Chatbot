@@ -39,3 +39,24 @@ export interface PurchaseBillAttachmentUploadResponse {
   data: PurchaseBillAttachmentDTO
   message: string
 }
+
+export interface SalesInvoiceAttachmentDTO {
+  id: string
+  salesInvoiceId: string
+  fileName: string
+  mimeType: string
+  fileSize: number
+  uploadedAt: string
+  uploadedBy: number | null
+  uploadedByName: string | null
+}
+
+export interface SalesInvoiceAttachmentListResponse {
+  data: SalesInvoiceAttachmentDTO[]
+  count: number
+}
+
+export interface SalesInvoiceAttachmentUploadResponse {
+  data: SalesInvoiceAttachmentDTO
+  message: string
+}

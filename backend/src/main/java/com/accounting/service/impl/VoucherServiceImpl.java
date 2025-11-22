@@ -767,7 +767,8 @@ public class VoucherServiceImpl implements VoucherService {
    * Logs blocked attempts in audit trail.
    *
    * @param voucherDate voucher date to validate
-   * @param periodId optional period ID (if provided, validates specific period)
+   * @param periodId    optional period ID (if provided, validates specific
+   *                    period)
    * @return true if period is open, throws ResponseStatusException if closed
    */
   private boolean validatePeriodForVoucher(LocalDate voucherDate, UUID periodId) {
@@ -775,7 +776,8 @@ public class VoucherServiceImpl implements VoucherService {
       // First validate that date is in an open period
       if (!periodManagementService.isDateInOpenPeriod(voucherDate)) {
         // Find the period for this date to get period details for error message
-        Optional<com.accounting.dto.AccountingPeriodDTO> periodOpt = periodManagementService.findPeriodByDate(voucherDate);
+        Optional<com.accounting.dto.AccountingPeriodDTO> periodOpt = periodManagementService
+            .findPeriodByDate(voucherDate);
 
         String periodName = periodOpt
             .map(com.accounting.dto.AccountingPeriodDTO::getPeriodName)
@@ -786,16 +788,14 @@ public class VoucherServiceImpl implements VoucherService {
           auditService.logPeriodValidationBlocked(
               periodOpt.map(com.accounting.dto.AccountingPeriodDTO::getId).orElse(null),
               "VOUCHER_CREATION",
-              "Cannot create voucher in closed or future period: " + periodName
-          );
+              "Cannot create voucher in closed or future period: " + periodName);
         } catch (Exception e) {
           logger.error("Failed to log period validation block to audit trail", e);
         }
 
         throw new ResponseStatusException(
             HttpStatus.BAD_REQUEST,
-            "Cannot create voucher in closed or future period: " + periodName
-        );
+            "Cannot create voucher in closed or future period: " + periodName);
       }
 
       // Validate that the period is open
@@ -811,16 +811,14 @@ public class VoucherServiceImpl implements VoucherService {
           auditService.logPeriodValidationBlocked(
               periodId,
               "VOUCHER_CREATION",
-              "Cannot create voucher in closed period: " + periodName
-          );
+              "Cannot create voucher in closed period: " + periodName);
         } catch (Exception e) {
           logger.error("Failed to log period validation block to audit trail", e);
         }
 
         throw new ResponseStatusException(
             HttpStatus.BAD_REQUEST,
-            "Cannot create voucher in closed period: " + periodName
-        );
+            "Cannot create voucher in closed period: " + periodName);
       }
 
       return true;
@@ -831,8 +829,19 @@ public class VoucherServiceImpl implements VoucherService {
       logger.error("Failed to validate period for voucher", e);
       throw new ResponseStatusException(
           HttpStatus.INTERNAL_SERVER_ERROR,
-          "Failed to validate period for voucher creation"
-      );
+          "Failed to validate period for voucher creation");
     }
+  }
+
+  @Override
+  public VoucherDTO postSalesInvoiceVoucher(
+      com.accounting.entity.SalesInvoice salesInvoice, Long userId) {
+    // This method signature exists for test compatibility.
+    // The actual implementation is in
+    // SalesInvoiceApprovalServiceImpl.postSalesInvoiceVoucher()
+    // which creates the voucher and posts it via VoucherPostingService.
+    throw new UnsupportedOperationException(
+        "Use SalesInvoiceApprovalService.approve() or SalesInvoiceApprovalService.submitForApproval() "
+            + "to post sales invoice vouchers. Direct voucher posting for sales invoices is not supported.");
   }
 }

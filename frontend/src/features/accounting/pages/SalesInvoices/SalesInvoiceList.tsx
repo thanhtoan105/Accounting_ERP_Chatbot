@@ -13,8 +13,6 @@ import {
   Trash2,
   MoreVertical,
   Plus,
-  Upload,
-  RotateCcw,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import type { ColumnDef, SortingState } from '@tanstack/react-table'
@@ -64,7 +62,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { getSalesInvoices, deleteSalesInvoice } from '@/services/salesInvoice'
-import { SalesInvoiceImportDialog, DraftRecoveryDialog } from '@/components/purchase'
+// Import/draft recovery for sales invoices will be implemented in a future story
 import type {
   SalesInvoiceListDTO,
   SalesInvoiceQueryParams,
@@ -199,12 +197,6 @@ export default function SalesInvoiceList() {
   const [deleteReason, setDeleteReason] = useState('')
   const [deleting, setDeleting] = useState(false)
 
-  // Import dialog
-  const [importDialogOpen, setImportDialogOpen] = useState(false)
-
-  // Draft recovery dialog
-  const [draftRecoveryDialogOpen, setDraftRecoveryDialogOpen] = useState(false)
-
   // Save to localStorage whenever filters change
   useEffect(() => {
     saveToStorage('status', status)
@@ -290,7 +282,7 @@ export default function SalesInvoiceList() {
 
   const handleRefresh = async () => {
     await loadInvoices()
-    toast.success('Purchase invoices refreshed')
+    toast.success('Sales invoices refreshed')
   }
 
   const handleDelete = async () => {
@@ -302,7 +294,7 @@ export default function SalesInvoiceList() {
     try {
       setDeleting(true)
       await deleteSalesInvoice(invoiceToDelete.id, deleteReason.trim())
-      toast.success('Purchase invoice deleted successfully')
+      toast.success('Sales invoice deleted successfully')
       setDeleteDialogOpen(false)
       setInvoiceToDelete(null)
       setDeleteReason('')
@@ -315,16 +307,6 @@ export default function SalesInvoiceList() {
     } finally {
       setDeleting(false)
     }
-  }
-
-  const handleResetFilters = () => {
-    setStatus('all')
-    setCustomer(undefined)
-    setDateFrom('')
-    setDateTo('')
-    setSearch('')
-    setSorting([])
-    setPage(0)
   }
 
   const columns = useMemo<ColumnDef<SalesInvoiceListDTO>[]>(
@@ -413,7 +395,7 @@ export default function SalesInvoiceList() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate(`/purchase-invoices/${invoice.id}`)}>
+                <DropdownMenuItem onClick={() => navigate(`/sales-invoices/${invoice.id}`)}>
                   <FileText className="mr-2 h-4 w-4" />
                   View
                 </DropdownMenuItem>
@@ -458,7 +440,7 @@ export default function SalesInvoiceList() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
-            Sales Invoices <span className="text-muted-foreground text-lg">/ Hóa đơn mua hàng</span>
+            Sales Invoices <span className="text-muted-foreground text-lg">/ Hóa đơn bán hàng</span>
           </h1>
           <p className="text-muted-foreground">
             View, search, and manage sales invoices with server-side pagination.
@@ -469,15 +451,7 @@ export default function SalesInvoiceList() {
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            Import
-          </Button>
-          <Button variant="outline" onClick={() => setDraftRecoveryDialogOpen(true)}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Recover Draft
-          </Button>
-          <Button onClick={() => navigate('/purchase-invoices/new')}>
+          <Button onClick={() => navigate('/sales-invoices/new')}>
             <Plus className="mr-2 h-4 w-4" />
             Create Sales Invoice
           </Button>
@@ -666,7 +640,7 @@ export default function SalesInvoiceList() {
                 <TableRow
                   key={row.id}
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => navigate(`/purchase-invoices/${row.original.id}`)}
+                  onClick={() => navigate(`/sales-invoices/${row.original.id}`)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -746,21 +720,7 @@ export default function SalesInvoiceList() {
         </div>
       </div>
 
-      {/* Import Dialog */}
-      <SalesInvoiceImportDialog
-        open={importDialogOpen}
-        onOpenChange={setImportDialogOpen}
-        onSuccess={() => {
-          loadInvoices()
-          toast.success('Purchase invoices imported successfully')
-        }}
-      />
-
-      {/* Draft Recovery Dialog */}
-      <DraftRecoveryDialog
-        open={draftRecoveryDialogOpen}
-        onOpenChange={setDraftRecoveryDialogOpen}
-      />
+      {/* Import and draft recovery for sales invoices will be added in a future story */}
     </div>
   )
 }

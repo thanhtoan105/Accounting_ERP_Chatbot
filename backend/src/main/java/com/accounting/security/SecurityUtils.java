@@ -46,4 +46,19 @@ public class SecurityUtils {
           HttpStatus.UNAUTHORIZED, "Unable to determine current user");
     }
   }
+
+  /**
+   * Check if current user has specific role.
+   *
+   * @param role role name (without ROLE_ prefix)
+   * @return true if user has role
+   */
+  public static boolean hasRole(String role) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null) {
+      return false;
+    }
+    return authentication.getAuthorities().stream()
+        .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
+  }
 }

@@ -16,12 +16,14 @@ public interface VoucherService {
   /**
    * Find all vouchers with pagination, filtering, and sorting support.
    *
-   * @param pageable pagination and sorting parameters
-   * @param status filter by status (optional: draft, posted, unposted)
-   * @param dateFrom filter by date from (optional)
-   * @param dateTo filter by date to (optional)
-   * @param search search term for voucher number or description (optional, supports Vietnamese unaccented matching)
-   * @param accountId filter by account ID (optional, filters vouchers that have lines with this account)
+   * @param pageable  pagination and sorting parameters
+   * @param status    filter by status (optional: draft, posted, unposted)
+   * @param dateFrom  filter by date from (optional)
+   * @param dateTo    filter by date to (optional)
+   * @param search    search term for voucher number or description (optional,
+   *                  supports Vietnamese unaccented matching)
+   * @param accountId filter by account ID (optional, filters vouchers that have
+   *                  lines with this account)
    * @return paginated list of vouchers
    */
   Page<VoucherListDTO> findAll(
@@ -55,7 +57,8 @@ public interface VoucherService {
    *
    * @param request voucher create request with line items
    * @return created voucher DTO
-   * @throws org.springframework.web.server.ResponseStatusException if validation fails
+   * @throws org.springframework.web.server.ResponseStatusException if validation
+   *                                                                fails
    */
   VoucherDTO create(VoucherCreateRequest request);
 
@@ -63,9 +66,12 @@ public interface VoucherService {
    * Update an existing draft voucher.
    *
    * @param voucherId voucher ID
-   * @param request voucher update request with line items
+   * @param request   voucher update request with line items
    * @return updated voucher DTO
-   * @throws org.springframework.web.server.ResponseStatusException if validation fails or voucher is not draft
+   * @throws org.springframework.web.server.ResponseStatusException if validation
+   *                                                                fails or
+   *                                                                voucher is not
+   *                                                                draft
    */
   VoucherDTO update(UUID voucherId, VoucherCreateRequest request);
 
@@ -73,9 +79,23 @@ public interface VoucherService {
    * Delete voucher with validation.
    *
    * @param voucherId voucher ID
-   * @param reason deletion reason (required)
-   * @param request HTTP request for audit logging
-   * @throws org.springframework.web.server.ResponseStatusException if validation fails
+   * @param reason    deletion reason (required)
+   * @param request   HTTP request for audit logging
+   * @throws org.springframework.web.server.ResponseStatusException if validation
+   *                                                                fails
    */
   void delete(UUID voucherId, String reason, jakarta.servlet.http.HttpServletRequest request);
+
+  /**
+   * Post a sales invoice voucher (Dr 131 / Cr 5xx / Cr 3332).
+   * Creates voucher entries for the sales invoice and posts them.
+   *
+   * @param salesInvoice sales invoice to post
+   * @param userId       user ID performing the posting
+   * @return posted voucher DTO
+   * @throws org.springframework.web.server.ResponseStatusException if validation
+   *                                                                fails
+   */
+  VoucherDTO postSalesInvoiceVoucher(
+      com.accounting.entity.SalesInvoice salesInvoice, Long userId);
 }

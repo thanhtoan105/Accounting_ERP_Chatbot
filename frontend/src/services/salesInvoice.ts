@@ -37,7 +37,7 @@ export async function getSalesInvoices(
     })
   }
 
-  const url = `${API_BASE}/purchase-invoices${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+  const url = `${API_BASE}/ar/sales-invoices${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
   const res = await fetchWithAuth(url, {
     method: 'GET',
   })
@@ -45,7 +45,7 @@ export async function getSalesInvoices(
 }
 
 export async function getSalesInvoiceById(id: string): Promise<SalesInvoiceDTO> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/${id}`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/${id}`, {
     method: 'GET',
   })
   const payload = await handleJsonResponse<{ data: SalesInvoiceDTO }>(res)
@@ -55,7 +55,7 @@ export async function getSalesInvoiceById(id: string): Promise<SalesInvoiceDTO> 
 export async function createSalesInvoice(
   request: SalesInvoiceCreateRequest,
 ): Promise<SalesInvoiceDTO> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices`, {
     method: 'POST',
     body: JSON.stringify(request),
   })
@@ -71,7 +71,7 @@ export async function updateSalesInvoice(
   id: string,
   request: SalesInvoiceCreateRequest,
 ): Promise<SalesInvoiceDTO> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/${id}`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/${id}`, {
     method: 'PUT',
     body: JSON.stringify(request),
   })
@@ -88,7 +88,7 @@ export async function deleteSalesInvoice(invoiceId: string, reason: string): Pro
   queryParams.append('reason', reason)
 
   const res = await fetchWithAuth(
-    `${API_BASE}/purchase-invoices/${invoiceId}?${queryParams.toString()}`,
+    `${API_BASE}/ar/sales-invoices/${invoiceId}?${queryParams.toString()}`,
     {
       method: 'DELETE',
     },
@@ -103,7 +103,7 @@ export async function validateSalesInvoice(
   id: string,
   request: SalesInvoiceCreateRequest,
 ): Promise<SalesInvoiceValidationResult> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/${id}/validate`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/${id}/validate`, {
     method: 'POST',
     body: JSON.stringify(request),
   })
@@ -118,7 +118,7 @@ export async function saveDraft(
   id: string,
   request: SalesInvoiceCreateRequest,
 ): Promise<SalesInvoiceDTO> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/${id}/save-draft`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/${id}/save-draft`, {
     method: 'POST',
     body: JSON.stringify(request),
   })
@@ -131,7 +131,7 @@ export async function saveDraft(
 }
 
 export async function getDrafts(): Promise<SalesInvoiceDTO[]> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/drafts`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/drafts`, {
     method: 'GET',
   })
   const payload = await handleJsonResponse<{ data: SalesInvoiceDTO[] }>(res)
@@ -139,7 +139,7 @@ export async function getDrafts(): Promise<SalesInvoiceDTO[]> {
 }
 
 export async function recoverDraft(id: string): Promise<SalesInvoiceDTO> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/${id}/recover`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/${id}/recover`, {
     method: 'POST',
   })
   if (!res.ok) {
@@ -208,7 +208,7 @@ export async function uploadSalesInvoiceAttachment(
       reject(new Error('Upload aborted'))
     })
 
-    xhr.open('POST', `${API_BASE}/purchase-invoices/${invoiceId}/attachments`)
+    xhr.open('POST', `${API_BASE}/ar/sales-invoices/${invoiceId}/attachments`)
     Object.entries(headers).forEach(([key, value]) => {
       xhr.setRequestHeader(key, value)
     })
@@ -219,7 +219,7 @@ export async function uploadSalesInvoiceAttachment(
 export async function getSalesInvoiceAttachments(
   invoiceId: string,
 ): Promise<import('../types/attachment').SalesInvoiceAttachmentDTO[]> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/${invoiceId}/attachments`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/${invoiceId}/attachments`, {
     method: 'GET',
   })
   if (!res.ok) {
@@ -236,7 +236,7 @@ export async function downloadSalesInvoiceAttachment(
   attachmentId: string,
 ): Promise<void> {
   const res = await fetchWithAuth(
-    `${API_BASE}/purchase-invoices/${invoiceId}/attachments/${attachmentId}/download`,
+    `${API_BASE}/ar/sales-invoices/${invoiceId}/attachments/${attachmentId}/download`,
     {
       method: 'GET',
     },
@@ -261,7 +261,7 @@ export async function previewSalesInvoiceAttachment(
   attachmentId: string,
 ): Promise<string> {
   const res = await fetchWithAuth(
-    `${API_BASE}/purchase-invoices/${invoiceId}/attachments/${attachmentId}/preview`,
+    `${API_BASE}/ar/sales-invoices/${invoiceId}/attachments/${attachmentId}/preview`,
     {
       method: 'GET',
     },
@@ -283,7 +283,7 @@ export async function deleteSalesInvoiceAttachment(
   queryParams.append('reason', reason)
 
   const res = await fetchWithAuth(
-    `${API_BASE}/purchase-invoices/${invoiceId}/attachments/${attachmentId}?${queryParams.toString()}`,
+    `${API_BASE}/ar/sales-invoices/${invoiceId}/attachments/${attachmentId}?${queryParams.toString()}`,
     {
       method: 'DELETE',
     },
@@ -349,7 +349,7 @@ export async function batchImportSalesInvoices(
       reject(new Error('Import aborted'))
     })
 
-    xhr.open('POST', `${API_BASE}/purchase-invoices/batch-import`)
+    xhr.open('POST', `${API_BASE}/ar/sales-invoices/batch-import`)
     Object.entries(headers).forEach(([key, value]) => {
       xhr.setRequestHeader(key, value)
     })
@@ -358,7 +358,7 @@ export async function batchImportSalesInvoices(
 }
 
 export async function downloadSalesInvoiceImportTemplate(): Promise<void> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/import-template`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/import-template`, {
     method: 'GET',
   })
   if (!res.ok) {
@@ -405,7 +405,7 @@ export interface ApprovalWorkflowDTO {
 
 export async function submitForApproval(invoiceId: string): Promise<ApprovalWorkflowDTO> {
   const res = await fetchWithAuth(
-    `${API_BASE}/purchase-invoices/${invoiceId}/submit-for-approval`,
+    `${API_BASE}/ar/sales-invoices/${invoiceId}/submit-for-approval`,
     {
       method: 'POST',
     },
@@ -419,10 +419,10 @@ export async function submitForApproval(invoiceId: string): Promise<ApprovalWork
 }
 
 export async function approveSalesInvoice(
-  invoiceId: string,
+  workflowId: string,
   reason?: string,
 ): Promise<ApprovalWorkflowDTO> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/${invoiceId}/approve`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/approvals/${workflowId}/approve`, {
     method: 'POST',
     body: reason ? JSON.stringify({ reason }) : undefined,
   })
@@ -435,10 +435,10 @@ export async function approveSalesInvoice(
 }
 
 export async function rejectSalesInvoice(
-  invoiceId: string,
+  workflowId: string,
   reason: string,
 ): Promise<ApprovalWorkflowDTO> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/${invoiceId}/reject`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/approvals/${workflowId}/reject`, {
     method: 'POST',
     body: JSON.stringify({ reason }),
   })
@@ -451,7 +451,7 @@ export async function rejectSalesInvoice(
 }
 
 export async function getPendingApprovals(): Promise<ApprovalWorkflowDTO[]> {
-  const res = await fetchWithAuth(`${API_BASE}/approval-workflows/pending`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/approvals/pending`, {
     method: 'GET',
   })
   const payload = await handleJsonResponse<ApprovalWorkflowDTO[]>(res)
@@ -459,7 +459,7 @@ export async function getPendingApprovals(): Promise<ApprovalWorkflowDTO[]> {
 }
 
 export async function getApprovalHistory(invoiceId: string): Promise<ApprovalWorkflowDTO[]> {
-  const res = await fetchWithAuth(`${API_BASE}/purchase-invoices/${invoiceId}/approval-history`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/${invoiceId}/approval-history`, {
     method: 'GET',
   })
   const payload = await handleJsonResponse<ApprovalWorkflowDTO[]>(res)
@@ -467,9 +467,9 @@ export async function getApprovalHistory(invoiceId: string): Promise<ApprovalWor
 }
 
 export async function getPendingApprovalsCount(): Promise<number> {
-  const res = await fetchWithAuth(`${API_BASE}/approval-workflows/pending/count`, {
+  const res = await fetchWithAuth(`${API_BASE}/ar/sales-invoices/approvals/pending/count`, {
     method: 'GET',
   })
-  const payload = await handleJsonResponse<number>(res)
-  return payload
+  const payload = await handleJsonResponse<{ count: number }>(res)
+  return payload.count
 }

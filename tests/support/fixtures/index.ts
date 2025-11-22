@@ -1,7 +1,9 @@
 import { test as base } from '@playwright/test';
 import { UserFactory } from './factories/user-factory';
 import { SupplierFactory } from './factories/supplier-factory';
+import { CustomerFactory } from './factories/customer-factory';
 import { PurchaseBillFactory } from './factories/purchase-bill-factory';
+import { SalesInvoiceFactory } from './factories/sales-invoice-factory';
 import { ApprovalWorkflowFactory } from './factories/approval-workflow-factory';
 import { PaymentFactory } from './factories/payment-factory';
 
@@ -18,7 +20,9 @@ import { PaymentFactory } from './factories/payment-factory';
 type TestFixtures = {
   userFactory: UserFactory;
   supplierFactory: SupplierFactory;
+  customerFactory: CustomerFactory;
   purchaseBillFactory: PurchaseBillFactory;
+  salesInvoiceFactory: SalesInvoiceFactory;
   approvalWorkflowFactory: ApprovalWorkflowFactory;
   paymentFactory: PaymentFactory;
 };
@@ -146,6 +150,26 @@ export const test = base.extend<TestFixtures>({
 
     // Auto-cleanup: Delete all workflows and thresholds created during test
     await factory.cleanup(apiRequest);
+  },
+
+  /**
+   * Customer factory fixture (no automatic cleanup)
+   * Provides factory methods for creating test customers
+   */
+  customerFactory: async ({}, use) => {
+    const factory = new CustomerFactory();
+    await use(factory);
+    factory.reset();
+  },
+
+  /**
+   * Sales invoice factory fixture (no automatic cleanup)
+   * Provides factory methods for creating test sales invoices
+   */
+  salesInvoiceFactory: async ({}, use) => {
+    const factory = new SalesInvoiceFactory();
+    await use(factory);
+    factory.reset();
   },
 
   /**
