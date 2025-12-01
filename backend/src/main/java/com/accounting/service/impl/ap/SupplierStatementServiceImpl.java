@@ -42,7 +42,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Implementation of SupplierStatementService for supplier statement generation, reconciliation, and
+ * Implementation of SupplierStatementService for supplier statement generation,
+ * reconciliation, and
  * dispute management.
  */
 @Service
@@ -94,10 +95,9 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     }
 
     // Get supplier
-    Supplier supplier =
-        supplierRepository
-            .findByCompanyIdAndId(companyId, supplierId)
-            .orElseThrow(() -> new IllegalArgumentException("Supplier not found: " + supplierId));
+    Supplier supplier = supplierRepository
+        .findByCompanyIdAndId(companyId, supplierId)
+        .orElseThrow(() -> new IllegalArgumentException("Supplier not found: " + supplierId));
 
     // Get bills in date range (POSTED, PAID, PARTIALLY_PAID)
     List<PurchaseBill> bills = getPostedBillsForSupplier(companyId, supplierId, startDate, endDate);
@@ -127,8 +127,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     // Add bills and payments in chronological order
     for (PurchaseBill bill : bills) {
       // Add bill line
-      SupplierStatementDTO.StatementLineItemDTO billLine =
-          new SupplierStatementDTO.StatementLineItemDTO();
+      SupplierStatementDTO.StatementLineItemDTO billLine = new SupplierStatementDTO.StatementLineItemDTO();
       billLine.setType("BILL");
       billLine.setDate(bill.getBillDate());
       billLine.setReference(bill.getReference());
@@ -143,15 +142,13 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       items.add(billLine);
 
       // Add payment lines for this bill
-      List<PaymentAllocation> allocations =
-          allocationRepository.findByPurchaseBillId(bill.getId());
+      List<PaymentAllocation> allocations = allocationRepository.findByPurchaseBillId(bill.getId());
       for (PaymentAllocation allocation : allocations) {
         APPayment payment = allocation.getPayment();
         if (payment != null
             && payment.getPaymentDate().compareTo(startDate) >= 0
             && payment.getPaymentDate().compareTo(endDate) <= 0) {
-          SupplierStatementDTO.StatementLineItemDTO paymentLine =
-              new SupplierStatementDTO.StatementLineItemDTO();
+          SupplierStatementDTO.StatementLineItemDTO paymentLine = new SupplierStatementDTO.StatementLineItemDTO();
           paymentLine.setType("PAYMENT");
           paymentLine.setDate(payment.getPaymentDate());
           paymentLine.setReference(payment.getReference());
@@ -185,21 +182,21 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
         endDate,
         statement);
     historyRepository.save(history);
-    
+
     // Update statement DTO with persisted ID
     statement.setId(history.getId());
 
     // Log audit event
     try {
-        auditService.logStatementGenerated(
-            companyId,
-            getCurrentUserId(),
-            history.getId(),
-            supplierId,
-            SupplierStatementHistory.StatementType.SUMMARY.name(),
-            null); // No specific request object available/needed here
+      auditService.logStatementGenerated(
+          companyId,
+          getCurrentUserId(),
+          history.getId(),
+          supplierId,
+          SupplierStatementHistory.StatementType.SUMMARY.name(),
+          null); // No specific request object available/needed here
     } catch (Exception e) {
-        logger.error("Failed to log statement generation audit event", e);
+      logger.error("Failed to log statement generation audit event", e);
     }
 
     return statement;
@@ -215,10 +212,9 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     }
 
     // Get supplier
-    Supplier supplier =
-        supplierRepository
-            .findByCompanyIdAndId(companyId, supplierId)
-            .orElseThrow(() -> new IllegalArgumentException("Supplier not found: " + supplierId));
+    Supplier supplier = supplierRepository
+        .findByCompanyIdAndId(companyId, supplierId)
+        .orElseThrow(() -> new IllegalArgumentException("Supplier not found: " + supplierId));
 
     // Get bills in date range (POSTED, PAID, PARTIALLY_PAID)
     List<PurchaseBill> bills = getPostedBillsForSupplier(companyId, supplierId, startDate, endDate);
@@ -247,8 +243,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     // Add bills and payments in chronological order
     for (PurchaseBill bill : bills) {
       // Add bill line
-      SupplierStatementDTO.StatementLineItemDTO billLine =
-          new SupplierStatementDTO.StatementLineItemDTO();
+      SupplierStatementDTO.StatementLineItemDTO billLine = new SupplierStatementDTO.StatementLineItemDTO();
       billLine.setType("BILL");
       billLine.setDate(bill.getBillDate());
       billLine.setReference(bill.getReference());
@@ -263,15 +258,13 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       items.add(billLine);
 
       // Add payment lines for this bill
-      List<PaymentAllocation> allocations =
-          allocationRepository.findByPurchaseBillId(bill.getId());
+      List<PaymentAllocation> allocations = allocationRepository.findByPurchaseBillId(bill.getId());
       for (PaymentAllocation allocation : allocations) {
         APPayment payment = allocation.getPayment();
         if (payment != null
             && payment.getPaymentDate().compareTo(startDate) >= 0
             && payment.getPaymentDate().compareTo(endDate) <= 0) {
-          SupplierStatementDTO.StatementLineItemDTO paymentLine =
-              new SupplierStatementDTO.StatementLineItemDTO();
+          SupplierStatementDTO.StatementLineItemDTO paymentLine = new SupplierStatementDTO.StatementLineItemDTO();
           paymentLine.setType("PAYMENT");
           paymentLine.setDate(payment.getPaymentDate());
           paymentLine.setReference(payment.getReference());
@@ -303,8 +296,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     // Get detailed bill information
     List<DetailedStatementDTO.DetailedBillItemDTO> billDetails = new ArrayList<>();
     for (PurchaseBill bill : bills) {
-      DetailedStatementDTO.DetailedBillItemDTO billDetail =
-          new DetailedStatementDTO.DetailedBillItemDTO();
+      DetailedStatementDTO.DetailedBillItemDTO billDetail = new DetailedStatementDTO.DetailedBillItemDTO();
       billDetail.setBillId(bill.getId());
       billDetail.setBillNumber(bill.getBillNumber());
       billDetail.setBillDate(bill.getBillDate());
@@ -320,8 +312,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       for (PaymentAllocation allocation : allocations) {
         APPayment payment = allocation.getPayment();
         if (payment != null) {
-          DetailedStatementDTO.PaymentEventDTO event =
-              new DetailedStatementDTO.PaymentEventDTO();
+          DetailedStatementDTO.PaymentEventDTO event = new DetailedStatementDTO.PaymentEventDTO();
           event.setPaymentId(payment.getId());
           event.setPaymentNumber(payment.getPaymentNumber());
           event.setPaymentDate(payment.getPaymentDate());
@@ -347,21 +338,21 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
         endDate,
         summaryStatement);
     historyRepository.save(history);
-    
+
     // Update detailed statement DTO with persisted ID
     detailedStatement.setId(history.getId());
 
     // Log audit event
     try {
-        auditService.logStatementGenerated(
-            companyId,
-            getCurrentUserId(),
-            history.getId(),
-            supplierId,
-            SupplierStatementHistory.StatementType.DETAILED.name(),
-            null);
+      auditService.logStatementGenerated(
+          companyId,
+          getCurrentUserId(),
+          history.getId(),
+          supplierId,
+          SupplierStatementHistory.StatementType.DETAILED.name(),
+          null);
     } catch (Exception e) {
-        logger.error("Failed to log statement generation audit event", e);
+      logger.error("Failed to log statement generation audit event", e);
     }
 
     return detailedStatement;
@@ -374,10 +365,9 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       throw new IllegalStateException("Missing company context");
     }
 
-    SupplierStatementHistory history =
-        historyRepository
-            .findByCompanyIdAndId(companyId, statementId)
-            .orElseThrow(() -> new IllegalArgumentException("Statement not found: " + statementId));
+    SupplierStatementHistory history = historyRepository
+        .findByCompanyIdAndId(companyId, statementId)
+        .orElseThrow(() -> new IllegalArgumentException("Statement not found: " + statementId));
 
     return convertToHistoryDTO(history);
   }
@@ -396,18 +386,16 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
 
     Page<SupplierStatementHistory> historyPage;
     if (supplierId != null && statementType != null) {
-      historyPage =
-          historyRepository.findByCompanyIdAndSupplierIdAndStatementType(
-              companyId, supplierId, statementType, pageable);
+      historyPage = historyRepository.findByCompanyIdAndPartyIdAndStatementType(
+          companyId, supplierId, statementType.name(), pageable);
     } else if (supplierId != null) {
-      historyPage =
-          historyRepository.findByCompanyIdAndSupplierId(companyId, supplierId, pageable);
+      historyPage = historyRepository.findByCompanyIdAndPartyId(companyId, supplierId, pageable);
     } else {
       historyPage = historyRepository.findByCompanyId(companyId, pageable);
     }
 
-    List<SupplierStatementHistoryDTO> dtos =
-        historyPage.getContent().stream().map(this::convertToHistoryDTO).collect(Collectors.toList());
+    List<SupplierStatementHistoryDTO> dtos = historyPage.getContent().stream().map(this::convertToHistoryDTO)
+        .collect(Collectors.toList());
 
     return new PageImpl<>(dtos, pageable, historyPage.getTotalElements());
   }
@@ -422,15 +410,13 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       throw new IllegalStateException("Missing company context");
     }
 
-    SupplierStatementHistory history =
-        historyRepository
-            .findByCompanyIdAndId(companyId, statementId)
-            .orElseThrow(() -> new IllegalArgumentException("Statement not found: " + statementId));
+    SupplierStatementHistory history = historyRepository
+        .findByCompanyIdAndId(companyId, statementId)
+        .orElseThrow(() -> new IllegalArgumentException("Statement not found: " + statementId));
 
     // Regenerate statement data
-    SupplierStatementDTO statement =
-        generateSummaryStatement(
-            history.getSupplierId(), history.getStartDate(), history.getEndDate());
+    SupplierStatementDTO statement = generateSummaryStatement(
+        history.getSupplierId(), history.getStartDate(), history.getEndDate());
 
     byte[] exportedData;
     if (format == SupplierStatementHistory.ExportFormat.EXCEL) {
@@ -463,10 +449,9 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       throw new IllegalStateException("Missing company context");
     }
 
-    SupplierStatementHistory history =
-        historyRepository
-            .findByCompanyIdAndId(companyId, statementId)
-            .orElseThrow(() -> new IllegalArgumentException("Statement not found: " + statementId));
+    SupplierStatementHistory history = historyRepository
+        .findByCompanyIdAndId(companyId, statementId)
+        .orElseThrow(() -> new IllegalArgumentException("Statement not found: " + statementId));
 
     // Update sent information
     history.setSentDate(Instant.now());
@@ -511,22 +496,19 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       throw new IllegalStateException("Missing company context");
     }
 
-    List<SupplierStatementHistory> statements =
-        historyRepository.findByCompanyIdAndIdIn(companyId, statementIds);
+    List<SupplierStatementHistory> statements = historyRepository.findByCompanyIdAndIdIn(companyId, statementIds);
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try (ZipOutputStream zos = new ZipOutputStream(baos)) {
       for (SupplierStatementHistory history : statements) {
         // Regenerate statement
-        SupplierStatementDTO statement =
-            generateSummaryStatement(
-                history.getSupplierId(), history.getStartDate(), history.getEndDate());
+        SupplierStatementDTO statement = generateSummaryStatement(
+            history.getSupplierId(), history.getStartDate(), history.getEndDate());
 
         byte[] statementData = exportToExcel(statement);
-        String filename =
-            String.format(
-                "statement-%s-%s.xlsx",
-                statement.getSupplierCode(), DATE_FORMATTER.format(statement.getEndDate()));
+        String filename = String.format(
+            "statement-%s-%s.xlsx",
+            statement.getSupplierCode(), DATE_FORMATTER.format(statement.getEndDate()));
 
         ZipEntry entry = new ZipEntry(filename);
         zos.putNextEntry(entry);
@@ -554,24 +536,21 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     }
 
     // Parse file based on format
-    List<ReconciliationResultDTO.ReconciliationItemDTO> supplierItems =
-        parseSupplierStatementFile(file, format);
+    List<ReconciliationResultDTO.ReconciliationItemDTO> supplierItems = parseSupplierStatementFile(file, format);
 
     // Get system bills for supplier
-    List<PurchaseBill> systemBills =
-        billRepository.findByCompanyId(companyId).stream()
-            .filter(b -> b.getSupplierId().equals(supplierId))
-            .collect(Collectors.toList());
+    List<PurchaseBill> systemBills = billRepository.findByCompanyId(companyId).stream()
+        .filter(b -> b.getSupplierId().equals(supplierId))
+        .collect(Collectors.toList());
 
     // Perform reconciliation
     ReconciliationResultDTO result = performReconciliation(supplierItems, systemBills);
     result.setSupplierId(supplierId);
     result.setReconciliationDate(LocalDate.now());
 
-    Supplier supplier =
-        supplierRepository
-            .findByCompanyIdAndId(companyId, supplierId)
-            .orElseThrow(() -> new IllegalArgumentException("Supplier not found"));
+    Supplier supplier = supplierRepository
+        .findByCompanyIdAndId(companyId, supplierId)
+        .orElseThrow(() -> new IllegalArgumentException("Supplier not found"));
     result.setSupplierName(supplier.getName());
 
     // Log audit event
@@ -608,7 +587,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       dispute.setDisputeReason("Amount mismatch: " + item.getNotes());
       dispute.setDisputedAmount(item.getSupplierAmount());
       dispute.setSystemAmount(item.getSystemAmount());
-      dispute.setStatus(SupplierStatementDispute.DisputeStatus.OPEN);
+      dispute.setStatusEnum(SupplierStatementDispute.DisputeStatus.OPEN);
       dispute.setCreatedBy(userId);
       disputeRepository.save(dispute);
     }
@@ -621,7 +600,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       dispute.setBillNumber(item.getBillNumber());
       dispute.setDisputeReason("Bill not found in system: " + item.getNotes());
       dispute.setDisputedAmount(item.getSupplierAmount());
-      dispute.setStatus(SupplierStatementDispute.DisputeStatus.OPEN);
+      dispute.setStatusEnum(SupplierStatementDispute.DisputeStatus.OPEN);
       dispute.setCreatedBy(userId);
       disputeRepository.save(dispute);
     }
@@ -644,15 +623,14 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       throw new IllegalStateException("Missing company context");
     }
 
-    SupplierStatementDispute dispute =
-        disputeRepository
-            .findByCompanyIdAndId(companyId, disputeId)
-            .orElseThrow(() -> new IllegalArgumentException("Dispute not found: " + disputeId));
+    SupplierStatementDispute dispute = disputeRepository
+        .findByCompanyIdAndId(companyId, disputeId)
+        .orElseThrow(() -> new IllegalArgumentException("Dispute not found: " + disputeId));
 
     Long userId = getCurrentUserId();
 
     // Capture old status for audit
-    String oldStatus = dispute.getStatus().name();
+    String oldStatus = dispute.getStatus();
 
     // Update status and resolution
     if (request.getStatus() == SupplierStatementDispute.DisputeStatus.RESOLVED) {
@@ -660,7 +638,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     } else if (request.getStatus() == SupplierStatementDispute.DisputeStatus.REJECTED) {
       dispute.reject(userId, request.getResolutionNotes());
     } else {
-      dispute.setStatus(request.getStatus());
+      dispute.setStatusEnum(request.getStatus());
       dispute.setResolutionNotes(request.getResolutionNotes());
     }
 
@@ -672,7 +650,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
         userId,
         disputeId,
         oldStatus,
-        dispute.getStatus().name(),
+        dispute.getStatus(),
         null);
   }
 
@@ -683,10 +661,9 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       throw new IllegalStateException("Missing company context");
     }
 
-    SupplierStatementDispute dispute =
-        disputeRepository
-            .findByCompanyIdAndId(companyId, disputeId)
-            .orElseThrow(() -> new IllegalArgumentException("Dispute not found: " + disputeId));
+    SupplierStatementDispute dispute = disputeRepository
+        .findByCompanyIdAndId(companyId, disputeId)
+        .orElseThrow(() -> new IllegalArgumentException("Dispute not found: " + disputeId));
 
     return convertToDisputeDTO(dispute);
   }
@@ -701,25 +678,19 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
 
     Page<SupplierStatementDispute> disputePage;
     if (supplierId != null && status != null) {
-      SupplierStatementDispute.DisputeStatus disputeStatus =
-          SupplierStatementDispute.DisputeStatus.valueOf(status);
-      disputePage =
-          disputeRepository.findByCompanyIdAndSupplierIdAndStatus(
-              companyId, supplierId, disputeStatus, pageable);
+      disputePage = disputeRepository.findByCompanyIdAndPartyIdAndStatus(
+          companyId, supplierId, status, pageable);
     } else if (supplierId != null) {
-      disputePage =
-          disputeRepository.findByCompanyIdAndSupplierId(companyId, supplierId, pageable);
+      disputePage = disputeRepository.findByCompanyIdAndPartyId(companyId, supplierId, pageable);
     } else if (status != null) {
-      SupplierStatementDispute.DisputeStatus disputeStatus =
-          SupplierStatementDispute.DisputeStatus.valueOf(status);
-      disputePage =
-          disputeRepository.findByCompanyIdAndStatus(companyId, disputeStatus, pageable);
+      SupplierStatementDispute.DisputeStatus disputeStatus = SupplierStatementDispute.DisputeStatus.valueOf(status);
+      disputePage = disputeRepository.findByCompanyIdAndStatus(companyId, disputeStatus, pageable);
     } else {
       disputePage = disputeRepository.findByCompanyId(companyId, pageable);
     }
 
-    List<SupplierStatementDisputeDTO> dtos =
-        disputePage.getContent().stream().map(this::convertToDisputeDTO).collect(Collectors.toList());
+    List<SupplierStatementDisputeDTO> dtos = disputePage.getContent().stream().map(this::convertToDisputeDTO)
+        .collect(Collectors.toList());
 
     return new PageImpl<>(dtos, pageable, disputePage.getTotalElements());
   }
@@ -737,10 +708,9 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     return billRepository.findByCompanyId(companyId).stream()
         .filter(b -> b.getSupplierId().equals(supplierId))
         .filter(
-            b ->
-                b.getStatus() == PurchaseBillStatus.POSTED
-                    || b.getStatus() == PurchaseBillStatus.PAID
-                    || b.getStatus() == PurchaseBillStatus.PARTIALLY_PAID)
+            b -> b.getStatus() == PurchaseBillStatus.POSTED
+                || b.getStatus() == PurchaseBillStatus.PAID
+                || b.getStatus() == PurchaseBillStatus.PARTIALLY_PAID)
         .filter(b -> !b.getBillDate().isBefore(startDate))
         .filter(b -> !b.getBillDate().isAfter(endDate))
         .sorted(Comparator.comparing(PurchaseBill::getBillDate))
@@ -749,16 +719,14 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
 
   private BigDecimal calculateOpeningBalance(
       Long companyId, Long supplierId, LocalDate beforeDate) {
-    List<PurchaseBill> priorBills =
-        billRepository.findByCompanyId(companyId).stream()
-            .filter(b -> b.getSupplierId().equals(supplierId))
-            .filter(
-                b ->
-                    b.getStatus() == PurchaseBillStatus.POSTED
-                        || b.getStatus() == PurchaseBillStatus.PAID
-                        || b.getStatus() == PurchaseBillStatus.PARTIALLY_PAID)
-            .filter(b -> b.getBillDate().isBefore(beforeDate))
-            .collect(Collectors.toList());
+    List<PurchaseBill> priorBills = billRepository.findByCompanyId(companyId).stream()
+        .filter(b -> b.getSupplierId().equals(supplierId))
+        .filter(
+            b -> b.getStatus() == PurchaseBillStatus.POSTED
+                || b.getStatus() == PurchaseBillStatus.PAID
+                || b.getStatus() == PurchaseBillStatus.PARTIALLY_PAID)
+        .filter(b -> b.getBillDate().isBefore(beforeDate))
+        .collect(Collectors.toList());
 
     BigDecimal opening = BigDecimal.ZERO;
     for (PurchaseBill bill : priorBills) {
@@ -769,15 +737,13 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
 
   private BigDecimal calculateRemainingBalance(UUID billId) {
     List<PaymentAllocation> allocations = allocationRepository.findByPurchaseBillId(billId);
-    BigDecimal totalAllocated =
-        allocations.stream()
-            .map(PaymentAllocation::getAllocatedAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    BigDecimal totalAllocated = allocations.stream()
+        .map(PaymentAllocation::getAllocatedAmount)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-    PurchaseBill bill =
-        billRepository
-            .findById(billId)
-            .orElseThrow(() -> new IllegalArgumentException("Bill not found: " + billId));
+    PurchaseBill bill = billRepository
+        .findById(billId)
+        .orElseThrow(() -> new IllegalArgumentException("Bill not found: " + billId));
     return bill.getTotalAmount().subtract(totalAllocated);
   }
 
@@ -818,7 +784,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       // Table header
       rowNum++;
       Row headerRow = sheet.createRow(rowNum++);
-      String[] headers = {"Date", "Reference", "Description", "Debit", "Credit", "Balance"};
+      String[] headers = { "Date", "Reference", "Description", "Debit", "Credit", "Balance" };
       for (int i = 0; i < headers.length; i++) {
         Cell cell = headerRow.createCell(i);
         cell.setCellValue(headers[i]);
@@ -844,11 +810,10 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
 
       // Footer
       rowNum++;
-      String footer =
-          "Generated: "
-              + DATE_FORMATTER.format(LocalDate.now())
-              + " | Hash: "
-              + generateHash(statement);
+      String footer = "Generated: "
+          + DATE_FORMATTER.format(LocalDate.now())
+          + " | Hash: "
+          + generateHash(statement);
       createRow(sheet, rowNum++, footer, "");
 
       // Auto-size columns
@@ -918,11 +883,10 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
   private String generateHash(SupplierStatementDTO statement) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      String content =
-          String.valueOf(statement.getSupplierId())
-              + statement.getStartDate().toString()
-              + statement.getEndDate().toString()
-              + statement.getClosingBalance().toString();
+      String content = String.valueOf(statement.getSupplierId())
+          + statement.getStartDate().toString()
+          + statement.getEndDate().toString()
+          + statement.getClosingBalance().toString();
       byte[] hash = digest.digest(content.getBytes(StandardCharsets.UTF_8));
       return bytesToHex(hash).substring(0, 16);
     } catch (NoSuchAlgorithmException e) {
@@ -969,8 +933,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
         for (int i = 1; i < sheet.getLastRowNum(); i++) { // Skip header
           Row row = sheet.getRow(i);
           if (row != null) {
-            ReconciliationResultDTO.ReconciliationItemDTO item =
-                new ReconciliationResultDTO.ReconciliationItemDTO();
+            ReconciliationResultDTO.ReconciliationItemDTO item = new ReconciliationResultDTO.ReconciliationItemDTO();
             item.setBillNumber(getCellValue(row.getCell(0)));
             item.setBillDate(LocalDate.parse(getCellValue(row.getCell(1)), DATE_FORMATTER));
             item.setSupplierAmount(new BigDecimal(getCellValue(row.getCell(2))));
@@ -1002,9 +965,8 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     ReconciliationResultDTO result = new ReconciliationResultDTO();
     result.setReconciliationDate(LocalDate.now());
 
-    Map<String, PurchaseBill> systemBillMap =
-        systemBills.stream()
-            .collect(Collectors.toMap(PurchaseBill::getBillNumber, b -> b, (a, b) -> a));
+    Map<String, PurchaseBill> systemBillMap = systemBills.stream()
+        .collect(Collectors.toMap(PurchaseBill::getBillNumber, b -> b, (a, b) -> a));
 
     List<ReconciliationResultDTO.ReconciliationItemDTO> matched = new ArrayList<>();
     List<ReconciliationResultDTO.ReconciliationItemDTO> mismatched = new ArrayList<>();
@@ -1020,8 +982,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
       } else {
         supplierItem.setBillId(systemBill.getId());
         supplierItem.setSystemAmount(systemBill.getTotalAmount());
-        BigDecimal variance =
-            supplierItem.getSupplierAmount().subtract(supplierItem.getSystemAmount()).abs();
+        BigDecimal variance = supplierItem.getSupplierAmount().subtract(supplierItem.getSystemAmount()).abs();
         supplierItem.setVariance(variance);
 
         if (variance.compareTo(TOLERANCE) <= 0) {
@@ -1040,8 +1001,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     // Remaining system bills are "applied" (not in supplier statement)
     List<ReconciliationResultDTO.ReconciliationItemDTO> applied = new ArrayList<>();
     for (PurchaseBill bill : systemBillMap.values()) {
-      ReconciliationResultDTO.ReconciliationItemDTO item =
-          new ReconciliationResultDTO.ReconciliationItemDTO();
+      ReconciliationResultDTO.ReconciliationItemDTO item = new ReconciliationResultDTO.ReconciliationItemDTO();
       item.setBillId(bill.getId());
       item.setBillNumber(bill.getBillNumber());
       item.setBillDate(bill.getBillDate());
@@ -1087,9 +1047,9 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     SupplierStatementHistoryDTO dto = new SupplierStatementHistoryDTO();
     dto.setId(history.getId());
     dto.setSupplierId(history.getSupplierId());
-    dto.setStatementType(history.getStatementType());
+    dto.setStatementType(history.getStatementTypeEnum());
     dto.setGenerationDate(history.getGenerationDate());
-    dto.setFormat(history.getFormat());
+    dto.setFormat(history.getExportFormatEnum());
     dto.setHash(history.getHash());
     dto.setSentDate(history.getSentDate());
     dto.setViewCount(history.getViewCount());
@@ -1108,9 +1068,8 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
 
     if (history.getSentTo() != null) {
       try {
-        List<String> emails =
-            objectMapper.readValue(
-                history.getSentTo(), objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+        List<String> emails = objectMapper.readValue(
+            history.getSentTo(), objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
         dto.setSentTo(emails);
       } catch (JsonProcessingException e) {
         logger.error("Failed to deserialize sent_to emails", e);
@@ -1127,7 +1086,7 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     dto.setBillId(dispute.getBillId());
     dto.setBillNumber(dispute.getBillNumber());
     dto.setDisputeReason(dispute.getDisputeReason());
-    dto.setStatus(dispute.getStatus());
+    dto.setStatus(dispute.getStatusEnum());
     dto.setResolutionNotes(dispute.getResolutionNotes());
     dto.setCreatedAt(dispute.getCreatedAt());
     dto.setResolvedAt(dispute.getResolvedAt());
@@ -1180,13 +1139,13 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     SupplierStatementHistory history = new SupplierStatementHistory();
     history.setCompanyId(companyId);
     history.setSupplierId(supplierId);
-    history.setStatementType(statementType);
+    history.setStatementTypeEnum(statementType);
     history.setStartDate(startDate);
     history.setEndDate(endDate);
     history.setGenerationDate(Instant.now());
-    history.setGeneratedBy(getCurrentUserId());
-    history.setFormat(statement.getFormat() != null 
-        ? statement.getFormat() 
+    history.setGeneratedById(getCurrentUserId());
+    history.setExportFormatEnum(statement.getFormat() != null
+        ? statement.getFormat()
         : SupplierStatementHistory.ExportFormat.EXCEL);
     history.setHash(generateHash(statement));
     history.setViewCount(0);
@@ -1194,4 +1153,3 @@ public class SupplierStatementServiceImpl implements SupplierStatementService {
     return history;
   }
 }
-

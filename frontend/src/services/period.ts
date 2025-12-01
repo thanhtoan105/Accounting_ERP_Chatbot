@@ -1,4 +1,5 @@
 import api from '@/utils/axios'
+import { toast } from 'sonner'
 import type {
   AccountingPeriod,
   PeriodSummary,
@@ -8,11 +9,13 @@ import type {
   PeriodApiResponse,
 } from '@/types/accountingPeriod'
 
+const PERIODS_BASE = '/periods'
+
 export const periodService = {
   // Get current period
   async getCurrentPeriod(): Promise<AccountingPeriod | null> {
     try {
-      const response = await api.get<PeriodApiResponse<AccountingPeriod>>('/api/v1/periods/current')
+      const response = await api.get<PeriodApiResponse<AccountingPeriod>>(`${PERIODS_BASE}/current`)
       return response.data.data
     } catch (error) {
       console.error('Failed to fetch current period:', error)
@@ -23,10 +26,45 @@ export const periodService = {
   // Get open periods for period selector
   async getOpenPeriods(): Promise<AccountingPeriod[]> {
     try {
-      const response = await api.get<PeriodApiResponse<AccountingPeriod[]>>('/api/v1/periods/open')
+      const response = await api.get<PeriodApiResponse<AccountingPeriod[]>>(`${PERIODS_BASE}/open`)
       return response.data.data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch open periods:', error)
+
+      // Log detailed error information for debugging
+      if (error.response) {
+        console.error('Response status:', error.response.status)
+        console.error('Response data:', error.response.data)
+        console.error('Response headers:', error.response.headers)
+
+        // If it's a 403 Forbidden error, show authorization error to user
+        if (error.response.status === 403) {
+          console.error(
+            '🚫 AUTHORIZATION ERROR: You do not have permission to access open periods.',
+          )
+          console.error('Required role: ACCOUNTANT, CHIEF_ACCOUNTANT, ADMIN, or CFO')
+          console.error(
+            'Error details:',
+            error.response.data?.error?.message || 'No additional details',
+          )
+
+          const errorMsg =
+            error.response.data?.error?.message ||
+            'Access denied. You do not have permission to view accounting periods. Required role: ACCOUNTANT, CHIEF_ACCOUNTANT, ADMIN, or CFO.'
+          toast.error(errorMsg)
+        } else {
+          toast.error(
+            `Failed to fetch periods: ${error.response.status} ${error.response.statusText}`,
+          )
+        }
+      } else if (error.request) {
+        console.error('No response received:', error.request)
+        toast.error('Network error: Unable to reach the server')
+      } else {
+        console.error('Error setting up request:', error.message)
+        toast.error(`Request error: ${error.message}`)
+      }
+
       return []
     }
   },
@@ -35,7 +73,7 @@ export const periodService = {
   async getPeriodById(periodId: string): Promise<AccountingPeriod | null> {
     try {
       const response = await api.get<PeriodApiResponse<AccountingPeriod>>(
-        `/api/v1/periods/${periodId}`,
+        `${PERIODS_BASE}/${periodId}`,
       )
       return response.data.data
     } catch (error) {
@@ -48,7 +86,7 @@ export const periodService = {
   async getPeriodSummary(periodId: string): Promise<PeriodSummary | null> {
     try {
       const response = await api.get<PeriodApiResponse<PeriodSummary>>(
-        `/api/v1/periods/${periodId}/summary`,
+        `${PERIODS_BASE}/${periodId}/summary`,
       )
       return response.data.data
     } catch (error) {
@@ -61,7 +99,7 @@ export const periodService = {
   async findPeriodByDate(date: string): Promise<AccountingPeriod | null> {
     try {
       const response = await api.get<PeriodApiResponse<AccountingPeriod>>(
-        '/api/v1/periods/find-by-date',
+        `${PERIODS_BASE}/find-by-date`,
         {
           params: { date },
         },
@@ -77,7 +115,7 @@ export const periodService = {
   async checkPeriodOpen(periodId: string): Promise<boolean> {
     try {
       const response = await api.get<PeriodApiResponse<{ isOpen: boolean }>>(
-        `/api/v1/periods/${periodId}/check-open`,
+        `${PERIODS_BASE}/${periodId}/check-open`,
       )
       return response.data.data.isOpen
     } catch (error) {
@@ -90,7 +128,7 @@ export const periodService = {
   async checkDateInOpenPeriod(date: string): Promise<boolean> {
     try {
       const response = await api.get<PeriodApiResponse<{ isDateInOpenPeriod: boolean }>>(
-        '/api/v1/periods/check-date-open',
+        `${PERIODS_BASE}/check-date-open`,
         {
           params: { date },
         },
@@ -105,7 +143,7 @@ export const periodService = {
   // Close period
   async closePeriod(periodId: string, request: PeriodCloseRequest): Promise<AccountingPeriod> {
     const response = await api.post<PeriodApiResponse<AccountingPeriod>>(
-      `/api/v1/periods/${periodId}/close`,
+      `${PERIODS_BASE}/${periodId}/close`,
       request,
     )
     return response.data.data
@@ -114,7 +152,7 @@ export const periodService = {
   // Reopen period
   async reopenPeriod(periodId: string, request: PeriodReopenRequest): Promise<AccountingPeriod> {
     const response = await api.post<PeriodApiResponse<AccountingPeriod>>(
-      `/api/v1/periods/${periodId}/reopen`,
+      `${PERIODS_BASE}/${periodId}/reopen`,
       request,
     )
     return response.data.data
@@ -123,7 +161,7 @@ export const periodService = {
   // Get all periods
   async getAllPeriods(): Promise<AccountingPeriod[]> {
     try {
-      const response = await api.get<PeriodApiResponse<AccountingPeriod[]>>('/api/v1/periods')
+      const response = await api.get<PeriodApiResponse<AccountingPeriod[]>>(PERIODS_BASE)
       return response.data.data
     } catch (error) {
       console.error('Failed to fetch all periods:', error)
@@ -135,7 +173,7 @@ export const periodService = {
   async getPeriodsByFiscalYear(fiscalYear: number): Promise<AccountingPeriod[]> {
     try {
       const response = await api.get<PeriodApiResponse<AccountingPeriod[]>>(
-        `/api/v1/periods/fiscal-year/${fiscalYear}`,
+        `${PERIODS_BASE}/fiscal-year/${fiscalYear}`,
       )
       return response.data.data
     } catch (error) {
@@ -146,7 +184,7 @@ export const periodService = {
 
   // Create period
   async createPeriod(period: Partial<AccountingPeriod>): Promise<AccountingPeriod> {
-    const response = await api.post<PeriodApiResponse<AccountingPeriod>>('/api/v1/periods', period)
+    const response = await api.post<PeriodApiResponse<AccountingPeriod>>(PERIODS_BASE, period)
     return response.data.data
   },
 
@@ -156,7 +194,7 @@ export const periodService = {
     period: Partial<AccountingPeriod>,
   ): Promise<AccountingPeriod> {
     const response = await api.put<PeriodApiResponse<AccountingPeriod>>(
-      `/api/v1/periods/${periodId}`,
+      `${PERIODS_BASE}/${periodId}`,
       period,
     )
     return response.data.data
@@ -164,7 +202,7 @@ export const periodService = {
 
   // Delete period
   async deletePeriod(periodId: string): Promise<void> {
-    await api.delete(`/api/v1/periods/${periodId}`)
+    await api.delete(`${PERIODS_BASE}/${periodId}`)
   },
 
   // Validate period for voucher operations

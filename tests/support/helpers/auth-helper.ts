@@ -42,24 +42,24 @@ export async function loginAsUser(
     // Verify we're logged in (not on login page)
     const currentUrl = page.url();
     expect(currentUrl).not.toContain('/login');
-    
-    // Wait for the redirect to complete (LoginForm uses setTimeout 1500ms)
-    await page.waitForTimeout(2000);
-    
+
+    // Wait for navigation to stabilize (no hard wait needed - waitForURL above handles it)
+    await page.waitForLoadState('networkidle', { timeout: 5000 });
+
     // Check final URL after redirect
     const finalUrl = page.url();
-    
+
     // If we're on company selection page, navigate to home
     if (finalUrl.includes('/company')) {
       await page.goto('/');
       await page.waitForLoadState('networkidle');
     }
-    
+
     // Verify authentication by checking localStorage for token
     const hasToken = await page.evaluate(() => {
       return !!localStorage.getItem('accessToken');
     });
-    
+
     if (!hasToken) {
       throw new Error('Authentication failed - no access token in localStorage');
     }

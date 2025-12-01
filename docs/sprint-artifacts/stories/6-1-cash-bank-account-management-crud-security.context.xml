@@ -1,0 +1,321 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>1</storyId>
+    <title>Cash/Bank Account Management (CRUD & Security)</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-26</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/6-1-cash-bank-account-management-crud-security.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>accountant/admin</asA>
+    <iWant>create, edit, and inactivate cash/bank accounts with validations</iWant>
+    <soThat>downstream transactions use only valid accounts and history remains intact</soThat>
+    <tasks>
+      - Task 1: Database Migration - Extend BankAccount Entity (AC: #1, #6, #10)
+      - Task 2: Backend - Update BankAccount Entity and Repository (AC: #1, #2, #6)
+      - Task 3: Backend - Enhanced BankAccountService (AC: #1-#4, #7, #10)
+      - Task 4: Backend - Account Import Service (AC: #9)
+      - Task 5: Backend - Enhanced REST Controller (AC: #1-#10)
+      - Task 6: Backend - Account Export Service (AC: #5)
+      - Task 7: Frontend - Enhanced Account List Page (AC: #5)
+      - Task 8: Frontend - Account Form Enhancements (AC: #1, #10)
+      - Task 9: Frontend - Account Picker Enhancement (AC: #6)
+      - Task 10: Frontend - Import Dialog (AC: #9)
+      - Task 11: Testing - Backend Unit Tests (AC: #1-#10)
+      - Task 12: Testing - Integration and E2E Tests (AC: #1-#10)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. (AC6.1-01) Account Form Fields: Account form captures account name, bank name, account number (required, unique per company), branch (optional), type (CASH/BANK), opening balance (default 0), GL account code (required, must be leaf account). All required fields validated on save.
+
+    2. (AC6.1-02) Account Number Uniqueness: Account number uniqueness enforced at DB constraint and API validation; duplicate returns 409 Conflict with conflicting account details in error response.
+
+    3. (AC6.1-03) Inactivation Workflow: Inactivation removes account from pickers but preserves history; inactivation blocked if unposted transactions reference account; error shows blocking transaction count and examples.
+
+    4. (AC6.1-04) Delete Protection: Delete blocked if account referenced in any posted voucher/reconciliation; error shows reference count and example transactions with links.
+
+    5. (AC6.1-05) Account List Features: Account list supports filter by type (CASH/BANK) and status (active/inactive), search by name/number/bank, sort by balance/last activity; export to CSV/Excel with applied filters in header.
+
+    6. (AC6.1-06) Account Picker Enhancement: Account picker displays only active accounts with tooltip showing current balance, last TX date, last reconciled statement date.
+
+    7. (AC6.1-07) RBAC Enforcement: Only Admin/Chief Accountant can create/inactivate; Accountant can view and select; all permissions enforced server-side with 403 Forbidden on violation.
+
+    8. (AC6.1-08) Audit Logging: Every create/edit/inactivate logged to audit trail with who/when/old/new/IP; blocked attempts logged with reason and message code.
+
+    9. (AC6.1-09) Import Functionality: Import accounts via CSV with template validation; atomic batch (all or nothing); duplicates reported with line numbers in error response.
+
+    10. (AC6.1-10) Opening Balance Lock: Opening balance locked (uneditable) after first period closes; edit requires admin override with reason, and override action audit-logged.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-6.md</path>
+        <title>Epic Technical Specification: Cash &amp; Bank Management</title>
+        <section>Story 6.1: Cash/Bank Account Management</section>
+        <snippet>Epic 6 extends existing BankAccount entity (Epic 2) with 4 new fields: glAccountCode (FK to ChartOfAccounts), openingBalanceLocked (Boolean), lastReconciledDate (LocalDate), lastReconciledBalance (BigDecimal). Uses existing ar_payments and ap_payments tables for cash receipts/payments.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-6-cash-bank-management.md</path>
+        <title>Epic 6: Cash &amp; Bank Management</title>
+        <section>Story 6.1: Cash/Bank Account Management (CRUD &amp; Security)</section>
+        <snippet>Account form captures account number (unique per company), bank name, type (CASH/BANK), opening balance, GL account. Inactivation preserves history. RBAC: only admin/chief may create/inactivate. Import via CSV with atomic batch.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/data-architecture.md</path>
+        <title>Data Architecture</title>
+        <section>Multi-Tenancy Strategy &amp; Core Entities</section>
+        <snippet>Row-level filtering via company_id on all tables. bank_accounts table exists with id, account_number, bank_name, type (CASH/BANK), opening_balance, active status. Chart of Accounts has hierarchical structure (3 levels) with postable leaf accounts.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/security-architecture.md</path>
+        <title>Security Architecture</title>
+        <section>Authorization</section>
+        <snippet>Role-Based Access Control (RBAC): Admin, Accountant, Chief Accountant, CFO. Spring Security method-level security via @PreAuthorize annotations. API-level permission checks with company-level data isolation.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/BankAccount.java</path>
+        <kind>entity</kind>
+        <symbol>BankAccount</symbol>
+        <lines>25-165</lines>
+        <reason>Existing BankAccount entity from Epic 2 - needs 4 new fields (glAccountCode, openingBalanceLocked, lastReconciledDate, lastReconciledBalance). Entity implements CompanyScopedEntity for multi-tenancy. Currently has: id, companyId, accountNumber, bankName, branch, type (CASH/BANK), openingBalance, active, timestamps.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/BankAccountRepository.java</path>
+        <kind>repository</kind>
+        <symbol>BankAccountRepository</symbol>
+        <lines>15-77</lines>
+        <reason>Existing repository with company-scoped queries. Already has: findByCompanyId, findByCompanyIdAndId, existsByCompanyIdAndAccountNumber (for uniqueness check), searchByAccountNumberOrBankNameNative (with unaccent for Vietnamese). Needs new queries: findByCompanyIdAndActive (for picker), countUnpostedTransactionsByAccountId (inactivation check), countPostedReferences (delete protection).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/BankAccountService.java</path>
+        <kind>service-interface</kind>
+        <symbol>BankAccountService</symbol>
+        <lines>13-81</lines>
+        <reason>Service interface already defines: findAll (with pagination, filters), getBankAccountById, create, update, delete, activate, deactivate, getBalanceTooltip. Needs enhancements: update() should check openingBalanceLocked; deactivate() should check unposted transactions; delete() should check posted references; getBalanceTooltip() needs actual balance calculation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/BankAccountServiceImpl.java</path>
+        <kind>service-impl</kind>
+        <symbol>BankAccountServiceImpl</symbol>
+        <lines>35-351</lines>
+        <reason>Implementation with audit logging integration. Current functionality: CRUD operations with company scoping, duplicate account number check, search with Vietnamese unaccent support, audit logging via AuditService. Delete currently blocks all deletions as policy (line 268-279). Needs: GL account validation, opening balance lock check, transaction reference checks, actual balance calculation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/BankAccountController.java</path>
+        <kind>controller</kind>
+        <symbol>BankAccountController</symbol>
+        <lines>50-390</lines>
+        <reason>REST controller at /api/v1/bank-accounts with existing endpoints: GET /, GET /:id, POST /, PUT /:id, DELETE /:id, PATCH /:id/activate, PATCH /:id/deactivate. RBAC annotations in place. Needs new endpoints: GET /:id/balance-tooltip, GET /export, POST /import.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service-interface</kind>
+        <symbol>AuditService</symbol>
+        <lines>10-1523</lines>
+        <reason>Centralized audit service with existing methods: logBankAccountCreated, logBankAccountUpdated, logBankAccountDeleted, logBankAccountActivated, logBankAccountDeactivated, logBankAccountExport, logBankAccountImport. All methods capture user, timestamp, IP, old/new values. Import logging uses logImportRow for row-level audit.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/imports/handler/impl/BankAccountImportHandler.java</path>
+        <kind>import-handler</kind>
+        <symbol>BankAccountImportHandler</symbol>
+        <lines>40-463</lines>
+        <reason>Existing CSV import handler with template validation, atomic batch processing, duplicate detection, row-level error reporting. Implements ImportHandler interface. Uses Validator for bean validation, ImportErrorReportService for error collection. Needs update to handle new GL account code field and validation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/dto/BankAccountDTO.java</path>
+        <kind>dto</kind>
+        <symbol>BankAccountDTO</symbol>
+        <lines>10-127</lines>
+        <reason>Data transfer object for BankAccount. Needs 4 new fields: glAccountCode, openingBalanceLocked, lastReconciledDate, lastReconciledBalance to match entity extension.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/dto/BankAccountCreateRequest.java</path>
+        <kind>dto</kind>
+        <symbol>BankAccountCreateRequest</symbol>
+        <lines>13-84</lines>
+        <reason>Request DTO for account creation with validation annotations. Needs glAccountCode field with @NotBlank validation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/dto/BankAccountUpdateRequest.java</path>
+        <kind>dto</kind>
+        <symbol>BankAccountUpdateRequest</symbol>
+        <lines>12-68</lines>
+        <reason>Request DTO for account updates. Needs glAccountCode field and reason field (for opening balance override).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/ChartOfAccountsRepository.java</path>
+        <kind>repository</kind>
+        <symbol>ChartOfAccountsRepository</symbol>
+        <lines>10-126</lines>
+        <reason>Repository for Chart of Accounts validation. Needed to validate that glAccountCode is a leaf account (no children) and belongs to valid cash/bank categories (1111, 1112 for cash; 1121, 1122 for bank).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/ar/ARStatementExportServiceImpl.java</path>
+        <kind>service-impl</kind>
+        <symbol>ARStatementExportServiceImpl</symbol>
+        <lines>full file</lines>
+        <reason>Reference implementation for export service pattern (Story 5.5). Shows Excel/PDF export with Apache POI, legal footers, SHA256 hashing, company branding, currency formatting, auto-sized columns. Use as template for BankAccountExportService.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/bankaccounts/pages/BankAccountList.tsx</path>
+        <kind>component</kind>
+        <symbol>BankAccountList</symbol>
+        <lines>full file</lines>
+        <reason>Existing bank account list page - needs enhancements: filter by type/status, search, sort by balance/last activity, export button, display GL account column, current balance column, last activity column.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/types/bankAccount.ts</path>
+        <kind>types</kind>
+        <symbol>BankAccount, BankAccountCreateRequest, BankAccountUpdateRequest</symbol>
+        <lines>3-59</lines>
+        <reason>TypeScript interfaces for BankAccount - needs 4 new fields matching backend DTOs: glAccountCode?, openingBalanceLocked?, lastReconciledDate?, lastReconciledBalance?.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <backend>
+        <dependency name="Spring Boot" version="3.5.7">Core framework</dependency>
+        <dependency name="Spring Data JPA" version="3.5.x">Data access with repository pattern</dependency>
+        <dependency name="Spring Security" version="6.x">Authentication/authorization with @PreAuthorize</dependency>
+        <dependency name="PostgreSQL Driver" version="42.7.4">Database connectivity</dependency>
+        <dependency name="Flyway" version="11.10.0">Database migrations</dependency>
+        <dependency name="Apache POI" version="5.3.0">Excel export functionality</dependency>
+        <dependency name="Apache Commons CSV" version="1.11.0">CSV import/export</dependency>
+        <dependency name="Hibernate Validator" version="8.x">Bean validation (@NotBlank, @Size, @DecimalMin)</dependency>
+      </backend>
+      <frontend>
+        <dependency name="React" version="19.1.x">UI framework</dependency>
+        <dependency name="TypeScript" version="5.9.x">Type safety</dependency>
+        <dependency name="shadcn/ui" version="latest">UI component library (Button, Dialog, DataTable, Form, Select, Tooltip)</dependency>
+        <dependency name="TanStack Table" version="8.21.x">Data table with sorting, filtering, pagination</dependency>
+        <dependency name="React Hook Form" version="7.66.x">Form handling and validation</dependency>
+        <dependency name="Zod" version="4.1.x">Schema validation</dependency>
+        <dependency name="date-fns" version="4.1.x">Date formatting and manipulation</dependency>
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    1. Entity Extension Pattern: Extend existing BankAccount entity (Epic 2) rather than creating new table. Use Flyway migration to add 4 columns: gl_account_code, opening_balance_locked, last_reconciled_date, last_reconciled_balance.
+
+    2. Multi-Tenancy: All queries must filter by company_id. Use CompanyContext.getCompanyId() for automatic filtering. Repository methods must include company_id in WHERE clauses.
+
+    3. RBAC Enforcement: Use @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT')") for create/inactivate endpoints. Accountants can view/select only. Server-side enforcement mandatory - 403 Forbidden on violation.
+
+    4. Audit Logging: Every mutation (create/update/delete/activate/deactivate) must call AuditService with old/new values. Blocked attempts (delete protection, inactivation blocked) must also be logged with reason.
+
+    5. GL Account Validation: glAccountCode must exist in chart_of_accounts table, be a leaf account (no children), and belong to valid cash/bank categories (1111, 1112 for CASH; 1121, 1122 for BANK). Query ChartOfAccountsRepository for validation.
+
+    6. Opening Balance Lock: After first accounting period closes, set openingBalanceLocked = true. Edits require admin override with mandatory reason field. Override logged to audit with HIGH priority.
+
+    7. Delete Protection: Hard delete blocked if account referenced in any posted voucher/reconciliation. Until voucher/reconciliation integration complete, enforce strict policy: block all deletes, require deactivation (current implementation at BankAccountServiceImpl.java:268-279).
+
+    8. Inactivation Guard: Block inactivation if account referenced in unposted transactions. Query voucher_lines/journal_entries for unposted status. Return error with transaction count and examples (first 5 transactions).
+
+    9. Account Number Uniqueness: Enforce at DB level with UNIQUE constraint (company_id, account_number) and API level with existsByCompanyIdAndAccountNumber query. Return 409 Conflict with conflicting account details on duplicate.
+
+    10. Import Atomicity: CSV import must be atomic (all or nothing). Use @Transactional with rollback on any error. Collect all validation errors with line numbers before rollback. Return ImportResultDTO with successCount, errorCount, errors array.
+
+    11. Balance Calculation: Current balance = opening_balance + SUM(credits) - SUM(debits) from voucher_lines where account_code = bank_account.gl_account_code. Cache in Redis for optimization (optional). For MVP, use opening_balance as placeholder until voucher integration.
+
+    12. Existing Patterns: Follow existing repository patterns (company-scoped queries), service patterns (audit logging), controller patterns (@PreAuthorize, ResponseEntity), and import patterns (BankAccountImportHandler template validation).
+  </constraints>
+
+  <interfaces>
+    <api>
+      <name>GET /api/v1/bank-accounts</name>
+      <kind>REST endpoint</kind>
+      <signature>Page&lt;BankAccountDTO&gt; findAll(Pageable pageable, String type, Boolean status, String search)</signature>
+      <path>backend/src/main/java/com/accounting/controller/BankAccountController.java</path>
+      <description>List accounts with pagination, filters (type: CASH|BANK, status: active|inactive), search (account number or bank name with Vietnamese unaccent), sort (balance, lastActivity). Returns page with content array, totalElements, totalPages.</description>
+    </api>
+    <api>
+      <name>POST /api/v1/bank-accounts</name>
+      <kind>REST endpoint</kind>
+      <signature>ResponseEntity&lt;Map&lt;String, Object&gt;&gt; createBankAccount(@Valid @RequestBody BankAccountCreateRequest request)</signature>
+      <path>backend/src/main/java/com/accounting/controller/BankAccountController.java:152-169</path>
+      <description>Create new account. Validates: accountNumber unique per company, glAccountCode is leaf account. RBAC: Admin/Chief Accountant only. Returns created account with status 201.</description>
+    </api>
+    <api>
+      <name>PUT /api/v1/bank-accounts/:id</name>
+      <kind>REST endpoint</kind>
+      <signature>BankAccountDTO update(Long bankAccountId, BankAccountUpdateRequest request)</signature>
+      <path>backend/src/main/java/com/accounting/service/BankAccountService.java</path>
+      <description>Update account. Validates: openingBalance editable only if openingBalanceLocked=false (unless admin override with reason). Captures old/new values for audit. Returns updated account.</description>
+    </api>
+    <api>
+      <name>PATCH /api/v1/bank-accounts/:id/deactivate</name>
+      <kind>REST endpoint</kind>
+      <signature>void deactivate(Long bankAccountId)</signature>
+      <path>backend/src/main/java/com/accounting/controller/BankAccountController.java:230-235</path>
+      <description>Deactivate account (set active=false). Validates: no unposted transactions reference account. Returns 409 Conflict if blocked with transaction count/examples. RBAC: Admin/Chief Accountant.</description>
+    </api>
+    <api>
+      <name>GET /api/v1/bank-accounts/:id/balance-tooltip</name>
+      <kind>REST endpoint (NEW)</kind>
+      <signature>BalanceTooltipDTO getBalanceTooltip(Long bankAccountId)</signature>
+      <path>backend/src/main/java/com/accounting/service/BankAccountService.java:68-73</path>
+      <description>Get balance data for picker tooltip. Returns: currentBalance, lastTxDate, lastReconciledDate. For MVP, returns opening balance as placeholder until voucher integration.</description>
+    </api>
+    <api>
+      <name>GET /api/v1/bank-accounts/export</name>
+      <kind>REST endpoint (NEW)</kind>
+      <signature>ResponseEntity&lt;byte[]&gt; export(String format, String type, Boolean status, String search)</signature>
+      <path>TBD - BankAccountController (new endpoint)</path>
+      <description>Export accounts to CSV/Excel. Includes applied filters in header. Format: CSV (simple) or EXCEL (formatted with company branding per ARStatementExportServiceImpl pattern). Returns binary file with Content-Disposition header.</description>
+    </api>
+    <api>
+      <name>POST /api/v1/bank-accounts/import</name>
+      <kind>REST endpoint (NEW)</kind>
+      <signature>ImportResultDTO importAccounts(MultipartFile file)</signature>
+      <path>TBD - BankAccountController (new endpoint)</path>
+      <description>Import accounts from CSV. Validates template headers, performs atomic batch insert. Returns successCount, errorCount, errors array with line numbers. Uses existing BankAccountImportHandler.</description>
+    </api>
+    <interface>
+      <name>BankAccountRepository.existsByCompanyIdAndAccountNumber</name>
+      <kind>repository method</kind>
+      <signature>boolean existsByCompanyIdAndAccountNumber(Long companyId, String accountNumber, Long excludeId)</signature>
+      <path>backend/src/main/java/com/accounting/repository/BankAccountRepository.java:36-40</path>
+      <description>Check account number uniqueness per company. excludeId parameter allows skipping current account ID during updates. Uses @Query with COUNT for efficiency.</description>
+    </interface>
+    <interface>
+      <name>ChartOfAccountsRepository.findByCompanyIdAndAccountCode</name>
+      <kind>repository method (to add)</kind>
+      <signature>Optional&lt;ChartOfAccount&gt; findByCompanyIdAndAccountCode(Long companyId, String accountCode)</signature>
+      <path>backend/src/main/java/com/accounting/repository/ChartOfAccountsRepository.java</path>
+      <description>Validate GL account code exists and is leaf account. Check parentId is null or has no children. Validate account type matches bank account type (1111/1112 for CASH, 1121/1122 for BANK).</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend: JUnit 5 + Mockito for unit tests, TestContainers PostgreSQL for integration tests. Frontend: Vitest + Testing Library for component tests, Playwright for E2E. Coverage target: ≥80% backend line coverage, ≥70% frontend component coverage, 100% AC coverage in E2E.
+    </standards>
+    <locations>
+      - backend/src/test/java/com/accounting/service/impl/BankAccountServiceImplTest.java (unit tests)
+      - backend/src/test/java/com/accounting/controller/BankAccountControllerIntegrationTest.java (integration tests)
+      - backend/src/test/java/com/accounting/imports/handler/impl/BankAccountImportHandlerTest.java (import tests)
+      - tests/api/bank-accounts.api.spec.ts (API integration tests)
+      - tests/e2e/bank-account-management.spec.ts (E2E workflow tests)
+      - frontend/src/features/bankaccounts/__tests__/BankAccountList.test.tsx (component tests)
+    </locations>
+    <ideas>
+      - AC6.1-01: Test form validation (required fields, max lengths, account number format). Test GL account code picker shows only leaf accounts.
+      - AC6.1-02: Test uniqueness constraint at DB and API level. Test update allows same account number for current account. Test error response includes conflicting account details.
+      - AC6.1-03: Test inactivation success when no unposted transactions. Test inactivation blocked with transaction count/examples when unposted refs exist. Test inactive accounts excluded from pickers.
+      - AC6.1-04: Test delete blocked with reference count when posted vouchers/reconciliations exist. Test error includes example transactions with links.
+      - AC6.1-05: Test filters (type, status), search (account number, bank name with Vietnamese), sort (balance, lastActivity). Test export includes filter snapshot in header.
+      - AC6.1-06: Test picker tooltip fetches balance data on hover (debounced). Test tooltip displays currentBalance, lastTxDate, lastReconciledDate with proper formatting.
+      - AC6.1-07: Test RBAC: Admin/Chief can create/inactivate, Accountant can view/select only. Test 403 Forbidden for unauthorized roles.
+      - AC6.1-08: Test audit logs created for create/update/activate/deactivate with old/new values. Test blocked attempts logged with reason.
+      - AC6.1-09: Test CSV import with valid template. Test atomic batch rollback on any error. Test error report with line numbers for duplicates/validation errors.
+      - AC6.1-10: Test opening balance editable when openingBalanceLocked=false. Test edit blocked when locked. Test admin override with reason creates high-priority audit log.
+    </ideas>
+  </tests>
+</story-context>

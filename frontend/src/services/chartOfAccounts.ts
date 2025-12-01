@@ -75,7 +75,7 @@ export async function getPostableAccounts(): Promise<ChartOfAccount[]> {
     },
   })
   const data = await handleJsonResponse<ChartOfAccountsResponse>(res)
-  return Array.isArray(data.data) ? data.data : []
+  return (Array.isArray(data.data) ? data.data : []) as ChartOfAccount[]
 }
 
 /**

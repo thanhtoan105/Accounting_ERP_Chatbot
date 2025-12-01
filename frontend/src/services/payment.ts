@@ -186,3 +186,50 @@ export async function downloadPaymentImportTemplate(): Promise<Blob> {
   }
   return await res.blob()
 }
+
+/**
+ * Approve a payment that is pending approval.
+ * AC6.3-08: Only CHIEF_ACCOUNTANT, CFO, or ADMIN can approve.
+ */
+export async function approvePayment(paymentId: string): Promise<APPaymentDTO> {
+  const res = await fetchWithAuth(`${API_BASE}/ap-payments/${paymentId}/approve`, {
+    method: 'POST',
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Request failed' }))
+    throw error
+  }
+  return await handleJsonResponse<APPaymentDTO>(res)
+}
+
+/**
+ * Reject a payment that is pending approval.
+ * AC6.3-08: Only CHIEF_ACCOUNTANT, CFO, or ADMIN can reject.
+ */
+export async function rejectPayment(paymentId: string, reason: string): Promise<APPaymentDTO> {
+  const res = await fetchWithAuth(`${API_BASE}/ap-payments/${paymentId}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Request failed' }))
+    throw error
+  }
+  return await handleJsonResponse<APPaymentDTO>(res)
+}
+
+/**
+ * Reverse a posted payment.
+ * AC6.3-10: Creates reversing voucher and updates bill/allocation states.
+ */
+export async function reversePayment(paymentId: string, reason: string): Promise<APPaymentDTO> {
+  const res = await fetchWithAuth(`${API_BASE}/ap-payments/${paymentId}/reverse`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Request failed' }))
+    throw error
+  }
+  return await handleJsonResponse<APPaymentDTO>(res)
+}

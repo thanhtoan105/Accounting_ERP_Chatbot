@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>5</storyId>
+    <title>Customer Statement &amp; Reconciliation</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-22T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/5-5-customer-statement-reconciliation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>an accountant</asA>
+    <iWant>to generate and distribute customer statements and reconcile discrepancies</iWant>
+    <soThat>balances are agreed and disputes are documented</soThat>
+    <tasks>
+      - Backend: Create StatementHistory, DisputeLog, and StatementDelivery entities and database migrations (AC: #1, #2, #6, #7, #9)
+      - Backend: Statement calculation service (AC: #1, #2, #7)
+      - Backend: Statement service (AC: #1, #2, #3, #4, #7, #8)
+      - Backend: Statement export service (AC: #3, #8, #10)
+      - Backend: Email delivery service (AC: #4)
+      - Backend: Reconciliation import service (AC: #5, #6, #9)
+      - Backend: Dispute management service (AC: #6, #9, #10)
+      - Backend: Statement controller and API (AC: #1, #2, #3, #4, #5, #7, #8)
+      - Frontend: Statement view component (AC: #1, #2)
+      - Frontend: Statement export and send UI (AC: #3, #4)
+      - Frontend: Reconciliation import UI (AC: #5, #6)
+      - Frontend: Dispute management UI (AC: #6, #9)
+      - Frontend: Statement history UI (AC: #7)
+      - Frontend: Batch export UI (AC: #8)
+      - Testing: Backend unit tests (AC: #1-#10)
+      - Testing: Integration and E2E tests (AC: #1-#10)
+      - Testing: Security and Performance
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Customer Statement - Summary View: GET /api/v1/ar-statements/:customerId?format=SUMMARY displays customer header, statement rows (invoice number, invoice date, invoice amount, amount paid, balance), totals row, and running balance column
+    2. Customer Statement - Detailed View: GET /api/v1/ar-statements/:customerId?format=DETAILED displays for each invoice sub-rows: receipts applied, credit notes, adjustments, with receipt date, amount, reference. Running balance updates after each transaction
+    3. Statement Export: GET /api/v1/ar-statements/:customerId/export?format=PDF|EXCEL. PDF includes legal footer with company address/tax code, report hash (SHA256), statement date. Excel includes all columns + formulas for balance calculations. Filename: "Statement_{CustomerCode}_{Date}.pdf"
+    4. Send to Customer: POST /api/v1/ar-statements/:customerId/send?email=customer@xyz.com queues email job. Email body includes statement attachment (PDF) + message (configurable). System creates delivery tracking record (sentAt, status=SENT, recipientEmail). Notification sent to accountant confirming dispatch
+    5. Customer Reconciliation Import: POST /api/v1/ar-statements/:customerId/import-reconciliation uploads CSV from customer. Template: InvoiceNumber, CustomerAmount, CustomerPayment, Notes. System parses, matches to system invoices, flags mismatches: if system.amount ≠ customer.amount, mark MISMATCH with colors (red=significant variance, yellow=rounding). Response includes reconciliationID, matchedCount, mismatchCount, list of mismatches
+    6. Dispute Logging: On reconciliation import, system creates DisputeLog entry for each mismatch: reconciliationID, invoiceID, systemAmount, customerAmount, variance, notes, status=OPEN. Accountant can view dispute grid, add resolution notes, mark RESOLVED. Resolution audit-logged
+    7. Statement History: System maintains statement history with versioning. Each statement generation creates StatementHistory entry: statementId, customerId, generatedAt, generatedBy, format (SUMMARY/DETAILED), filters applied, exportCount, sentCount. Users can view historical statements and regenerate previous versions
+    8. Batch Statement Export: GET /api/v1/ar-statements/batch-export?customerIds=id1,id2,id3&format=ZIP generates ZIP file containing individual statement PDFs/Excel files for each customer. ZIP filename: "Statements_{Date}.zip". Each file follows naming convention: "Statement_{CustomerCode}_{Date}.pdf"
+    9. Dispute Resolution Workflow: Accountant can view dispute grid filtered by status (OPEN/RESOLVED), customer, date range. For each dispute, accountant can add resolution notes, attach supporting documents, mark as RESOLVED. Resolution actions audit-logged with before/after status and resolution reason
+    10. Statement Notes in Exports: Subsequent statement exports include notes from previous reconciliation disputes. Notes appear in a dedicated "Reconciliation Notes" section at the bottom of PDF/Excel exports. Notes include: dispute date, invoice number, variance amount, resolution status, resolution notes
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-5.md</path>
+        <title>Epic Technical Specification: Sales Invoice Entry &amp; AR Management</title>
+        <section>AR Statement &amp; Reconciliation</section>
+        <snippet>Detailed acceptance criteria for statement generation (summary/detailed views), export (PDF/Excel with hash and legal footer), email functionality with delivery logging, import/reconciliation with mismatch detection, comprehensive history tracking, and dispute logging with audit trail.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-5-accounts-receivable-ar-module.md</path>
+        <title>Epic 5: Accounts Receivable (AR) Module</title>
+        <section>Story 5.5: Customer Statement &amp; Reconciliation</section>
+        <snippet>Business requirements for customer statement generation and reconciliation functionality, enabling accountants to produce statements, compare with customer-provided statements, track discrepancies, and maintain complete audit trail.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/5-4-ar-aging-report-and-overdue-alerts.md</path>
+        <title>Story 5.4: AR Aging Report and Overdue Alerts</title>
+        <section>Export Patterns and Service Patterns</section>
+        <snippet>Established patterns for Excel/PDF export with Apache POI/iText, audit logging for all operations, RBAC enforcement at service and API levels, and Redis caching. All export operations include metadata, timestamp, and audit trail. Report generation uses ARAgingExportServiceImpl patterns.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-5-supplier-statement-reconciliation.md</path>
+        <title>Story 4.5: Supplier Statement &amp; Reconciliation</title>
+        <section>AP Statement Patterns</section>
+        <snippet>AP statement reconciliation patterns to reuse: CSV import with mismatch detection, dispute logging entity structure, statement history tracking, email delivery with queue-based jobs, PDF/Excel export with legal footer and hash. AR statements will follow similar patterns but adapted for customer receivables instead of supplier payables.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/5-1-sales-invoice-entry-edit-and-draft-management.md</path>
+        <title>Story 5.1: Sales Invoice Entry, Edit, and Draft Management</title>
+        <section>SalesInvoice Entity and Service Patterns</section>
+        <snippet>SalesInvoice entity with complete invoice details (invoice_number, invoice_date, due_date, total_amount, amount_paid, remaining_balance, status). Service patterns with @Transactional, @PreAuthorize annotations. Multi-tenancy with CompanyScopedEntity pattern. Invoice status tracking for statement aggregation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/5-3-customer-payment-receipts-linked-receivables-standalone-entry.md</path>
+        <title>Story 5.3: Customer Payment Receipts (Linked Receivables, Standalone Entry)</title>
+        <section>Receipt and Allocation Data</section>
+        <snippet>ARPayment and ReceiptAllocation entities track payment history with receipt number, date, amount, and allocated amount. Payment allocation logic and receipt tracking established. Receipt allocations used for detailed statement views showing payment sub-rows.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/5-2-invoice-approval-workflow-maker-checker.md</path>
+        <title>Story 5.2: Invoice Approval Workflow (Maker-Checker)</title>
+        <section>Approval Workflow Patterns</section>
+        <snippet>Approval workflow patterns with email notification, queue-based jobs, and audit logging. Statement generation should only include POSTED invoices (approval workflow complete). Email delivery patterns established for approval notifications can be reused for statement delivery.</snippet>
+      </doc>
+    </docs>
+    
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/Customer.java</path>
+        <kind>entity</kind>
+        <symbol>Customer</symbol>
+        <reason>Customer entity with company scoping, validation, and contact information (email, address, tax_code) for statement generation and email delivery</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/CustomerRepository.java</path>
+        <kind>repository</kind>
+        <symbol>CustomerRepository</symbol>
+        <reason>Customer repository with company-scoped queries for filtering customers by company and retrieving contact information</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/CustomerService.java</path>
+        <kind>service</kind>
+        <symbol>CustomerService</symbol>
+        <reason>Customer service interface with CRUD operations and search capabilities for statement customer selection</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/SalesInvoice.java</path>
+        <kind>entity</kind>
+        <symbol>SalesInvoice</symbol>
+        <reason>SalesInvoice entity with invoice details (invoice_number, invoice_date, due_date, total_amount, amount_paid, remaining_balance, status) required for statement generation. Status values: DRAFT, PENDING_APPROVAL, POSTED, REJECTED, PAID, PARTIALLY_PAID</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/SalesInvoiceRepository.java</path>
+        <kind>repository</kind>
+        <symbol>SalesInvoiceRepository</symbol>
+        <reason>SalesInvoice repository with queries for filtering invoices by customer, status (POSTED only), and date range for statement data aggregation</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/ARPayment.java</path>
+        <kind>entity</kind>
+        <symbol>ARPayment</symbol>
+        <reason>ARPayment entity with payment details (receipt_number, receipt_date, amount) for detailed statement view showing receipt sub-rows</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/ReceiptAllocation.java</path>
+        <kind>entity</kind>
+        <symbol>ReceiptAllocation</symbol>
+        <reason>ReceiptAllocation entity linking payments to invoices with allocated amounts for detailed statement reconciliation and running balance calculation</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/sales/ReceiptServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>ReceiptServiceImpl</symbol>
+        <reason>Receipt service implementation with find operations and filtering for statement payment event queries and allocation tracking</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>AuditServiceImpl</symbol>
+        <reason>Audit service implementation for logging all statement operations (generation, export, email, import, reconciliation, dispute resolution) with user, timestamp, and IP tracking</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service</kind>
+        <symbol>AuditService</symbol>
+        <reason>Audit service interface defining logging methods to be extended for statement operations</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/ARAgingExportServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>exportToExcel, exportToPDF</symbol>
+        <reason>Export functionality patterns using Apache POI for Excel and iText/JasperReports for PDF, includes metadata, timestamp, legal footer, and SHA256 hash generation. AR aging export patterns to reuse for statement exports.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/sales/ReceiptController.java</path>
+        <kind>controller</kind>
+        <symbol>ReceiptController</symbol>
+        <reason>Controller patterns with @PreAuthorize annotations, company-scoped filtering, and standard error response format to reuse for AR statement controller</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/services/arAging.ts</path>
+        <kind>service</kind>
+        <symbol>exportAgingReport</symbol>
+        <reason>Frontend export service pattern using fetchWithAuth and Blob response for file download to reuse for statement exports</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/ARAging/ARAgingReport.tsx</path>
+        <kind>component</kind>
+        <symbol>ARAgingReport</symbol>
+        <reason>Frontend report component pattern with DataTable, filtering, export buttons, and drill-down functionality to reuse for statement list and dispute management</reason>
+      </artifact>
+    </code>
+    
+    <dependencies>
+      <backend>
+        <package name="org.springframework.boot:spring-boot-starter-web" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-data-jpa" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-security" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-validation" version="3.5.7" />
+        <package name="org.apache.poi:poi" version="5.3.0" note="For Excel export generation" />
+        <package name="com.itextpdf:itext7-core" version="8.0.5" note="For PDF export with legal footer and hash" />
+        <package name="org.postgresql:postgresql" version="42.7.4" />
+        <package name="org.flywaydb:flyway-core" version="11.10.0" note="For database migrations" />
+        <package name="io.jsonwebtoken:jjwt-api" version="0.12.5" note="For JWT authentication" />
+        <package name="org.springframework.boot:spring-boot-starter-mail" version="3.5.7" note="For email delivery (async queue)" />
+      </backend>
+      <frontend>
+        <package name="react" version="^19.1.1" />
+        <package name="react-router-dom" version="^7.9.5" />
+        <package name="@tanstack/react-table" version="^8.21.3" note="For data tables" />
+        <package name="@radix-ui/react-dialog" version="^1.1.15" note="For dialog components" />
+        <package name="axios" version="^1.7.9" note="For HTTP requests" />
+        <package name="zod" version="^4.1.12" note="For validation" />
+        <package name="react-hook-form" version="^7.66.0" note="For forms" />
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Multi-Tenancy: All statement entities (StatementHistory, DisputeLog, StatementDelivery) must extend CompanyScopedEntity interface and implement company_id field. All queries must be filtered by CompanyContext.getCompanyId().</constraint>
+    <constraint>RBAC Enforcement: Accountant can generate/send statements for assigned customers; Chief Accountant can view all statements and disputes; Admin can manage dispute resolutions. Use @PreAuthorize annotations at service and controller methods.</constraint>
+    <constraint>TT200 Compliance: Statement exports must follow TT200 format requirements including legal footer with company address and tax code, SHA-256 hash generation for document integrity, and proper Vietnamese formatting (currency: #,##0.00₫, dates: dd/MM/yyyy).</constraint>
+    <constraint>Audit Logging: All statement operations (generation, export, email, import, reconciliation, dispute updates) must be logged via AuditService with action, user, timestamp, IP address, and change details.</constraint>
+    <constraint>Service Layer Patterns: Use @Transactional for data modifications, @Cacheable for read operations where appropriate (frequently accessed statements), and @PreAuthorize for RBAC enforcement. Follow naming convention: ARStatementService with ARStatementServiceImpl in service/impl/sales/ package.</constraint>
+    <constraint>Database Design: Create new entities for statement history (StatementHistory), dispute logging (DisputeLog), and delivery tracking (StatementDelivery) with proper indexes on customer_id, company_id, generated_at, status (for DisputeLog), and reconciliation_id for query performance.</constraint>
+    <constraint>Export Patterns: Use iText/JasperReports for PDF generation with proper formatting (company header, customer header, statement table, legal footer with hash). Use Apache POI (XSSFWorkbook) for Excel generation with formulas for balance calculations. Include metadata (customer, period, timestamp) and hash in exported files.</constraint>
+    <constraint>Email Integration: Use async queue-based email jobs (Spring Async or message queue) to avoid blocking API responses. Track delivery status (SENT/DELIVERED/FAILED) with StatementDelivery entity. Implement rate limiting: max 100 emails per minute. Support batch email delivery with queue management.</constraint>
+    <constraint>Reconciliation Logic: Use tolerance-based matching (variance >1000 VND = SIGNIFICANT/red, variance ≤1000 VND = ROUNDING/yellow). Match invoices by invoice number (case-insensitive, trim whitespace). Create DisputeLog entries for each mismatch with status=OPEN. Support partial matches (some invoices matched, some not).</constraint>
+    <constraint>Statement Calculation: On-demand computation (no pre-computed cache like aging reports, but can cache for frequently accessed customers). Query POSTED invoices only. Exclude REVERSED and PAID invoices (balance = 0). Calculate running balance: start with opening balance (if any), then cumulative after each transaction. Include customer header information from Customer entity.</constraint>
+    <constraint>Frontend Structure: Create feature under features/accounting/pages/Statements/ following feature-first structure. Reuse existing DataTable components, export functionality, and dialog patterns from ARAging and Receipts components. Use shadcn/ui components consistently.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>ARStatementService</name>
+      <kind>service interface</kind>
+      <signature>
+        StatementDTO getStatement(UUID customerId, StatementFormat format, LocalDate asOfDate)
+        StatementHistoryDTO generateStatement(UUID customerId, StatementFormat format, LocalDate asOfDate)
+        byte[] exportStatement(UUID customerId, ExportFormat format, LocalDate asOfDate)
+        StatementDeliveryDTO sendStatementToCustomer(UUID customerId, String recipientEmail, String message)
+        byte[] batchExportStatements(List&lt;UUID&gt; customerIds, ExportFormat format)
+        Page&lt;StatementHistoryDTO&gt; getStatementHistory(UUID customerId, Pageable pageable)
+        StatementHistoryDTO regenerateStatement(UUID statementId)
+        ReconciliationResultDTO importReconciliation(UUID customerId, MultipartFile file)
+        Page&lt;DisputeLogDTO&gt; getDisputes(UUID customerId, DisputeStatus status, LocalDate dateFrom, LocalDate dateTo, Pageable pageable)
+        DisputeLogDTO resolveDispute(UUID disputeId, String resolutionNotes, List&lt;String&gt; attachmentUrls)
+        List&lt;ReconciliationNoteDTO&gt; getReconciliationNotes(UUID customerId)
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/ARStatementService.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARStatementCalculationService</name>
+      <kind>service interface</kind>
+      <signature>
+        StatementSummaryDTO generateSummaryStatement(UUID customerId, LocalDate asOfDate)
+        StatementDetailedDTO generateDetailedStatement(UUID customerId, LocalDate asOfDate)
+        BigDecimal computeRunningBalance(List&lt;StatementLineDTO&gt; lines, BigDecimal openingBalance)
+        String computeStatementHash(StatementDTO statement)
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/ARStatementCalculationService.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARStatementExportService</name>
+      <kind>service interface</kind>
+      <signature>
+        byte[] exportToPDF(StatementDTO statement, CompanyDTO company, CustomerDTO customer)
+        byte[] exportToExcel(StatementDTO statement, CompanyDTO company, CustomerDTO customer)
+        byte[] batchExportToZIP(List&lt;StatementDTO&gt; statements, ExportFormat format)
+        String generateFilename(String customerCode, LocalDate date, ExportFormat format)
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/ARStatementExportService.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARStatementEmailService</name>
+      <kind>service interface</kind>
+      <signature>
+        void sendStatementEmail(UUID customerId, String recipientEmail, String message, byte[] statementPDF)
+        StatementDeliveryDTO trackDelivery(UUID statementId, String recipientEmail, DeliveryStatus status)
+        void updateDeliveryStatus(UUID deliveryId, DeliveryStatus status, String failureReason)
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/ARStatementEmailService.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARReconciliationImportService</name>
+      <kind>service interface</kind>
+      <signature>
+        ReconciliationResultDTO parseReconciliationFile(UUID customerId, MultipartFile file)
+        List&lt;ReconciliationLineDTO&gt; matchInvoices(List&lt;ReconciliationLineDTO&gt; lines)
+        List&lt;DisputeLogDTO&gt; createDisputeLogs(UUID reconciliationId, List&lt;ReconciliationMismatchDTO&gt; mismatches)
+        ReconciliationResultDTO importReconciliation(UUID customerId, MultipartFile file)
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/ARReconciliationImportService.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARDisputeService</name>
+      <kind>service interface</kind>
+      <signature>
+        Page&lt;DisputeLogDTO&gt; getDisputes(UUID customerId, DisputeStatus status, LocalDate dateFrom, LocalDate dateTo, Pageable pageable)
+        DisputeLogDTO resolveDispute(UUID disputeId, String resolutionNotes, List&lt;String&gt; attachmentUrls)
+        List&lt;DisputeLogDTO&gt; getDisputeHistory(UUID invoiceId)
+        List&lt;ReconciliationNoteDTO&gt; getReconciliationNotes(UUID customerId)
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/ARDisputeService.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARStatementController REST API</name>
+      <kind>REST endpoints</kind>
+      <signature>
+        GET /api/v1/ar-statements/{customerId} (get statement with format query param: SUMMARY/DETAILED, optional asOfDate)
+        GET /api/v1/ar-statements/{customerId}/export (export PDF/Excel)
+        POST /api/v1/ar-statements/{customerId}/send (send to customer email with optional message)
+        POST /api/v1/ar-statements/{customerId}/import-reconciliation (upload reconciliation CSV)
+        GET /api/v1/ar-statements/{customerId}/history (get statement history)
+        GET /api/v1/ar-statements/batch-export (batch ZIP export for multiple customers)
+        GET /api/v1/ar-statements/disputes (get disputes with filters: customer, status, dateFrom, dateTo)
+        POST /api/v1/ar-statements/disputes/{disputeId}/resolve (resolve dispute with notes and attachments)
+      </signature>
+      <path>backend/src/main/java/com/accounting/controller/sales/ARStatementController.java</path>
+    </interface>
+    
+    <interface>
+      <name>StatementHistory Entity</name>
+      <kind>database entity</kind>
+      <signature>
+        Fields: id (UUID), company_id (UUID), customer_id (UUID), statement_number (String auto-generated), generated_at (Instant), generated_by_id (UUID), format (SUMMARY/DETAILED), filters_applied (JSON), export_count (Integer), sent_count (Integer), statement_hash (String SHA256), created_at (Instant)
+        Extends: CompanyScopedEntity
+        Indexes: company_id, customer_id, generated_at, statement_number (unique per company)
+      </signature>
+      <path>backend/src/main/java/com/accounting/entity/StatementHistory.java</path>
+    </interface>
+    
+    <interface>
+      <name>DisputeLog Entity</name>
+      <kind>database entity</kind>
+      <signature>
+        Fields: id (UUID), company_id (UUID), reconciliation_id (UUID nullable), invoice_id (UUID), invoice_number (String), system_amount (BigDecimal), customer_amount (BigDecimal), variance (BigDecimal), variance_type (SIGNIFICANT/ROUNDING), notes (String), status (OPEN/RESOLVED), resolved_at (Instant nullable), resolved_by_id (UUID nullable), resolution_notes (String nullable), created_at (Instant), updated_at (Instant)
+        Extends: CompanyScopedEntity
+        Indexes: company_id, invoice_id, reconciliation_id, status, customer_id (via invoice)
+      </signature>
+      <path>backend/src/main/java/com/accounting/entity/DisputeLog.java</path>
+    </interface>
+    
+    <interface>
+      <name>StatementDelivery Entity</name>
+      <kind>database entity</kind>
+      <signature>
+        Fields: id (UUID), company_id (UUID), statement_id (UUID), customer_id (UUID), recipient_email (String), sent_at (Instant), status (SENT/DELIVERED/FAILED), delivery_tracking_id (String nullable), failure_reason (String nullable), created_at (Instant)
+        Extends: CompanyScopedEntity
+        Indexes: company_id, statement_id, customer_id, sent_at, status
+      </signature>
+      <path>backend/src/main/java/com/accounting/entity/StatementDelivery.java</path>
+    </interface>
+    
+    <interface>
+      <name>Frontend arStatement API service</name>
+      <kind>typescript service</kind>
+      <signature>
+        getStatement(customerId: string, format: 'SUMMARY' | 'DETAILED', asOfDate?: string): Promise&lt;StatementDTO&gt;
+        exportStatement(customerId: string, format: 'PDF' | 'EXCEL'): Promise&lt;Blob&gt;
+        sendStatement(customerId: string, email: string, message?: string): Promise&lt;StatementDeliveryDTO&gt;
+        importReconciliation(customerId: string, file: File): Promise&lt;ReconciliationResultDTO&gt;
+        getStatementHistory(customerId: string, page?: number, size?: number): Promise&lt;PaginatedResponse&lt;StatementHistoryDTO&gt;&gt;
+        batchExportStatements(customerIds: string[], format: 'PDF' | 'EXCEL'): Promise&lt;Blob&gt;
+        getDisputes(params: DisputeFilterParams): Promise&lt;PaginatedResponse&lt;DisputeLogDTO&gt;&gt;
+        resolveDispute(disputeId: string, resolution: DisputeResolutionRequest): Promise&lt;DisputeLogDTO&gt;
+      </signature>
+      <path>frontend/src/services/arStatement.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Follow testing patterns established in Stories 5.1-5.4: Use TestContainers with PostgreSQL for integration tests. Test all service operations with company-scoped data isolation. Verify RBAC enforcement at service and API levels. Test export functionality (Excel and PDF formats) with TT200 compliance including legal footer and SHA256 hash. Test import and reconciliation logic with various scenarios (matched, mismatched, rounding variance, significant variance). Verify dispute logging and resolution workflows. Test statement history tracking and batch operations (ZIP download, batch email). Validate email functionality with async queue (mocked for tests). Test audit logging for all operations. Use JUnit 5 for backend tests and Vitest + Testing Library for frontend component tests.
+    </standards>
+    
+    <locations>
+      backend/src/test/java/com/accounting/service/impl/sales/ARStatementServiceImplTest.java
+      backend/src/test/java/com/accounting/service/impl/sales/ARStatementCalculationServiceImplTest.java
+      backend/src/test/java/com/accounting/service/impl/sales/ARStatementExportServiceImplTest.java
+      backend/src/test/java/com/accounting/service/impl/sales/ARReconciliationImportServiceImplTest.java
+      backend/src/test/java/com/accounting/service/impl/sales/ARDisputeServiceImplTest.java
+      backend/src/test/java/com/accounting/controller/sales/ARStatementControllerTest.java
+      backend/src/test/java/com/accounting/integration/ARStatementIntegrationTest.java
+      frontend/src/features/accounting/pages/Statements/__tests__/StatementView.test.tsx
+      frontend/src/features/accounting/pages/Statements/__tests__/ReconciliationImportDialog.test.tsx
+      frontend/src/features/accounting/pages/Statements/__tests__/DisputeManagement.test.tsx
+    </locations>
+    
+    <ideas>
+      <test ac="1" idea="Test summary statement generation with invoice-level aggregation. Verify customer header (name, address, tax code), statement rows (invoice number, date, amount, paid, balance), totals row calculation, and running balance column showing cumulative outstanding balance."/>
+      <test ac="2" idea="Test detailed statement generation with transaction-level view. Verify expandable rows showing receipts applied, credit notes, adjustments with receipt date, amount, reference. Verify running balance updates after each transaction (invoice → receipt → credit)."/>
+      <test ac="3" idea="Test PDF export with legal footer (company address, tax code), SHA256 hash of content computed before footer, statement date. Test Excel export with all columns plus formulas for balance calculations. Verify filename format: 'Statement_{CustomerCode}_{Date}.pdf'."/>
+      <test ac="4" idea="Test email delivery with async queue job system. Verify StatementDelivery record created with status=SENT, recipientEmail, sentAt. Test email body includes PDF attachment and configurable message. Verify notification sent to accountant confirming dispatch. Test delivery status updates (DELIVERED/FAILED)."/>
+      <test ac="5" idea="Test reconciliation CSV import parsing with template validation (InvoiceNumber, CustomerAmount, CustomerPayment, Notes). Test invoice matching by invoice number (case-insensitive, trim whitespace). Test mismatch detection: calculate variance, flag SIGNIFICANT (red) if >1000 VND, ROUNDING (yellow) if ≤1000 VND. Verify response includes reconciliationID, matchedCount, mismatchCount, mismatches array."/>
+      <test ac="6" idea="Test DisputeLog creation for each mismatch with reconciliationID, invoiceID, systemAmount, customerAmount, variance, notes, status=OPEN. Test dispute grid view filtered by status, customer, date range. Test dispute resolution: add resolution notes, attach documents, mark RESOLVED. Verify resolution audit-logged."/>
+      <test ac="7" idea="Test statement history tracking with StatementHistory entry on generation: statementId, customerId, generatedAt, generatedBy, format, filters_applied, exportCount, sentCount. Test historical statement viewing and regeneration from previous version. Verify pagination and filtering by customer and date range."/>
+      <test ac="8" idea="Test batch export ZIP generation with multiple customer statements. Verify ZIP filename: 'Statements_{Date}.zip'. Verify individual files follow naming: 'Statement_{CustomerCode}_{Date}.pdf'. Test format selection (PDF or Excel). Verify ZIP download with progress indicator."/>
+      <test ac="9" idea="Test dispute resolution workflow with dispute grid filtering (status: OPEN/RESOLVED, customer, date range). Test dispute detail dialog showing invoice details, variance breakdown. Test resolution with notes textarea, attachment upload, resolve button with confirmation. Verify resolution actions audit-logged with before/after status and resolution reason."/>
+      <test ac="10" idea="Test reconciliation notes included in subsequent statement exports. Verify notes section at bottom of PDF/Excel with dispute date, invoice number, variance amount, resolution status (OPEN/RESOLVED), resolution notes. Test notes aggregation from resolved disputes for customer."/>
+      <test ac="all" idea="Test RBAC enforcement: Accountant can generate/send for assigned customers; Chief Accountant can view all statements and disputes; Admin can manage dispute resolutions. Test multi-tenancy: verify all queries filtered by company_id and no cross-company data access."/>
+      <test ac="all" idea="Test audit logging for all operations: generation, export, email, import, reconciliation, dispute updates. Verify action, user, timestamp, IP address, and change details captured in audit log. Test statement hash integrity verification."/>
+      <test ac="performance" idea="Test statement generation performance: <3s for 1000 invoices per customer. Test email rate limiting: max 100 emails per minute. Test batch ZIP generation with 100+ customer statements. Test large reconciliation import (1000+ rows) parsing performance."/>
+    </ideas>
+  </tests>
+</story-context>
+

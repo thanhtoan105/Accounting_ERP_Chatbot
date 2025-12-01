@@ -1,8 +1,5 @@
 package com.accounting.dto;
-
-import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Instant;
-import java.util.UUID;
 import lombok.Data;
 
 @Data

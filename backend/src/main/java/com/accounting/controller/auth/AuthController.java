@@ -5,17 +5,23 @@ import com.accounting.dto.ForgotPasswordRequest;
 import com.accounting.dto.LoginRequest;
 import com.accounting.dto.ResetPasswordRequest;
 import com.accounting.security.JwtTokenProvider;
+import com.accounting.security.SecurityUtils;
 import com.accounting.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -117,6 +123,35 @@ public class AuthController {
     body.put("data", data);
 
     return ResponseEntity.ok(body);
+  }
+
+  /**
+   * Diagnostic endpoint to check current user's authentication and role.
+   * Useful for debugging authorization issues.
+   */
+  @GetMapping("/me")
+  public ResponseEntity<Map<String, Object>> getCurrentUser() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    Map<String, Object> response = new HashMap<>();
+    
+    if (auth == null) {
+      response.put("authenticated", false);
+      response.put("message", "Not authenticated");
+      return ResponseEntity.ok(response);
+    }
+    
+    response.put("authenticated", true);
+    response.put("userId", SecurityUtils.getCurrentUserId());
+    response.put("principal", auth.getPrincipal());
+    response.put("authorities", auth.getAuthorities().stream()
+        .map(GrantedAuthority::getAuthority)
+        .collect(Collectors.toList()));
+    response.put("hasAdminRole", SecurityUtils.hasRole("ADMIN"));
+    response.put("hasAccountantRole", SecurityUtils.hasRole("ACCOUNTANT"));
+    response.put("hasChiefAccountantRole", SecurityUtils.hasRole("CHIEF_ACCOUNTANT"));
+    response.put("hasCFORole", SecurityUtils.hasRole("CFO"));
+    
+    return ResponseEntity.ok(response);
   }
 
   private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken, boolean rememberMe) {

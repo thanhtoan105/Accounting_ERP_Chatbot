@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   useReactTable,
   getCoreRowModel,
@@ -62,6 +63,7 @@ const ROLES: Role[] = ['admin', 'accountant', 'chief_accountant', 'cfo']
 const STATUSES = ['ACTIVE', 'INACTIVE', 'LOCKED']
 
 export default function UserManagement() {
+  const { t } = useTranslation()
   const { canManageUsers } = useRole()
   const { user: currentUser } = useAuth()
 
@@ -293,15 +295,15 @@ export default function UserManagement() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">User Management</h1>
+        <h1 className="text-3xl font-bold">{t('users.title')}</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setInviteDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Invite User
+            {t('users.inviteUser')}
           </Button>
           <Button onClick={handleCreateUser}>
             <Plus className="mr-2 h-4 w-4" />
-            Create User
+            {t('users.createUser')}
           </Button>
         </div>
       </div>
@@ -310,7 +312,7 @@ export default function UserManagement() {
         <div className="relative flex-1 min-w-[250px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by email or name..."
+            placeholder={t('users.searchUsers')}
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-9"
@@ -324,10 +326,10 @@ export default function UserManagement() {
           }}
         >
           <SelectTrigger className="w-[150px]" aria-label="Role">
-            <SelectValue placeholder="All Roles" />
+            <SelectValue placeholder={t('users.allRoles')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="all">{t('users.allRoles')}</SelectItem>
             {ROLES.map((role) => (
               <SelectItem key={role} value={role}>
                 {getRoleDisplayName(role)}
@@ -343,10 +345,10 @@ export default function UserManagement() {
           }}
         >
           <SelectTrigger className="w-[150px]" aria-label="Status">
-            <SelectValue placeholder="All Statuses" />
+            <SelectValue placeholder={t('users.allStatuses')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="all">{t('users.allStatuses')}</SelectItem>
             {STATUSES.map((status) => (
               <SelectItem key={status} value={status}>
                 {status}

@@ -2,22 +2,11 @@
  * Type definitions for supplier statement functionality
  */
 
-export enum StatementType {
-  SUMMARY = 'SUMMARY',
-  DETAILED = 'DETAILED',
-}
+export type StatementType = 'SUMMARY' | 'DETAILED'
 
-export enum ExportFormat {
-  PDF = 'PDF',
-  EXCEL = 'EXCEL',
-}
+export type ExportFormat = 'PDF' | 'EXCEL'
 
-export enum DisputeStatus {
-  OPEN = 'OPEN',
-  IN_PROGRESS = 'IN_PROGRESS',
-  RESOLVED = 'RESOLVED',
-  REJECTED = 'REJECTED',
-}
+export type DisputeStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED'
 
 export interface StatementLineItem {
   type: 'BILL' | 'PAYMENT'

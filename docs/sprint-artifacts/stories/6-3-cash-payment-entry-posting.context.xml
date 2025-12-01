@@ -1,0 +1,138 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>3</storyId>
+    <title>Cash Payment Entry &amp; Posting</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-27</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/6-3-cash-payment-entry-posting.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>accountant</asA>
+    <iWant>record cash/bank payments and allocate them to AP bills or expenses</iWant>
+    <soThat>outflows are controlled and correctly posted to the general ledger</soThat>
+    <tasks>
+      <task id="1">Validate Existing AP Payment Domain Alignment (AC: #1-#5, #9-#10)</task>
+      <task id="2">Cash/Bank Account Integration (AC: #1, #5-#6)</task>
+      <task id="3">AP Allocation Rules (AC: #2-#3, #5)</task>
+      <task id="4">Standalone Expense Payments (AC: #4-#5, #10)</task>
+      <task id="5">Balance Guard Implementation (AC: #6, #10)</task>
+      <task id="6">Reversal Workflow (AC: #10)</task>
+      <task id="7">Batch Import Implementation (AC: #7, #10)</task>
+      <task id="8">Attachments Handling (AC: #1, #8, #10)</task>
+      <task id="9">Maker-Checker Workflow (AC: #8, #10)</task>
+      <task id="10">Frontend – Payment Form and List UX (AC: #1-#4, #6, #9)</task>
+      <task id="11">Frontend – Import and Attachments UX (AC: #7-#8)</task>
+      <task id="12">Testing – Backend (AC: #1-#10)</task>
+      <task id="13">Testing – Frontend and E2E (AC: #1-#9)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC6.3-01">Payment form captures: date, auto-number (CP-YYYY-seq), payee (supplier/other), reference, amount (>0), selected cash/bank account (active), payment method (cash/transfer), and attachment (required above threshold). Required fields validated client- and server-side.</criterion>
+    <criterion id="AC6.3-02">When payee is a supplier, UI shows unpaid/part-paid bills with remaining balances, supports FIFO default allocation with manual override, displays running remaining per bill and overall total.</criterion>
+    <criterion id="AC6.3-03">Overpayment is blocked; error lists bills where allocated amount exceeds remaining; user must adjust or remove allocations to proceed.</criterion>
+    <criterion id="AC6.3-04">Standalone payments to expense accounts (6xx/8xx) are permitted per policy; ad-hoc payee (not in supplier master) requires reason and is audit-tagged.</criterion>
+    <criterion id="AC6.3-05">Posting creates vouchers with: Cr Cash/Bank (1111/1121 via account.glAccountCode) and Dr AP (331) for allocated supplier payments or Dr Expense (6xx/8xx) for standalone payments; rounding and precision match GL engine rules.</criterion>
+    <criterion id="AC6.3-06">Before posting, system checks sufficient cash/bank balance; overdraft attempt is logged and either blocked or warned per configuration; block shows current balance and shortfall.</criterion>
+    <criterion id="AC6.3-07">CSV/Excel import supports header-based templates, atomic processing (all-or-nothing), row-level error mapping, and attachments mapped by filename. Errors include row number, field, and user-friendly message.</criterion>
+    <criterion id="AC6.3-08">Payments above threshold or marked sensitive route to approval; approver ≠ maker enforced server-side; notifications sent to approvers; all state transitions are audit-logged.</criterion>
+    <criterion id="AC6.3-09">Typical create + post of a simple payment completes within ≤ 10 seconds, measured from submit to server response; quick keyboard entry supported; latency logged for observability.</criterion>
+    <criterion id="AC6.3-10">All create/edit/post/approve/reject/reverse/import/download actions for payments generate audit entries capturing payload diffs and event hashes; blocked attempts are flagged separately for investigation.</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-6.md" title="Epic 6 Technical Specification" section="Story 6.3: Cash Payment Entry &amp; Posting" snippet="Payment form with payee selection, AP allocation (bill linkage), standalone expense payments, posting to GL (Cr Cash/Bank, Dr AP 331 or Expense 6xx/8xx), balance guard, maker-checker workflow, and audit logging." />
+      <doc path="docs/sprint-artifacts/stories/6-2-cash-receipt-entry-posting.md" title="Story 6.2: Cash Receipt Entry &amp; Posting" section="Learnings and Patterns" snippet="Reference patterns for GL account code integration, standalone transaction posting, threshold-based maker-checker, account validation, and performance telemetry." />
+      <doc path="docs/architecture/project-structure.md" title="Project Structure" section="Backend/Frontend Layout" snippet="Spring Boot backend with controller/service/repository layers. React frontend with feature-first modules under src/features/." />
+      <doc path="docs/architecture/data-architecture.md" title="Data Architecture" section="Multi-Tenancy Strategy" snippet="Row-level filtering via company_id on all tables. Spring Data JPA filter at repository level. API-level enforcement via security filter." />
+      <doc path="docs/ux-design-specification.md" title="UX Design Specification" section="Generic Data Table" snippet="Standard table and form patterns for accounting module UI." />
+    </docs>
+    <code>
+      <file path="backend/src/main/java/com/accounting/service/PaymentService.java" kind="service-interface" symbol="PaymentService" lines="1-121" reason="Core payment service interface defining create, update, allocateFIFO, postPayment, cancelPayment methods. Extend for balance guard and standalone expense support." />
+      <file path="backend/src/main/java/com/accounting/service/impl/payment/PaymentServiceImpl.java" kind="service-impl" symbol="PaymentServiceImpl.postPayment" lines="623-786" reason="Current payment posting logic with maker-checker pattern, voucher creation, and bill status updates. Add balance guard check and GL account code lookup." />
+      <file path="backend/src/main/java/com/accounting/controller/payment/PaymentController.java" kind="controller" symbol="PaymentController" lines="205-251" reason="Existing POST /api/v1/ap-payments/{id}/post endpoint. Reference for RBAC annotations and response patterns." />
+      <file path="backend/src/main/java/com/accounting/entity/BankAccount.java" kind="entity" symbol="BankAccount" lines="1-212" reason="Bank account entity with glAccountCode field. Used for GL posting credit entries." />
+      <file path="backend/src/main/java/com/accounting/entity/ReceiptStatus.java" kind="entity" symbol="ReceiptStatus" lines="1-20" reason="PENDING_APPROVAL status pattern to mirror for PaymentStatus if not already present." />
+      <file path="backend/src/main/java/com/accounting/service/impl/sales/ReceiptServiceImpl.java" kind="service-impl" symbol="ReceiptServiceImpl" lines="1-500" reason="Reference for GL account code lookup via bankAccount.glAccountCode, threshold-based maker-checker, and telemetry patterns from Story 6.2." />
+      <file path="backend/src/test/java/com/accounting/controller/payment/PaymentControllerIntegrationTest.java" kind="test" symbol="PaymentControllerIntegrationTest" lines="285-370" reason="Existing integration tests for payment posting and maker-checker workflow validation." />
+      <file path="frontend/src/features/accounting/pages/Receipts/ReceiptForm.tsx" kind="component" symbol="ReceiptForm" lines="1-477" reason="Reference for payment form structure including customer picker, bank account selection, allocation grid, and attachment handling." />
+      <file path="frontend/src/components/receipt/ReceiptAttachmentDropzone.tsx" kind="component" symbol="ReceiptAttachmentDropzone" lines="1-526" reason="Multi-file attachment dropzone with drag-drop, progress tracking, and 10 files/20MB limit. Reuse/adapt for PaymentAttachmentDropzone." />
+      <file path="frontend/src/components/receipt/ReceiptAllocationGrid.tsx" kind="component" symbol="ReceiptAllocationGrid" lines="1-200" reason="Allocation grid showing invoices with remaining balances. Adapt for bill allocation in payment form." />
+      <file path="backend/src/main/java/com/accounting/repository/BankAccountRepository.java" kind="repository" symbol="BankAccountRepository" lines="91-174" reason="Repository methods for GL account code queries and transaction references." />
+    </code>
+    <dependencies>
+      <backend>
+        <dependency name="spring-boot-starter-web" version="3.5.7" />
+        <dependency name="spring-boot-starter-data-jpa" version="3.5.7" />
+        <dependency name="spring-boot-starter-security" version="3.5.7" />
+        <dependency name="spring-boot-starter-validation" version="3.5.7" />
+        <dependency name="postgresql" version="42.7.4" />
+        <dependency name="flyway-core" version="11.10.0" />
+        <dependency name="apache-poi" version="5.3.0" />
+        <dependency name="apache-commons-csv" version="1.11.0" />
+        <dependency name="testcontainers" version="1.21.3" />
+      </backend>
+      <frontend>
+        <dependency name="react" version="19.1.x" />
+        <dependency name="typescript" version="5.9.x" />
+        <dependency name="@tanstack/react-table" version="8.21.x" />
+        <dependency name="react-hook-form" version="7.66.x" />
+        <dependency name="zod" version="4.1.x" />
+        <dependency name="date-fns" version="4.1.x" />
+        <dependency name="lucide-react" version="0.552.x" />
+        <dependency name="sonner" version="2.0.x" />
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Reuse existing APPaymentService and /api/v1/ap-payments endpoints. Do not create new cash-specific tables; use existing ap_payments and transaction_allocations tables.</constraint>
+    <constraint type="architecture">All posting and reversal actions must go through VoucherService from Epic 3, ensuring double-entry invariant (NFR11) and period close constraints (FR05, NFR12).</constraint>
+    <constraint type="architecture">All entities must implement CompanyScopedEntity for row-level security via company_id filtering.</constraint>
+    <constraint type="security">RBAC checks enforced server-side. Never rely purely on frontend hiding of controls.</constraint>
+    <constraint type="security">Maker-checker pattern: approver ≠ creator for PENDING_APPROVAL payments. Roles: CHIEF_ACCOUNTANT, CFO, ADMIN can approve.</constraint>
+    <constraint type="api">Maintain standard { data, meta, error } response wrapper. Use consistent error codes for validation failures, RBAC denials, balance guard violations, and period-close violations.</constraint>
+    <constraint type="performance">Payment create + post ≤ 10 seconds end-to-end. Add latency logging for observability.</constraint>
+    <constraint type="testing">Follow existing AP payment testing patterns from Epic 4. Include positive/negative test cases for allocation logic, balance guard, period validation, and reversal workflows.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="PaymentService.postPayment" kind="service-method" signature="APPaymentDTO postPayment(UUID paymentId)" path="backend/src/main/java/com/accounting/service/PaymentService.java" />
+    <interface name="PaymentService.allocateFIFO" kind="service-method" signature="List&lt;PaymentAllocationDTO&gt; allocateFIFO(BigDecimal paymentAmount, Long supplierId)" path="backend/src/main/java/com/accounting/service/PaymentService.java" />
+    <interface name="PaymentService.allocateManually" kind="service-method" signature="APPaymentDTO allocateManually(UUID paymentId, List&lt;PaymentAllocationRequest&gt; allocations)" path="backend/src/main/java/com/accounting/service/PaymentService.java" />
+    <interface name="POST /api/v1/ap-payments" kind="REST" signature="Create payment with allocations, returns APPaymentDTO" path="backend/src/main/java/com/accounting/controller/payment/PaymentController.java" />
+    <interface name="POST /api/v1/ap-payments/{id}/post" kind="REST" signature="Post payment, creates voucher, returns APPaymentDTO" path="backend/src/main/java/com/accounting/controller/payment/PaymentController.java" />
+    <interface name="POST /api/v1/ap-payments/{id}/approve" kind="REST" signature="Approve PENDING_APPROVAL payment (Chief Accountant/CFO)" path="backend/src/main/java/com/accounting/controller/payment/PaymentController.java" />
+    <interface name="POST /api/v1/ap-payments/{id}/reverse" kind="REST" signature="Reverse posted payment with reason" path="backend/src/main/java/com/accounting/controller/payment/PaymentController.java" />
+    <interface name="POST /api/v1/ap-payments/import" kind="REST" signature="Batch import payments via CSV/Excel" path="backend/src/main/java/com/accounting/controller/payment/PaymentController.java" />
+    <interface name="VoucherService.create" kind="service-method" signature="VoucherDTO create(VoucherCreateRequest request)" path="backend/src/main/java/com/accounting/service/VoucherService.java" />
+    <interface name="BankAccount.glAccountCode" kind="entity-field" signature="String glAccountCode - GL account code for voucher Cr entries (1111/1121)" path="backend/src/main/java/com/accounting/entity/BankAccount.java" />
+  </interfaces>
+
+  <tests>
+    <standards>JUnit 5 + TestContainers for backend integration tests. Vitest + Testing Library + jsdom for frontend component tests. Playwright for E2E tests. All tests must be company-scoped. Follow existing AP payment test patterns from Epic 4.</standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/impl/payment/</location>
+      <location>backend/src/test/java/com/accounting/controller/payment/</location>
+      <location>frontend/src/components/receipt/__tests__/</location>
+      <location>tests/api/</location>
+      <location>tests/e2e/</location>
+    </locations>
+    <ideas>
+      <idea acId="AC6.3-01">Test payment form field validation (date, amount >0, payee required, account selection)</idea>
+      <idea acId="AC6.3-02">Test FIFO allocation algorithm and manual override capability</idea>
+      <idea acId="AC6.3-03">Test overpayment blocking with specific error messages per bill</idea>
+      <idea acId="AC6.3-04">Test standalone expense payment without supplier, with reason and audit tag</idea>
+      <idea acId="AC6.3-05">Test GL posting creates correct Dr/Cr entries using bankAccount.glAccountCode</idea>
+      <idea acId="AC6.3-06">Test balance guard blocks/warns on insufficient balance, logs overdraft attempts</idea>
+      <idea acId="AC6.3-07">Test batch import atomic processing with row-level error mapping</idea>
+      <idea acId="AC6.3-08">Test maker-checker: threshold routing, approver ≠ creator, role validation</idea>
+      <idea acId="AC6.3-09">Test payment post latency ≤ 10 seconds with performance telemetry</idea>
+      <idea acId="AC6.3-10">Test audit entries generated for all payment lifecycle events</idea>
+    </ideas>
+  </tests>
+</story-context>

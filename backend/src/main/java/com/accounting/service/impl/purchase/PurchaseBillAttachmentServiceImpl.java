@@ -1,10 +1,11 @@
 package com.accounting.service.impl.purchase;
 
 import com.accounting.dto.PurchaseBillAttachmentDTO;
+import com.accounting.entity.Attachment;
+import com.accounting.entity.AttachmentEntityType;
 import com.accounting.entity.PurchaseBill;
-import com.accounting.entity.PurchaseBillAttachment;
 import com.accounting.entity.PurchaseBillStatus;
-import com.accounting.repository.PurchaseBillAttachmentRepository;
+import com.accounting.repository.AttachmentRepository;
 import com.accounting.repository.PurchaseBillRepository;
 import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
@@ -31,7 +32,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Implementation of PurchaseBillAttachmentService.
- * Handles file upload, validation, storage, and deletion for purchase bill attachments.
+ * Handles file upload, validation, storage, and deletion for purchase bill
+ * attachments.
  */
 @Service
 public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachmentService {
@@ -45,13 +47,11 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
       "image/jpg",
       "image/png",
       "image/gif",
-      "image/webp"
-  );
+      "image/webp");
 
   // Allowed file extensions (for additional validation)
   private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
-      "pdf", "jpg", "jpeg", "png", "gif", "webp"
-  );
+      "pdf", "jpg", "jpeg", "png", "gif", "webp");
 
   // Maximum file size: 20MB per file
   private static final long MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -65,14 +65,14 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
   // Signed URL expiry: 10 minutes (600 seconds)
   private static final int SIGNED_URL_EXPIRY_SECONDS = 600;
 
-  private final PurchaseBillAttachmentRepository attachmentRepository;
+  private final AttachmentRepository attachmentRepository;
   private final PurchaseBillRepository purchaseBillRepository;
   private final UserRepository userRepository;
   private final StorageService storageService;
   private final VirusScanService virusScanService;
 
   public PurchaseBillAttachmentServiceImpl(
-      PurchaseBillAttachmentRepository attachmentRepository,
+      AttachmentRepository attachmentRepository,
       PurchaseBillRepository purchaseBillRepository,
       UserRepository userRepository,
       StorageService storageService,
@@ -119,10 +119,10 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
     }
 
     // Check total size limit
-    List<PurchaseBillAttachment> existingAttachments = attachmentRepository
+    List<Attachment> existingAttachments = attachmentRepository
         .findByPurchaseBillIdAndCompanyId(purchaseBillId, companyId);
     long currentTotalSize = existingAttachments.stream()
-        .mapToLong(PurchaseBillAttachment::getFileSize)
+        .mapToLong(Attachment::getFileSize)
         .sum();
     if (currentTotalSize + file.getSize() > MAX_TOTAL_SIZE) {
       throw new ResponseStatusException(
@@ -137,8 +137,9 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
     Long userId = SecurityUtils.getCurrentUserId();
 
     // Create attachment entity
-    PurchaseBillAttachment attachment = new PurchaseBillAttachment();
-    attachment.setPurchaseBill(purchaseBill);
+    Attachment attachment = new Attachment();
+    attachment.setEntityType(AttachmentEntityType.PURCHASE_BILL);
+    attachment.setEntityId(purchaseBillId);
     attachment.setCompanyId(companyId);
     attachment.setFileName(file.getOriginalFilename() != null ? file.getOriginalFilename() : "file");
     attachment.setStoragePath(storagePath);
@@ -171,7 +172,7 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
             HttpStatus.NOT_FOUND, "Purchase bill not found: " + purchaseBillId));
 
     // Load attachments (company-scoped)
-    List<PurchaseBillAttachment> attachments = attachmentRepository
+    List<Attachment> attachments = attachmentRepository
         .findByPurchaseBillIdAndCompanyId(purchaseBillId, companyId);
 
     return attachments.stream()
@@ -188,7 +189,7 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
     }
 
     // Load attachment (company-scoped)
-    PurchaseBillAttachment attachment = attachmentRepository
+    Attachment attachment = attachmentRepository
         .findByPurchaseBillIdAndIdAndCompanyId(purchaseBillId, attachmentId, companyId)
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Attachment not found: " + attachmentId));
@@ -224,13 +225,14 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
     if (purchaseBill.getStatus() != PurchaseBillStatus.DRAFT) {
       throw new ResponseStatusException(
           HttpStatus.FORBIDDEN,
-          "Cannot delete attachment: purchase bill is not in DRAFT status. Current status: " + purchaseBill.getStatus());
+          "Cannot delete attachment: purchase bill is not in DRAFT status. Current status: "
+              + purchaseBill.getStatus());
     }
 
     // Check permissions: only creator or admin can delete
     boolean isCreator = purchaseBill.getCreatedById().equals(userId);
     boolean isAdmin = isAdmin();
-    
+
     if (!isCreator && !isAdmin) {
       throw new ResponseStatusException(
           HttpStatus.FORBIDDEN,
@@ -238,7 +240,7 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
     }
 
     // Load attachment (company-scoped)
-    PurchaseBillAttachment attachment = attachmentRepository
+    Attachment attachment = attachmentRepository
         .findByPurchaseBillIdAndIdAndCompanyId(purchaseBillId, attachmentId, companyId)
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Attachment not found: " + attachmentId));
@@ -289,7 +291,8 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
     if (originalFilename != null) {
       String extension = getFileExtension(originalFilename).toLowerCase(Locale.ROOT);
       if (!ALLOWED_EXTENSIONS.contains(extension)) {
-        errors.add("File extension not supported: ." + extension + ". Allowed extensions: .pdf, .jpg, .jpeg, .png, .gif, .webp");
+        errors.add("File extension not supported: ." + extension
+            + ". Allowed extensions: .pdf, .jpg, .jpeg, .png, .gif, .webp");
       }
     }
 
@@ -299,17 +302,17 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
     }
   }
 
-  private PurchaseBillAttachmentDTO toDTO(PurchaseBillAttachment attachment) {
+  private PurchaseBillAttachmentDTO toDTO(Attachment attachment) {
     PurchaseBillAttachmentDTO dto = new PurchaseBillAttachmentDTO();
     dto.setId(attachment.getId());
-    dto.setPurchaseBillId(attachment.getPurchaseBill().getId());
+    dto.setPurchaseBillId(attachment.getEntityId());
     dto.setFileName(attachment.getFileName());
     dto.setMimeType(attachment.getMimeType());
     dto.setFileSize(attachment.getFileSize());
     dto.setUploadedAt(attachment.getUploadedAt());
-    
+
     dto.setUploadedBy(attachment.getUploadedBy());
-    
+
     // Load user name if available
     if (attachment.getUploadedByUser() != null) {
       dto.setUploadedByName(attachment.getUploadedByUser().getFullName());
@@ -338,4 +341,3 @@ public class PurchaseBillAttachmentServiceImpl implements PurchaseBillAttachment
         .anyMatch(auth -> auth.equals("ROLE_ADMIN") || auth.equals("ADMIN"));
   }
 }
-

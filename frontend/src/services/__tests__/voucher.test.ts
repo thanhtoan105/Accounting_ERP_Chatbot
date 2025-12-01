@@ -72,7 +72,7 @@ describe('voucher service', () => {
       expect(headers.get('Authorization')).toBe('Bearer mock-token')
       expect(headers.get('X-Company-Id')).toBe('1')
       expect(result.data).toHaveLength(1)
-      expect(result.total).toBe(1)
+      expect(result.data.totalElements).toBe(1)
     })
 
     it('handles error responses', async () => {

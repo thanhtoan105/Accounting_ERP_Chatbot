@@ -1,0 +1,251 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>epic-5</epicId>
+    <storyId>5.2</storyId>
+    <title>Story 5.2: Invoice Approval Workflow (Maker-Checker)</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-20T22:30:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow (manual execution via Cascade)</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/5-2-invoice-approval-workflow-maker-checker.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As a chief accountant,</asA>
+    <iWant>I want threshold-based approval for sales invoices,</iWant>
+    <soThat>so that high-value or sensitive revenue documents are reviewed before posting.</soThat>
+    <tasks><![CDATA[
+- [ ] **Backend: Approval threshold configuration and company settings integration (AC: #1)**
+  - [ ] Confirm or extend `CompanySettings` entity and Flyway migrations to include AR invoice approval threshold (default 100M VND per company).
+  - [ ] Add service and API methods to read/update this threshold, reusing patterns from AP approval configuration in Story 4.2.
+  - [ ] Ensure thresholds are company-scoped and enforced via `CompanyScopedEntity` patterns.
+- [ ] **Backend: Invoice approval workflow service for AR (AC: #1–#4, #6–#8, #10)**
+  - [ ] Extend `SalesInvoiceStatus` and `SalesInvoice` usage to support `PENDING_APPROVAL`, `POSTED`, and `REJECTED` as per Epic 5 tech spec.
+  - [ ] Implement an approval workflow service for AR invoices (e.g. within `service/impl/sales`) that encapsulates: threshold checks, submit-for-approval, approve, reject, and auto-approve logic.
+  - [ ] Enforce approver ≠ creator at service and database levels, mirroring maker-checker enforcement from AP `ApprovalWorkflow`.
+  - [ ] Integrate with period management to block approvals in closed periods.
+  - [ ] Integrate with the voucher engine so that approval posts the correct AR voucher entries and invalidates AR aging cache.
+  - [ ] Integrate with shared `AuditService` to log APPROVE / REJECT / AUTO_APPROVE actions with before/after snapshots and `eventHash`.
+- [ ] **Backend: REST API endpoints and RBAC for AR approvals (AC: #2–#4, #6–#8, #10)**
+  - [ ] Add approval-related endpoints under `SalesInvoiceController` (e.g. `/api/v1/ar/sales-invoices/{id}/submit-for-approval`, `/approve`, `/reject`) following REST conventions used by AP approval workflow.
+  - [ ] Secure endpoints with `@PreAuthorize` so that only Chief Accountant (and/or CFO) roles can approve/reject, while Accountants can only submit for approval.
+  - [ ] Return structured error responses for blocked approvals (period closed, approver==creator, invalid status transitions).
+- [ ] **Backend: Notification integration for AR invoice approvals (AC: #2, #3, #7, #9)**
+  - [ ] Reuse or extend the existing approval notification patterns from AP (`ApprovalNotificationService`), adapting messages and templates for AR invoices.
+  - [ ] Implement in-app notification hooks for approval requests, approvals, rejections, and (later) escalations, ensuring failures are logged but non-blocking.
+  - [ ] Wire optional email notifications via the shared email infrastructure when configured.
+- [ ] **Frontend: AR approval workflow UI and change history (AC: #2, #3, #5–#7, #9)**
+  - [ ] Extend the Sales Invoice list and detail pages to display approval status badges, approver information, and actions (Submit for approval, Approve, Reject) based on role and invoice status.
+  - [ ] Implement an approval decision dialog and workflow history panel by adapting AP components for AR.
+  - [ ] Surface full invoice details, line items, attachments, and a change history view in the approval UI.
+  - [ ] Ensure UX and component structure align with existing shadcn/ui patterns and feature-first layout for `SalesInvoices`.
+- [ ] **Testing: Backend and frontend coverage for AR approval workflow (AC: #1–#10)**
+  - [ ] Add unit tests for the AR approval workflow service covering threshold logic, approver ≠ creator, period closed blocking, auto-approval, and error handling.
+  - [ ] Add integration tests for submit, approve, reject, and auto-approve endpoints, including audit log assertions.
+  - [ ] Add component tests for approval dialogs/history and list actions, plus E2E flows: submit → approve, submit → reject, and auto-approve for below-threshold invoices.
+    ]]></tasks>
+  </story>
+
+  <acceptanceCriteria><![CDATA[
+1. (AC26-001) Approval threshold is stored in company settings with a default of 100M VND per company. Admins can update the threshold via a settings API or UI. The threshold is company-wide in MVP (no per-customer overrides).
+2. (AC26-002) When a sales invoice is posted and its total amount exceeds the configured threshold or is marked sensitive, the system sets its status to `PENDING_APPROVAL` instead of `POSTED`, shows an "Awaiting Approval" badge, and sends an approval request notification to the Chief Accountant (in-app and email when email service is available).
+3. (AC26-003) When a sales invoice is posted and its total amount is less than or equal to the approval threshold and it is not marked sensitive, the system auto-approves it: status transitions directly to `POSTED` without a manual approval step and an `AUTO_APPROVE` audit record is written explaining that the amount was below threshold.
+4. (AC26-004) The approver of a sales invoice must be different from its creator. If the same user attempts to approve their own invoice, the request is rejected with HTTP 403 and a clear error message (for example, "Cannot approve your own invoice"), and the attempt is logged to the audit trail.
+5. (AC26-005) The approval UI for pending invoices shows invoice header details, all line items, attachments, and a change history panel showing previous edits with timestamps, editor identity, and diffs. Approvers can review this context before making a decision.
+6. (AC26-006) When a Chief Accountant approves a pending invoice, the system transitions status to `POSTED`, sets `approvedBy` and `approvedAt`, posts the journal voucher via the voucher engine (Dr 131 / Cr 5xx per revenue line), invalidates AR aging cache, and notifies the creator. The approval action and voucher linkage are written to the audit log.
+7. (AC26-007) When a Chief Accountant rejects a pending invoice, they must enter a rejection reason (required, max 500 characters). The system reverts the invoice back to `DRAFT`, stores the reason, logs a rejection audit event, and notifies the creator so they can adjust and resubmit.
+8. (AC26-008) If an approval or post is attempted for an invoice whose `invoiceDate` falls in a closed accounting period, the operation is blocked with an explicit error (for example, "Period 2024-12 is closed; cannot approve"), and the attempt is recorded in the audit log.
+9. (AC26-009) Approval notifications are always sent as in-app notifications and, when email service is configured, as emails. Notification payload includes invoice number, customer, amount, current status, approver name/role, and a deep link into the approval UI. Email failures do not block approval but are logged.
+10. (AC26-010) Every approval and rejection action produces an immutable `AuditLog` entry with `entityType=SALES_INVOICE`, `action=APPROVE|REJECT|AUTO_APPROVE`, before/after snapshots, diff summary, and a deterministic `eventHash` for tamper detection. Audit entries are filterable and exportable with other AR audit logs.
+  ]]></acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics/epic-5-accounts-receivable-ar-module.md</path>
+        <title>Epic 5: Accounts Receivable (AR) Module</title>
+        <section>Story 5.2: Invoice Approval Workflow (Maker-Checker)</section>
+        <snippet><![CDATA[Defines the high-level business goals and acceptance criteria for Story 5.2, including threshold-based approvals, maker-checker separation, approver UI, and audit expectations aligned with Epic 4 patterns.]]></snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-5.md</path>
+        <title>Epic Technical Specification: Sales Invoice Entry &amp; AR Management</title>
+        <section>FR26 – Maker-Checker Approval Workflow</section>
+        <snippet><![CDATA[Provides detailed technical requirements for AR approval workflows: company-level threshold configuration, routing above-threshold invoices to PENDING_APPROVAL, auto-approval rules, maker-checker enforcement, audit logging, and suggested test cases per AC26-001–AC26-010.]]></snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/5-1-sales-invoice-entry-edit-and-draft-management.md</path>
+        <title>Story 5.1: Sales Invoice Entry, Edit, and Draft Management</title>
+        <section>Dev Notes &amp; Project Structure</section>
+        <snippet><![CDATA[Documents the existing SalesInvoice entities, services, controller endpoints, and validation/audit patterns for AR invoices. Story 5.2 must build on this foundation instead of creating parallel invoice models or endpoints.]]></snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-2-purchase-bill-approval-workflow-maker-checker.md</path>
+        <title>Story 4.2: Purchase Bill Approval Workflow (Maker-Checker)</title>
+        <section>Architecture Patterns and Lessons Learned</section>
+        <snippet><![CDATA[Describes the implemented AP maker-checker workflow including threshold configuration (20M VND), PENDING_APPROVAL routing, approver ≠ creator enforcement, rejection reasons, audit trails, and period-close checks—serving as the primary reference pattern for AR approval.]]></snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/data-architecture.md</path>
+        <title>Data Architecture</title>
+        <section>Multi-Tenancy Strategy &amp; AP/AR Entities</section>
+        <snippet><![CDATA[Explains company_id-based row-level security via CompanyScopedEntity and CompanyContext and lists core AP/AR tables including sales_invoices and purchase_bills. AR approval workflows must respect this multi-tenant design.]]></snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/security-architecture.md</path>
+        <title>Security Architecture</title>
+        <section>Authorization (RBAC)</section>
+        <snippet><![CDATA[Defines roles (Admin, Accountant, Chief Accountant, CFO) and method-level security patterns. AR approval endpoints must restrict approve/reject actions to appropriate roles and enforce company-level data isolation.]]></snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/epic-to-architecture-mapping.md</path>
+        <title>Epic to Architecture Mapping</title>
+        <section>Epic 5: AR Module</section>
+        <snippet><![CDATA[Maps Epic 5 backend code to controller/sales/ and frontend UI to pages/SalesInvoices.tsx, reinforcing that AR approval behavior should extend these areas rather than introducing a separate AR module.]]></snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/epic-4-retro-2025-11-20.md</path>
+        <title>Epic 4 Retrospective</title>
+        <section>Approval Workflow Pattern Reuse</section>
+        <snippet><![CDATA[Retrospective evidence notes that the AP approval workflow pattern is stable (zero bugs) and directly reusable for Epic 5, justifying reusing ApprovalWorkflowService concepts for AR maker-checker.]]></snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <codeArtifact>
+        <path>backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java</path>
+        <kind>controller</kind>
+        <symbol>SalesInvoiceController</symbol>
+        <lines>45-347</lines>
+        <reason>Existing REST controller for sales invoices at /api/v1/ar/sales-invoices. Story 5.2 will add submit-for-approval, approve, and reject endpoints here, following AP controller patterns.</reason>
+      </codeArtifact>
+      <codeArtifact>
+        <path>backend/src/main/java/com/accounting/service/impl/sales/SalesInvoiceServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>SalesInvoiceServiceImpl</symbol>
+        <lines>91-604</lines>
+        <reason>Current service handling SalesInvoice creation, validation, and posting. AR approval workflow will extend this service to integrate threshold checks, maker-checker logic, audit logging, and voucher posting triggers.</reason>
+      </codeArtifact>
+      <codeArtifact>
+        <path>backend/src/main/java/com/accounting/entity/SalesInvoice.java</path>
+        <kind>entity</kind>
+        <symbol>SalesInvoice</symbol>
+        <lines>25-123</lines>
+        <reason>AR invoice entity with status, approvedById, postedVoucherId, and isSensitive fields. Approval workflow will transition statuses (DRAFT/PENDING_APPROVAL/POSTED/REJECTED) and populate approval metadata.</reason>
+      </codeArtifact>
+      <codeArtifact>
+        <path>backend/src/main/java/com/accounting/service/ApprovalWorkflowService.java</path>
+        <kind>service-interface</kind>
+        <symbol>ApprovalWorkflowService</symbol>
+        <lines>9-100</lines>
+        <reason>AP approval workflow interface defining checkApprovalRequired, submitForApproval, approve, reject, and autoApprove. Serves as the primary pattern to mirror for AR-specific approval services.</reason>
+      </codeArtifact>
+      <codeArtifact>
+        <path>backend/src/main/java/com/accounting/service/impl/purchase/ApprovalWorkflowServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>ApprovalWorkflowServiceImpl</symbol>
+        <lines>80-337</lines>
+        <reason>Implements maker-checker for purchase bills: reads company-level threshold, moves bills to PENDING_APPROVAL, enforces approver ≠ creator, checks closed periods, posts vouchers, invalidates AP aging cache, and logs audit events. AR approval should follow the same structure.</reason>
+      </codeArtifact>
+      <codeArtifact>
+        <path>backend/src/main/java/com/accounting/entity/PurchaseBill.java</path>
+        <kind>entity</kind>
+        <symbol>PurchaseBill</symbol>
+        <lines>25-117</lines>
+        <reason>AP bill entity with approval-related fields mirroring those on SalesInvoice. Demonstrates how approval metadata is modeled, reused when designing AR-specific behavior.</reason>
+      </codeArtifact>
+      <codeArtifact>
+        <path>tests/e2e/purchase-bill-approval.spec.ts</path>
+        <kind>e2e-test</kind>
+        <symbol>Purchase bill approval E2E flows</symbol>
+        <lines>19-320</lines>
+        <reason>Existing Playwright tests for AP maker-checker workflows. AR tests for submit, approve, reject, and auto-approve can reuse these flows and patterns.</reason>
+      </codeArtifact>
+    </code>
+
+    <dependencies>
+      <dependency>
+        <ecosystem>backend-maven</ecosystem>
+        <manifest>backend/pom.xml</manifest>
+        <packages><![CDATA[Spring Boot 3.5.7 (web, validation, data-jpa, security, cache, data-redis), PostgreSQL driver, Flyway, Testcontainers, Lombok, SLF4J.]]></packages>
+      </dependency>
+      <dependency>
+        <ecosystem>frontend-node</ecosystem>
+        <manifest>frontend/package.json</manifest>
+        <packages><![CDATA[React 19, React Router 7, @tanstack/react-query, @tanstack/react-table, Tailwind CSS 4, shadcn/ui (via Radix + custom components), Axios, Zod, React Hook Form, Vitest, Testing Library.]]></packages>
+      </dependency>
+      <dependency>
+        <ecosystem>e2e</ecosystem>
+        <manifest>package.json</manifest>
+        <packages><![CDATA[@playwright/test 1.56.1 for end-to-end tests in tests/e2e, configured via playwright.config.ts to run against the Vite frontend and Spring Boot backend.]]></packages>
+      </dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints><![CDATA[
+- Multi-tenancy: All AR approval operations must respect company_id scoping using CompanyScopedEntity and CompanyContext, matching existing AP and voucher modules.
+- Maker-checker: Enforce that creators cannot approve their own invoices (service- and database-level where applicable) and restrict approve/reject operations to Chief Accountant/CFO roles via Spring Security method-level security.
+- Pattern reuse: Reuse the ApprovalWorkflowService and ApprovalWorkflowServiceImpl patterns from AP for AR approvals instead of creating a completely different workflow mechanism.
+- Voucher engine integration: Do not duplicate posting logic; approvals must delegate to the existing voucher engine so that Dr 131 / Cr 5xx / Cr 3332 entries follow Epic 3 rules for leaf-only accounts and double-entry checks.
+- Period management: Approval and posting must honor closed periods; attempts in closed periods should be rejected with clear messages and logged to AuditLog.
+- Audit trail: All approval-related actions (submit, approve, reject, auto-approve) must log immutable AuditLog entries with before/after snapshots, diff summary, actor, device/IP, and deterministic eventHash, aligning with AR audit requirements.
+- Architecture alignment: Backend changes for this story stay under controller/sales/ and service/impl/sales/; frontend changes live under features/accounting/pages/SalesInvoices/ and related components, matching the epic-to-architecture mapping.
+- Security: No secrets in code; preserve JWT-based auth and RBAC model described in security-architecture.md. Approval APIs must not leak cross-company data or bypass role checks.]]></constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /api/v1/ar/sales-invoices</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/ar/sales-invoices</signature>
+      <path>backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java</path>
+      <notes>Existing endpoint for creating and posting sales invoices; AR approval logic will hook into this flow to decide between auto-approve and PENDING_APPROVAL routing.</notes>
+    </interface>
+    <interface>
+      <name>POST /api/v1/ar/sales-invoices/{id}/submit-for-approval</name>
+      <kind>REST endpoint (planned)</kind>
+      <signature>POST /api/v1/ar/sales-invoices/{id}/submit-for-approval</signature>
+      <path>backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java</path>
+      <notes>Planned endpoint to submit an invoice for approval. Will validate status and threshold rules and delegate to an AR approval workflow service.</notes>
+    </interface>
+    <interface>
+      <name>POST /api/v1/ar/sales-invoices/{id}/approve</name>
+      <kind>REST endpoint (planned)</kind>
+      <signature>POST /api/v1/ar/sales-invoices/{id}/approve</signature>
+      <path>backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java</path>
+      <notes>Planned endpoint for Chief Accountant/CFO to approve an invoice, enforcing approver ≠ creator, posting voucher entries, invalidating AR aging cache, and logging audit events.</notes>
+    </interface>
+    <interface>
+      <name>POST /api/v1/ar/sales-invoices/{id}/reject</name>
+      <kind>REST endpoint (planned)</kind>
+      <signature>POST /api/v1/ar/sales-invoices/{id}/reject</signature>
+      <path>backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java</path>
+      <notes>Planned endpoint for approvers to reject pending invoices with mandatory rejection reason and full audit logging.</notes>
+    </interface>
+    <interface>
+      <name>ApprovalWorkflowService.approve</name>
+      <kind>service method (reference pattern)</kind>
+      <signature>ApprovalWorkflowDTO approve(UUID workflowId, Long approverId, String reason)</signature>
+      <path>backend/src/main/java/com/accounting/service/ApprovalWorkflowService.java</path>
+      <notes>Reference AP service method that validates approver ≠ creator, checks workflow status and periods, posts vouchers, and logs audit events. AR approval service should follow similar contracts.</notes>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards><![CDATA[
+Backend testing uses JUnit with Spring Boot test support and Testcontainers for integration tests; AR approval logic should follow existing patterns from Epic 4 and Story 5.1, including unit tests for validation and state transitions plus integration tests over REST controllers. Frontend testing uses Vitest and Testing Library for React components, and Playwright for end-to-end user flows under tests/e2e, following the guidelines in tests/README.md (parallel execution, failure-only artifacts, and stable selectors via data-testid).]]></standards>
+    <locations><![CDATA[
+- Backend unit/integration tests: backend/src/test/java/**
+- Frontend unit/component tests: frontend/src/**/__tests__/** and frontend/src/**/*.{test,spec}.tsx
+- End-to-end tests: tests/e2e/** (configured via playwright.config.ts)]]></locations>
+    <ideas><![CDATA[
+From tech-spec FR26 test matrix (Story 5.2):
+- AC26-001 → test_approvalThreshold_readFromCompanySettings: Verify approval threshold is read from company settings with default 100M VND and is updatable via settings API.
+- AC26-002 → test_invoicePost_amountOver100M_status_PENDING_APPROVAL: Posting invoice above threshold routes to PENDING_APPROVAL, shows Awaiting Approval, and sends notifications.
+- AC26-003 → test_invoicePost_amountUnder100M_autoApproves: Posting invoice below or equal to threshold auto-approves and logs AUTO_APPROVE audit event.
+- AC26-004 → test_invoiceApprove_rejects_creatorApprovesOwn: Approver equal to creator results in 403 and audit log of blocked attempt.
+- AC26-005 → test_approvalUI_displayChangeHistory: Approval UI exposes line items, attachments, and change history.
+Additional ideas:
+- AC26-006/AC26-007: Integration tests for approve/reject endpoints ensuring status transitions (PENDING_APPROVAL → POSTED/DRAFT), voucher posting, AR aging cache invalidation (when AR aging is implemented), and audit log entries.
+- AC26-008: Negative tests for approvals in closed periods using PeriodManagementService stubs.
+- AC26-009/AC26-010: Tests that approval notifications are non-blocking (logging on failure) and that all approval actions create immutable AuditLog records with expected fields.]]></ideas>
+  </tests>
+</story-context>

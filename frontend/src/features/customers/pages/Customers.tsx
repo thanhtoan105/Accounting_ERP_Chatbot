@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Plus,
   Search,
@@ -69,6 +70,7 @@ import CustomerImportWizard from '@/features/customers/components/CustomerImport
 const POLLING_INTERVAL = 5 * 60 * 1000 // 5 minutes
 
 export default function Customers() {
+  const { t } = useTranslation()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -404,19 +406,19 @@ export default function Customers() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('customers.title')}</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setImportWizardOpen(true)}>
             <Upload className="mr-2 h-4 w-4" />
-            Import
+            {t('common.import')}
           </Button>
           <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
-            Export
+            {t('common.export')}
           </Button>
           <Button onClick={handleAddClick}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Customer
+            {t('customers.addCustomer')}
           </Button>
         </div>
       </div>
@@ -425,7 +427,7 @@ export default function Customers() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name or code"
+            placeholder={t('customers.searchCustomers')}
             value={searchTerm}
             onChange={(e) => {
               const v = e.target.value
@@ -471,7 +473,7 @@ export default function Customers() {
           aria-label="Refresh"
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
@@ -489,7 +491,7 @@ export default function Customers() {
         </div>
       ) : customers.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          <p className="text-lg font-medium">No customers found</p>
+          <p className="text-lg font-medium">{t('customers.noCustomersFound')}</p>
           <p className="text-sm">
             {debouncedSearch
               ? 'Try adjusting your search criteria.'

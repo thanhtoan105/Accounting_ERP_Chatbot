@@ -1,0 +1,150 @@
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import { Loader2, Plus, ChevronsUpDownIcon } from 'lucide-react'
+
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { getCustomers } from '@/features/customers/services/customer'
+import type { Customer } from '@/types/customer'
+
+export interface CustomerPickerProps {
+  value?: Customer | null
+  onChange?: (customer: Customer | null) => void
+  disabled?: boolean
+  error?: string | null
+  placeholder?: string
+  onAddNew?: () => void
+}
+
+export function CustomerPicker({
+  value,
+  onChange,
+  disabled,
+  error,
+  placeholder = 'Select customer...',
+  onAddNew,
+}: CustomerPickerProps) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [customers, setCustomers] = useState<Customer[]>([])
+
+  useEffect(() => {
+    if (!open) return
+    async function fetchCustomers() {
+      setLoading(true)
+      try {
+        const response = await getCustomers({
+          page: 1,
+          size: 20,
+          search: search || undefined,
+          status: true,
+        })
+        setCustomers(response.data)
+      } catch (err) {
+        console.error('Failed to fetch customers', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCustomers()
+  }, [open, search])
+
+  const selectedLabel = useMemo(() => {
+    if (!value) return placeholder
+    return `${value.code || ''} • ${value.name}`.trim()
+  }, [value, placeholder])
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn(
+            'w-full justify-between',
+            error && 'border-destructive',
+            disabled && 'cursor-not-allowed opacity-50',
+          )}
+          disabled={disabled}
+          role="combobox"
+          aria-expanded={open}
+          aria-label="Customer combobox"
+        >
+          <span className="truncate">{selectedLabel}</span>
+          <ChevronsUpDownIcon className="opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
+        <Command>
+          <CommandInput
+            placeholder="Search customers..."
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            {loading ? (
+              <div className="flex items-center justify-center p-4">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            ) : (
+              <>
+                <CommandEmpty>
+                  {search ? 'No customers found.' : 'Start typing to search...'}
+                </CommandEmpty>
+                {onAddNew && (
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={() => {
+                        onAddNew()
+                        setOpen(false)
+                      }}
+                      className="text-primary"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add New Customer
+                    </CommandItem>
+                  </CommandGroup>
+                )}
+                <CommandGroup>
+                  {customers.map((customer) => (
+                    <CommandItem
+                      key={customer.id}
+                      value={`${customer.code} ${customer.name}`}
+                      onSelect={() => {
+                        onChange?.(customer)
+                        setOpen(false)
+                      }}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {customer.code ? `${customer.code} • ` : ''}
+                          {customer.name}
+                        </span>
+                        {customer.taxCode && (
+                          <span className="text-xs text-muted-foreground">
+                            Tax: {customer.taxCode}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}

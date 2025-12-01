@@ -11,8 +11,9 @@ import { defineConfig, devices } from '@playwright/test';
  * - Parallel execution with CI-aware worker configuration
  */
 export default defineConfig({
-  // Test directory
-  testDir: './tests/e2e',
+  // Test directory - includes both E2E and API tests
+  testDir: './tests',
+  testMatch: ['**/*.spec.ts'], // Match all spec files
 
   // Parallel execution
   fullyParallel: true,

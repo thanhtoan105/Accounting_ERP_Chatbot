@@ -1,0 +1,134 @@
+# generated: 2025-10-31T00:00:00Z
+# project: accounting
+# project_key: accounting
+# tracking_system: file-system
+# story_location: {project-root}/docs/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then to 'done'
+
+generated: 2025-10-31T00:00:00Z
+project: accounting
+project_key: accounting
+tracking_system: file-system
+story_location: "{project-root}/docs/sprint-artifacts"
+
+development_status:
+  epic-1: contexted
+  1-1-initialize-project-repositories-devops: done
+  1-2-company-bootstrap-multitenancy: done
+  1-3-user-registration-secure-authentication: done
+  1-4-role-based-access-control-rbac: done
+  1-5-user-profile-management: done
+  1-6-company-settings: done
+  1-7-mvp-branding-app-layout: done
+  1-8-admin-demo-data-seed: done
+  epic-1-retrospective: completed
+
+  epic-2: contexted
+  2-1-chart-of-accounts-coa-tt200-preload-read-only-management: done
+  2-2-customer-master-data-management-crud: done
+  2-3-supplier-master-data-management-crud: done
+  2-4-bank-account-management-crud: done
+  2-5-company-settings-expansion-advanced-fields: done
+  2-6-data-import-migration: done
+  2-7-audit-trail-data-integrity-for-master-data: done
+  epic-2-retrospective: completed
+
+  epic-3: contexted
+  3-1-voucher-list-and-search: done
+  3-2-voucher-form-create-edit-line-item-engine: done
+  3-3-posting-unposting-reversal-workflows: done
+  3-4-leaf-only-and-double-entry-validation-engine: done
+  3-5-audit-trail-for-voucher-lifecycle: done
+  3-6-period-selector-voucher-period-mapping: done
+  3-7-attachments-and-voucher-documentation: done
+  epic-3-retrospective: completed
+
+  epic-4: contexted
+  4-1-purchase-bills-entry-edit-and-draft-management: done
+  4-2-purchase-bill-approval-workflow-maker-checker: done
+  4-3-cash-payments-linked-to-bills-standalone: done
+  4-4-ap-aging-and-overdue-alerts: done
+  4-5-supplier-statement-reconciliation: done
+  4-6-vat-handling-and-reporting: done
+  4-7-audit-trail-and-compliance-for-all-ap-activities: done
+  epic-4-retrospective: completed
+
+  epic-5: contexted
+  5-1-sales-invoice-entry-edit-and-draft-management: done
+  5-2-invoice-approval-workflow-maker-checker: done
+  5-3-customer-payment-receipts-linked-receivables-standalone-entry: done
+  5-4-ar-aging-report-and-overdue-alerts: done
+  5-5-customer-statement-reconciliation: done
+  5-6-revenue-vat-handling: deferred
+  5-7-audit-trail-and-compliance-for-all-ar-activities: deferred
+  epic-5-retrospective: optional
+
+  epic-6: contexted
+  6-1-cash-bank-account-management-crud-security: done
+  6-2-cash-receipt-entry-posting: done
+  6-3-cash-payment-entry-posting: done
+  6-4-bank-book-cash-book-view-running-balances: done
+  6-5-manual-bank-reconciliation: backlog
+  6-6-cash-bank-audit-and-compliance: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-mvp-trial-balance-basic: backlog
+  7-2-mvp-balance-sheet-income-statement-basic: backlog
+  7-1-trial-balance-s06-dn-generation-export: backlog
+  7-2-statutory-reports-b01-dn-b02-dn-b03-dn-f01-with-tt200-mapping: backlog
+  7-3-report-scheduling-export-distribution-and-access-control: backlog
+  7-4-multi-period-comparison-variance-analysis: backlog
+  7-5-reporting-audit-compliance-and-integrity: backlog
+  7-6-f01-detailed-ledger-report-implementation: backlog
+  epic-7-retrospective: optional
+
+  epic-8: backlog
+  8-0-mvp-metabase-integration: done
+  8-1-real-time-financial-dashboard-setup-data-pipeline: ready-for-dev
+  8-2-widget-configuration-user-personalization: backlog
+  8-3-drill-down-filtering-and-interactive-exploration: backlog
+  8-4-trends-forecasts-and-predictive-analytics: backlog
+  8-5-data-quality-integrity-and-bi-security: backlog
+  epic-8-retrospective: optional
+
+  epic-9: contexted
+  9-0-mvp-voucher-rag-chatbot-basic: done
+  9-1-chatbot-widget-integration-and-security:  backlog
+  9-2-contextual-retrieval-augmented-generation-rag-for-q-a: backlog
+  9-3-workflow-automation-and-guided-journeys: backlog
+  9-4-feedback-training-data-capture-and-guardrail-monitoring: backlog
+  9-5-usage-analytics-and-continuous-improvement: backlog
+  epic-9-retrospective: optional
+
+  epic-10: backlog
+  10-1-environment-configuration-management: backlog
+  10-2-user-access-management-utilities: backlog
+  10-3-audit-log-explorer-legal-holds: backlog
+  10-4-backup-restore-and-disaster-recovery-utilities: backlog
+  10-5-global-settings-and-scheduled-utilities: backlog
+  epic-10-retrospective: optional

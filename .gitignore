@@ -73,7 +73,6 @@ jacoco.exec
 .clinerules/
 .gemini/
 .opencode/
-.windsurf/
 
 # Playwright
 /test-results/

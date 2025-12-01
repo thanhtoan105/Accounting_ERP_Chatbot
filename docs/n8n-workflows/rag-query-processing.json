@@ -1,0 +1,431 @@
+{
+    "name": "RAG Query Processing",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "chatbot-query",
+                "authentication": "headerAuth",
+                "responseMode": "lastNode",
+                "options": {
+                    "responseData": "firstEntryJson"
+                }
+            },
+            "id": "query-webhook",
+            "name": "Chatbot Query Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                240,
+                300
+            ],
+            "webhookId": "chatbot-query"
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForAllItems",
+                "jsCode": "// Validate and prepare query\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const payload = item.json;\n  const query = payload.query?.trim();\n  const companyId = payload.companyId;\n  const userId = payload.userId;\n  const sessionId = payload.sessionId;\n  const language = payload.language || 'vi';\n  \n  // Validation\n  if (!query || query.length === 0) {\n    throw new Error('Query cannot be empty');\n  }\n  if (query.length > 5000) {\n    throw new Error('Query exceeds maximum length of 5000 characters');\n  }\n  if (!companyId) {\n    throw new Error('Company ID is required');\n  }\n  \n  results.push({\n    json: {\n      query,\n      companyId,\n      userId,\n      sessionId,\n      language,\n      timestamp: new Date().toISOString()\n    }\n  });\n}\n\nreturn results;"
+            },
+            "id": "validate-query",
+            "name": "Validate Query",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.AZURE_OPENAI_ENDPOINT }}openai/deployments/{{ $env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT }}/embeddings?api-version=2023-05-15",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ input: $json.query }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "query-embedding",
+            "name": "Generate Query Embedding",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                680,
+                300
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "azure-openai-creds",
+                    "name": "Azure OpenAI API Key"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForAllItems",
+                "jsCode": "// Prepare Pinecone Query\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const embeddingResponse = item.json;\n  const queryData = $('Validate Query').first().json;\n  \n  const embedding = embeddingResponse.data?.[0]?.embedding;\n  \n  if (!embedding) {\n    throw new Error('No embedding returned from Azure OpenAI');\n  }\n  \n  // Pinecone query payload with namespace and filters\n  const pineconeQuery = {\n    vector: embedding,\n    topK: 10,\n    includeMetadata: true,\n    namespace: `company-${queryData.companyId}`,\n    filter: {\n      companyId: queryData.companyId\n    }\n  };\n  \n  results.push({\n    json: {\n      pineconeQuery,\n      originalQuery: queryData.query,\n      companyId: queryData.companyId,\n      userId: queryData.userId,\n      sessionId: queryData.sessionId,\n      language: queryData.language\n    }\n  });\n}\n\nreturn results;"
+            },
+            "id": "prepare-pinecone-query",
+            "name": "Prepare Pinecone Query",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.PINECONE_HOST }}/query",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json.pineconeQuery) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "pinecone-query",
+            "name": "Query Pinecone",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1120,
+                300
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "pinecone-creds",
+                    "name": "Pinecone API Key"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForAllItems",
+                "jsCode": "// Build Context and Citations from Pinecone Results\nconst items = $input.all();\nconst results = [];\nconst SCORE_THRESHOLD = 0.7;\n\nfor (const item of items) {\n  const pineconeResponse = item.json;\n  const queryData = $('Prepare Pinecone Query').first().json;\n  \n  const matches = pineconeResponse.matches || [];\n  \n  // Filter by score threshold\n  const relevantMatches = matches.filter(m => m.score >= SCORE_THRESHOLD);\n  \n  // Build context string for LLM\n  let contextParts = [];\n  let citations = [];\n  let totalScore = 0;\n  \n  for (const match of relevantMatches) {\n    const meta = match.metadata || {};\n    totalScore += match.score;\n    \n    // Add to context\n    contextParts.push(`\n[Voucher: ${meta.voucherNumber}]\nNgày: ${meta.voucherDate || 'N/A'}\nMô tả: ${meta.description || 'N/A'}\nTổng Nợ: ${meta.totalDebit || 0} VND\nTổng Có: ${meta.totalCredit || 0} VND\n${meta.voucherText ? `Chi tiết: ${meta.voucherText.substring(0, 500)}` : ''}\n---`);\n    \n    // Add citation\n    citations.push({\n      entityType: meta.entityType || 'voucher',\n      entityId: match.id.replace('voucher-', ''),\n      voucherNumber: meta.voucherNumber,\n      excerpt: meta.description || meta.voucherText?.substring(0, 100),\n      relevanceScore: match.score,\n      link: `/vouchers/${match.id.replace('voucher-', '')}`\n    });\n  }\n  \n  const avgScore = relevantMatches.length > 0 ? totalScore / relevantMatches.length : 0;\n  const confidence = (avgScore * 0.7) + (Math.min(relevantMatches.length, 5) / 5 * 0.3);\n  \n  results.push({\n    json: {\n      context: contextParts.join('\\n'),\n      citations,\n      confidence,\n      matchCount: relevantMatches.length,\n      totalMatches: matches.length,\n      originalQuery: queryData.originalQuery,\n      companyId: queryData.companyId,\n      userId: queryData.userId,\n      sessionId: queryData.sessionId,\n      language: queryData.language\n    }\n  });\n}\n\nreturn results;"
+            },
+            "id": "build-context",
+            "name": "Build Context & Citations",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1340,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForAllItems",
+                "jsCode": "// Check confidence and prepare LLM prompt\nconst items = $input.all();\nconst results = [];\nconst LOW_CONFIDENCE_THRESHOLD = 0.5;\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // Low confidence - return fallback response\n  if (data.confidence < LOW_CONFIDENCE_THRESHOLD || data.matchCount === 0) {\n    results.push({\n      json: {\n        skipLLM: true,\n        answer: 'Không đủ dữ liệu để trả lời câu hỏi này. Vui lòng thử:\\n- Đặt câu hỏi cụ thể hơn về số phiếu hoặc khoảng thời gian\\n- Kiểm tra xem các phiếu kế toán liên quan đã được nhập chưa\\n- Liên hệ quản trị viên nếu cần hỗ trợ thêm',\n        citations: [],\n        confidence: data.confidence,\n        originalQuery: data.originalQuery,\n        companyId: data.companyId,\n        userId: data.userId,\n        sessionId: data.sessionId\n      }\n    });\n    continue;\n  }\n  \n  // Build system prompt for Vietnamese accounting assistant\n  const systemPrompt = `Bạn là trợ lý kế toán AI chuyên nghiệp, hỗ trợ người dùng tìm hiểu thông tin về các phiếu kế toán và giao dịch tài chính.\n\nQuy tắc:\n1. Trả lời bằng tiếng Việt, ngắn gọn và chính xác\n2. Chỉ sử dụng thông tin từ ngữ cảnh được cung cấp\n3. Nếu không chắc chắn, nói rõ \"Dựa trên dữ liệu hiện có...\"\n4. Đề cập đến số phiếu cụ thể khi có thể\n5. Sử dụng định dạng số tiền VND với dấu phẩy (ví dụ: 10,000,000 VND)\n6. Không bịa thông tin không có trong ngữ cảnh`;\n\n  const userPrompt = `Ngữ cảnh từ hệ thống kế toán:\n${data.context}\n\nCâu hỏi của người dùng: ${data.originalQuery}\n\nHãy trả lời câu hỏi dựa trên ngữ cảnh trên.`;\n  \n  results.push({\n    json: {\n      skipLLM: false,\n      systemPrompt,\n      userPrompt,\n      context: data.context,\n      citations: data.citations,\n      confidence: data.confidence,\n      originalQuery: data.originalQuery,\n      companyId: data.companyId,\n      userId: data.userId,\n      sessionId: data.sessionId\n    }\n  });\n}\n\nreturn results;"
+            },
+            "id": "prepare-llm-prompt",
+            "name": "Prepare LLM Prompt",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1560,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.skipLLM }}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "id": "if-skip-llm",
+            "name": "Skip LLM?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                1780,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.AZURE_OPENAI_ENDPOINT }}openai/deployments/{{ $env.AZURE_OPENAI_COMPLETION_DEPLOYMENT }}/chat/completions?api-version=2023-05-15",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({\n  messages: [\n    { role: 'system', content: $json.systemPrompt },\n    { role: 'user', content: $json.userPrompt }\n  ],\n  max_tokens: 500,\n  temperature: 0.3\n}) }}",
+                "options": {
+                    "timeout": 60000
+                }
+            },
+            "id": "llm-completion",
+            "name": "Generate LLM Response",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2000,
+                200
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "azure-openai-creds",
+                    "name": "Azure OpenAI API Key"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForAllItems",
+                "jsCode": "// Format final response with LLM answer\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const llmResponse = item.json;\n  const promptData = $('Prepare LLM Prompt').first().json;\n  \n  const answer = llmResponse.choices?.[0]?.message?.content || 'Không thể tạo câu trả lời. Vui lòng thử lại.';\n  \n  // Determine confidence level label\n  let confidenceLabel;\n  if (promptData.confidence >= 0.8) {\n    confidenceLabel = 'high';\n  } else if (promptData.confidence >= 0.5) {\n    confidenceLabel = 'medium';\n  } else {\n    confidenceLabel = 'low';\n  }\n  \n  results.push({\n    json: {\n      success: true,\n      answer,\n      citations: promptData.citations,\n      confidence: promptData.confidence,\n      confidenceLabel,\n      query: promptData.originalQuery,\n      companyId: promptData.companyId,\n      userId: promptData.userId,\n      sessionId: promptData.sessionId,\n      responseTimeMs: Date.now() - new Date($('Validate Query').first().json.timestamp).getTime(),\n      usage: llmResponse.usage || {}\n    }\n  });\n}\n\nreturn results;"
+            },
+            "id": "format-response",
+            "name": "Format LLM Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2220,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForAllItems",
+                "jsCode": "// Format low-confidence fallback response\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const data = item.json;\n  \n  results.push({\n    json: {\n      success: true,\n      answer: data.answer,\n      citations: data.citations,\n      confidence: data.confidence,\n      confidenceLabel: 'low',\n      query: data.originalQuery,\n      companyId: data.companyId,\n      userId: data.userId,\n      sessionId: data.sessionId,\n      responseTimeMs: Date.now() - new Date($('Validate Query').first().json.timestamp).getTime()\n    }\n  });\n}\n\nreturn results;"
+            },
+            "id": "format-fallback",
+            "name": "Format Fallback Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2000,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForAllItems",
+                "jsCode": "// Merge responses from both branches\nconst items = $input.all();\nreturn items;"
+            },
+            "id": "merge-response",
+            "name": "Merge Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2440,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForAllItems",
+                "jsCode": "// Error Handler\nconst items = $input.all();\nconst queryData = $('Validate Query').first()?.json || {};\n\nconsole.error('RAG Query failed:', {\n  error: items[0]?.json?.error || 'Unknown error',\n  query: queryData.query,\n  companyId: queryData.companyId,\n  timestamp: new Date().toISOString()\n});\n\nreturn [{\n  json: {\n    success: false,\n    answer: 'Đã xảy ra lỗi khi xử lý câu hỏi. Vui lòng thử lại sau hoặc liên hệ quản trị viên.',\n    citations: [],\n    confidence: 0,\n    confidenceLabel: 'error',\n    query: queryData.query,\n    companyId: queryData.companyId,\n    error: items[0]?.json?.error || 'Unknown error'\n  }\n}];"
+            },
+            "id": "error-handler-query",
+            "name": "Error Handler",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1560,
+                500
+            ]
+        }
+    ],
+    "connections": {
+        "Chatbot Query Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Query",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Query": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Query Embedding",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Query Embedding": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare Pinecone Query",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error Handler",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Pinecone Query": {
+            "main": [
+                [
+                    {
+                        "node": "Query Pinecone",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Pinecone": {
+            "main": [
+                [
+                    {
+                        "node": "Build Context & Citations",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error Handler",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Build Context & Citations": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare LLM Prompt",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare LLM Prompt": {
+            "main": [
+                [
+                    {
+                        "node": "Skip LLM?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Skip LLM?": {
+            "main": [
+                [
+                    {
+                        "node": "Format Fallback Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Generate LLM Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate LLM Response": {
+            "main": [
+                [
+                    {
+                        "node": "Format LLM Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error Handler",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format LLM Response": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Fallback Response": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Error Handler": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1",
+        "timezone": "Asia/Ho_Chi_Minh",
+        "saveDataErrorExecution": "all",
+        "saveDataSuccessExecution": "all",
+        "saveExecutionProgress": true,
+        "saveManualExecutions": true
+    },
+    "staticData": null,
+    "tags": [
+        {
+            "name": "chatbot"
+        },
+        {
+            "name": "rag"
+        },
+        {
+            "name": "query"
+        }
+    ],
+    "triggerCount": 1,
+    "meta": {
+        "instanceId": "accounting-chatbot",
+        "templateCredsSetupCompleted": false
+    }
+}

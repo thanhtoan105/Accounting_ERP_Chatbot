@@ -1,0 +1,547 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>epic-5</epicId>
+    <storyId>5.3</storyId>
+    <title>Customer Payment Receipts (Linked Receivables, Standalone Entry)</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-21</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/5-3-customer-payment-receipts-linked-receivables-standalone-entry.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>accountant</asA>
+    <iWant>to record receipts and allocate them to invoices (including partials and advances)</iWant>
+    <soThat>AR balances and customer statements are correct</soThat>
+    <tasks>
+      **Backend Tasks:**
+      - Create ARPayment entity and database migration (AC: #1-5, #10-11)
+        - Entity fields: id, company_id, customer_id, receipt_number (auto-generated), receipt_date, cash/bank account, amount, payment method, status (DRAFT/POSTED/REVERSED), linked_voucher_id
+        - Implement CompanyScopedEntity for multi-tenancy
+        - Create ReceiptAllocation entity for invoice allocation tracking
+        - Add Flyway migration V20251221__create_ar_payments.sql
+        - Add validation annotations and constraints
+      
+      - Receipt validation service (AC: #1-5)
+        - ReceiptValidationService interface and implementation
+        - Validate customer has open invoices
+        - Validate allocations (no overpayment, within invoice remaining balance)
+        - Validate standalone receipts (admin-only)
+        - Return field-level error maps
+      
+      - Receipt service (AC: #1-7, #10-11)
+        - ReceiptService interface and ReceiptServiceImpl
+        - CRUD operations: findAll (paginated, filtered), findById, create, update
+        - allocateInvoices(receiptId, allocations) - supports single/multiple invoice allocation
+        - postReceipt(receiptId) - generates voucher (Dr 111/112, Cr 131), updates invoice statuses
+        - reverseReceipt(receiptId, reason) - generates linked reversal voucher
+        - getOpenInvoicesForCustomer(customerId) - for customer picker
+        - Integrate AuditService for all operations
+      
+      - Receipt controller and API (AC: #1-5, #8-9)
+        - ReceiptController with REST endpoints
+        - GET /api/v1/ar/receipts (pagination, filters)
+        - POST /api/v1/ar/receipts (create with validation)
+        - POST /api/v1/ar/receipts/{id}/post (post receipt)
+        - POST /api/v1/ar/receipts/{id}/reverse (reverse posted receipt)
+        - POST /api/v1/ar/receipts/batch-import (Excel import)
+        - RBAC enforcement: accountants create/post, chief accountant/CFO reverse
+      
+      - Voucher engine integration (AC: #4-7, #10-11)
+        - Generate voucher: Dr Bank/Cash (111/112), Cr AR (131)
+        - Include all dimensions (customer, cost center, project)
+        - Update invoice statuses (PAID/PARTIALLY_PAID)
+        - Update invoice remaining_balance
+        - Handle reversal voucher generation with cross-linking
+      
+      - Receipt batch import service (AC: #8-9, #11)
+        - ReceiptImportService interface and implementation
+        - Parse Excel file with Apache POI
+        - Atomic transaction (all succeed or all fail)
+        - Return detailed error map with row numbers
+        - Create audit log entry per imported row
+      
+      **Frontend Tasks:**
+      - Receipt form component (AC: #1-3, #5, #10-11)
+        - ReceiptForm component following SalesInvoiceForm patterns
+        - Customer picker filtering to customers with open invoices
+        - Auto-generated receipt number (read-only)
+        - Cash/bank account picker with balance display
+        - Payment method dropdown (CASH, BANK_TRANSFER, CHECK, OTHER)
+        - Standalone receipt toggle (admin-only, with warning)
+        - Real-time validation
+        - Draft autosave (30s)
+      
+      - Receipt allocation UI (AC: #2)
+        - ReceiptAllocationGrid component following VoucherLineGrid patterns
+        - Display open invoices for selected customer
+        - Allow partial allocations to individual invoices
+        - Real-time validation (prevent overpayment)
+        - Allocation summary display
+      
+      - Receipt list component (AC: #1-5, #10)
+        - ReceiptList component following SalesInvoiceList patterns
+        - DataTablePro with pagination, sorting, filtering
+        - Status badges (DRAFT, POSTED, REVERSED)
+        - Standalone receipt indicator
+        - Actions: view, edit, delete, post, reverse
+      
+      - Receipt reversal dialog (AC: #6-7)
+        - ReceiptReversalDialog component
+        - Show receipt details and allocations
+        - Required reversal reason field
+        - Confirm action with warning
+      
+      **Testing:**
+      - Unit tests for ReceiptService (allocation, validation, posting)
+      - Unit tests for ReceiptValidationService
+      - Integration tests for receipt API endpoints
+      - Integration tests for voucher posting integration
+      - Component tests for receipt form and list
+      - E2E tests for complete receipt flow
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. (AC23-001) Receipt form has customer picker that filters to customers with open invoices; date/number auto-generated (per customer/period); cash/bank account; amount; reference; attachment; and payment method (CASH, BANK_TRANSFER, CHECK, OTHER).
+    
+    2. (AC23-002) Allocation UI allows selection of one or many invoices; supports partial and prorated allocations; prevents overpayments; shows remaining amount per invoice.
+    
+    3. (AC23-003) Standalone receipts (advances/on-account) allowed; can later be matched to invoices; are flagged in audit.
+    
+    4. (AC23-004) Posting entry generates GL voucher: Dr Bank/Cash (account 111 or 112), Cr AR (account 131).
+    
+    5. (AC23-005) Posting entry includes all configured dimensions (customer, cost center, project if present) in GL lines.
+    
+    6. (AC23-006) Reversal path: generates linked reversal voucher with both vouchers cross-linked in audit trail.
+    
+    7. (AC23-007) Reversal requires mandatory reversal reason; reason is logged in voucher audit.
+    
+    8. (AC23-008) Import receipts: atomic batch (all succeed or all fail); template-based with required column mapping.
+    
+    9. (AC23-009) Import error handling: returns detailed error map with row numbers and validation failure reasons.
+    
+    10. (AC23-010) Full audit on create/edit/post: tracks user, timestamp, and old/new values in audit log.
+    
+    11. (AC23-011) Reversal and import: audit logged with full before/after state; allocation changes include invoice balance deltas.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/epics/epic-5-accounts-receivable-ar-module.md</path>
+        <title>Epic 5: Accounts Receivable (AR) Module</title>
+        <section>Story 5.3: Customer Payment Receipts</section>
+        <snippet>Receipt form with customer picker, date/number auto-generation, allocation UI supporting single/multi invoice allocations with partial payments, standalone receipts for advances, posting with voucher generation (Dr Bank/Cash, Cr AR), reversal with cross-linking, import with atomic batch processing, and comprehensive audit trail.</snippet>
+      </artifact>
+      
+      <artifact>
+        <path>docs/sprint-artifacts/tech-spec-epic-5.md</path>
+        <title>Epic Technical Specification: Sales Invoice Entry &amp; AR Management</title>
+        <section>FR24: Customer Payment Receipts</section>
+        <snippet>Complete technical specification for AR receipts including data models (ARReceipt, ARAllocation), API contracts (POST /api/v1/ar-receipts, allocation endpoints), validation rules (allocation sums, remaining balance checks), voucher integration patterns, and audit requirements. Covers FIFO/manual allocation, reversal voucher cross-linking, and import validation.</snippet>
+      </artifact>
+      
+      <artifact>
+        <path>docs/architecture/data-architecture.md</path>
+        <title>Data Architecture</title>
+        <section>Multi-Tenancy Strategy</section>
+        <snippet>Row-level filtering via company_id on all tables. Spring Data JPA filter at repository level, API-level enforcement via security filter, Supabase RLS policies as additional layer. All AR entities inherit CompanyScopedEntity.</snippet>
+      </artifact>
+      
+      <artifact>
+        <path>docs/architecture/security-architecture.md</path>
+        <title>Security Architecture</title>
+        <section>Authorization</section>
+        <snippet>Role-Based Access Control (RBAC): Admin, Accountant, Chief Accountant, CFO. Spring Security method-level security, API-level permission checks, company-level data isolation. Accountants create/post receipts; Chief Accountant/CFO reverse receipts; standalone receipts require admin role.</snippet>
+      </artifact>
+      
+      <artifact>
+        <path>docs/sprint-artifacts/stories/5-2-invoice-approval-workflow-maker-checker.md</path>
+        <title>Story 5.2: Invoice Approval Workflow (Maker-Checker)</title>
+        <section>Completion Notes</section>
+        <snippet>AR approval infrastructure (SalesInvoiceApprovalService) implemented with threshold-based approval and maker-checker patterns. Integration tests pass, but 13 unit tests have mock/behavior mismatches. Receipt posting may need approval workflow integration for high-value transactions.</snippet>
+      </artifact>
+      
+      <artifact>
+        <path>docs/sprint-artifacts/stories/4-3-cash-payments-linked-to-bills-standalone.md</path>
+        <title>Story 4.3: Cash Payments (Linked to Bills, Standalone)</title>
+        <section>Architecture Patterns</section>
+        <snippet>Payment allocation patterns established: FIFO support with manual override, multiple bill allocation, overpayment prevention, allocation order tracking. Reversal voucher generation with cross-linking. PaymentValidationService pattern for overpayment prevention and standalone transaction flagging.</snippet>
+      </artifact>
+    </docs>
+    
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/APPayment.java</path>
+        <kind>entity</kind>
+        <symbol>APPayment</symbol>
+        <lines>1-370</lines>
+        <reason>Reference pattern for AR receipt entity structure. Shows CompanyScopedEntity implementation, payment status enum, cash/bank account relationships, standalone flag, linked voucher ID, and audit timestamps. AR receipts (ARPayment) should follow identical structure with customer_id instead of supplier_id.</reason>
+      </artifact>
+      
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/PaymentAllocation.java</path>
+        <kind>entity</kind>
+        <symbol>PaymentAllocation</symbol>
+        <lines>1-145</lines>
+        <reason>Reference pattern for receipt allocation entity. Shows allocation tracking with allocated_amount, allocation_order, and company_id scoping. ReceiptAllocation should follow same pattern with sales_invoice_id instead of purchase_bill_id.</reason>
+      </artifact>
+      
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/SalesInvoice.java</path>
+        <kind>entity</kind>
+        <symbol>SalesInvoice</symbol>
+        <lines>1-322</lines>
+        <reason>Target entity for receipt allocation. Shows invoice structure with customer_id, status enum (DRAFT/POSTED/PAID/PARTIALLY_PAID), total_amount, vat_amount, and posted_voucher_id. Receipts need to update invoice status and track allocated amounts against these invoices.</reason>
+      </artifact>
+      
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/payment/PaymentServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>PaymentServiceImpl</symbol>
+        <lines>1-1168</lines>
+        <reason>Reference implementation for payment service patterns. Shows CRUD operations, allocation logic, voucher posting integration, validation service calls, and audit logging. ReceiptServiceImpl should follow identical patterns for AR domain.</reason>
+      </artifact>
+      
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PaymentValidationService.java</path>
+        <kind>service</kind>
+        <symbol>PaymentValidationService</symbol>
+        <lines>interface</lines>
+        <reason>Reference pattern for validation service interface. Shows validation methods for allocations, account balance, standalone payments, and payment proof. ReceiptValidationService should implement parallel methods for AR domain.</reason>
+      </artifact>
+      
+      <artifact>
+        <path>frontend/src/features/accounting/pages/Payments/PaymentForm.tsx</path>
+        <kind>component</kind>
+        <symbol>PaymentForm</symbol>
+        <lines>React component</lines>
+        <reason>Reference pattern for receipt form implementation. Shows supplier/customer picker, cash/bank account selection, allocation grid integration, standalone toggle, real-time validation, and draft autosave. ReceiptForm should follow identical patterns with customer domain.</reason>
+      </artifact>
+      
+      <artifact>
+        <path>frontend/src/components/payment/PaymentAllocationGrid.tsx</path>
+        <kind>component</kind>
+        <symbol>PaymentAllocationGrid</symbol>
+        <lines>React component</lines>
+        <reason>Reference pattern for receipt allocation UI. Shows grid display of open bills/invoices, allocation amount inputs, remaining balance tracking, and real-time validation. ReceiptAllocationGrid should mirror this for sales invoices.</reason>
+      </artifact>
+      
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java</path>
+        <kind>interface</kind>
+        <symbol>CompanyScopedEntity</symbol>
+        <lines>interface</lines>
+        <reason>Required interface for all AR entities. Ensures company_id filtering at repository level for multi-tenancy. ARPayment and ReceiptAllocation must implement this interface.</reason>
+      </artifact>
+    </code>
+    
+    <dependencies>
+      <java>
+        <dependency name="spring-boot-starter-parent" version="3.5.7"/>
+        <dependency name="spring-boot-starter-web" version="3.5.7"/>
+        <dependency name="spring-boot-starter-data-jpa" version="3.5.7"/>
+        <dependency name="spring-boot-starter-validation" version="3.5.7"/>
+        <dependency name="spring-boot-starter-security" version="3.5.7"/>
+        <dependency name="postgresql" version="42.7.4"/>
+        <dependency name="flyway-core" version="11.10.0"/>
+        <dependency name="flyway-database-postgresql" version="11.10.0"/>
+        <dependency name="jjwt-api" version="0.12.5"/>
+        <dependency name="springdoc-openapi-starter-webmvc-ui" version="2.8.13"/>
+        <dependency name="apache-poi" version="5.x" note="For Excel import"/>
+      </java>
+      
+      <react>
+        <dependency name="react" version="^19.1.1"/>
+        <dependency name="react-dom" version="^19.1.1"/>
+        <dependency name="react-router-dom" version="^7.9.5"/>
+        <dependency name="react-hook-form" version="^7.66.0"/>
+        <dependency name="@tanstack/react-query" version="^5.62.0"/>
+        <dependency name="@tanstack/react-table" version="^8.21.3"/>
+        <dependency name="axios" version="^1.7.9"/>
+        <dependency name="zod" version="^4.1.12"/>
+        <dependency name="@radix-ui/react-dialog" version="^1.1.15"/>
+        <dependency name="@radix-ui/react-select" version="^2.2.6"/>
+        <dependency name="lucide-react" version="^0.552.0"/>
+        <dependency name="tailwindcss" version="^4.1.16"/>
+        <dependency name="shadcn/ui" note="Component library for forms, tables, dialogs"/>
+      </react>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    **Multi-Tenancy:**
+    - All AR receipt operations must respect company_id scoping
+    - ARPayment and ReceiptAllocation entities must implement CompanyScopedEntity
+    - All repository queries and JPA filters must include company_id filtering
+    - API endpoints must enforce company context via CompanyContext.getCompanyId()
+    
+    **Allocation Design:**
+    - Support flexible allocation: single invoice, multiple invoices, partial allocations
+    - Prevent overpayment: sum(allocations) must not exceed receipt amount
+    - Prevent over-allocation: per-invoice allocation must not exceed invoice remaining_balance
+    - Enforce at database level with CHECK constraints and application validation
+    - Track allocation order for audit trail
+    
+    **Standalone Receipts:**
+    - Support advance payments/on-account receipts (no immediate invoice allocation)
+    - Flag with is_standalone=true
+    - Allow later matching to invoices (partial or full allocation)
+    - Admin-only for MVP (RBAC enforcement required)
+    - Audit flag for all standalone receipts
+    
+    **Voucher Engine Integration:**
+    - Receipts post through Epic 3 voucher engine
+    - Generate journal entry: Dr Bank/Cash (111/112), Cr AR (131)
+    - Include all dimensions: customer (131), cost center (if configured), project (if present)
+    - Link receipt to voucher via linked_voucher_id
+    - Update invoice statuses (PAID/PARTIALLY_PAID) based on allocation
+    - Update invoice remaining_balance after allocation
+    - Handle voucher posting failures with transaction rollback
+    
+    **Reversal Pattern:**
+    - Generate linked reversal voucher on receipt reversal
+    - Maintain cross-references: original ← → reversal
+    - Require mandatory reversal reason (logged in voucher audit)
+    - Follow same pattern as AP payment reversals (Story 4.3)
+    - Revert invoice statuses and remaining_balance
+    - Mark allocations as reversed (do not delete)
+    
+    **RBAC and Permissions:**
+    - Accountants: create, edit (DRAFT), post receipts
+    - Chief Accountant: all accountant permissions + reverse posted receipts
+    - CFO: view-only (no create/edit/post)
+    - Admin: all permissions + standalone receipts
+    - Enforce via Spring Security @PreAuthorize on service methods
+    - API-level permission checks in controllers
+    
+    **Project Structure:**
+    - Backend entities: backend/src/main/java/com/accounting/entity/
+    - Backend services: backend/src/main/java/com/accounting/service/impl/sales/
+    - Backend controllers: backend/src/main/java/com/accounting/controller/sales/
+    - Flyway migrations: backend/src/main/resources/db/migration/
+    - Frontend pages: frontend/src/features/accounting/pages/Receipts/
+    - Frontend components: frontend/src/components/receipt/
+    - Follow AR pattern (under /sales) not AP pattern (under /payment)
+    
+    **Audit Requirements:**
+    - Use existing AuditService for all receipt operations
+    - Log create/edit/allocate/post/reverse/import actions
+    - Include before/after snapshots (JSON)
+    - Track actor, timestamp, device IP, user agent
+    - Compute event hash (SHA256) for integrity
+    - Log allocation changes with invoice balance deltas
+    
+    **Coding Standards:**
+    - Backend: Use Spotless formatter (mvn spotless:apply)
+    - Backend: All validation via Jakarta Bean Validation annotations
+    - Backend: Use BigDecimal with SCALE=2, ROUNDING_MODE=HALF_UP for money
+    - Frontend: Use ESLint/Prettier
+    - Frontend: Import via path aliases (@/features/..., @/components/...)
+    - UI: Use shadcn/ui components consistently
+    - Tables: Must have search, refresh, count, pagination (DataTablePro pattern)
+  </constraints>
+
+  <interfaces>
+    **REST API Endpoints:**
+    
+    GET /api/v1/ar/receipts
+    - Query params: page, size, sort, customer, status, dateFrom, dateTo, search, standalone
+    - Response: { data: { content: [ARReceipt], totalElements, totalPages }, meta: {...} }
+    - Authorization: All authenticated users
+    
+    GET /api/v1/ar/receipts/{id}
+    - Response: Full receipt with allocations, customer details
+    - Authorization: All authenticated users (company-scoped)
+    
+    POST /api/v1/ar/receipts
+    - Request: { customerId, receiptDate, cashAccountId OR bankAccountId, amount, payee, reference, paymentMethod, isStandalone, allocations: [{ invoiceId, allocatedAmount }] }
+    - Response: { data: { id, receiptNumber, status: 'DRAFT' }, meta: {...} }
+    - Validation: customer exists, date in open period, account exists, amount > 0, allocations sum ≤ amount
+    - Authorization: Accountant role required
+    
+    PUT /api/v1/ar/receipts/{id}
+    - Request: { amount, reference, allocations: [...] }
+    - Validation: status must be DRAFT
+    - Authorization: Accountant role, must be creator or admin
+    
+    DELETE /api/v1/ar/receipts/{id}
+    - Validation: status must be DRAFT
+    - Authorization: Accountant role, must be creator or admin
+    
+    POST /api/v1/ar/receipts/{id}/allocate
+    - Request: { allocations: [{ invoiceId, allocatedAmount }] }
+    - Response: { data: { updatedReceipt, allocations }, meta: {...} }
+    - Validation: allocations sum ≤ receipt amount, per-invoice allocation ≤ remaining balance
+    - Authorization: Accountant role
+    
+    POST /api/v1/ar/receipts/{id}/post
+    - Request: {} (trigger posting)
+    - Response: { data: { status: 'POSTED', voucherId, updatedInvoices }, meta: {...} }
+    - Side effects: create voucher, update invoice statuses, invalidate AR aging cache
+    - Authorization: Accountant role
+    
+    POST /api/v1/ar/receipts/{id}/reverse
+    - Request: { reversalReason }
+    - Response: { data: { reversalReceiptId, reversalVoucherId }, meta: {...} }
+    - Side effects: create reversal receipt, create reversal voucher, revert invoice statuses
+    - Authorization: Chief Accountant or CFO role
+    
+    GET /api/v1/ar/receipts/open-invoices/{customerId}
+    - Response: { data: { invoices: [{ id, invoiceNumber, date, totalAmount, remainingBalance }] }, meta: {...} }
+    - Authorization: All authenticated users
+    
+    POST /api/v1/ar/receipts/batch-import
+    - Content-Type: multipart/form-data
+    - Request: FormData with Excel file
+    - Response: { data: { importedCount, errorCount, errorMap: [{ rowNumber, field, message }] }, meta: {...} }
+    - Validation: atomic batch (all succeed or all fail)
+    - Authorization: Accountant role
+    
+    **Service Interfaces:**
+    
+    ReceiptService:
+    - Page&lt;ARPaymentListDTO&gt; findAll(Pageable, filters)
+    - Optional&lt;ARPaymentDTO&gt; findById(UUID)
+    - ARPaymentDTO create(ARPaymentCreateRequest)
+    - ARPaymentDTO update(UUID, ARPaymentUpdateRequest)
+    - void delete(UUID)
+    - ARPaymentDTO allocateInvoices(UUID receiptId, List&lt;AllocationRequest&gt;)
+    - ARPaymentDTO postReceipt(UUID receiptId)
+    - ARPaymentDTO reverseReceipt(UUID receiptId, String reason)
+    - List&lt;SalesInvoiceDTO&gt; getOpenInvoicesForCustomer(Long customerId)
+    
+    ReceiptValidationService:
+    - PaymentValidationResult validateCustomerHasOpenInvoices(Long customerId)
+    - PaymentValidationResult validateAllocations(List&lt;AllocationRequest&gt;, BigDecimal receiptAmount)
+    - PaymentValidationResult validateAccountBalance(Long accountId, BigDecimal amount)
+    - PaymentValidationResult validateStandaloneReceipt(ARPayment receipt)
+    - PaymentValidationResult validateReceiptProof(BigDecimal amount, String proofUrl)
+    
+    ReceiptImportService:
+    - ImportResult importReceipts(MultipartFile file)
+    - byte[] generateTemplate()
+  </interfaces>
+
+  <tests>
+    <standards>
+      **Backend Testing:**
+      - JUnit 5 with Spring Boot Test framework
+      - MockMvc for integration tests
+      - Testcontainers for PostgreSQL integration tests
+      - Target: 80% code coverage minimum
+      - Unit tests: isolated service logic with mocked dependencies
+      - Integration tests: full Spring context with database
+      
+      **Frontend Testing:**
+      - Vitest with React Testing Library
+      - Component tests: user interactions and state management
+      - Integration tests: API mocking with MSW
+      - E2E tests: Playwright for critical paths
+      - Target: 70% code coverage minimum
+      
+      **Test Naming:**
+      - Backend: test_{methodName}_{scenario}_{expectedOutcome}
+      - Frontend: {ComponentName}.test.tsx with describe/it blocks
+      
+      **Patterns:**
+      - Follow existing test patterns from PaymentServiceImplTest
+      - Follow existing component test patterns from PaymentForm.test.tsx
+      - Use test factories for entity creation (e.g., TestDataFactory)
+      - Use @Transactional for database cleanup in integration tests
+    </standards>
+    
+    <locations>
+      **Backend:**
+      - Unit tests: backend/src/test/java/com/accounting/service/impl/sales/
+      - Integration tests: backend/src/test/java/com/accounting/controller/sales/
+      - Entity tests: backend/src/test/java/com/accounting/entity/
+      
+      **Frontend:**
+      - Component tests: frontend/src/features/accounting/pages/Receipts/__tests__/
+      - Component tests: frontend/src/components/receipt/__tests__/
+      - E2E tests: tests/e2e/ar-receipt-workflow.spec.ts
+      - API tests: tests/api/ar-receipt-api.spec.ts
+    </locations>
+    
+    <ideas>
+      **AC23-001 (Receipt Form Fields):**
+      - Test customer picker filters to customers with open invoices
+      - Test auto-generated receipt number (unique per company/year)
+      - Test cash/bank account selection (mutually exclusive)
+      - Test payment method dropdown (all enum values)
+      - Test form validation (required fields)
+      
+      **AC23-002 (Allocation UI):**
+      - Test single invoice allocation (full payment)
+      - Test multiple invoice allocation (partial payments)
+      - Test allocation sum validation (cannot exceed receipt amount)
+      - Test per-invoice allocation validation (cannot exceed remaining balance)
+      - Test allocation preview/summary display
+      
+      **AC23-003 (Standalone Receipts):**
+      - Test standalone receipt creation (admin-only)
+      - Test standalone receipt flag in audit
+      - Test later matching to invoices
+      - Test RBAC rejection for non-admin users
+      
+      **AC23-004 (Voucher Posting):**
+      - Test voucher generation with Dr Bank/Cash (111/112), Cr AR (131)
+      - Test voucher line amounts match receipt amount
+      - Test voucher creation fails on invalid account
+      
+      **AC23-005 (Dimension Inclusion):**
+      - Test voucher includes customer dimension (131)
+      - Test voucher includes cost center (if configured)
+      - Test voucher includes project (if present)
+      
+      **AC23-006 (Reversal Cross-linking):**
+      - Test reversal receipt creation
+      - Test reversal voucher generation
+      - Test cross-references (original ← → reversal)
+      - Test audit trail includes cross-references
+      
+      **AC23-007 (Reversal Reason):**
+      - Test reversal requires reason (validation)
+      - Test reversal reason logged in voucher audit
+      - Test reversal reason visible in UI
+      
+      **AC23-008 (Import Atomic Batch):**
+      - Test all rows succeed (happy path)
+      - Test all rows fail if one row has error
+      - Test template validation (required columns)
+      - Test row count limit (1000 rows)
+      
+      **AC23-009 (Import Error Handling):**
+      - Test error map includes row numbers
+      - Test error map includes field names
+      - Test error map includes validation messages
+      - Test downloadable error report
+      
+      **AC23-010 (Create/Edit/Post Audit):**
+      - Test audit log entry on create
+      - Test audit log entry on edit (with before/after)
+      - Test audit log entry on post
+      - Test audit includes user, timestamp, device IP
+      
+      **AC23-011 (Reversal/Import Audit):**
+      - Test reversal audit includes full before/after state
+      - Test import audit includes batch summary
+      - Test allocation audit includes invoice balance deltas
+      
+      **Integration Tests:**
+      - Test complete receipt flow: create → allocate → post → reverse
+      - Test receipt posting updates invoice statuses correctly
+      - Test receipt reversal reverts invoice statuses correctly
+      - Test period closure prevents posting to closed period
+      - Test company scoping (cannot access other company receipts)
+      
+      **E2E Tests:**
+      - Test accountant creates receipt and allocates to invoices
+      - Test chief accountant reverses posted receipt
+      - Test import receipts from Excel file
+      - Test standalone receipt creation and later matching
+    </ideas>
+  </tests>
+</story-context>

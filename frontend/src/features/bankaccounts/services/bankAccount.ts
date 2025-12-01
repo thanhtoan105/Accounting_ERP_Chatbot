@@ -190,3 +190,37 @@ export async function exportBankAccounts(
   }
   return res.blob()
 }
+
+/**
+ * Import bank accounts from CSV/Excel file
+ */
+export async function importBankAccounts(file: File): Promise<{
+  success: boolean
+  successCount: number
+  message: string
+}> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const res = await fetchWithAuth(`${API_BASE}/bank-accounts/import`, {
+    method: 'POST',
+    body: formData,
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: res.statusText }))
+    throw { status: res.status, error }
+  }
+  return res.json()
+}
+
+/**
+ * Download import template
+ */
+export async function downloadImportTemplate(): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/bank-accounts/import/template`)
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: res.statusText }))
+    throw { status: res.status, error }
+  }
+  return res.blob()
+}
