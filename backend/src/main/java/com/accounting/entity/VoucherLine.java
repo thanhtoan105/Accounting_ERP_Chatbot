@@ -61,7 +61,13 @@ public class VoucherLine implements CompanyScopedEntity {
   @Column(name = "item_id")
   private Long itemId; // Item ID (entity may not exist yet)
 
-  // Company ID for company scoping (inherited via Voucher relationship, but stored for direct queries)
+  // Bank account ID for cash/bank tracking (used when account is 1121, 1122,
+  // etc.)
+  @Column(name = "bank_account_id")
+  private Long bankAccountId;
+
+  // Company ID for company scoping (inherited via Voucher relationship, but
+  // stored for direct queries)
   @NotNull
   @Column(name = "company_id", nullable = false)
   private Long companyId;
@@ -78,6 +84,10 @@ public class VoucherLine implements CompanyScopedEntity {
   @ManyToOne
   @JoinColumn(name = "customer_id", insertable = false, updatable = false)
   private Customer customer;
+
+  @ManyToOne
+  @JoinColumn(name = "bank_account_id", insertable = false, updatable = false)
+  private BankAccount bankAccount;
 
   // Getters and setters
   public UUID getId() {
@@ -168,6 +178,22 @@ public class VoucherLine implements CompanyScopedEntity {
     this.itemId = itemId;
   }
 
+  public Long getBankAccountId() {
+    return bankAccountId;
+  }
+
+  public void setBankAccountId(Long bankAccountId) {
+    this.bankAccountId = bankAccountId;
+  }
+
+  public BankAccount getBankAccount() {
+    return bankAccount;
+  }
+
+  public void setBankAccount(BankAccount bankAccount) {
+    this.bankAccount = bankAccount;
+  }
+
   @Override
   public Long getCompanyId() {
     return companyId;
@@ -202,4 +228,3 @@ public class VoucherLine implements CompanyScopedEntity {
     this.customer = customer;
   }
 }
-

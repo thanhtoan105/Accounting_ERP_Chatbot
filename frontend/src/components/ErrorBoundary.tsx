@@ -1,4 +1,5 @@
 import React, { Component, type ReactNode } from 'react'
+import i18n from '@/i18n'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, RefreshCw } from 'lucide-react'
@@ -41,17 +42,17 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex min-h-[400px] items-center justify-center p-6">
           <Alert variant="destructive" className="max-w-md">
             <AlertCircle className="size-4" />
-            <AlertTitle>Something went wrong</AlertTitle>
+            <AlertTitle>{i18n.t('errors.somethingWentWrong')}</AlertTitle>
             <AlertDescription className="mt-2">
-              {this.state.error?.message || 'An unexpected error occurred'}
+              {this.state.error?.message || i18n.t('errors.unexpectedError')}
             </AlertDescription>
             <div className="mt-4 flex gap-2">
               <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
                 <RefreshCw className="mr-2 size-4" />
-                Reload Page
+                {i18n.t('errors.reloadPage')}
               </Button>
               <Button variant="outline" size="sm" onClick={this.handleReset}>
-                Try Again
+                {i18n.t('errors.tryAgain')}
               </Button>
             </div>
           </Alert>

@@ -17,12 +17,19 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * PaymentAllocation entity representing the allocation of a payment to purchase bills.
+ * PaymentAllocation entity representing the allocation of a payment to purchase
+ * bills.
  * Implements FIFO allocation with manual override capability.
+ * Uses the unified transaction_allocations table with transaction_type =
+ * 'PAYMENT'.
  */
 @Entity
-@Table(name = "payment_allocations")
+@Table(name = "transaction_allocations")
+@org.hibernate.annotations.SQLRestriction("transaction_type = 'PAYMENT'")
 public class PaymentAllocation implements CompanyScopedEntity {
+
+  private static final String TRANSACTION_TYPE = "PAYMENT";
+  private static final String DOCUMENT_TYPE = "PURCHASE_BILL";
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -32,12 +39,18 @@ public class PaymentAllocation implements CompanyScopedEntity {
   @Column(name = "company_id", nullable = false)
   private Long companyId;
 
-  @NotNull
-  @Column(name = "payment_id", nullable = false)
-  private UUID paymentId;
+  @Column(name = "transaction_type", nullable = false, length = 20)
+  private String transactionType = TRANSACTION_TYPE;
 
   @NotNull
-  @Column(name = "purchase_bill_id", nullable = false)
+  @Column(name = "transaction_id", nullable = false)
+  private UUID paymentId;
+
+  @Column(name = "document_type", nullable = false, length = 20)
+  private String documentType = DOCUMENT_TYPE;
+
+  @NotNull
+  @Column(name = "document_id", nullable = false)
   private UUID purchaseBillId;
 
   @NotNull
@@ -54,16 +67,18 @@ public class PaymentAllocation implements CompanyScopedEntity {
 
   // Relationships
   @ManyToOne
-  @JoinColumn(name = "payment_id", insertable = false, updatable = false)
+  @JoinColumn(name = "transaction_id", insertable = false, updatable = false)
   private APPayment payment;
 
   @ManyToOne
-  @JoinColumn(name = "purchase_bill_id", insertable = false, updatable = false)
+  @JoinColumn(name = "document_id", insertable = false, updatable = false)
   private PurchaseBill purchaseBill;
 
   @PrePersist
   protected void onCreate() {
     createdAt = Instant.now();
+    transactionType = TRANSACTION_TYPE;
+    documentType = DOCUMENT_TYPE;
   }
 
   // Getters and setters
@@ -141,4 +156,3 @@ public class PaymentAllocation implements CompanyScopedEntity {
     this.purchaseBill = purchaseBill;
   }
 }
-

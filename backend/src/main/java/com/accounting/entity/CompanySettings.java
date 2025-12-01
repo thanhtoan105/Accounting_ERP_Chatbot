@@ -111,6 +111,10 @@ public class CompanySettings implements CompanyScopedEntity {
   @Column(name = "approval_threshold_amount", precision = 19, scale = 2)
   private java.math.BigDecimal approvalThresholdAmount; // Default 20,000,000 VND
 
+  @Min(0)
+  @Column(name = "sales_invoice_approval_threshold_amount", precision = 19, scale = 2)
+  private java.math.BigDecimal salesInvoiceApprovalThresholdAmount; // Default 100,000,000 VND
+
   // Numbering section (stored as JSON)
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "numbering_config", columnDefinition = "JSONB")
@@ -303,6 +307,15 @@ public class CompanySettings implements CompanyScopedEntity {
     this.approvalThresholdAmount = approvalThresholdAmount;
   }
 
+  public java.math.BigDecimal getSalesInvoiceApprovalThresholdAmount() {
+    return salesInvoiceApprovalThresholdAmount;
+  }
+
+  public void setSalesInvoiceApprovalThresholdAmount(
+      java.math.BigDecimal salesInvoiceApprovalThresholdAmount) {
+    this.salesInvoiceApprovalThresholdAmount = salesInvoiceApprovalThresholdAmount;
+  }
+
   public String getNumberingConfig() {
     return numberingConfig;
   }
@@ -343,4 +356,3 @@ public class CompanySettings implements CompanyScopedEntity {
     this.updatedAt = updatedAt;
   }
 }
-

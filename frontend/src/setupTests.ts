@@ -70,3 +70,34 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn(),
   })),
 })
+
+// Global mock for useRole hook to provide default role functions
+// Individual tests can override these using vi.mocked()
+vi.mock('@/hooks/useRole', async () => {
+  return {
+    useRole: () => ({
+      role: 'ACCOUNTANT',
+      isAdmin: () => false,
+      isChiefAccountant: () => false,
+      canManageUsers: () => false,
+      canViewReports: () => true,
+      canCreateVouchers: () => true,
+      canApproveVouchers: () => false,
+      canChangeRoles: () => false,
+      getRoleDisplayName: () => 'Accountant',
+      hasRole: () => false,
+      hasAnyRole: () => false,
+      hasAllRoles: () => false,
+      isValidRole: () => true,
+    }),
+  }
+})
+
+// Global mock for useAuth hook
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: { id: 1, role: 'ACCOUNTANT', email: 'test@example.com', fullName: 'Test User' },
+    isAuthenticated: true,
+    loading: false,
+  }),
+}))

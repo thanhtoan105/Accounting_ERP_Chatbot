@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router-dom'
 import { z } from 'zod'
 import { forgotPassword } from '@/features/auth/services/auth'
@@ -28,6 +29,7 @@ export type ForgotPasswordProps = {
 }
 
 export default function ForgotPassword({ onSuccess }: ForgotPasswordProps = {}) {
+  const { t } = useTranslation()
   const [values, setValues] = useState<ForgotPasswordForm>({ email: '' })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -61,8 +63,8 @@ export default function ForgotPassword({ onSuccess }: ForgotPasswordProps = {}) 
     try {
       setSubmitting(true)
       await forgotPassword(values.email)
-      toast.success('Check your email', {
-        description: "If an account with that email exists, we've sent a password reset link.",
+      toast.success(t('auth.checkYourEmail'), {
+        description: t('auth.resetEmailSent'),
       })
       if (onSuccess) {
         onSuccess()
@@ -72,7 +74,7 @@ export default function ForgotPassword({ onSuccess }: ForgotPasswordProps = {}) 
       const message =
         errorData?.error?.message || errorData?.message || 'Failed to send reset email'
       setErrors({ form: message })
-      toast.error('Failed to send reset email', { description: message })
+      toast.error(t('auth.failedToSendResetEmail'), { description: message })
     } finally {
       setSubmitting(false)
     }
@@ -83,21 +85,19 @@ export default function ForgotPassword({ onSuccess }: ForgotPasswordProps = {}) 
       <form onSubmit={onSubmit} className="w-full max-w-md">
         <Card>
           <CardHeader className="space-y-3">
-            <CardTitle className="text-3xl">Forgot Password?</CardTitle>
-            <CardDescription>
-              Enter your email and we'll send you instructions to reset your password
-            </CardDescription>
+            <CardTitle className="text-3xl">{t('auth.forgotPasswordTitle')}</CardTitle>
+            <CardDescription>{t('auth.forgotPasswordDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Email address*</Label>
+              <Label htmlFor="email">{t('auth.emailAddress')}</Label>
               <Input
                 id="email"
                 type="email"
                 value={values.email}
                 onChange={(e) => onChange('email', e.target.value)}
                 autoComplete="email"
-                placeholder="Enter your email address"
+                placeholder={t('auth.enterEmail')}
               />
               {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
             </div>
@@ -105,7 +105,7 @@ export default function ForgotPassword({ onSuccess }: ForgotPasswordProps = {}) 
             {errors.form && <p className="text-sm text-destructive">{errors.form}</p>}
 
             <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? 'Sending…' : 'Send Reset Link'}
+              {submitting ? t('auth.sending') : t('auth.sendResetLink')}
             </Button>
           </CardContent>
           <CardFooter className="justify-center">
@@ -113,7 +113,7 @@ export default function ForgotPassword({ onSuccess }: ForgotPasswordProps = {}) 
               to="/login"
               className="text-sm underline underline-offset-4 inline-flex items-center gap-1"
             >
-              <ArrowLeft className="h-4 w-4" /> Back to login
+              <ArrowLeft className="h-4 w-4" /> {t('auth.backToLogin')}
             </RouterLink>
           </CardFooter>
         </Card>

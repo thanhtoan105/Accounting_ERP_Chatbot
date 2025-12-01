@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Plus,
   Search,
@@ -59,6 +60,7 @@ import {
 } from '@tanstack/react-table'
 
 export default function VoucherTypeList() {
+  const { t } = useTranslation()
   const [voucherTypes, setVoucherTypes] = useState<VoucherType[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -258,10 +260,10 @@ export default function VoucherTypeList() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Voucher Types</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('vouchers.voucherTypes')}</h1>
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Voucher Type
+          {t('vouchers.addVoucherType')}
         </Button>
       </div>
 
@@ -269,7 +271,7 @@ export default function VoucherTypeList() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by code or name..."
+            placeholder={t('vouchers.searchByCodeOrName')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8"

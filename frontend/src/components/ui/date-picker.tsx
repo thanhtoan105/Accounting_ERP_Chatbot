@@ -129,3 +129,63 @@ export function DatePicker({
     </div>
   )
 }
+
+interface DatePickerWithRangeProps {
+  value?: { from?: Date; to?: Date }
+  onChange?: (value: { from?: Date; to?: Date }) => void
+  placeholder?: string
+  className?: string
+}
+
+export function DatePickerWithRange({
+  value,
+  onChange,
+  placeholder = 'Pick a date range',
+  className,
+}: DatePickerWithRangeProps) {
+  const [open, setOpen] = React.useState(false)
+
+  const handleSelect = (range: { from?: Date; to?: Date } | undefined) => {
+    onChange?.(range || {})
+  }
+
+  return (
+    <div className={cn('grid gap-2', className)}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            id="date"
+            variant="outline"
+            className={cn(
+              'w-full justify-start text-left font-normal',
+              !value?.from && 'text-muted-foreground',
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value?.from ? (
+              value.to ? (
+                <>
+                  {format(value.from, 'MMM dd, yyyy')} - {format(value.to, 'MMM dd, yyyy')}
+                </>
+              ) : (
+                format(value.from, 'MMM dd, yyyy')
+              )
+            ) : (
+              <span>{placeholder}</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="range"
+            defaultMonth={value?.from}
+            selected={value as any}
+            onSelect={handleSelect as any}
+            numberOfMonths={2}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}

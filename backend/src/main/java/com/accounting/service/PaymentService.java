@@ -15,19 +15,21 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * Service for managing AP payments including creation, allocation, posting, and cancellation.
+ * Service for managing AP payments including creation, allocation, posting, and
+ * cancellation.
  */
 public interface PaymentService {
 
   /**
    * Find all payments with pagination, sorting, and filtering.
    *
-   * @param pageable pagination and sorting parameters
+   * @param pageable   pagination and sorting parameters
    * @param supplierId filter by supplier ID (optional)
-   * @param status filter by status (optional)
-   * @param dateFrom filter by date from (optional)
-   * @param dateTo filter by date to (optional)
-   * @param search search term for payment number, reference, or payee (optional)
+   * @param status     filter by status (optional)
+   * @param dateFrom   filter by date from (optional)
+   * @param dateTo     filter by date to (optional)
+   * @param search     search term for payment number, reference, or payee
+   *                   (optional)
    * @param standalone filter by standalone flag (optional)
    * @return paginated list of payments
    */
@@ -61,7 +63,7 @@ public interface PaymentService {
    * Update an existing draft payment.
    *
    * @param paymentId payment ID
-   * @param request payment update request
+   * @param request   payment update request
    * @return updated payment DTO
    */
   APPaymentDTO update(UUID paymentId, APPaymentCreateRequest request);
@@ -76,7 +78,7 @@ public interface PaymentService {
   /**
    * Allocate payment manually (override FIFO allocation).
    *
-   * @param paymentId payment ID
+   * @param paymentId   payment ID
    * @param allocations list of allocation requests
    * @return updated payment DTO
    */
@@ -84,10 +86,11 @@ public interface PaymentService {
 
   /**
    * Allocate payment using FIFO algorithm.
-   * Fetches open/unpaid bills sorted by due_date ASC and allocates payment amount.
+   * Fetches open/unpaid bills sorted by due_date ASC and allocates payment
+   * amount.
    *
    * @param paymentAmount total payment amount
-   * @param supplierId supplier ID
+   * @param supplierId    supplier ID
    * @return list of allocation DTOs
    */
   List<PaymentAllocationDTO> allocateFIFO(BigDecimal paymentAmount, Long supplierId);
@@ -116,5 +119,34 @@ public interface PaymentService {
    * @return list of purchase bill DTOs
    */
   List<com.accounting.dto.PurchaseBillDTO> getOpenBillsForSupplier(Long supplierId);
-}
 
+  /**
+   * Approve a payment that is pending approval.
+   * AC6.3-08: Validates approver role (CHIEF_ACCOUNTANT/CFO/ADMIN) and
+   * maker-checker pattern.
+   *
+   * @param paymentId payment ID
+   * @return approved payment DTO
+   */
+  APPaymentDTO approvePayment(UUID paymentId);
+
+  /**
+   * Reject a payment that is pending approval.
+   * AC6.3-08: Validates approver role (CHIEF_ACCOUNTANT/CFO/ADMIN).
+   *
+   * @param paymentId payment ID
+   * @param reason    rejection reason
+   * @return rejected payment DTO
+   */
+  APPaymentDTO rejectPayment(UUID paymentId, String reason);
+
+  /**
+   * Reverse a posted payment.
+   * AC6.3-10: Creates reversing voucher and updates bill/allocation states.
+   *
+   * @param paymentId payment ID
+   * @param reason    reversal reason (mandatory)
+   * @return reversed payment DTO
+   */
+  APPaymentDTO reversePayment(UUID paymentId, String reason);
+}

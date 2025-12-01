@@ -12,6 +12,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -47,9 +55,8 @@ import type {
   VoucherTemplatePayload,
   VoucherTemplateSummaryDTO,
 } from '@/types/voucher'
-import { getPostableAccounts } from '@/services/chartOfAccounts'
-import type { ChartOfAccount } from '@/types/chartOfAccount'
-import { AccountPicker, type AccountSummary, RoleGuard } from '@/components'
+import { RoleGuard } from '@/components'
+import AccountCombobox from '@/components/account/AccountCombobox'
 import {
   Copy,
   Loader2,
@@ -77,8 +84,8 @@ type TemplateFormMode = 'create' | 'edit' | 'duplicate'
 
 type TemplateLineForm = {
   id: string
-  debitAccount: AccountSummary | null
-  creditAccount: AccountSummary | null
+  debitAccountId: number | null
+  creditAccountId: number | null
   defaultDescription: string
   requiresCustomer: boolean
   requiresSupplier: boolean
@@ -95,8 +102,8 @@ type TemplateFormState = {
 
 const createEmptyLine = (): TemplateLineForm => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-  debitAccount: null,
-  creditAccount: null,
+  debitAccountId: null,
+  creditAccountId: null,
   defaultDescription: '',
   requiresCustomer: false,
   requiresSupplier: false,
@@ -111,39 +118,15 @@ const initialFormState: TemplateFormState = {
   lines: [createEmptyLine()],
 }
 
-function mapAccountsToSummaries(accounts: ChartOfAccount[]): AccountSummary[] {
-  return accounts
-    .filter((account) => account.postable)
-    .map<AccountSummary>((account) => ({
-      id: String(account.id),
-      code: account.code,
-      name: account.name,
-      balanceSide:
-        account.normalSide?.toLowerCase() === 'credit'
-          ? 'credit'
-          : account.normalSide?.toLowerCase() === 'debit'
-            ? 'debit'
-            : 'both',
-      group: account.type,
-      isLeaf: account.postable,
-    }))
-}
-
-function mapTemplateToForm(
-  template: VoucherTemplateDTO,
-  accountOptions: AccountSummary[],
-): TemplateFormState {
-  const findAccount = (id?: string | null) =>
-    id ? accountOptions.find((acct) => acct.id === String(id)) || null : null
-
+function mapTemplateToForm(template: VoucherTemplateDTO): TemplateFormState {
   return {
     name: template.name,
     description: template.description || '',
     isActive: template.isActive,
     lines: template.lines?.map((line) => ({
       id: `${template.id}-${line.lineNumber}-${Math.random().toString(36).slice(2, 6)}`,
-      debitAccount: findAccount(line.debitAccountId),
-      creditAccount: findAccount(line.creditAccountId),
+      debitAccountId: line.debitAccountId ? Number(line.debitAccountId) : null,
+      creditAccountId: line.creditAccountId ? Number(line.creditAccountId) : null,
       defaultDescription: line.defaultDescription || '',
       requiresCustomer: Boolean(line.requiresCustomer),
       requiresSupplier: Boolean(line.requiresSupplier),
@@ -159,8 +142,8 @@ function buildTemplatePayload(state: TemplateFormState): VoucherTemplatePayload 
     description: state.description?.trim() || undefined,
     isActive: state.isActive,
     lines: state.lines.map((line, index) => ({
-      debitAccountId: line.debitAccount?.id || '',
-      creditAccountId: line.creditAccount?.id || '',
+      debitAccountId: line.debitAccountId ? String(line.debitAccountId) : undefined,
+      creditAccountId: line.creditAccountId ? String(line.creditAccountId) : undefined,
       defaultDescription: line.defaultDescription?.trim() || undefined,
       requiresCustomer: line.requiresCustomer || undefined,
       requiresSupplier: line.requiresSupplier || undefined,
@@ -209,10 +192,6 @@ export default function VoucherTemplateManagementPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
 
-  const [accounts, setAccounts] = useState<AccountSummary[]>([])
-  const [accountsLoading, setAccountsLoading] = useState(false)
-  const [accountsError, setAccountsError] = useState<string | null>(null)
-
   const [deleteState, setDeleteState] = useState<DeleteState>({ open: false, template: null })
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [rowActionId, setRowActionId] = useState<string | null>(null)
@@ -236,21 +215,6 @@ export default function VoucherTemplateManagementPage() {
   }, [filteredTemplates, page, pageSize])
 
   const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / pageSize))
-
-  const loadAccounts = useCallback(async () => {
-    if (accounts.length || accountsLoading) return
-    setAccountsLoading(true)
-    setAccountsError(null)
-    try {
-      const response = await getPostableAccounts()
-      setAccounts(mapAccountsToSummaries(response))
-    } catch (err: any) {
-      setAccountsError(err?.message || 'Cannot load account catalog')
-      toast.error('Không thể tải danh mục tài khoản', { description: err?.message })
-    } finally {
-      setAccountsLoading(false)
-    }
-  }, [accounts.length, accountsLoading])
 
   const loadTemplates = useCallback(async () => {
     setLoading(true)
@@ -284,7 +248,6 @@ export default function VoucherTemplateManagementPage() {
     setFormError(null)
     setEditingTemplateId(null)
     setFormOpen(true)
-    loadAccounts()
   }
 
   const openEditDialog = async (templateId: string, mode: TemplateFormMode = 'edit') => {
@@ -292,16 +255,9 @@ export default function VoucherTemplateManagementPage() {
     setFormError(null)
     setFormOpen(true)
     setFormLoading(true)
-    loadAccounts()
     try {
       const detail = await getVoucherTemplateById(templateId)
-      let accountOptions = accounts
-      if (!accountOptions.length) {
-        const fetched = mapAccountsToSummaries(await getPostableAccounts())
-        accountOptions = fetched
-        setAccounts(fetched)
-      }
-      const state = mapTemplateToForm(detail, accountOptions)
+      const state = mapTemplateToForm(detail)
       const adjustedState =
         mode === 'duplicate'
           ? {
@@ -331,8 +287,8 @@ export default function VoucherTemplateManagementPage() {
       setFormError('At least one line is required.')
       return false
     }
-    if (formState.lines.some((line) => !line.debitAccount || !line.creditAccount)) {
-      setFormError('Each line must select both debit and credit accounts.')
+    if (formState.lines.some((line) => !line.debitAccountId && !line.creditAccountId)) {
+      setFormError('Each line must select at least one account (debit or credit).')
       return false
     }
     setFormError(null)
@@ -680,84 +636,85 @@ export default function VoucherTemplateManagementPage() {
         </div>
       </div>
 
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>
+      <Sheet open={formOpen} onOpenChange={setFormOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl !p-0 overflow-hidden">
+          <SheetHeader className="px-6 pt-6 pb-4 flex-shrink-0">
+            <SheetTitle>
               {formMode === 'edit'
                 ? 'Edit voucher template'
                 : formMode === 'duplicate'
                   ? 'Duplicate voucher template'
                   : 'Create voucher template'}
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               {formMode === 'edit'
                 ? 'Update template information and default line accounts.'
                 : formMode === 'duplicate'
                   ? 'Copy existing template, you can edit before saving.'
                   : 'Declare template line accounts to apply quickly for accounting vouchers.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {(formLoading || accountsLoading) && (
-              <div className="rounded-md border border-dashed px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading data...
+            </SheetDescription>
+          </SheetHeader>
+          <ScrollArea className="flex-1 min-h-0 px-6">
+            <div className="flex flex-col gap-4 pb-4">
+              {formLoading && (
+                <div className="rounded-md border border-dashed px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading data...
+                </div>
+              )}
+              {formError ? (
+                <div className="rounded-md border border-destructive/50 bg-destructive/5 px-4 py-2 text-sm text-destructive">
+                  {formError}
+                </div>
+              ) : null}
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="template-name">Template Name *</Label>
+                  <Input
+                    id="template-name"
+                    value={formState.name}
+                    onChange={(event) =>
+                      setFormState((prev) => ({ ...prev, name: event.target.value }))
+                    }
+                    placeholder="Example: Cash received from customer"
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                  <span className="text-sm font-medium">Active</span>
+                  <Switch
+                    checked={formState.isActive}
+                    onCheckedChange={(checked) =>
+                      setFormState((prev) => ({ ...prev, isActive: checked }))
+                    }
+                  />
+                </div>
               </div>
-            )}
-            {formError ? (
-              <div className="rounded-md border border-destructive/50 bg-destructive/5 px-4 py-2 text-sm text-destructive">
-                {formError}
-              </div>
-            ) : null}
-            <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
               <div className="space-y-2">
-                <Label htmlFor="template-name">Template Name *</Label>
-                <Input
-                  id="template-name"
-                  value={formState.name}
+                <Label htmlFor="template-description">Description</Label>
+                <Textarea
+                  id="template-description"
+                  rows={2}
+                  value={formState.description}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, name: event.target.value }))
+                    setFormState((prev) => ({ ...prev, description: event.target.value }))
                   }
-                  placeholder="Example: Cash received from customer"
+                  placeholder="Description of template purpose..."
                 />
               </div>
-              <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                <span className="text-sm font-medium">Active</span>
-                <Switch
-                  checked={formState.isActive}
-                  onCheckedChange={(checked) =>
-                    setFormState((prev) => ({ ...prev, isActive: checked }))
-                  }
-                />
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-sm">Template line accounts</p>
+                  <p className="text-xs text-muted-foreground">
+                    Each line must have at least one account (debit or credit) and required
+                    conditions.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addLine}>
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Add line
+                </Button>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="template-description">Description</Label>
-              <Textarea
-                id="template-description"
-                rows={3}
-                value={formState.description}
-                onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, description: event.target.value }))
-                }
-                placeholder="Description of template purpose..."
-              />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-sm">Template line accounts</p>
-                <p className="text-xs text-muted-foreground">
-                  Each line must have 1 debit account + 1 credit account and required conditions.
-                </p>
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={addLine}>
-                <Plus className="mr-1.5 h-4 w-4" />
-                Add line
-              </Button>
-            </div>
-            <ScrollArea className="max-h-[420px] rounded-md border p-4">
               <div className="space-y-4">
                 {formState.lines.map((line, index) => (
                   <div
@@ -776,27 +733,25 @@ export default function VoucherTemplateManagementPage() {
                         Delete
                       </Button>
                     </div>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <div>
-                        <Label>Debit Account *</Label>
-                        <AccountPicker
-                          options={accounts}
-                          value={line.debitAccount}
-                          onChange={(account) => updateLine(line.id, { debitAccount: account })}
-                          disabled={accountsLoading || Boolean(accountsError)}
+                    <div className="grid gap-3">
+                      <div className="space-y-1.5">
+                        <Label>Debit Account</Label>
+                        <AccountCombobox
+                          value={line.debitAccountId}
+                          onValueChange={(value) => updateLine(line.id, { debitAccountId: value })}
+                          disabled={formLoading}
                         />
                       </div>
-                      <div>
-                        <Label>Credit Account *</Label>
-                        <AccountPicker
-                          options={accounts}
-                          value={line.creditAccount}
-                          onChange={(account) => updateLine(line.id, { creditAccount: account })}
-                          disabled={accountsLoading || Boolean(accountsError)}
+                      <div className="space-y-1.5">
+                        <Label>Credit Account</Label>
+                        <AccountCombobox
+                          value={line.creditAccountId}
+                          onValueChange={(value) => updateLine(line.id, { creditAccountId: value })}
+                          disabled={formLoading}
                         />
                       </div>
                     </div>
-                    <div>
+                    <div className="space-y-1.5">
                       <Label>Default description</Label>
                       <Input
                         value={line.defaultDescription}
@@ -806,7 +761,7 @@ export default function VoucherTemplateManagementPage() {
                         placeholder="Example: Cash received from customer..."
                       />
                     </div>
-                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-2 grid-cols-2">
                       <Label className="flex items-center gap-2 text-sm font-medium">
                         <Checkbox
                           checked={line.requiresCustomer}
@@ -834,7 +789,7 @@ export default function VoucherTemplateManagementPage() {
                         />
                         Requires cost center
                       </Label>
-                      <Label className="flex items-center justify-between gap-2 text-sm font-medium">
+                      <Label className="flex items-center gap-2 text-sm font-medium">
                         <Checkbox
                           checked={line.lockAccounts}
                           onCheckedChange={(checked) =>
@@ -847,25 +802,25 @@ export default function VoucherTemplateManagementPage() {
                   </div>
                 ))}
               </div>
-            </ScrollArea>
-          </div>
-          <DialogFooter>
+            </div>
+          </ScrollArea>
+          <SheetFooter className="px-6 py-4 border-t flex-shrink-0 flex-row gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => setFormOpen(false)}>
-              Huỷ
+              Cancel
             </Button>
             <Button onClick={handleFormSubmit} disabled={formLoading}>
               {formLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang lưu...
+                  Saving...
                 </>
               ) : (
-                'Lưu mẫu'
+                'Save Template'
               )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       <Dialog
         open={deleteState.open}
@@ -875,7 +830,7 @@ export default function VoucherTemplateManagementPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Xoá mẫu chứng từ</DialogTitle>
+            <DialogTitle>Delete Voucher Template</DialogTitle>
             <DialogDescription>
               Bạn chắc chắn muốn xoá mẫu{' '}
               <span className="font-semibold">{deleteState.template?.name}</span>? Hành động này
@@ -887,16 +842,16 @@ export default function VoucherTemplateManagementPage() {
               variant="outline"
               onClick={() => setDeleteState({ open: false, template: null })}
             >
-              Huỷ
+              Cancel
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>
               {deleteLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang xoá...
+                  Deleting...
                 </>
               ) : (
-                'Xoá mẫu'
+                'Delete Template'
               )}
             </Button>
           </DialogFooter>

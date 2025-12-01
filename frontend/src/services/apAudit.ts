@@ -1,13 +1,12 @@
-import { AxiosResponse } from 'axios'
-import axios from '@/lib/axios' // Assuming configured axios instance
-import {
+import axios from '@/utils/axios' // Configured axios instance with auth
+import type {
   APAuditTimelineDTO,
   APAuditEventDTO,
   AbuseDetectionResultDTO,
   APAuditBackup,
   AuditFilters,
 } from '@/types/apAudit'
-import { Page } from '@/types/common' // Assuming Page type exists
+import type { Page } from '@/types/common' // Assuming Page type exists
 
 const BASE_URL = '/api/v1/ap-audit'
 

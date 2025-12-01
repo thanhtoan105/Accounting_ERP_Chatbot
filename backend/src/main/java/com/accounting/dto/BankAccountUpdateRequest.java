@@ -24,7 +24,11 @@ public class BankAccountUpdateRequest {
 
   private String reason; // Optional reason for change (for audit)
 
-  public BankAccountUpdateRequest() {}
+  @Size(max = 20, message = "GL account code must be at most 20 characters")
+  private String glAccountCode;
+
+  public BankAccountUpdateRequest() {
+  }
 
   public String getBankName() {
     return bankName;
@@ -65,5 +69,12 @@ public class BankAccountUpdateRequest {
   public void setReason(String reason) {
     this.reason = reason;
   }
-}
 
+  public String getGlAccountCode() {
+    return glAccountCode;
+  }
+
+  public void setGlAccountCode(String glAccountCode) {
+    this.glAccountCode = glAccountCode;
+  }
+}

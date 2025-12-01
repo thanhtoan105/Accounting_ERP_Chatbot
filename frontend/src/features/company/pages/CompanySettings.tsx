@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import { z } from 'zod'
 import {
@@ -91,6 +92,7 @@ const companySchema = z.object({
 type CompanyForm = z.infer<typeof companySchema>
 
 export default function CompanySettings() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
@@ -515,9 +517,9 @@ export default function CompanySettings() {
       <Card className="max-w-4xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            {hasCompany ? 'Company Settings' : 'Create Company'}
+            {hasCompany ? t('company.title') : t('company.createCompany')}
             <span className="text-xs font-medium text-muted-foreground">
-              {hasCompany ? 'Manage your organization settings' : 'First-time setup'}
+              {hasCompany ? t('company.manageSettings') : t('company.firstTimeSetup')}
             </span>
           </CardTitle>
         </CardHeader>
@@ -525,8 +527,8 @@ export default function CompanySettings() {
           {hasCompany ? (
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'basic' | 'advanced')}>
               <TabsList>
-                <TabsTrigger value="basic">Basic</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                <TabsTrigger value="basic">{t('company.basic')}</TabsTrigger>
+                <TabsTrigger value="advanced">{t('company.advanced')}</TabsTrigger>
               </TabsList>
               <TabsContent value="basic" className="mt-6">
                 {loadingCompany ? (

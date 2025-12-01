@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Plus,
   Send,
+  RefreshCw,
 } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
@@ -369,6 +370,19 @@ export default function PurchaseBillForm() {
     }
   }, [])
 
+  const loadVatCorrections = useCallback(async () => {
+    if (!billId) return
+    try {
+      setVatCorrectionsLoading(true)
+      const list = await vatService.listCorrections({ billId })
+      setVatCorrections(list)
+    } catch (error) {
+      toast.error(`Failed to load VAT corrections: ${String(error)}`)
+    } finally {
+      setVatCorrectionsLoading(false)
+    }
+  }, [billId])
+
   useEffect(() => {
     if (!billId) return
     loadVatCorrections()
@@ -436,19 +450,6 @@ export default function PurchaseBillForm() {
   }, [lines])
 
   const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error')
-
-  const loadVatCorrections = useCallback(async () => {
-    if (!billId) return
-    try {
-      setVatCorrectionsLoading(true)
-      const list = await vatService.listCorrections({ billId })
-      setVatCorrections(list)
-    } catch (error) {
-      toast.error(`Failed to load VAT corrections: ${String(error)}`)
-    } finally {
-      setVatCorrectionsLoading(false)
-    }
-  }, [billId])
 
   function buildRequest(values: PurchaseBillFormValues): PurchaseBillCreateRequest {
     return {

@@ -90,3 +90,54 @@ export interface VATCorrectionCreateRequest {
   newVatAmount: string
   reason: string
 }
+
+// ==================== Output VAT Report (AR) ====================
+
+export interface OutputVATReportLineItem {
+  invoiceId: string
+  invoiceNumber: string
+  invoiceDate: string
+  customerId: number | null
+  customerName: string | null
+  customerTaxCode: string | null
+  vatRate: VATRate
+  vatAmount: string
+  totalAmount: string
+  baseAmount: string
+  revenue0pct: string
+  revenue5pct: string
+  revenue10pct: string
+  revenueExempt: string
+}
+
+export interface OutputVATReportDTO {
+  reportId: string
+  companyId: number
+  periodId: string | null
+  customerId: number | null
+  customerName: string | null
+  customerTaxCode: string | null
+  vatClass: string | null
+  startDate: string
+  endDate: string
+  generationDate: string
+  generatedByName: string | null
+  format: VATExportFormat
+  grandTotalVAT: string
+  grandTotalAmount: string
+  totalVATByRate: Record<VATRate, string>
+  revenue0pct: string
+  revenue5pct: string
+  revenue10pct: string
+  revenueExempt: string
+  totalVatCollected: string
+  items: OutputVATReportLineItem[]
+}
+
+export interface OutputVATReportRequest {
+  periodId?: string
+  customerId?: number
+  vatClass?: string
+  startDate?: string
+  endDate?: string
+}

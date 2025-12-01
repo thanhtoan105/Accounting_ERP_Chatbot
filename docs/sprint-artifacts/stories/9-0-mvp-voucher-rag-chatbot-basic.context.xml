@@ -1,0 +1,470 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>9</epicId>
+    <storyId>0</storyId>
+    <title>MVP Voucher-Focused RAG Chatbot</title>
+    <status>in-progress</status>
+    <generatedAt>2025-11-24</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/9-0-mvp-voucher-rag-chatbot-basic.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>an accountant or financial reviewer</asA>
+    <iWant>an AI chatbot that can answer natural language questions about voucher transactions in Vietnamese</iWant>
+    <soThat>I can quickly find voucher information, check account balances, and understand transaction history without manually searching through multiple screens</soThat>
+    <tasks>
+### Task 1: Setup Infrastructure and External Services (AC 9.0.1, 9.0.2, 9.0.6)
+- Setup Pinecone Account and Index
+- Setup OpenAI Account and API Access
+- Setup n8n Workflow Automation
+- Add Configuration to application.yml
+
+### Task 2: Backend - Database Schema and Entities (AC 9.0.5)
+- Create Flyway Migration for Chatbot Tables
+- Create JPA Entities
+
+### Task 3: Backend - External Service Integration (AC 9.0.1, 9.0.2)
+- Create N8nWebhookService
+- Create EmbeddingService (Placeholder)
+- Integrate Webhook Trigger into VoucherService
+
+### Task 4: Backend - RAG Query Processing Services (AC 9.0.4)
+- Create PineconeClient Wrapper
+- Create OpenAIClient Wrapper
+- Create RAGQueryService
+- Create ChatbotService (Orchestration)
+
+### Task 5: Backend - REST API Endpoints (AC 9.0.3, 9.0.4, 9.0.5)
+- Create ChatbotController
+- Implement POST /api/v1/chatbot/query Endpoint
+- Create DTOs
+- Add Integration Tests for API Endpoints
+
+### Task 6: Frontend - Chatbot Widget Component (AC 9.0.3, 9.0.4)
+- Create Chatbot Feature Structure
+- Create Chatbot Service and Types
+- Create useChatbot Custom Hook
+- Create ChatbotWidget Component
+- Create ChatMessage Component
+- Create CitationList Component
+- Integrate ChatbotWidget into ProtectedLayout
+- Add Chatbot Routing and Deep Links
+
+### Task 7: Frontend - Styling and UX Polish (AC 9.0.3)
+- Add Tailwind CSS Styles for Chatbot
+- Add Loading States and Skeletons
+- Add Error Boundaries and Fallbacks
+
+### Task 8: Testing and Validation (All ACs)
+- Unit Tests (Backend)
+- Integration Tests (Backend)
+- Unit Tests (Frontend)
+- E2E Tests (Playwright)
+- Manual QA and Language Quality Testing
+
+### Task 9: Documentation and Deployment Preparation (AC 9.0.6)
+- Update CLAUDE.md
+- Create Chatbot Setup Manual
+- Create .env.example Entries
+- Update Docker Compose (if needed)
+</tasks>
+  </story>
+
+  <acceptanceCriteria>
+### AC 9.0.1 - Embedding Trigger
+After every successful voucher save/post operation, the backend triggers an n8n webhook that receives:
+- Company ID
+- Voucher header (number, date, description)
+- Line items (account code, account name, debit, credit, line description)
+- Related entities (customers/vendors if applicable)
+- Summary balances (total debit/credit)
+
+Success Criteria:
+- Webhook triggered within 200ms of voucher post
+- Fire-and-forget pattern (doesn't block voucher posting)
+- Webhook payload includes all required fields in JSON format
+
+### AC 9.0.2 - Idempotent Embedding
+Embeddings are stored in Pinecone under company-specific namespaces (company_{companyId}). Re-indexing the same voucher ID is idempotent (overwrites existing embedding). Retry logic handles n8n unavailability with exponential backoff (3 attempts) and logs all failures.
+
+Success Criteria:
+- Pinecone namespace format: company_{UUID}
+- Embedding ID format: voucher_{entityId}
+- Retry attempts: 1s, 5s, 15s delays
+- Failed webhooks logged to database with retry status
+
+### AC 9.0.3 - Chatbot Panel
+A minimal in-app chatbot panel (floating, expandable) allows Vietnamese questions like "Tình hình công nợ hiện tại ra sao?" (What is the current AR/AP status?). Panel accessible from all authenticated pages via icon in header. Queries call backend /api/v1/chatbot/query endpoint.
+
+Success Criteria:
+- Floating widget in bottom-right corner of all main pages
+- Widget toggle button in app header
+- Chat interface with message history (scrollable)
+- Loading indicator during query processing
+- Error boundary for graceful error handling
+
+### AC 9.0.4 - Hybrid Retrieval with Citations
+RAG query performs hybrid retrieval (semantic + metadata filters) over Pinecone + ledger aggregates. Responses ALWAYS include:
+- (a) Natural-language answer in Vietnamese
+- (b) Citation list with voucher/invoice IDs and clickable links
+- (c) Confidence indicator (0.0-1.0)
+
+If no evidence found (confidence < 0.5), chatbot replies "Không đủ dữ liệu" with next-step suggestions.
+
+Success Criteria:
+- Hybrid search: semantic (Pinecone) + metadata filters (company_id, period_id)
+- Top 10 results with relevance score > 0.7
+- Answer format: Vietnamese text + citation section with links
+- Confidence badge: High (>0.8), Medium (0.5-0.8), Low (<0.5)
+- Fallback message if confidence < 0.5
+
+### AC 9.0.5 - Audit Logging
+Each chatbot query is audit-logged in chatbot_queries table with:
+- User ID
+- Company ID
+- Timestamp
+- Prompt text
+- Answer summary
+- Citations JSON
+- Confidence score
+- Response time (ms)
+
+Errors surfaced to user with retry guidance.
+
+Success Criteria:
+- Database table chatbot_queries created via Flyway migration
+- All queries logged with audit hash (SHA-256)
+- Error responses include actionable guidance ("Try rephrasing", "Contact support")
+- Integration with existing AuditService for TT200 compliance
+
+### AC 9.0.6 - Feature Flag
+Feature flag chatbot.enabled (env variable) allows disabling chatbot widget UI without affecting voucher posting workflows. When disabled, chatbot icon hidden from UI; voucher workflows continue normally.
+
+Success Criteria:
+- Environment variable: CHATBOT_ENABLED=true|false
+- When false: widget icon hidden, API returns 503
+- Voucher posting unaffected by chatbot status
+- Clear log message when chatbot disabled
+</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-9.md</path>
+        <title>Epic 9 Technical Specification: AI RAG Chatbot & Contextual Help</title>
+        <section>Overview & Architecture</section>
+        <snippet>Comprehensive technical specification covering chatbot architecture, n8n automation pipelines, Pinecone vector database integration, and RAG query processing. Includes detailed service layer design (ChatbotService, EmbeddingService, RAGQueryService), API contracts, and data models.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-9.md</path>
+        <title>Epic 9 Technical Specification</title>
+        <section>Services and Modules</section>
+        <snippet>Defines ChatbotController, ChatbotService, EmbeddingService, RAGQueryService, N8nWebhookService, GuardrailService with responsibilities, inputs, outputs. Backend package structure: com.accounting.service.chatbot.*, com.accounting.controller.ChatbotController.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-9.md</path>
+        <title>Epic 9 Technical Specification</title>
+        <section>Data Models - Entities</section>
+        <snippet>JPA entities: ChatbotQuery extends CompanyScopedEntity (id, userId, queryText, answerText, citations JSONB, confidenceScore, sessionId, language, responseTimeMs, auditHash). Also ChatbotFeedback and GuardrailLog entities. Pinecone metadata schema with company_id namespace scoping.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-9.md</path>
+        <title>Epic 9 Technical Specification</title>
+        <section>APIs and Interfaces</section>
+        <snippet>REST endpoints: POST /api/v1/chatbot/query (ChatbotQueryRequest → ChatbotQueryResponse with answer, citations, confidenceScore), POST /api/v1/chatbot/feedback, GET /api/v1/chatbot/history, POST /api/v1/webhooks/n8n/embedding. n8n webhook payload structure for voucher embedding automation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-9.md</path>
+        <title>Epic 9 Technical Specification</title>
+        <section>Workflows - Query Processing Flow</section>
+        <snippet>13-step flow: User query → JWT validation → GuardrailService → RAGQueryService generates embedding → Pinecone query with metadata filters (company_id, RBAC created_by) → retrieve top 10 results (score >0.7) → construct LLM prompt with system message in Vietnamese → OpenAI completion → parse citations → save ChatbotQuery with audit hash → return response with confidence indicator.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-9.md</path>
+        <title>Epic 9 Technical Specification</title>
+        <section>Workflows - Embedding Automation Flow</section>
+        <snippet>n8n pipeline triggered after VoucherService.post(): fire-and-forget webhook → n8n validates payload → formats text for embedding → OpenAI Embedding API (text-embedding-ada-002) → Pinecone upsert to namespace company_{companyId} with ID voucher_{entityId} → retry 3x on failure with exponential backoff.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-9.md</path>
+        <title>Epic 9 Technical Specification</title>
+        <section>Non-Functional Requirements - Security</section>
+        <snippet>JWT authentication for all chatbot endpoints. RBAC enforcement: Accountant sees only their vouchers (created_by filter), Chief Accountant sees all company data. Company-scoped Pinecone namespaces. Webhook protected by N8N_WEBHOOK_SECRET. Exclude sensitive fields from embeddings (password_hash, api_keys). Input sanitization: max 5000 chars, block SQL injection. Rate limiting: 20 queries/user/minute.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-9.md</path>
+        <title>Epic 9 Technical Specification</title>
+        <section>Non-Functional Requirements - Performance</section>
+        <snippet>Target query response time P95 < 5 seconds (Pinecone + OpenAI). Fire-and-forget webhook < 200ms. Redis cache for FAQ queries (1-hour TTL). Support 20 concurrent queries per company. OpenAI gpt-3.5-turbo for MVP, text-embedding-ada-002 for embeddings. Max context window: top 10 chunks, 8000 tokens. Cost limit: $10/company/day with monitoring alerts.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-8.md</path>
+        <title>Epic 8 Technical Specification: BI Dashboard & Analytics - Metabase Integration Patterns</title>
+        <section>Overview & Learnings from Story 8-0</section>
+        <snippet>Story 8-0 demonstrates external service integration pattern: MetabaseService interface + implementation, JWT SSO with 10-minute token expiration, configuration via application.yml environment variables. React feature structure: features/analytics/ with services, pages, components. Patterns directly applicable to chatbot Pinecone/OpenAI/n8n integration.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/9-0-mvp-voucher-rag-chatbot-basic.md</path>
+        <title>Story 9.0 - Dev Notes</title>
+        <section>Learnings from Previous Story (8-0)</section>
+        <snippet>Reusable patterns: Service interface + implementation (MetabaseService/MetabaseServiceImpl), JWT token handling with JJWT library and modern API, React feature-first structure with barrel exports, role-based endpoint protection with @PreAuthorize, comprehensive setup manual in docs/manuals/. Apply to ChatbotService, EmbeddingService, RAGQueryService.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/MetabaseService.java</path>
+        <kind>interface</kind>
+        <symbol>MetabaseService</symbol>
+        <lines>8-35</lines>
+        <reason>Reference implementation pattern for external service integration. ChatbotService, EmbeddingService, RAGQueryService should follow this interface + implementation pattern with @Service annotation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/MetabaseServiceImpl.java</path>
+        <kind>service-impl</kind>
+        <symbol>MetabaseServiceImpl</symbol>
+        <lines>20-80</lines>
+        <reason>JWT token generation pattern using JJWT library with modern API (Jwts.builder().claims().expiration().signWith()). Demonstrates @Value property injection for environment variables. CompanyContext.getCompanyId() extraction for multi-tenancy. Apply same patterns to chatbot JWT/webhook authentication.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/AnalyticsController.java</path>
+        <kind>controller</kind>
+        <symbol>AnalyticsController</symbol>
+        <lines>14-65</lines>
+        <reason>REST controller pattern with @PreAuthorize for RBAC enforcement. Demonstrates role-based access control with hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT'). ChatbotController should follow same pattern with @RestController, @RequestMapping("/api/v1/chatbot"), and role-based security annotations.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/VoucherService.java</path>
+        <kind>interface</kind>
+        <symbol>postSalesInvoiceVoucher</symbol>
+        <lines>91-101</lines>
+        <reason>Integration point for n8n webhook trigger. After voucher post operation, ChatbotService should trigger N8nWebhookService.triggerEmbedding() with fire-and-forget pattern. VoucherServiceImpl.post() method should be extended to call webhook.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java</path>
+        <kind>interface</kind>
+        <symbol>CompanyScopedEntity</symbol>
+        <lines>3-5</lines>
+        <reason>All chatbot entities (ChatbotQuery, ChatbotFeedback, GuardrailLog) MUST extend CompanyScopedEntity for automatic company-scoped filtering. Provides getCompanyId() method used by CompanyScopeAspect for multi-tenant isolation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/security/JwtAuthenticationFilter.java</path>
+        <kind>filter</kind>
+        <symbol>JwtAuthenticationFilter</symbol>
+        <lines>21-81</lines>
+        <reason>JWT token extraction and validation pattern. Demonstrates how to extract userId and role from JWT token using JwtTokenProvider. ChatbotController should leverage SecurityContextHolder.getContext().getAuthentication() to get current user context for audit logging and RBAC enforcement.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/config/SecurityConfig.java</path>
+        <kind>config</kind>
+        <symbol>SecurityConfig</symbol>
+        <lines>20-76</lines>
+        <reason>Security configuration with JWT filter chain. All /api/v1/chatbot/* endpoints will be automatically protected by JwtAuthenticationFilter. No additional security configuration needed for chatbot endpoints unless webhook endpoint requires special authentication (shared secret).</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/analytics/index.ts</path>
+        <kind>barrel-export</kind>
+        <symbol>analytics feature</symbol>
+        <lines>1-4</lines>
+        <reason>Barrel export pattern for feature modules. Chatbot feature should follow same structure: frontend/src/features/chatbot/index.ts exporting pages, components, services, types for clean imports like import { ChatbotWidget } from '@/features/chatbot'.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/analytics/services/analytics.ts</path>
+        <kind>service</kind>
+        <symbol>getEmbeddingToken, getEmbeddedDashboardUrl</symbol>
+        <lines>1-33</lines>
+        <reason>Axios service pattern for API calls. Chatbot service (frontend/src/features/chatbot/services/chatbot.ts) should follow same pattern with TypeScript interfaces for request/response DTOs and axios.post('/api/v1/chatbot/query') for query submission.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <backend>
+        <dependency name="spring-boot-starter-web" version="3.5.7">REST API framework (existing)</dependency>
+        <dependency name="spring-boot-starter-data-jpa" version="3.5.7">Database ORM (existing)</dependency>
+        <dependency name="spring-boot-starter-data-redis" version="3.5.7">Redis caching for FAQ queries (existing)</dependency>
+        <dependency name="spring-boot-starter-security" version="3.5.7">JWT authentication, RBAC (existing)</dependency>
+        <dependency name="postgresql" version="42.7.4">Database driver (existing)</dependency>
+        <dependency name="flyway-core" version="11.10.0">Database migrations (existing)</dependency>
+        <dependency name="jjwt-api" version="0.12.5">JWT token library (existing)</dependency>
+        <dependency name="NEW: pinecone-client" version="0.7.2+">Pinecone vector database SDK (TO BE ADDED in Task 4.1)</dependency>
+        <dependency name="NEW: openai-java" version="0.18.0+">OpenAI API client for embeddings and completions (TO BE ADDED in Task 4.2)</dependency>
+        <dependency name="NEW: okhttp" version="4.12.0+">HTTP client for n8n webhook calls (TO BE ADDED in Task 3.1)</dependency>
+      </backend>
+      <frontend>
+        <dependency name="react" version="19.1.1">UI framework (existing)</dependency>
+        <dependency name="react-router-dom" version="7.9.5">Routing (existing)</dependency>
+        <dependency name="@tanstack/react-query" version="5.62.0">Server state management for chatbot queries (existing)</dependency>
+        <dependency name="axios" version="1.7.9">HTTP client (existing)</dependency>
+        <dependency name="@radix-ui/react-dialog" version="1.1.15">Modal for chatbot widget (existing)</dependency>
+        <dependency name="lucide-react" version="0.552.0">Icons for chatbot UI (existing)</dependency>
+        <dependency name="NEW: react-markdown" version="9.0.0+">Markdown rendering for chatbot responses (TO BE ADDED in Task 6.5)</dependency>
+        <dependency name="NEW: @tailwindcss/typography" version="0.5.13+">Typography styling for markdown (TO BE ADDED in Task 7.1)</dependency>
+        <dependency name="tailwindcss" version="4.1.16">Styling framework (existing)</dependency>
+        <dependency name="zod" version="4.1.12">Request/response validation (existing)</dependency>
+      </frontend>
+      <external-services>
+        <service name="Pinecone">Vector database for embeddings storage. Serverless free tier. API Key: PINECONE_API_KEY (env var). Environment: us-east-1-aws. Index name: accounting-embeddings. Dimensions: 1536 (OpenAI ada-002). Metric: cosine similarity.</service>
+        <service name="OpenAI">Embedding generation and LLM completions. Pay-as-you-go. API Key: OPENAI_API_KEY (env var). Embedding model: text-embedding-ada-002. Completion model: gpt-3.5-turbo. Max tokens: 2000 per response. Temperature: 0.3.</service>
+        <service name="n8n">Automation workflow for embedding pipeline. Self-hosted Docker. Webhook URL: N8N_WEBHOOK_URL (env var). Webhook secret: N8N_WEBHOOK_SECRET (env var). Workflow: "Voucher Embedding Automation". Retry policy: 3 attempts with exponential backoff.</service>
+      </external-services>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint category="multi-tenancy">All chatbot entities MUST extend CompanyScopedEntity for automatic company filtering via CompanyScopeAspect. Pinecone namespaces MUST be scoped by company_id (format: company_{UUID}). RAG queries MUST filter by company context extracted from JWT token. Test multi-tenant isolation: User from Company A cannot query Company B's vouchers.</constraint>
+    <constraint category="security">JWT authentication required for all chatbot endpoints. RBAC enforcement: Accountant sees only their vouchers (created_by filter), Chief Accountant sees all company data. Input sanitization: Max query length 5000 chars, block SQL injection patterns. Webhook authentication: n8n webhook protected by shared secret (N8N_WEBHOOK_SECRET). Exclude sensitive fields from embeddings: password_hash, refresh_token, api_keys.</constraint>
+    <constraint category="performance">Fire-and-forget webhook trigger (< 200ms, non-blocking). Target query response time: P95 < 5 seconds (Pinecone + OpenAI). Rate limiting: 20 queries per user per minute. Redis caching for frequently asked questions (1-hour TTL). Support 20 concurrent queries per company.</constraint>
+    <constraint category="testing">Unit tests: 70% coverage for backend chatbot package (JUnit 5 + Mockito). Integration tests: End-to-end flows with TestContainers (PostgreSQL, Redis). E2E tests: Playwright for chatbot widget UI interactions. Manual QA: Vietnamese language quality assessment.</constraint>
+    <constraint category="code-structure-backend">Backend package structure: com.accounting.controller.ChatbotController, com.accounting.service.{ChatbotService, EmbeddingService, RAGQueryService}, com.accounting.service.impl.chatbot.{ChatbotServiceImpl, N8nWebhookServiceImpl, PineconeClientWrapper, OpenAIClientWrapper}, com.accounting.dto.{ChatbotQueryRequest, ChatbotQueryResponse, Citation}, com.accounting.entity.{ChatbotQuery, ChatbotFeedback, GuardrailLog}, com.accounting.repository.ChatbotQueryRepository.</constraint>
+    <constraint category="code-structure-frontend">Frontend feature structure: frontend/src/features/chatbot/{components, hooks, services, types, index.ts}. Components: ChatbotWidget (main floating widget), ChatMessage (individual message display), CitationList (citation rendering with links). Hooks: useChatbot (React Query + state management). Services: chatbot.ts (axios API client). Types: chatbot.ts (TypeScript interfaces). Barrel export: index.ts.</constraint>
+    <constraint category="database">Database migrations: V20251224__create_chatbot_tables.sql creates chatbot_queries, chatbot_feedback, guardrail_logs tables. All chatbot entities use JSONB columns for citations and context. Indexes required on company_id, user_id, session_id, created_at for query performance.</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>POST /api/v1/chatbot/query</name>
+      <kind>REST endpoint</kind>
+      <signature>ChatbotQueryRequest → ChatbotQueryResponse</signature>
+      <path>backend/src/main/java/com/accounting/controller/ChatbotController.java</path>
+      <details>Request: { query: string, sessionId: string, language?: "vi" | "en", contextFilters?: { periodId?, entityType? } }. Response: { answer: string, citations: Citation[], confidenceScore: number, queryId: number, responseTimeMs: number }. Security: JWT required, RBAC enforced (Accountant sees only their vouchers).</details>
+    </interface>
+    <interface>
+      <name>POST /api/v1/chatbot/feedback</name>
+      <kind>REST endpoint</kind>
+      <signature>FeedbackRequest → 200 OK</signature>
+      <path>backend/src/main/java/com/accounting/controller/ChatbotController.java</path>
+      <details>Request: { queryId: number, feedbackType: "helpful" | "not_helpful" | "report_issue", comment?: string }. Saves feedback to chatbot_feedback table. Security: JWT required.</details>
+    </interface>
+    <interface>
+      <name>GET /api/v1/chatbot/history</name>
+      <kind>REST endpoint</kind>
+      <signature>Query params: sessionId, limit → ChatbotQuery[]</signature>
+      <path>backend/src/main/java/com/accounting/controller/ChatbotController.java</path>
+      <details>Retrieve user's chat history filtered by sessionId. Returns array of ChatbotQuery entities with queries, answers, citations. Security: JWT required, user can only access their own sessions.</details>
+    </interface>
+    <interface>
+      <name>DELETE /api/v1/chatbot/session/{sessionId}</name>
+      <kind>REST endpoint</kind>
+      <signature>sessionId → 204 No Content</signature>
+      <path>backend/src/main/java/com/accounting/controller/ChatbotController.java</path>
+      <details>Clear a chat session by sessionId. Soft-delete or mark as inactive. Security: JWT required, user can only delete their own sessions.</details>
+    </interface>
+    <interface>
+      <name>POST /api/v1/webhooks/n8n/embedding (internal)</name>
+      <kind>Webhook endpoint</kind>
+      <signature>EmbeddingPayload → 200 OK</signature>
+      <path>backend/src/main/java/com/accounting/controller/ChatbotController.java or separate WebhookController</path>
+      <details>Internal webhook called by backend to trigger n8n embedding automation. Payload: { companyId: UUID, entityType: "voucher", entityId: number, voucherNumber: string, data: {...} }. Security: Protected by N8N_WEBHOOK_SECRET shared secret (not JWT).</details>
+    </interface>
+    <interface>
+      <name>ChatbotService.processQuery</name>
+      <kind>Service method</kind>
+      <signature>(queryText: string, userId: Long, companyId: Long, sessionId: string) → ChatbotQueryResponse</signature>
+      <path>backend/src/main/java/com/accounting/service/ChatbotService.java</path>
+      <details>Orchestrates RAG query processing: 1) Validate query, 2) Call RAGQueryService.retrieveRelevantVouchers(), 3) Construct LLM prompt, 4) Call OpenAI completion API, 5) Parse response and extract citations, 6) Calculate confidence score, 7) Create ChatbotQuery entity with audit hash, 8) Save to database, 9) Log via AuditService, 10) Return ChatbotQueryResponse.</details>
+    </interface>
+    <interface>
+      <name>RAGQueryService.retrieveRelevantVouchers</name>
+      <kind>Service method</kind>
+      <signature>(query: string, companyId: Long, filters: Map) → List&lt;RetrievedDocument&gt;</signature>
+      <path>backend/src/main/java/com/accounting/service/RAGQueryService.java</path>
+      <details>Hybrid retrieval: 1) Generate query embedding via OpenAI, 2) Query Pinecone with namespace filter (company_{companyId}), 3) Retrieve top 10 results with score > 0.7, 4) Load voucher details from database using entity IDs, 5) Return list of RetrievedDocument objects with metadata.</details>
+    </interface>
+    <interface>
+      <name>N8nWebhookService.triggerEmbedding</name>
+      <kind>Service method</kind>
+      <signature>(VoucherEmbeddingPayload payload) → CompletableFuture&lt;Void&gt;</signature>
+      <path>backend/src/main/java/com/accounting/service/impl/chatbot/N8nWebhookServiceImpl.java</path>
+      <details>Fire-and-forget webhook trigger: 1) Construct payload with voucher header + line items, 2) Send POST to n8n webhook URL with shared secret, 3) Retry logic with exponential backoff (3 attempts: 1s, 5s, 15s), 4) Log all webhook calls (success/failure) with Request ID. Non-blocking async operation.</details>
+    </interface>
+    <interface>
+      <name>CompanyScopedEntity.getCompanyId</name>
+      <kind>Interface method</kind>
+      <signature>() → Long</signature>
+      <path>backend/src/main/java/com/accounting/repository/CompanyScopedEntity.java</path>
+      <details>All chatbot entities (ChatbotQuery, ChatbotFeedback, GuardrailLog) must implement this interface. Used by CompanyScopeAspect for automatic company filtering in repository queries.</details>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+The project uses a comprehensive testing strategy with multiple test levels:
+
+**Backend (JUnit 5 + Mockito + TestContainers):**
+- Unit tests: Test service classes with mocked dependencies (JUnit 5 + Mockito). Target 70% code coverage for chatbot package.
+- Integration tests: End-to-end flows using TestContainers for PostgreSQL and Redis. Test complete API flows, database persistence, caching.
+- Test structure: Tests located in src/test/java mirroring src/main/java package structure.
+- Naming convention: *Test.java for unit tests, *IntegrationTest.java for integration tests.
+- Assertions: Use assertThat() from AssertJ for fluent assertions.
+- Mocking: Use @Mock, @InjectMocks, Mockito.when().thenReturn() for unit tests.
+
+**Frontend (Vitest + Testing Library + jsdom):**
+- Unit tests: Test React components and hooks in isolation with mocked API responses.
+- Component tests: Use @testing-library/react for rendering and user interactions.
+- Test structure: Tests located in __tests__ directories within each feature/component folder.
+- Naming convention: *.test.tsx for component tests, *.test.ts for service tests.
+- Target: 60% coverage for chatbot feature.
+
+**E2E Tests (Playwright):**
+- Full user flows: Test chatbot widget interactions, query submission, citation navigation.
+- Test location: tests/e2e/ directory in project root.
+- Naming convention: *.spec.ts for E2E test files.
+- Fixtures: Use Playwright fixtures for authentication, test data setup.
+
+**Manual QA:**
+- Vietnamese language quality assessment for accounting terminology accuracy.
+- Hallucination detection: Verify no fabricated numbers in answers.
+- Citation quality: Verify excerpts are relevant and accurate.
+- Usability testing: Chatbot UI/UX, help documentation clarity.
+    </standards>
+    <locations>
+- Backend unit tests: backend/src/test/java/com/accounting/service/{ChatbotServiceTest, RAGQueryServiceTest, N8nWebhookServiceTest}
+- Backend integration tests: backend/src/test/java/com/accounting/controller/ChatbotControllerIntegrationTest
+- Frontend unit tests: frontend/src/features/chatbot/__tests__/{useChatbot.test.ts, ChatMessage.test.tsx, CitationList.test.tsx}
+- Frontend component tests: frontend/src/features/chatbot/components/__tests__/ChatbotWidget.test.tsx
+- E2E tests: tests/e2e/chatbot-widget.spec.ts, tests/e2e/chatbot-query-flow.spec.ts
+- API tests: tests/api/chatbot-api.spec.ts (Playwright API testing)
+    </locations>
+    <ideas>
+**AC 9.0.1 - Embedding Trigger:**
+- Unit test: Verify N8nWebhookService.triggerEmbedding() constructs correct payload format (companyId, voucher header, line items, totals)
+- Integration test: Post voucher via VoucherService, verify n8n webhook called with correct payload within 200ms
+- Test fire-and-forget pattern: Webhook failure should not block voucher posting
+
+**AC 9.0.2 - Idempotent Embedding:**
+- Integration test: Embed same voucher twice, verify idempotent (same vector ID in Pinecone namespace)
+- Test retry logic: Mock n8n webhook failure (timeout, 500 error), verify 3 retry attempts with exponential backoff (1s, 5s, 15s)
+- Test failure logging: Verify failed webhooks logged to database with retry status
+
+**AC 9.0.3 - Chatbot Panel:**
+- E2E test: Verify chatbot widget renders in bottom-right corner on all main pages (Dashboard, Vouchers, Sales Invoices)
+- E2E test: Type Vietnamese query "Tình hình công nợ hiện tại ra sao?", verify panel expands, loading indicator shown, API called
+- Unit test: Test ChatbotWidget component rendering, expand/collapse state management
+- Test error boundary: Simulate API error, verify graceful error handling with retry button
+
+**AC 9.0.4 - Hybrid Retrieval with Citations:**
+- Integration test: Submit query, mock Pinecone response with 10 results (relevance score > 0.7), verify answer includes Vietnamese text + citations + confidence score
+- Unit test: Test RAGQueryService.retrieveRelevantVouchers() with metadata filters (company_id, period_id)
+- Edge case test: No results (empty Pinecone response), verify confidence < 0.5, returns "Không đủ dữ liệu" message
+- Test citation links: Verify clickable links navigate to voucher detail page
+
+**AC 9.0.5 - Audit Logging:**
+- Integration test: Submit query, verify chatbot_queries table entry created with userId, companyId, queryText, answerText, citations JSONB, confidenceScore, responseTimeMs, audit hash (SHA-256)
+- Unit test: Test ChatbotQuery entity audit hash generation (SHA-256 of query + timestamp + userId)
+- Test AuditService integration: Verify query event logged via existing AuditService for TT200 compliance
+- Test error handling: API error, verify user gets actionable guidance ("Try rephrasing", "Contact support")
+
+**AC 9.0.6 - Feature Flag:**
+- Integration test: Set CHATBOT_ENABLED=false in application.yml, verify chatbot widget icon hidden from UI, API returns 503
+- Test voucher posting unaffected: With chatbot disabled, post voucher, verify success (webhook not triggered)
+- Test clear log message: Verify log entry "Chatbot feature disabled" when chatbot_enabled=false
+
+**Multi-tenancy isolation:**
+- Integration test: User from Company A queries, verify only Company A's vouchers in Pinecone results (namespace filter company_{companyA_id})
+- RBAC test: Accountant queries, verify only their vouchers in results (created_by filter), Chief Accountant sees all company data
+- Cross-company leak test: Attempt to query Company B's data with Company A's JWT token, verify 403 Forbidden
+
+**Vietnamese language quality:**
+- Manual QA: Test various Vietnamese query types: "Công nợ phải trả là bao nhiêu?" (How much is payable?), "Có phiếu chi nào trong tháng 11?" (Any payment vouchers in Nov?), "Tổng số tiền đã thanh toán cho nhà cung cấp ABC?" (Total paid to supplier ABC?)
+- Test accounting terminology accuracy: Verify correct use of Vietnamese accounting terms (công nợ, phải trả, phải thu, phiếu chi, phiếu thu)
+- Test confidence score calibration: Low confidence for ambiguous queries, high confidence for specific queries with clear evidence
+    </ideas>
+  </tests>
+</story-context>

@@ -145,50 +145,48 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     // Build specification with company scope and optional filters
-    Specification<APPayment> spec =
-        (root, query, criteriaBuilder) -> {
-          List<Predicate> predicates = new ArrayList<>();
+    Specification<APPayment> spec = (root, query, criteriaBuilder) -> {
+      List<Predicate> predicates = new ArrayList<>();
 
-          // Always filter by company
-          predicates.add(criteriaBuilder.equal(root.get("companyId"), companyId));
+      // Always filter by company
+      predicates.add(criteriaBuilder.equal(root.get("companyId"), companyId));
 
-          // Filter by supplier
-          if (supplierId != null) {
-            predicates.add(criteriaBuilder.equal(root.get("supplierId"), supplierId));
-          }
+      // Filter by supplier
+      if (supplierId != null) {
+        predicates.add(criteriaBuilder.equal(root.get("supplierId"), supplierId));
+      }
 
-          // Filter by status
-          if (status != null) {
-            predicates.add(criteriaBuilder.equal(root.get("status"), status));
-          }
+      // Filter by status
+      if (status != null) {
+        predicates.add(criteriaBuilder.equal(root.get("status"), status));
+      }
 
-          // Filter by date range
-          if (dateFrom != null) {
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("paymentDate"), dateFrom));
-          }
-          if (dateTo != null) {
-            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("paymentDate"), dateTo));
-          }
+      // Filter by date range
+      if (dateFrom != null) {
+        predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("paymentDate"), dateFrom));
+      }
+      if (dateTo != null) {
+        predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("paymentDate"), dateTo));
+      }
 
-          // Filter by standalone
-          if (standalone != null) {
-            predicates.add(criteriaBuilder.equal(root.get("isStandalone"), standalone));
-          }
+      // Filter by standalone
+      if (standalone != null) {
+        predicates.add(criteriaBuilder.equal(root.get("isStandalone"), standalone));
+      }
 
-          // Search by payment number, reference, or payee
-          if (search != null && !search.isBlank()) {
-            List<UUID> matchingIds =
-                paymentRepository.findIdsByCompanyIdAndSearchTerm(companyId, search.trim());
-            if (matchingIds.isEmpty()) {
-              // No matches found, return empty result
-              predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
-            } else {
-              predicates.add(root.get("id").in(matchingIds));
-            }
-          }
+      // Search by payment number, reference, or payee
+      if (search != null && !search.isBlank()) {
+        List<UUID> matchingIds = paymentRepository.findIdsByCompanyIdAndSearchTerm(companyId, search.trim());
+        if (matchingIds.isEmpty()) {
+          // No matches found, return empty result
+          predicates.add(criteriaBuilder.equal(root.get("id"), UUID.randomUUID()));
+        } else {
+          predicates.add(root.get("id").in(matchingIds));
+        }
+      }
 
-          return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+      return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+    };
 
     Page<APPayment> payments = paymentRepository.findAll(spec, pageable);
     return payments.map(this::toListDTO);
@@ -214,166 +212,158 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     try {
-        Long createdById = SecurityUtils.getCurrentUserId();
+      Long createdById = SecurityUtils.getCurrentUserId();
 
-        // Validate account selection (either cash or bank, not both)
-        if (request.getCashAccountId() == null && request.getBankAccountId() == null) {
+      // Validate account selection (either cash or bank, not both)
+      if (request.getCashAccountId() == null && request.getBankAccountId() == null) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Either cash account or bank account must be specified");
+      }
+      if (request.getCashAccountId() != null && request.getBankAccountId() != null) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Cannot specify both cash account and bank account");
+      }
+
+      // Validate supplier exists
+      supplierRepository
+          .findByCompanyIdAndId(companyId, request.getSupplierId())
+          .orElseThrow(
+              () -> new ResponseStatusException(
+                  HttpStatus.NOT_FOUND, "Supplier not found: " + request.getSupplierId()));
+
+      // Validate account exists
+      Long accountId = request.getCashAccountId() != null ? request.getCashAccountId() : request.getBankAccountId();
+      bankAccountRepository
+          .findByCompanyIdAndId(companyId, accountId)
+          .orElseThrow(
+              () -> new ResponseStatusException(
+                  HttpStatus.NOT_FOUND, "Bank account not found: " + accountId));
+
+      // Validate standalone payment (if applicable)
+      if (request.getIsStandalone() != null && request.getIsStandalone()) {
+        var validationResult = paymentValidationService.validateStandalonePayment(
+            toEntity(request, companyId, createdById), createdById);
+        if (!validationResult.isValid()) {
           throw new ResponseStatusException(
-              HttpStatus.BAD_REQUEST, "Either cash account or bank account must be specified");
+              HttpStatus.BAD_REQUEST, formatValidationErrors(validationResult));
         }
-        if (request.getCashAccountId() != null && request.getBankAccountId() != null) {
+      }
+
+      // Validate account balance
+      var balanceValidation = paymentValidationService.validateAccountBalance(accountId, request.getAmount());
+      if (balanceValidation.hasErrors()) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, formatValidationErrors(balanceValidation));
+      }
+
+      // Validate payment proof (if required)
+      var proofValidation = paymentValidationService.validatePaymentProof(
+          request.getAmount(), request.getPaymentProofUrl());
+      if (!proofValidation.isValid()) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, formatValidationErrors(proofValidation));
+      }
+
+      // Generate payment number
+      String paymentNumber = generatePaymentNumber(request.getPaymentDate(), companyId);
+
+      // Create payment entity
+      APPayment payment = new APPayment();
+      payment.setCompanyId(companyId);
+      payment.setSupplierId(request.getSupplierId());
+      payment.setPaymentNumber(paymentNumber);
+      payment.setPaymentDate(request.getPaymentDate());
+      payment.setDueDate(request.getDueDate());
+      payment.setCashAccountId(request.getCashAccountId());
+      payment.setBankAccountId(request.getBankAccountId());
+      payment.setPayee(request.getPayee());
+      payment.setAmount(request.getAmount().setScale(SCALE, ROUNDING_MODE));
+      payment.setReference(request.getReference());
+      payment.setPaymentMethod(request.getPaymentMethod());
+      payment.setPaymentProofUrl(request.getPaymentProofUrl());
+      payment.setIsStandalone(
+          request.getIsStandalone() != null ? request.getIsStandalone() : false);
+      payment.setStatus(PaymentStatus.DRAFT);
+      payment.setCreatedById(createdById);
+
+      // Save payment
+      payment = paymentRepository.save(payment);
+
+      // Handle allocations
+      if (!payment.getIsStandalone()) {
+        // Validate supplier has open bills
+        var supplierValidation = paymentValidationService.validateSupplierHasOpenBills(request.getSupplierId());
+        if (!supplierValidation.isValid()) {
           throw new ResponseStatusException(
-              HttpStatus.BAD_REQUEST, "Cannot specify both cash account and bank account");
+              HttpStatus.BAD_REQUEST, formatValidationErrors(supplierValidation));
         }
 
-        // Validate supplier exists
-        supplierRepository
-            .findByCompanyIdAndId(companyId, request.getSupplierId())
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Supplier not found: " + request.getSupplierId()));
-
-        // Validate account exists
-        Long accountId = request.getCashAccountId() != null ? request.getCashAccountId() : request.getBankAccountId();
-        bankAccountRepository
-            .findByCompanyIdAndId(companyId, accountId)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Bank account not found: " + accountId));
-
-        // Validate standalone payment (if applicable)
-        if (request.getIsStandalone() != null && request.getIsStandalone()) {
-          var validationResult =
-              paymentValidationService.validateStandalonePayment(
-                  toEntity(request, companyId, createdById), createdById);
-          if (!validationResult.isValid()) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST, formatValidationErrors(validationResult));
-          }
+        // If allocations not provided, perform FIFO allocation
+        List<PaymentAllocationRequest> allocations = request.getAllocations();
+        if (allocations == null || allocations.isEmpty()) {
+          List<PaymentAllocationDTO> fifoAllocations = allocateFIFO(request.getAmount(), request.getSupplierId());
+          allocations = fifoAllocations.stream()
+              .map(
+                  dto -> new PaymentAllocationRequest(
+                      dto.getPurchaseBillId(), dto.getAllocatedAmount()))
+              .collect(Collectors.toList());
         }
 
-        // Validate account balance
-        var balanceValidation =
-            paymentValidationService.validateAccountBalance(accountId, request.getAmount());
-        if (balanceValidation.hasErrors()) {
+        // Validate allocations
+        var allocationValidation = paymentValidationService.validateAllocations(allocations, request.getAmount());
+        if (!allocationValidation.isValid()) {
           throw new ResponseStatusException(
-              HttpStatus.BAD_REQUEST, formatValidationErrors(balanceValidation));
+              HttpStatus.BAD_REQUEST, formatValidationErrors(allocationValidation));
         }
 
-        // Validate payment proof (if required)
-        var proofValidation =
-            paymentValidationService.validatePaymentProof(
-                request.getAmount(), request.getPaymentProofUrl());
-        if (!proofValidation.isValid()) {
-          throw new ResponseStatusException(
-              HttpStatus.BAD_REQUEST, formatValidationErrors(proofValidation));
-        }
+        // Save allocations
+        saveAllocations(payment.getId(), allocations, companyId);
+      }
 
-        // Generate payment number
-        String paymentNumber = generatePaymentNumber(request.getPaymentDate(), companyId);
+      // Check if approval is required based on payment amount and threshold
+      BigDecimal approvalThreshold = getApprovalThreshold();
+      if (payment.getAmount().compareTo(approvalThreshold) > 0) {
+        // Payment exceeds threshold - requires approval
+        payment.setStatus(PaymentStatus.PENDING_APPROVAL);
+        logger.info(
+            "Payment {} requires approval (amount: {}, threshold: {})",
+            payment.getPaymentNumber(),
+            payment.getAmount(),
+            approvalThreshold);
+      } else {
+        // Payment below threshold - auto-approved (stays in DRAFT, can be posted
+        // directly)
+        logger.info(
+            "Payment {} auto-approved (amount: {}, threshold: {})",
+            payment.getPaymentNumber(),
+            payment.getAmount(),
+            approvalThreshold);
+      }
 
-        // Create payment entity
-        APPayment payment = new APPayment();
-        payment.setCompanyId(companyId);
-        payment.setSupplierId(request.getSupplierId());
-        payment.setPaymentNumber(paymentNumber);
-        payment.setPaymentDate(request.getPaymentDate());
-        payment.setDueDate(request.getDueDate());
-        payment.setCashAccountId(request.getCashAccountId());
-        payment.setBankAccountId(request.getBankAccountId());
-        payment.setPayee(request.getPayee());
-        payment.setAmount(request.getAmount().setScale(SCALE, ROUNDING_MODE));
-        payment.setReference(request.getReference());
-        payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setPaymentProofUrl(request.getPaymentProofUrl());
-        payment.setIsStandalone(
-            request.getIsStandalone() != null ? request.getIsStandalone() : false);
-        payment.setStatus(PaymentStatus.DRAFT);
-        payment.setCreatedById(createdById);
+      // Log audit event
+      try {
+        JsonNode afterSnapshot = serializePaymentToJson(payment);
+        auditService.logPaymentEvent(
+            payment.getId(),
+            payment.getPaymentNumber(),
+            "PAYMENT_CREATED",
+            null, // before snapshot (null for create)
+            afterSnapshot,
+            null, // diff hash (null for create)
+            null); // HttpServletRequest not available in service layer
+      } catch (Exception e) {
+        logger.error("Failed to log audit event for payment creation: {}", e.getMessage(), e);
+      }
 
-        // Save payment
-        payment = paymentRepository.save(payment);
-
-        // Handle allocations
-        if (!payment.getIsStandalone()) {
-          // Validate supplier has open bills
-          var supplierValidation = paymentValidationService.validateSupplierHasOpenBills(request.getSupplierId());
-          if (!supplierValidation.isValid()) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST, formatValidationErrors(supplierValidation));
-          }
-
-          // If allocations not provided, perform FIFO allocation
-          List<PaymentAllocationRequest> allocations = request.getAllocations();
-          if (allocations == null || allocations.isEmpty()) {
-            List<PaymentAllocationDTO> fifoAllocations =
-                allocateFIFO(request.getAmount(), request.getSupplierId());
-            allocations =
-                fifoAllocations.stream()
-                    .map(
-                        dto ->
-                            new PaymentAllocationRequest(
-                                dto.getPurchaseBillId(), dto.getAllocatedAmount()))
-                    .collect(Collectors.toList());
-          }
-
-          // Validate allocations
-          var allocationValidation =
-              paymentValidationService.validateAllocations(allocations, request.getAmount());
-          if (!allocationValidation.isValid()) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST, formatValidationErrors(allocationValidation));
-          }
-
-          // Save allocations
-          saveAllocations(payment.getId(), allocations, companyId);
-        }
-
-        // Check if approval is required based on payment amount and threshold
-        BigDecimal approvalThreshold = getApprovalThreshold();
-        if (payment.getAmount().compareTo(approvalThreshold) > 0) {
-          // Payment exceeds threshold - requires approval
-          payment.setStatus(PaymentStatus.PENDING_APPROVAL);
-          logger.info(
-              "Payment {} requires approval (amount: {}, threshold: {})",
-              payment.getPaymentNumber(),
-              payment.getAmount(),
-              approvalThreshold);
-        } else {
-          // Payment below threshold - auto-approved (stays in DRAFT, can be posted directly)
-          logger.info(
-              "Payment {} auto-approved (amount: {}, threshold: {})",
-              payment.getPaymentNumber(),
-              payment.getAmount(),
-              approvalThreshold);
-        }
-
-        // Log audit event
-        try {
-          JsonNode afterSnapshot = serializePaymentToJson(payment);
-          auditService.logPaymentEvent(
-              payment.getId(),
-              payment.getPaymentNumber(),
-              "PAYMENT_CREATED",
-              null, // before snapshot (null for create)
-              afterSnapshot,
-              null, // diff hash (null for create)
-              null); // HttpServletRequest not available in service layer
-        } catch (Exception e) {
-          logger.error("Failed to log audit event for payment creation: {}", e.getMessage(), e);
-        }
-
-        return toDTO(payment);
+      return toDTO(payment);
     } catch (Exception e) {
-        auditService.logPaymentOperationFailed(
-            null, 
-            null, 
-            "PAYMENT_CREATE_FAILED", 
-            e.getMessage(), 
-            null);
-        throw e;
+      auditService.logPaymentOperationFailed(
+          null,
+          null,
+          "PAYMENT_CREATE_FAILED",
+          e.getMessage(),
+          null);
+      throw e;
     }
   }
 
@@ -385,79 +375,76 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     try {
-        // Find existing payment
-        APPayment payment =
-            paymentRepository
-                .findByCompanyIdAndId(companyId, paymentId)
-                .orElseThrow(
-                    () ->
-                        new ResponseStatusException(
-                            HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
+      // Find existing payment
+      APPayment payment = paymentRepository
+          .findByCompanyIdAndId(companyId, paymentId)
+          .orElseThrow(
+              () -> new ResponseStatusException(
+                  HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
 
-        // Validate payment is in DRAFT status
-        if (payment.getStatus() != PaymentStatus.DRAFT) {
+      // Validate payment is in DRAFT status
+      if (payment.getStatus() != PaymentStatus.DRAFT) {
+        throw new ResponseStatusException(
+            HttpStatus.CONFLICT,
+            "Cannot update payment: only DRAFT payments can be updated. Current status: "
+                + payment.getStatus());
+      }
+
+      // Update payment fields
+      payment.setPaymentDate(request.getPaymentDate());
+      payment.setDueDate(request.getDueDate());
+      payment.setCashAccountId(request.getCashAccountId());
+      payment.setBankAccountId(request.getBankAccountId());
+      payment.setPayee(request.getPayee());
+      payment.setAmount(request.getAmount().setScale(SCALE, ROUNDING_MODE));
+      payment.setReference(request.getReference());
+      payment.setPaymentMethod(request.getPaymentMethod());
+      payment.setPaymentProofUrl(request.getPaymentProofUrl());
+
+      // Save payment
+      payment = paymentRepository.save(payment);
+
+      // Update allocations if provided
+      if (!payment.getIsStandalone() && request.getAllocations() != null) {
+        // Delete existing allocations
+        allocationRepository.deleteByPaymentId(paymentId);
+
+        // Validate new allocations
+        var allocationValidation = paymentValidationService.validateAllocations(
+            request.getAllocations(), request.getAmount());
+        if (!allocationValidation.isValid()) {
           throw new ResponseStatusException(
-              HttpStatus.CONFLICT,
-              "Cannot update payment: only DRAFT payments can be updated. Current status: "
-                  + payment.getStatus());
+              HttpStatus.BAD_REQUEST, formatValidationErrors(allocationValidation));
         }
 
-        // Update payment fields
-        payment.setPaymentDate(request.getPaymentDate());
-        payment.setDueDate(request.getDueDate());
-        payment.setCashAccountId(request.getCashAccountId());
-        payment.setBankAccountId(request.getBankAccountId());
-        payment.setPayee(request.getPayee());
-        payment.setAmount(request.getAmount().setScale(SCALE, ROUNDING_MODE));
-        payment.setReference(request.getReference());
-        payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setPaymentProofUrl(request.getPaymentProofUrl());
+        // Save new allocations
+        saveAllocations(payment.getId(), request.getAllocations(), companyId);
+      }
 
-        // Save payment
-        payment = paymentRepository.save(payment);
-
-        // Update allocations if provided
-        if (!payment.getIsStandalone() && request.getAllocations() != null) {
-          // Delete existing allocations
-          allocationRepository.deleteByPaymentId(paymentId);
-
-          // Validate new allocations
-          var allocationValidation =
-              paymentValidationService.validateAllocations(
-                  request.getAllocations(), request.getAmount());
-          if (!allocationValidation.isValid()) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST, formatValidationErrors(allocationValidation));
-          }
-
-          // Save new allocations
-          saveAllocations(payment.getId(), request.getAllocations(), companyId);
-        }
-
-        // Audit logging for update
-        try {
-            JsonNode afterSnapshot = serializePaymentToJson(payment);
-            auditService.logPaymentEvent(
-                payment.getId(),
-                payment.getPaymentNumber(),
-                "PAYMENT_UPDATED",
-                null, // before snapshot (could be captured before update)
-                afterSnapshot,
-                null, // diff hash
-                null);
-        } catch (Exception e) {
-            logger.error("Failed to log audit event for payment update: {}", e.getMessage(), e);
-        }
-
-        return toDTO(payment);
-    } catch (Exception e) {
-        auditService.logPaymentOperationFailed(
-            paymentId, 
-            null, 
-            "PAYMENT_UPDATE_FAILED", 
-            e.getMessage(), 
+      // Audit logging for update
+      try {
+        JsonNode afterSnapshot = serializePaymentToJson(payment);
+        auditService.logPaymentEvent(
+            payment.getId(),
+            payment.getPaymentNumber(),
+            "PAYMENT_UPDATED",
+            null, // before snapshot (could be captured before update)
+            afterSnapshot,
+            null, // diff hash
             null);
-        throw e;
+      } catch (Exception e) {
+        logger.error("Failed to log audit event for payment update: {}", e.getMessage(), e);
+      }
+
+      return toDTO(payment);
+    } catch (Exception e) {
+      auditService.logPaymentOperationFailed(
+          paymentId,
+          null,
+          "PAYMENT_UPDATE_FAILED",
+          e.getMessage(),
+          null);
+      throw e;
     }
   }
 
@@ -469,47 +456,45 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     try {
-        // Find payment
-        APPayment payment =
-            paymentRepository
-                .findByCompanyIdAndId(companyId, paymentId)
-                .orElseThrow(
-                    () ->
-                        new ResponseStatusException(
-                            HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
+      // Find payment
+      APPayment payment = paymentRepository
+          .findByCompanyIdAndId(companyId, paymentId)
+          .orElseThrow(
+              () -> new ResponseStatusException(
+                  HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
 
-        // Validate payment is in DRAFT status
-        if (payment.getStatus() != PaymentStatus.DRAFT) {
-          throw new ResponseStatusException(
-              HttpStatus.CONFLICT,
-              "Cannot delete payment: only DRAFT payments can be deleted. Current status: "
-                  + payment.getStatus());
-        }
+      // Validate payment is in DRAFT status
+      if (payment.getStatus() != PaymentStatus.DRAFT) {
+        throw new ResponseStatusException(
+            HttpStatus.CONFLICT,
+            "Cannot delete payment: only DRAFT payments can be deleted. Current status: "
+                + payment.getStatus());
+      }
 
-        // Delete payment (allocations will be deleted via CASCADE)
-        paymentRepository.delete(payment);
-        
-        // Audit logging for deletion
-        try {
-            auditService.logPaymentEvent(
-                paymentId,
-                payment.getPaymentNumber(),
-                "PAYMENT_DELETED",
-                null,
-                null,
-                null,
-                null);
-        } catch (Exception e) {
-            logger.error("Failed to log audit event for payment deletion: {}", e.getMessage(), e);
-        }
-    } catch (Exception e) {
-        auditService.logPaymentOperationFailed(
-            paymentId, 
-            null, 
-            "PAYMENT_DELETE_FAILED", 
-            e.getMessage(), 
+      // Delete payment (allocations will be deleted via CASCADE)
+      paymentRepository.delete(payment);
+
+      // Audit logging for deletion
+      try {
+        auditService.logPaymentEvent(
+            paymentId,
+            payment.getPaymentNumber(),
+            "PAYMENT_DELETED",
+            null,
+            null,
+            null,
             null);
-        throw e;
+      } catch (Exception e) {
+        logger.error("Failed to log audit event for payment deletion: {}", e.getMessage(), e);
+      }
+    } catch (Exception e) {
+      auditService.logPaymentOperationFailed(
+          paymentId,
+          null,
+          "PAYMENT_DELETE_FAILED",
+          e.getMessage(),
+          null);
+      throw e;
     }
   }
 
@@ -522,13 +507,11 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     // Find payment
-    APPayment payment =
-        paymentRepository
-            .findByCompanyIdAndId(companyId, paymentId)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
+    APPayment payment = paymentRepository
+        .findByCompanyIdAndId(companyId, paymentId)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
 
     // Validate payment is in DRAFT status
     if (payment.getStatus() != PaymentStatus.DRAFT) {
@@ -539,8 +522,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     // Validate allocations
-    var allocationValidation =
-        paymentValidationService.validateAllocations(allocations, payment.getAmount());
+    var allocationValidation = paymentValidationService.validateAllocations(allocations, payment.getAmount());
     if (!allocationValidation.isValid()) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, formatValidationErrors(allocationValidation));
@@ -563,18 +545,17 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     // Get open/unpaid bills for supplier (status=POSTED, sorted by due_date ASC)
-    List<PurchaseBill> openBills =
-        purchaseBillRepository
-            .findByCompanyIdAndStatus(companyId, PurchaseBillStatus.POSTED)
-            .stream()
-            .filter(bill -> bill.getSupplierId().equals(supplierId))
-            .filter(
-                bill -> {
-                  BigDecimal remainingBalance = calculateRemainingBalance(bill.getId());
-                  return remainingBalance.compareTo(BigDecimal.ZERO) > 0;
-                })
-            .sorted(Comparator.comparing(PurchaseBill::getDueDate))
-            .collect(Collectors.toList());
+    List<PurchaseBill> openBills = purchaseBillRepository
+        .findByCompanyIdAndStatus(companyId, PurchaseBillStatus.POSTED)
+        .stream()
+        .filter(bill -> bill.getSupplierId().equals(supplierId))
+        .filter(
+            bill -> {
+              BigDecimal remainingBalance = calculateRemainingBalance(bill.getId());
+              return remainingBalance.compareTo(BigDecimal.ZERO) > 0;
+            })
+        .sorted(Comparator.comparing(PurchaseBill::getDueDate))
+        .collect(Collectors.toList());
 
     if (openBills.isEmpty()) {
       throw new ResponseStatusException(
@@ -622,6 +603,9 @@ public class PaymentServiceImpl implements PaymentService {
 
   @Override
   public APPaymentDTO postPayment(UUID paymentId) {
+    // AC6.3-09: Performance telemetry - track post latency
+    long startTime = System.currentTimeMillis();
+
     Long companyId = CompanyContext.getCompanyId();
     if (companyId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing company context");
@@ -630,13 +614,11 @@ public class PaymentServiceImpl implements PaymentService {
     Long currentUserId = SecurityUtils.getCurrentUserId();
 
     // Find payment
-    APPayment payment =
-        paymentRepository
-            .findByCompanyIdAndId(companyId, paymentId)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
+    APPayment payment = paymentRepository
+        .findByCompanyIdAndId(companyId, paymentId)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
 
     // Validate payment is in DRAFT or PENDING_APPROVAL status
     if (payment.getStatus() != PaymentStatus.DRAFT
@@ -647,18 +629,17 @@ public class PaymentServiceImpl implements PaymentService {
               + payment.getStatus());
     }
 
-    // If payment is PENDING_APPROVAL, validate approver role (Chief Accountant/CFO)
+    // AC6.3-08: If payment is PENDING_APPROVAL, validate approver role and
+    // maker-checker
     if (payment.getStatus() == PaymentStatus.PENDING_APPROVAL) {
-      boolean isApprover =
-          org.springframework.security.core.context.SecurityContextHolder.getContext()
-              .getAuthentication()
-              .getAuthorities()
-              .stream()
-              .anyMatch(
-                  auth ->
-                      auth.getAuthority().equals("ROLE_CHIEF_ACCOUNTANT")
-                          || auth.getAuthority().equals("ROLE_CFO")
-                          || auth.getAuthority().equals("ROLE_ADMIN"));
+      boolean isApprover = org.springframework.security.core.context.SecurityContextHolder.getContext()
+          .getAuthentication()
+          .getAuthorities()
+          .stream()
+          .anyMatch(
+              auth -> auth.getAuthority().equals("ROLE_CHIEF_ACCOUNTANT")
+                  || auth.getAuthority().equals("ROLE_CFO")
+                  || auth.getAuthority().equals("ROLE_ADMIN"));
 
       if (!isApprover) {
         throw new ResponseStatusException(
@@ -672,16 +653,50 @@ public class PaymentServiceImpl implements PaymentService {
             HttpStatus.FORBIDDEN,
             "Cannot post payment: approver must be different from creator (maker-checker pattern)");
       }
+
+      logger.info(
+          "Payment {} (PENDING_APPROVAL) approved by user {} (creator: {})",
+          payment.getPaymentNumber(),
+          currentUserId,
+          payment.getCreatedById());
     }
 
     // Get allocations
-    List<PaymentAllocation> allocations =
-        allocationRepository.findByCompanyIdAndPaymentIdOrderByAllocationOrder(
-            companyId, paymentId);
+    List<PaymentAllocation> allocations = allocationRepository.findByCompanyIdAndPaymentIdOrderByAllocationOrder(
+        companyId, paymentId);
+
+    // AC6.3-05: Validate and get bank account with GL account code
+    Long bankAccountEntityId = payment.getCashAccountId() != null ? payment.getCashAccountId()
+        : payment.getBankAccountId();
+    BankAccount bankAccount = bankAccountRepository
+        .findByCompanyIdAndId(companyId, bankAccountEntityId)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Bank/Cash account not found: " + bankAccountEntityId));
+
+    // Validate account is active
+    if (!Boolean.TRUE.equals(bankAccount.getActive())) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Cannot post payment: selected account is inactive");
+    }
+
+    // Validate account has GL account code (AC6.3-05)
+    if (bankAccount.getGlAccountCode() == null || bankAccount.getGlAccountCode().isBlank()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Cannot post payment: account has no GL account code configured");
+    }
+
+    // Look up COA account ID from GL account code (AC6.3-05 - mirror Story 6.2
+    // pattern)
+    Long glCreditAccountId = chartOfAccountsRepository
+        .findByCompanyIdAndCode(companyId, bankAccount.getGlAccountCode())
+        .map(account -> account.getId())
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "GL account not found for code: " + bankAccount.getGlAccountCode()));
 
     // Create voucher for payment posting
-    // Dr AP 331 (Accounts Payable) - allocated amount per bill
-    // Cr Cash/Bank 111/112 - total payment amount
     VoucherCreateRequest voucherRequest = new VoucherCreateRequest();
     voucherRequest.setDate(payment.getPaymentDate());
     voucherRequest.setDescription(
@@ -693,30 +708,44 @@ public class PaymentServiceImpl implements PaymentService {
 
     List<VoucherEntryLineRequest> entryLines = new ArrayList<>();
 
-    // For each allocation, create a voucher entry line:
-    // Debit: AP 331 (Accounts Payable) - allocated amount per bill
-    // Credit: Cash/Bank account - allocated amount per bill
-    Long accountId =
-        payment.getCashAccountId() != null ? payment.getCashAccountId() : payment.getBankAccountId();
-
-    for (PaymentAllocation allocation : allocations) {
-      PurchaseBill bill =
-          purchaseBillRepository
-              .findById(allocation.getPurchaseBillId())
-              .orElseThrow(
-                  () ->
-                      new ResponseStatusException(
-                          HttpStatus.NOT_FOUND,
-                          "Purchase bill not found: " + allocation.getPurchaseBillId()));
-
+    // AC6.3-04 & AC6.3-05: Handle standalone expense payments vs allocated supplier
+    // payments
+    if (payment.getIsStandalone()) {
+      // Standalone expense payment: Dr Expense (6xx/8xx), Cr Cash/Bank (via
+      // glAccountCode)
       VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
-      entryLine.setDebitAccountId(getAccountsPayableAccountId(payment.getCompanyId())); // AP account (331)
-      entryLine.setCreditAccountId(accountId); // Cash/Bank account
-      entryLine.setAmount(allocation.getAllocatedAmount());
-      entryLine.setDescription(
-          String.format("Payment allocation to bill %s", bill.getBillNumber()));
+      entryLine.setDebitAccountId(getExpenseAccountId(companyId)); // Expense account (6xx/8xx)
+      entryLine.setCreditAccountId(glCreditAccountId); // Cash/Bank via glAccountCode
+      entryLine.setAmount(payment.getAmount());
+      entryLine.setDescription("Standalone expense payment - " + payment.getPayee());
       entryLine.setSupplierId(payment.getSupplierId());
       entryLines.add(entryLine);
+
+      logger.info(
+          "Posting standalone expense payment {}: Dr {} Cr {} Amount {}",
+          payment.getPaymentNumber(),
+          "Expense",
+          bankAccount.getGlAccountCode(),
+          payment.getAmount());
+    } else {
+      // Allocated supplier payment: Dr AP 331, Cr Cash/Bank (via glAccountCode)
+      for (PaymentAllocation allocation : allocations) {
+        PurchaseBill bill = purchaseBillRepository
+            .findById(allocation.getPurchaseBillId())
+            .orElseThrow(
+                () -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Purchase bill not found: " + allocation.getPurchaseBillId()));
+
+        VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
+        entryLine.setDebitAccountId(getAccountsPayableAccountId(payment.getCompanyId())); // AP account (331)
+        entryLine.setCreditAccountId(glCreditAccountId); // Cash/Bank via glAccountCode (1111/1121)
+        entryLine.setAmount(allocation.getAllocatedAmount());
+        entryLine.setDescription(
+            String.format("Payment allocation to bill %s", bill.getBillNumber()));
+        entryLine.setSupplierId(payment.getSupplierId());
+        entryLines.add(entryLine);
+      }
     }
 
     voucherRequest.setEntryLines(entryLines);
@@ -732,27 +761,28 @@ public class PaymentServiceImpl implements PaymentService {
     payment.setApprovedById(currentUserId);
     payment = paymentRepository.save(payment);
 
-    // Update bill statuses and remaining balances
-    for (PaymentAllocation allocation : allocations) {
-      PurchaseBill bill =
-          purchaseBillRepository
-              .findById(allocation.getPurchaseBillId())
-              .orElseThrow(
-                  () ->
-                      new ResponseStatusException(
-                          HttpStatus.NOT_FOUND,
-                          "Purchase bill not found: " + allocation.getPurchaseBillId()));
+    // Update bill statuses and remaining balances (only for non-standalone
+    // payments)
+    if (!payment.getIsStandalone()) {
+      for (PaymentAllocation allocation : allocations) {
+        PurchaseBill bill = purchaseBillRepository
+            .findById(allocation.getPurchaseBillId())
+            .orElseThrow(
+                () -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Purchase bill not found: " + allocation.getPurchaseBillId()));
 
-      BigDecimal remainingBalance = calculateRemainingBalance(bill.getId());
-      BigDecimal newRemainingBalance = remainingBalance.subtract(allocation.getAllocatedAmount());
+        BigDecimal remainingBalance = calculateRemainingBalance(bill.getId());
+        BigDecimal newRemainingBalance = remainingBalance.subtract(allocation.getAllocatedAmount());
 
-      if (newRemainingBalance.compareTo(BigDecimal.ZERO) == 0) {
-        bill.setStatus(PurchaseBillStatus.PAID);
-      } else {
-        bill.setStatus(PurchaseBillStatus.PARTIALLY_PAID);
+        if (newRemainingBalance.compareTo(BigDecimal.ZERO) == 0) {
+          bill.setStatus(PurchaseBillStatus.PAID);
+        } else {
+          bill.setStatus(PurchaseBillStatus.PARTIALLY_PAID);
+        }
+
+        purchaseBillRepository.save(bill);
       }
-
-      purchaseBillRepository.save(bill);
     }
 
     // Invalidate aging cache when payment is posted (affects remaining balances)
@@ -767,8 +797,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     // Log audit event
     try {
-      // Note: For posting, we log the final state. In a more complete implementation,
-      // we would capture the before state before posting and calculate diff hash.
       JsonNode afterSnapshot = serializePaymentToJson(payment);
       auditService.logPaymentEvent(
           payment.getId(),
@@ -782,6 +810,20 @@ public class PaymentServiceImpl implements PaymentService {
       logger.error("Failed to log audit event for payment posting: {}", e.getMessage(), e);
     }
 
+    // AC6.3-09: Log performance telemetry
+    long endTime = System.currentTimeMillis();
+    long latencyMs = endTime - startTime;
+    logger.info(
+        "Payment {} posted successfully in {} ms (target: ≤10000 ms)",
+        payment.getPaymentNumber(),
+        latencyMs);
+    if (latencyMs > 10000) {
+      logger.warn(
+          "Payment posting latency {} ms exceeds target of 10000 ms for payment {}",
+          latencyMs,
+          payment.getPaymentNumber());
+    }
+
     return toDTO(payment);
   }
 
@@ -793,13 +835,11 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     // Find payment
-    APPayment payment =
-        paymentRepository
-            .findByCompanyIdAndId(companyId, paymentId)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
+    APPayment payment = paymentRepository
+        .findByCompanyIdAndId(companyId, paymentId)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
 
     // Validate payment is in DRAFT status
     if (payment.getStatus() != PaymentStatus.DRAFT) {
@@ -813,7 +853,8 @@ public class PaymentServiceImpl implements PaymentService {
     payment.setStatus(PaymentStatus.CANCELLED);
     payment = paymentRepository.save(payment);
 
-    // Delete allocations (they will be deleted via CASCADE, but we can also delete explicitly)
+    // Delete allocations (they will be deleted via CASCADE, but we can also delete
+    // explicitly)
     allocationRepository.deleteByPaymentId(paymentId);
 
     return toDTO(payment);
@@ -827,18 +868,17 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     // Get open/unpaid bills (status=POSTED, remaining_balance > 0)
-    List<PurchaseBill> openBills =
-        purchaseBillRepository
-            .findByCompanyIdAndStatus(companyId, PurchaseBillStatus.POSTED)
-            .stream()
-            .filter(bill -> bill.getSupplierId().equals(supplierId))
-            .filter(
-                bill -> {
-                  BigDecimal remainingBalance = calculateRemainingBalance(bill.getId());
-                  return remainingBalance.compareTo(BigDecimal.ZERO) > 0;
-                })
-            .sorted(Comparator.comparing(PurchaseBill::getDueDate))
-            .collect(Collectors.toList());
+    List<PurchaseBill> openBills = purchaseBillRepository
+        .findByCompanyIdAndStatus(companyId, PurchaseBillStatus.POSTED)
+        .stream()
+        .filter(bill -> bill.getSupplierId().equals(supplierId))
+        .filter(
+            bill -> {
+              BigDecimal remainingBalance = calculateRemainingBalance(bill.getId());
+              return remainingBalance.compareTo(BigDecimal.ZERO) > 0;
+            })
+        .sorted(Comparator.comparing(PurchaseBill::getDueDate))
+        .collect(Collectors.toList());
 
     // Convert to DTOs
     return openBills.stream()
@@ -857,8 +897,8 @@ public class PaymentServiceImpl implements PaymentService {
 
     // Find the highest sequence number for this year
     int maxSequence = 0;
-    List<APPayment> existingPayments =
-        paymentRepository.findByCompanyIdAndPaymentDateBetween(companyId, yearStart, yearEnd);
+    List<APPayment> existingPayments = paymentRepository.findByCompanyIdAndPaymentDateBetween(companyId, yearStart,
+        yearEnd);
     for (APPayment existing : existingPayments) {
       String existingNumber = existing.getPaymentNumber();
       if (existingNumber.startsWith(PAYMENT_NUMBER_PREFIX + year + "-")) {
@@ -902,13 +942,11 @@ public class PaymentServiceImpl implements PaymentService {
    * Calculate remaining balance for a purchase bill.
    */
   private BigDecimal calculateRemainingBalance(UUID billId) {
-    PurchaseBill bill =
-        purchaseBillRepository
-            .findById(billId)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Purchase bill not found: " + billId));
+    PurchaseBill bill = purchaseBillRepository
+        .findById(billId)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Purchase bill not found: " + billId));
 
     BigDecimal totalAllocated = allocationRepository.calculateTotalAllocatedAmount(billId);
     return bill.getTotalAmount().subtract(totalAllocated);
@@ -927,11 +965,10 @@ public class PaymentServiceImpl implements PaymentService {
         .findByCompanyIdAndCode(companyId, "331")
         .map(account -> account.getId())
         .orElseThrow(
-            () ->
-                new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Accounts Payable account (331) not found in chart of accounts. "
-                        + "Please ensure the chart of accounts is properly configured."));
+            () -> new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Accounts Payable account (331) not found in chart of accounts. "
+                    + "Please ensure the chart of accounts is properly configured."));
   }
 
   /**
@@ -959,30 +996,26 @@ public class PaymentServiceImpl implements PaymentService {
    * Convert entity to list DTO.
    */
   private APPaymentListDTO toListDTO(APPayment payment) {
-    Supplier supplier =
-        supplierRepository
-            .findByCompanyIdAndId(payment.getCompanyId(), payment.getSupplierId())
-            .orElse(null);
+    Supplier supplier = supplierRepository
+        .findByCompanyIdAndId(payment.getCompanyId(), payment.getSupplierId())
+        .orElse(null);
 
     BankAccount cashAccount = null;
     if (payment.getCashAccountId() != null) {
-      cashAccount =
-          bankAccountRepository
-              .findByCompanyIdAndId(payment.getCompanyId(), payment.getCashAccountId())
-              .orElse(null);
+      cashAccount = bankAccountRepository
+          .findByCompanyIdAndId(payment.getCompanyId(), payment.getCashAccountId())
+          .orElse(null);
     }
 
     BankAccount bankAccount = null;
     if (payment.getBankAccountId() != null) {
-      bankAccount =
-          bankAccountRepository
-              .findByCompanyIdAndId(payment.getCompanyId(), payment.getBankAccountId())
-              .orElse(null);
+      bankAccount = bankAccountRepository
+          .findByCompanyIdAndId(payment.getCompanyId(), payment.getBankAccountId())
+          .orElse(null);
     }
 
     // Count allocations
-    int allocationCount =
-        allocationRepository.findByPaymentIdOrderByAllocationOrder(payment.getId()).size();
+    int allocationCount = allocationRepository.findByPaymentIdOrderByAllocationOrder(payment.getId()).size();
 
     APPaymentListDTO dto = new APPaymentListDTO();
     dto.setId(payment.getId());
@@ -1009,37 +1042,32 @@ public class PaymentServiceImpl implements PaymentService {
    * Convert entity to full DTO.
    */
   private APPaymentDTO toDTO(APPayment payment) {
-    Supplier supplier =
-        supplierRepository
-            .findByCompanyIdAndId(payment.getCompanyId(), payment.getSupplierId())
-            .orElse(null);
+    Supplier supplier = supplierRepository
+        .findByCompanyIdAndId(payment.getCompanyId(), payment.getSupplierId())
+        .orElse(null);
 
     BankAccount cashAccount = null;
     if (payment.getCashAccountId() != null) {
-      cashAccount =
-          bankAccountRepository
-              .findByCompanyIdAndId(payment.getCompanyId(), payment.getCashAccountId())
-              .orElse(null);
+      cashAccount = bankAccountRepository
+          .findByCompanyIdAndId(payment.getCompanyId(), payment.getCashAccountId())
+          .orElse(null);
     }
 
     BankAccount bankAccount = null;
     if (payment.getBankAccountId() != null) {
-      bankAccount =
-          bankAccountRepository
-              .findByCompanyIdAndId(payment.getCompanyId(), payment.getBankAccountId())
-              .orElse(null);
+      bankAccount = bankAccountRepository
+          .findByCompanyIdAndId(payment.getCompanyId(), payment.getBankAccountId())
+          .orElse(null);
     }
 
     String createdByName = getUserName(payment.getCreatedById());
-    String approvedByName =
-        payment.getApprovedById() != null ? getUserName(payment.getApprovedById()) : null;
+    String approvedByName = payment.getApprovedById() != null ? getUserName(payment.getApprovedById()) : null;
 
     // Load allocations
-    List<PaymentAllocation> allocations =
-        allocationRepository.findByCompanyIdAndPaymentIdOrderByAllocationOrder(
-            payment.getCompanyId(), payment.getId());
-    List<PaymentAllocationDTO> allocationDTOs =
-        allocations.stream().map(this::toAllocationDTO).collect(Collectors.toList());
+    List<PaymentAllocation> allocations = allocationRepository.findByCompanyIdAndPaymentIdOrderByAllocationOrder(
+        payment.getCompanyId(), payment.getId());
+    List<PaymentAllocationDTO> allocationDTOs = allocations.stream().map(this::toAllocationDTO)
+        .collect(Collectors.toList());
 
     APPaymentDTO dto = new APPaymentDTO();
     dto.setId(payment.getId());
@@ -1080,10 +1108,9 @@ public class PaymentServiceImpl implements PaymentService {
    * Convert PaymentAllocation entity to DTO.
    */
   private PaymentAllocationDTO toAllocationDTO(PaymentAllocation allocation) {
-    PurchaseBill bill =
-        purchaseBillRepository
-            .findById(allocation.getPurchaseBillId())
-            .orElse(null);
+    PurchaseBill bill = purchaseBillRepository
+        .findById(allocation.getPurchaseBillId())
+        .orElse(null);
 
     PaymentAllocationDTO dto = new PaymentAllocationDTO();
     dto.setId(allocation.getId());
@@ -1163,5 +1190,338 @@ public class PaymentServiceImpl implements PaymentService {
         (field, error) -> sb.append(field).append(": ").append(error).append("; "));
     return sb.toString();
   }
-}
 
+  /**
+   * Get default expense account ID for standalone payments.
+   * AC6.3-04: Uses account 6421 (Chi phí quản lý kinh doanh - Operating Expense)
+   * as default.
+   *
+   * @param companyId company ID
+   * @return account ID for default expense account
+   * @throws ResponseStatusException if account not found
+   */
+  private Long getExpenseAccountId(Long companyId) {
+    // Try common expense accounts in order of preference
+    String[] expenseAccountCodes = { "6421", "6411", "642", "641", "6" };
+
+    for (String code : expenseAccountCodes) {
+      var account = chartOfAccountsRepository.findByCompanyIdAndCode(companyId, code);
+      if (account.isPresent() && Boolean.TRUE.equals(account.get().getPostable())) {
+        return account.get().getId();
+      }
+    }
+
+    throw new ResponseStatusException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "Default expense account (6421/6411/642/641) not found in chart of accounts. "
+            + "Please ensure the chart of accounts is properly configured.");
+  }
+
+  @Override
+  public APPaymentDTO approvePayment(UUID paymentId) {
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing company context");
+    }
+
+    Long currentUserId = SecurityUtils.getCurrentUserId();
+
+    // Find payment
+    APPayment payment = paymentRepository
+        .findByCompanyIdAndId(companyId, paymentId)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
+
+    // Validate payment is in PENDING_APPROVAL status
+    if (payment.getStatus() != PaymentStatus.PENDING_APPROVAL) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT,
+          "Cannot approve payment: only PENDING_APPROVAL payments can be approved. Current status: "
+              + payment.getStatus());
+    }
+
+    // AC6.3-08: Validate approver role
+    boolean isApprover = org.springframework.security.core.context.SecurityContextHolder.getContext()
+        .getAuthentication()
+        .getAuthorities()
+        .stream()
+        .anyMatch(
+            auth -> auth.getAuthority().equals("ROLE_CHIEF_ACCOUNTANT")
+                || auth.getAuthority().equals("ROLE_CFO")
+                || auth.getAuthority().equals("ROLE_ADMIN"));
+
+    if (!isApprover) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN,
+          "Cannot approve payment: requires Chief Accountant, CFO, or Admin role");
+    }
+
+    // AC6.3-08: Validate approver ≠ creator (maker-checker pattern)
+    if (payment.getCreatedById().equals(currentUserId)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN,
+          "Cannot approve payment: approver must be different from creator (maker-checker pattern)");
+    }
+
+    // Update status to DRAFT (approved, ready for posting)
+    payment.setStatus(PaymentStatus.DRAFT);
+    payment.setApprovedById(currentUserId);
+    payment = paymentRepository.save(payment);
+
+    // AC6.3-10: Audit logging
+    try {
+      JsonNode afterSnapshot = serializePaymentToJson(payment);
+      auditService.logPaymentEvent(
+          payment.getId(),
+          payment.getPaymentNumber(),
+          "PAYMENT_APPROVED",
+          null,
+          afterSnapshot,
+          null,
+          null);
+    } catch (Exception e) {
+      logger.error("Failed to log audit event for payment approval: {}", e.getMessage(), e);
+    }
+
+    logger.info(
+        "Payment {} approved by user {} (creator: {})",
+        payment.getPaymentNumber(),
+        currentUserId,
+        payment.getCreatedById());
+
+    return toDTO(payment);
+  }
+
+  @Override
+  public APPaymentDTO rejectPayment(UUID paymentId, String reason) {
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing company context");
+    }
+
+    Long currentUserId = SecurityUtils.getCurrentUserId();
+
+    // Validate reason is provided
+    if (reason == null || reason.isBlank()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Rejection reason is required");
+    }
+
+    // Find payment
+    APPayment payment = paymentRepository
+        .findByCompanyIdAndId(companyId, paymentId)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
+
+    // Validate payment is in PENDING_APPROVAL status
+    if (payment.getStatus() != PaymentStatus.PENDING_APPROVAL) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT,
+          "Cannot reject payment: only PENDING_APPROVAL payments can be rejected. Current status: "
+              + payment.getStatus());
+    }
+
+    // AC6.3-08: Validate approver role
+    boolean isApprover = org.springframework.security.core.context.SecurityContextHolder.getContext()
+        .getAuthentication()
+        .getAuthorities()
+        .stream()
+        .anyMatch(
+            auth -> auth.getAuthority().equals("ROLE_CHIEF_ACCOUNTANT")
+                || auth.getAuthority().equals("ROLE_CFO")
+                || auth.getAuthority().equals("ROLE_ADMIN"));
+
+    if (!isApprover) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN,
+          "Cannot reject payment: requires Chief Accountant, CFO, or Admin role");
+    }
+
+    // Update status to REJECTED
+    payment.setStatus(PaymentStatus.REJECTED);
+    payment.setReference(
+        (payment.getReference() != null ? payment.getReference() + " | " : "")
+            + "REJECTED: " + reason);
+    payment = paymentRepository.save(payment);
+
+    // AC6.3-10: Audit logging
+    try {
+      JsonNode afterSnapshot = serializePaymentToJson(payment);
+      auditService.logPaymentEvent(
+          payment.getId(),
+          payment.getPaymentNumber(),
+          "PAYMENT_REJECTED",
+          null,
+          afterSnapshot,
+          null,
+          null);
+    } catch (Exception e) {
+      logger.error("Failed to log audit event for payment rejection: {}", e.getMessage(), e);
+    }
+
+    logger.info(
+        "Payment {} rejected by user {} with reason: {}",
+        payment.getPaymentNumber(),
+        currentUserId,
+        reason);
+
+    return toDTO(payment);
+  }
+
+  @Override
+  public APPaymentDTO reversePayment(UUID paymentId, String reason) {
+    // AC6.3-10: Performance telemetry - track reversal latency
+    long startTime = System.currentTimeMillis();
+
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing company context");
+    }
+
+    Long currentUserId = SecurityUtils.getCurrentUserId();
+
+    // Validate reason is provided (mandatory per AC6.3-10)
+    if (reason == null || reason.isBlank()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Reversal reason is required");
+    }
+
+    // Find payment
+    APPayment payment = paymentRepository
+        .findByCompanyIdAndId(companyId, paymentId)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Payment not found: " + paymentId));
+
+    // Validate payment is in POSTED status
+    if (payment.getStatus() != PaymentStatus.POSTED) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT,
+          "Cannot reverse payment: only POSTED payments can be reversed. Current status: "
+              + payment.getStatus());
+    }
+
+    // Get bank account for GL account code lookup
+    Long bankAccountEntityId = payment.getCashAccountId() != null ? payment.getCashAccountId()
+        : payment.getBankAccountId();
+    BankAccount bankAccount = bankAccountRepository
+        .findByCompanyIdAndId(companyId, bankAccountEntityId)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Bank/Cash account not found: " + bankAccountEntityId));
+
+    // Look up GL account ID
+    Long glAccountId = chartOfAccountsRepository
+        .findByCompanyIdAndCode(companyId, bankAccount.getGlAccountCode())
+        .map(account -> account.getId())
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "GL account not found for code: " + bankAccount.getGlAccountCode()));
+
+    // Create reversing voucher (swap Dr/Cr from original)
+    VoucherCreateRequest reversingVoucherRequest = new VoucherCreateRequest();
+    reversingVoucherRequest.setDate(LocalDate.now());
+    reversingVoucherRequest.setDescription(
+        String.format(
+            "Reversal of Payment %s - Reason: %s",
+            payment.getPaymentNumber(),
+            reason));
+
+    List<VoucherEntryLineRequest> entryLines = new ArrayList<>();
+
+    if (payment.getIsStandalone()) {
+      // Reverse standalone: Cr Expense (6xx/8xx), Dr Cash/Bank
+      VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
+      entryLine.setDebitAccountId(glAccountId); // Cash/Bank (was Credit)
+      entryLine.setCreditAccountId(getExpenseAccountId(companyId)); // Expense (was Debit)
+      entryLine.setAmount(payment.getAmount());
+      entryLine.setDescription("Reversal - Standalone expense payment");
+      entryLine.setSupplierId(payment.getSupplierId());
+      entryLines.add(entryLine);
+    } else {
+      // Reverse allocated: Cr AP 331, Dr Cash/Bank
+      List<PaymentAllocation> allocations = allocationRepository
+          .findByCompanyIdAndPaymentIdOrderByAllocationOrder(companyId, paymentId);
+
+      for (PaymentAllocation allocation : allocations) {
+        PurchaseBill bill = purchaseBillRepository
+            .findById(allocation.getPurchaseBillId())
+            .orElse(null);
+
+        VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
+        entryLine.setDebitAccountId(glAccountId); // Cash/Bank (was Credit)
+        entryLine.setCreditAccountId(getAccountsPayableAccountId(payment.getCompanyId())); // AP (was Debit)
+        entryLine.setAmount(allocation.getAllocatedAmount());
+        entryLine.setDescription(
+            String.format("Reversal - Payment allocation to bill %s",
+                bill != null ? bill.getBillNumber() : allocation.getPurchaseBillId()));
+        entryLine.setSupplierId(payment.getSupplierId());
+        entryLines.add(entryLine);
+
+        // Revert bill status
+        if (bill != null) {
+          if (bill.getStatus() == PurchaseBillStatus.PAID) {
+            bill.setStatus(PurchaseBillStatus.PARTIALLY_PAID);
+          } else if (bill.getStatus() == PurchaseBillStatus.PARTIALLY_PAID) {
+            // Check if this was the only payment
+            BigDecimal otherPayments = allocationRepository
+                .calculateTotalAllocatedAmount(bill.getId())
+                .subtract(allocation.getAllocatedAmount());
+            if (otherPayments.compareTo(BigDecimal.ZERO) == 0) {
+              bill.setStatus(PurchaseBillStatus.POSTED);
+            }
+          }
+          purchaseBillRepository.save(bill);
+        }
+      }
+    }
+
+    reversingVoucherRequest.setEntryLines(entryLines);
+
+    // Create and post reversing voucher
+    var reversingVoucherDTO = voucherService.create(reversingVoucherRequest);
+    voucherPostingService.postVoucher(reversingVoucherDTO.getId(), null);
+
+    // Update payment status
+    payment.setStatus(PaymentStatus.REVERSED);
+    payment.setReference(
+        (payment.getReference() != null ? payment.getReference() + " | " : "")
+            + "REVERSED: " + reason);
+    payment = paymentRepository.save(payment);
+
+    // Invalidate aging cache
+    if (agingService != null
+        && agingService instanceof com.accounting.service.impl.ap.APAgingServiceImpl) {
+      try {
+        ((com.accounting.service.impl.ap.APAgingServiceImpl) agingService).invalidateAgingCache();
+      } catch (Exception e) {
+        logger.warn("Failed to invalidate aging cache after payment reversal: {}", e.getMessage());
+      }
+    }
+
+    // AC6.3-10: Audit logging with cross-reference
+    try {
+      JsonNode afterSnapshot = serializePaymentToJson(payment);
+      auditService.logPaymentEvent(
+          payment.getId(),
+          payment.getPaymentNumber(),
+          "PAYMENT_REVERSED",
+          null,
+          afterSnapshot,
+          null,
+          null);
+    } catch (Exception e) {
+      logger.error("Failed to log audit event for payment reversal: {}", e.getMessage(), e);
+    }
+
+    // Performance telemetry
+    long endTime = System.currentTimeMillis();
+    long latencyMs = endTime - startTime;
+    logger.info(
+        "Payment {} reversed successfully in {} ms by user {} with reason: {}",
+        payment.getPaymentNumber(),
+        latencyMs,
+        currentUserId,
+        reason);
+
+    return toDTO(payment);
+  }
+}

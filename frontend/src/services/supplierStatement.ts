@@ -2,10 +2,9 @@
  * Service for supplier statement API operations
  */
 
-import { fetchWithAuth } from '@/utils/api'
+import { fetchWithAuth } from '@/utils/axios'
 import type {
   SupplierStatement,
-  DetailedStatement,
   SupplierStatementHistory,
   ReconciliationResult,
   SupplierStatementDispute,

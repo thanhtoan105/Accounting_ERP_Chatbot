@@ -133,7 +133,7 @@ public class PeriodManagementServiceTest {
         // Given
         List<AccountingPeriod> openPeriods = List.of(testPeriod);
         LocalDate currentDate = LocalDate.now();
-        when(periodRepository.findOpenPeriodsAroundDate(1L, PeriodStatus.OPEN, currentDate))
+        when(periodRepository.findOpenPeriodsAroundDate(1L, PeriodStatus.OPEN.name(), currentDate))
                 .thenReturn(openPeriods);
 
         // When
@@ -143,7 +143,7 @@ public class PeriodManagementServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getPeriodName()).isEqualTo("January 2025");
         assertThat(result.get(0).getStatus()).isEqualTo(PeriodStatus.OPEN);
-        verify(periodRepository).findOpenPeriodsAroundDate(eq(1L), eq(PeriodStatus.OPEN), any(LocalDate.class));
+        verify(periodRepository).findOpenPeriodsAroundDate(eq(1L), eq(PeriodStatus.OPEN.name()), any(LocalDate.class));
     }
 
     @Test

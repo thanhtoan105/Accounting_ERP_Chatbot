@@ -67,6 +67,8 @@ class VATServiceImplTest {
   @Mock
   private PurchaseBillRepository purchaseBillRepository;
   @Mock
+  private com.accounting.repository.SalesInvoiceLineRepository salesInvoiceLineRepository;
+  @Mock
   private SupplierRepository supplierRepository;
   @Mock
   private VATCorrectionRepository vatCorrectionRepository;
@@ -88,6 +90,7 @@ class VATServiceImplTest {
     vatService = new VATServiceImpl(
         purchaseBillLineRepository,
         purchaseBillRepository,
+        salesInvoiceLineRepository,
         supplierRepository,
         vatCorrectionRepository,
         vatReportHistoryRepository,

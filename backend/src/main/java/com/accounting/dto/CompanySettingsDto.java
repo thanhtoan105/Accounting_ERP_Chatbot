@@ -3,7 +3,8 @@ package com.accounting.dto;
 import java.time.Instant;
 
 /**
- * DTO for CompanySettings responses. Used in GET /api/v1/company-settings endpoint.
+ * DTO for CompanySettings responses. Used in GET /api/v1/company-settings
+ * endpoint.
  */
 public class CompanySettingsDto {
 
@@ -35,6 +36,7 @@ public class CompanySettingsDto {
 
   // Approval Workflow section
   private java.math.BigDecimal approvalThresholdAmount;
+  private java.math.BigDecimal salesInvoiceApprovalThresholdAmount;
 
   // Numbering section
   private String numberingConfig; // JSON string
@@ -46,7 +48,8 @@ public class CompanySettingsDto {
   private Instant createdAt;
   private Instant updatedAt;
 
-  public CompanySettingsDto() {}
+  public CompanySettingsDto() {
+  }
 
   // Getters and Setters
   public Long getId() {
@@ -209,6 +212,15 @@ public class CompanySettingsDto {
     this.approvalThresholdAmount = approvalThresholdAmount;
   }
 
+  public java.math.BigDecimal getSalesInvoiceApprovalThresholdAmount() {
+    return salesInvoiceApprovalThresholdAmount;
+  }
+
+  public void setSalesInvoiceApprovalThresholdAmount(
+      java.math.BigDecimal salesInvoiceApprovalThresholdAmount) {
+    this.salesInvoiceApprovalThresholdAmount = salesInvoiceApprovalThresholdAmount;
+  }
+
   public String getNumberingConfig() {
     return numberingConfig;
   }
@@ -249,4 +261,3 @@ public class CompanySettingsDto {
     this.updatedAt = updatedAt;
   }
 }
-

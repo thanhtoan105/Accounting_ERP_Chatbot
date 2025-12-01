@@ -72,3 +72,52 @@ jwt:
   secret: ${JWT_SECRET:your-secret-key-change-this-in-production-minimum-256-bits}
   access-token-validity-minutes: ${JWT_ACCESS_TOKEN_VALIDITY_MINUTES:30}
   refresh-token-validity-days: ${JWT_REFRESH_TOKEN_VALIDITY_DAYS:7}
+
+# Metabase Configuration
+metabase:
+  site-url: ${METABASE_SITE_URL:http://localhost:3000}
+  embedding-secret: ${METABASE_EMBEDDING_SECRET:dev-secret-key-change-in-production}
+
+# AI Chatbot Configuration
+chatbot:
+  enabled: ${CHATBOT_ENABLED:true}
+
+  # Azure OpenAI Configuration
+  azure-openai:
+    endpoint: ${AZURE_OPENAI_ENDPOINT:https://your-resource.openai.azure.com/}
+    api-key: ${AZURE_OPENAI_API_KEY:}
+    api-version: "2023-05-15"
+    embedding-deployment: ${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:embedding-ada-002}
+    completion-deployment: ${AZURE_OPENAI_COMPLETION_DEPLOYMENT:gpt-35-turbo}
+    max-tokens: ${AZURE_OPENAI_MAX_TOKENS:500}
+    temperature: ${AZURE_OPENAI_TEMPERATURE:0.3}
+    timeout-seconds: ${AZURE_OPENAI_TIMEOUT:30}
+
+  # Pinecone Configuration
+  pinecone:
+    api-key: ${PINECONE_API_KEY:}
+    environment: ${PINECONE_ENVIRONMENT:us-east-1-aws}
+    index-name: ${PINECONE_INDEX_NAME:accounting-embeddings}
+    namespace-prefix: "company-"
+    top-k: 10
+    score-threshold: 0.7
+
+  # n8n Webhook Configuration
+  n8n:
+    webhook-url: ${N8N_WEBHOOK_URL:http://localhost:5678/webhook/voucher-embedding}
+    webhook-secret: ${N8N_WEBHOOK_SECRET:}
+    retry-attempts: 3
+    retry-delays: 1000,5000,15000  # milliseconds: 1s, 5s, 15s
+    timeout-seconds: 10
+
+  # Query Configuration
+  query:
+    max-length: 5000
+    default-language: vi
+    confidence-threshold-low: 0.5
+    confidence-threshold-high: 0.8
+
+  # Caching Configuration
+  cache:
+    enabled: ${REDIS_ENABLED:true}
+    ttl-hours: 1

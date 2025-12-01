@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useTranslation } from 'react-i18next'
 import { GalleryVerticalEnd, MoreVertical, Building2, LogOut } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -41,6 +42,7 @@ export function AppSidebar({
   user?: { name?: string | null; email?: string | null }
   onLogout?: () => void
 }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { company } = useCompany()
   return (
@@ -62,7 +64,7 @@ export function AppSidebar({
                   </div>
                 )}
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">{company?.name || 'Accounting'}</span>
+                  <span className="font-medium">{company?.name || t('app.name')}</span>
                   <span className="">App</span>
                 </div>
               </Link>
@@ -108,13 +110,13 @@ export function AppSidebar({
                 className="flex items-center gap-2"
               >
                 <Building2 className="size-4" />
-                <span>Company Settings</span>
+                <span>{t('nav.company')}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {onLogout && (
                 <DropdownMenuItem onClick={onLogout} className="text-destructive">
                   <LogOut className="mr-2 size-4" />
-                  <span>Logout</span>
+                  <span>{t('auth.logout')}</span>
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

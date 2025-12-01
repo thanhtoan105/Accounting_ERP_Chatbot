@@ -20,9 +20,11 @@ import com.accounting.entity.JournalEntry;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
 import com.accounting.exception.VoucherPostingException;
+import com.accounting.dto.VoucherEmbeddingPayload;
 import com.accounting.repository.VoucherLineRepository;
 import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
+import com.accounting.service.N8nWebhookService;
 import com.accounting.service.PeriodManagementService;
 import com.accounting.service.VoucherService;
 import com.accounting.service.VoucherValidationService;
@@ -69,6 +71,8 @@ class VoucherPostingServiceImplTest {
         private com.accounting.service.util.VoucherAuditHelper voucherAuditHelper;
         @Mock
         private PeriodManagementService periodManagementService;
+        @Mock
+        private N8nWebhookService n8nWebhookService;
 
         private VoucherPostingServiceImpl postingService;
         private Long testCompanyId = 1L;
@@ -84,7 +88,8 @@ class VoucherPostingServiceImplTest {
                                 voucherService,
                                 auditService,
                                 voucherAuditHelper,
-                                periodManagementService);
+                                periodManagementService,
+                                n8nWebhookService);
                 CompanyContext.setCompanyId(testCompanyId);
         }
 
@@ -592,5 +597,127 @@ class VoucherPostingServiceImplTest {
 
                 assertNotNull(response);
                 assertEquals("posted", response.getVoucher().getStatus());
+        }
+
+        @Test
+        void postVoucher_successfulPosting_triggersN8nWebhook() {
+                // Arrange
+                Voucher draftVoucher = createDraftVoucher();
+                VoucherLine line1 = createVoucherLine(1L, BigDecimal.valueOf(1000), BigDecimal.ZERO);
+                VoucherLine line2 = createVoucherLine(2L, BigDecimal.ZERO, BigDecimal.valueOf(1000));
+                List<VoucherLine> lines = List.of(line1, line2);
+
+                JournalEntry je1 = createJournalEntry(BigDecimal.valueOf(1000), BigDecimal.ZERO);
+                JournalEntry je2 = createJournalEntry(BigDecimal.ZERO, BigDecimal.valueOf(1000));
+                List<JournalEntry> journalEntries = List.of(je1, je2);
+
+                VoucherDTO voucherDTO = createVoucherDTO("posted");
+                VoucherValidationResult validResult = new VoucherValidationResult(true, new HashMap<>());
+
+                when(voucherRepository.findByCompanyIdAndId(testCompanyId, testVoucherId))
+                                .thenReturn(Optional.of(draftVoucher));
+                when(voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(testVoucherId))
+                                .thenReturn(lines);
+                when(voucherValidationService.validate(any(VoucherCreateRequest.class)))
+                                .thenReturn(validResult);
+                when(journalEntryService.generateJournalEntries(draftVoucher)).thenReturn(journalEntries);
+                when(voucherRepository.save(any(Voucher.class))).thenReturn(draftVoucher);
+                when(voucherService.getVoucherById(testVoucherId)).thenReturn(Optional.of(voucherDTO));
+
+                // Mock period validation - allow posting
+                LocalDate voucherDate = draftVoucher.getVoucherDate();
+                if (voucherDate != null) {
+                    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenReturn(true);
+                    if (draftVoucher.getPeriodId() != null) {
+                        when(periodManagementService.isPeriodOpen(draftVoucher.getPeriodId())).thenReturn(true);
+                    }
+                }
+
+                // Mock SecurityContext to return user ID
+                org.springframework.security.core.Authentication auth = org.mockito.Mockito
+                                .mock(org.springframework.security.core.Authentication.class);
+                when(auth.getPrincipal()).thenReturn("1");
+                org.springframework.security.core.context.SecurityContext securityContext = org.mockito.Mockito
+                                .mock(org.springframework.security.core.context.SecurityContext.class);
+                when(securityContext.getAuthentication()).thenReturn(auth);
+                org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
+
+                // Act
+                PostVoucherResponse response = postingService.postVoucher(testVoucherId, null);
+
+                // Assert
+                assertNotNull(response);
+                assertEquals("posted", response.getVoucher().getStatus());
+
+                // Verify that N8nWebhookService.triggerEmbedding() was called exactly once
+                ArgumentCaptor<VoucherEmbeddingPayload> payloadCaptor = ArgumentCaptor.forClass(VoucherEmbeddingPayload.class);
+                verify(n8nWebhookService).triggerEmbedding(payloadCaptor.capture());
+
+                // Verify payload contents
+                VoucherEmbeddingPayload capturedPayload = payloadCaptor.getValue();
+                assertNotNull(capturedPayload);
+                assertEquals(testCompanyId, capturedPayload.companyId());
+                assertEquals(testVoucherId.toString(), capturedPayload.voucherId());
+                assertNotNull(capturedPayload.header());
+                assertEquals(draftVoucher.getVoucherNumber(), capturedPayload.header().voucherNumber());
+                assertNotNull(capturedPayload.lineItems());
+                assertEquals(2, capturedPayload.lineItems().size());
+                assertNotNull(capturedPayload.summary());
+        }
+
+        @Test
+        void postVoucher_webhookFails_doesNotBreakPosting() {
+                // Arrange
+                Voucher draftVoucher = createDraftVoucher();
+                VoucherLine line1 = createVoucherLine(1L, BigDecimal.valueOf(1000), BigDecimal.ZERO);
+                List<VoucherLine> lines = List.of(line1);
+
+                JournalEntry je1 = createJournalEntry(BigDecimal.valueOf(1000), BigDecimal.ZERO);
+                List<JournalEntry> journalEntries = List.of(je1);
+
+                VoucherDTO voucherDTO = createVoucherDTO("posted");
+                VoucherValidationResult validResult = new VoucherValidationResult(true, new HashMap<>());
+
+                when(voucherRepository.findByCompanyIdAndId(testCompanyId, testVoucherId))
+                                .thenReturn(Optional.of(draftVoucher));
+                when(voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(testVoucherId))
+                                .thenReturn(lines);
+                when(voucherValidationService.validate(any(VoucherCreateRequest.class)))
+                                .thenReturn(validResult);
+                when(journalEntryService.generateJournalEntries(draftVoucher)).thenReturn(journalEntries);
+                when(voucherRepository.save(any(Voucher.class))).thenReturn(draftVoucher);
+                when(voucherService.getVoucherById(testVoucherId)).thenReturn(Optional.of(voucherDTO));
+
+                // Mock period validation
+                LocalDate voucherDate = draftVoucher.getVoucherDate();
+                if (voucherDate != null) {
+                    when(periodManagementService.isDateInOpenPeriod(voucherDate)).thenReturn(true);
+                }
+
+                // Mock SecurityContext to return user ID
+                org.springframework.security.core.Authentication auth = org.mockito.Mockito
+                                .mock(org.springframework.security.core.Authentication.class);
+                when(auth.getPrincipal()).thenReturn("1");
+                org.springframework.security.core.context.SecurityContext securityContext = org.mockito.Mockito
+                                .mock(org.springframework.security.core.context.SecurityContext.class);
+                when(securityContext.getAuthentication()).thenReturn(auth);
+                org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
+
+                // Simulate webhook failure - should not break posting
+                doThrow(new RuntimeException("n8n webhook unavailable"))
+                    .when(n8nWebhookService).triggerEmbedding(any(VoucherEmbeddingPayload.class));
+
+                // Act
+                PostVoucherResponse response = postingService.postVoucher(testVoucherId, null);
+
+                // Assert - Voucher should still be posted successfully despite webhook failure
+                assertNotNull(response);
+                assertEquals("posted", response.getVoucher().getStatus());
+
+                // Verify voucher was saved
+                verify(voucherRepository).save(any(Voucher.class));
+
+                // Verify webhook was attempted
+                verify(n8nWebhookService).triggerEmbedding(any(VoucherEmbeddingPayload.class));
         }
 }

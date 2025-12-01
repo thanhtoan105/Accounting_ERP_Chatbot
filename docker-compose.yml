@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: accounting-postgres
+    command: postgres -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all
     environment:
       POSTGRES_USER: accounting
       POSTGRES_PASSWORD: accounting
@@ -9,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U accounting"]
+      test: [ "CMD-SHELL", "pg_isready -U accounting" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -19,55 +20,73 @@ services:
     networks:
       - accounting-net
 
-  maildev:
-    image: maildev/maildev:2.2.1
-    container_name: accounting-maildev
-    ports:
-      - "1080:1080" # UI
-      - "1025:1025" # SMTP
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:1080"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - accounting-net
-
   redis:
     image: redis:7-alpine
     container_name: accounting-redis
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - accounting-net
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: accounting-pgadmin
+  metabase:
+    image: metabase/metabase:latest
+    container_name: accounting-metabase
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_CHECK_EMAIL_DELIVERABILITY: "False"
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase_app_db
+      MB_DB_PORT: 5432
+      MB_DB_USER: accounting
+      MB_DB_PASS: accounting
+      MB_DB_HOST: postgres
+      MB_EMBEDDING_SECRET_KEY: ${METABASE_EMBEDDING_SECRET:-dev-secret-key-change-in-production}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
-      - "5050:80"
+      - "3000:3000"
     volumes:
-      - pgadmin-data:/var/lib/pgadmin
+      - metabase-data:/metabase-data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - accounting-net
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: accounting-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_API_KEY=${N8N_API_KEY}
+    volumes:
+      - n8n-data:/home/node/.n8n
     networks:
       - accounting-net
 
 volumes:
   pgdata:
   pgadmin-data:
+  metabase-data:
+  n8n-data:
+
 
 networks:
   accounting-net:
     driver: bridge
-
-

@@ -55,10 +55,9 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
   @Transactional(Transactional.TxType.SUPPORTS)
   public List<VoucherTemplateSummaryDTO> list(Boolean isActive) {
     Long companyId = requireCompanyId();
-    List<VoucherTemplate> templates =
-        isActive == null
-            ? templateRepository.findByCompanyIdOrderByCreatedAtDesc(companyId)
-            : templateRepository.findByCompanyIdAndActiveOrderByCreatedAtDesc(companyId, isActive);
+    List<VoucherTemplate> templates = isActive == null
+        ? templateRepository.findByCompanyIdOrderByCreatedAtDesc(companyId)
+        : templateRepository.findByCompanyIdAndActiveOrderByCreatedAtDesc(companyId, isActive);
     return templates.stream().map(this::toSummaryDTO).collect(Collectors.toList());
   }
 
@@ -96,13 +95,11 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
   @Override
   public VoucherTemplateDTO update(UUID id, VoucherTemplateRequest request) {
     Long companyId = requireCompanyId();
-    VoucherTemplate template =
-        templateRepository
-            .findByCompanyIdAndId(companyId, id)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Voucher template not found: " + id));
+    VoucherTemplate template = templateRepository
+        .findByCompanyIdAndId(companyId, id)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Voucher template not found: " + id));
 
     ensureUniqueName(request.getName(), companyId, id);
     template.setName(request.getName().trim());
@@ -121,7 +118,7 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
     }
     // Flush to ensure deletions are executed before inserts
     entityManager.flush();
-    
+
     // Now add the new lines
     List<VoucherTemplateLine> newLines = buildLines(template, request.getLines(), companyId);
     template.getLines().addAll(newLines);
@@ -133,13 +130,11 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
   @Override
   public void delete(UUID id) {
     Long companyId = requireCompanyId();
-    VoucherTemplate template =
-        templateRepository
-            .findByCompanyIdAndId(companyId, id)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Voucher template not found: " + id));
+    VoucherTemplate template = templateRepository
+        .findByCompanyIdAndId(companyId, id)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Voucher template not found: " + id));
     templateRepository.deleteById(Objects.requireNonNull(template.getId()));
   }
 
@@ -157,13 +152,11 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
 
   private VoucherTemplate toggleStatus(UUID id, boolean active) {
     Long companyId = requireCompanyId();
-    VoucherTemplate template =
-        templateRepository
-            .findByCompanyIdAndId(companyId, id)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Voucher template not found: " + id));
+    VoucherTemplate template = templateRepository
+        .findByCompanyIdAndId(companyId, id)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Voucher template not found: " + id));
     template.setActive(active);
     template.setUpdatedAt(Instant.now());
     template.setUpdatedBy(getCurrentUserId());
@@ -179,39 +172,54 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
     List<VoucherTemplateLine> lines = new ArrayList<>();
     int lineNumber = 1;
     for (VoucherTemplateLineRequest lineRequest : lineRequests) {
-      ChartOfAccount debit =
-          chartOfAccountsRepository
-              .findByIdAndCompanyId(lineRequest.getDebitAccountId(), companyId)
-              .orElseThrow(
-                  () ->
-                      new ResponseStatusException(
-                          HttpStatus.BAD_REQUEST,
-                          "Debit account not found: " + lineRequest.getDebitAccountId()));
-      if (!Boolean.TRUE.equals(debit.getPostable())) {
+      // Validate at least one account is provided
+      if (lineRequest.getDebitAccountId() == null && lineRequest.getCreditAccountId() == null) {
         throw new ResponseStatusException(
             HttpStatus.BAD_REQUEST,
-            "Debit account must be a leaf/postable account: " + debit.getCode());
+            "Line " + lineNumber + ": At least one account (debit or credit) is required");
       }
-      ChartOfAccount credit =
-          chartOfAccountsRepository
-              .findByIdAndCompanyId(lineRequest.getCreditAccountId(), companyId)
-              .orElseThrow(
-                  () ->
-                      new ResponseStatusException(
-                          HttpStatus.BAD_REQUEST,
-                          "Credit account not found: " + lineRequest.getCreditAccountId()));
-      if (!Boolean.TRUE.equals(credit.getPostable())) {
-        throw new ResponseStatusException(
-            HttpStatus.BAD_REQUEST,
-            "Credit account must be a leaf/postable account: " + credit.getCode());
+
+      Long debitAccountId = null;
+      Long creditAccountId = null;
+
+      // Validate debit account if provided
+      if (lineRequest.getDebitAccountId() != null) {
+        ChartOfAccount debit = chartOfAccountsRepository
+            .findByIdAndCompanyId(lineRequest.getDebitAccountId(), companyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Debit account not found: " + lineRequest.getDebitAccountId()));
+        if (!Boolean.TRUE.equals(debit.getPostable())) {
+          throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST,
+              "Debit account must be a leaf/postable account: " + debit.getCode());
+        }
+        debitAccountId = debit.getId();
+      }
+
+      // Validate credit account if provided
+      if (lineRequest.getCreditAccountId() != null) {
+        ChartOfAccount credit = chartOfAccountsRepository
+            .findByIdAndCompanyId(lineRequest.getCreditAccountId(), companyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Credit account not found: " + lineRequest.getCreditAccountId()));
+        if (!Boolean.TRUE.equals(credit.getPostable())) {
+          throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST,
+              "Credit account must be a leaf/postable account: " + credit.getCode());
+        }
+        creditAccountId = credit.getId();
       }
 
       VoucherTemplateLine line = new VoucherTemplateLine();
       line.setCompanyId(companyId);
       line.setTemplate(template);
       line.setLineNumber(lineNumber++);
-      line.setDebitAccountId(debit.getId());
-      line.setCreditAccountId(credit.getId());
+      line.setDebitAccountId(debitAccountId);
+      line.setCreditAccountId(creditAccountId);
       line.setDefaultDescription(normalize(lineRequest.getDefaultDescription()));
       line.setRequiresCustomer(Boolean.TRUE.equals(lineRequest.getRequiresCustomer()));
       line.setRequiresSupplier(Boolean.TRUE.equals(lineRequest.getRequiresSupplier()));
@@ -231,10 +239,9 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
     dto.setCreatedAt(template.getCreatedAt());
     dto.setCreatedBy(resolveUserName(template.getCreatedBy()));
 
-    VoucherTemplateLine firstLine =
-        template.getLines().stream()
-            .min(Comparator.comparingInt(VoucherTemplateLine::getLineNumber))
-            .orElse(null);
+    VoucherTemplateLine firstLine = template.getLines().stream()
+        .min(Comparator.comparingInt(VoucherTemplateLine::getLineNumber))
+        .orElse(null);
     if (firstLine != null) {
       dto.setFirstLineDebitAccount(
           new AccountPreview(
@@ -261,10 +268,9 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
     dto.setFirstLineDebitAccount(null);
     dto.setFirstLineCreditAccount(null);
     if (!template.getLines().isEmpty()) {
-      VoucherTemplateLine firstLine =
-          template.getLines().stream()
-              .min(Comparator.comparingInt(VoucherTemplateLine::getLineNumber))
-              .orElse(null);
+      VoucherTemplateLine firstLine = template.getLines().stream()
+          .min(Comparator.comparingInt(VoucherTemplateLine::getLineNumber))
+          .orElse(null);
       if (firstLine != null) {
         dto.setFirstLineDebitAccount(
             new AccountPreview(
@@ -283,11 +289,10 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
       }
     }
 
-    List<VoucherTemplateLineDTO> lines =
-        template.getLines().stream()
-            .sorted(Comparator.comparingInt(VoucherTemplateLine::getLineNumber))
-            .map(this::toLineDTO)
-            .collect(Collectors.toList());
+    List<VoucherTemplateLineDTO> lines = template.getLines().stream()
+        .sorted(Comparator.comparingInt(VoucherTemplateLine::getLineNumber))
+        .map(this::toLineDTO)
+        .collect(Collectors.toList());
     dto.setLines(lines);
     return dto;
   }
@@ -318,11 +323,10 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
     if (name == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Template name is required");
     }
-    boolean exists =
-        excludeId == null
-            ? templateRepository.existsByCompanyIdAndNameIgnoreCase(companyId, name.trim())
-            : templateRepository.existsByCompanyIdAndNameIgnoreCaseAndIdNot(
-                companyId, name.trim(), excludeId);
+    boolean exists = excludeId == null
+        ? templateRepository.existsByCompanyIdAndNameIgnoreCase(companyId, name.trim())
+        : templateRepository.existsByCompanyIdAndNameIgnoreCaseAndIdNot(
+            companyId, name.trim(), excludeId);
     if (exists) {
       throw new ResponseStatusException(
           HttpStatus.CONFLICT, "A voucher template with the same name already exists");
@@ -344,20 +348,19 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
           HttpStatus.UNAUTHORIZED, "Unable to determine current user for voucher template action");
     }
     Object principal = authentication.getPrincipal();
-    
+
     // Handle Long principal (from JWT authentication filter)
     if (principal instanceof Long userId) {
       return userId;
     }
-    
+
     if (principal instanceof org.springframework.security.core.userdetails.User springUser) {
       return userRepository
           .findByEmail(springUser.getUsername())
           .map(User::getId)
           .orElseThrow(
-              () ->
-                  new ResponseStatusException(
-                      HttpStatus.UNAUTHORIZED, "Authenticated user record not found"));
+              () -> new ResponseStatusException(
+                  HttpStatus.UNAUTHORIZED, "Authenticated user record not found"));
     }
     if (principal instanceof User user) {
       return user.getId();
@@ -379,4 +382,3 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
     return value == null ? null : value.trim();
   }
 }
-

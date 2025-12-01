@@ -14,6 +14,7 @@ public class ApprovalWorkflowDTO {
   private UUID id;
   private Long companyId;
   private UUID purchaseBillId;
+  private UUID salesInvoiceId;
   private Long createdById;
   private Long approvedById;
   private ApprovalWorkflowStatus status;
@@ -31,11 +32,14 @@ public class ApprovalWorkflowDTO {
   private String createdByName;
   private String approvedByName;
 
-  // Nested bill info for convenience
+  // Nested bill/invoice info for convenience
   private String billNumber;
   private String supplierName;
+  private String invoiceNumber;
+  private String customerName;
 
-  public ApprovalWorkflowDTO() {}
+  public ApprovalWorkflowDTO() {
+  }
 
   public ApprovalWorkflowDTO(
       UUID id,
@@ -56,6 +60,7 @@ public class ApprovalWorkflowDTO {
     this.id = id;
     this.companyId = companyId;
     this.purchaseBillId = purchaseBillId;
+    this.salesInvoiceId = null;
     this.createdById = createdById;
     this.approvedById = approvedById;
     this.status = status;
@@ -93,6 +98,14 @@ public class ApprovalWorkflowDTO {
 
   public void setPurchaseBillId(UUID purchaseBillId) {
     this.purchaseBillId = purchaseBillId;
+  }
+
+  public UUID getSalesInvoiceId() {
+    return salesInvoiceId;
+  }
+
+  public void setSalesInvoiceId(UUID salesInvoiceId) {
+    this.salesInvoiceId = salesInvoiceId;
   }
 
   public Long getCreatedById() {
@@ -221,5 +234,21 @@ public class ApprovalWorkflowDTO {
 
   public void setSupplierName(String supplierName) {
     this.supplierName = supplierName;
+  }
+
+  public String getInvoiceNumber() {
+    return invoiceNumber;
+  }
+
+  public void setInvoiceNumber(String invoiceNumber) {
+    this.invoiceNumber = invoiceNumber;
+  }
+
+  public String getCustomerName() {
+    return customerName;
+  }
+
+  public void setCustomerName(String customerName) {
+    this.customerName = customerName;
   }
 }

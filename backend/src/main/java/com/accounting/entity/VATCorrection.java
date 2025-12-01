@@ -8,8 +8,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -35,11 +33,15 @@ public class VATCorrection implements CompanyScopedEntity {
   private Long companyId;
 
   @NotNull
-  @Column(name = "purchase_bill_id", nullable = false)
-  private UUID purchaseBillId;
+  @Column(name = "document_type", nullable = false, length = 50)
+  private String documentType;
 
-  @Column(name = "purchase_bill_line_id")
-  private UUID purchaseBillLineId;
+  @NotNull
+  @Column(name = "document_id", nullable = false)
+  private UUID documentId;
+
+  @Column(name = "line_item_id")
+  private UUID lineItemId;
 
   @NotNull
   @Column(name = "old_vat_amount", nullable = false, precision = 19, scale = 2)
@@ -77,13 +79,9 @@ public class VATCorrection implements CompanyScopedEntity {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  @ManyToOne
-  @JoinColumn(name = "purchase_bill_id", insertable = false, updatable = false)
-  private PurchaseBill purchaseBill;
-
-  @ManyToOne
-  @JoinColumn(name = "purchase_bill_line_id", insertable = false, updatable = false)
-  private PurchaseBillLine purchaseBillLine;
+  // Note: Relations removed - using polymorphic document_type/document_id pattern
+  // Lookup purchaseBill/salesInvoice by documentType + documentId at service
+  // layer
 
   @PrePersist
   protected void onCreate() {
@@ -123,20 +121,28 @@ public class VATCorrection implements CompanyScopedEntity {
     this.companyId = companyId;
   }
 
-  public UUID getPurchaseBillId() {
-    return purchaseBillId;
+  public String getDocumentType() {
+    return documentType;
   }
 
-  public void setPurchaseBillId(UUID purchaseBillId) {
-    this.purchaseBillId = purchaseBillId;
+  public void setDocumentType(String documentType) {
+    this.documentType = documentType;
   }
 
-  public UUID getPurchaseBillLineId() {
-    return purchaseBillLineId;
+  public UUID getDocumentId() {
+    return documentId;
   }
 
-  public void setPurchaseBillLineId(UUID purchaseBillLineId) {
-    this.purchaseBillLineId = purchaseBillLineId;
+  public void setDocumentId(UUID documentId) {
+    this.documentId = documentId;
+  }
+
+  public UUID getLineItemId() {
+    return lineItemId;
+  }
+
+  public void setLineItemId(UUID lineItemId) {
+    this.lineItemId = lineItemId;
   }
 
   public BigDecimal getOldVatAmount() {
@@ -211,12 +217,40 @@ public class VATCorrection implements CompanyScopedEntity {
     return updatedAt;
   }
 
-  public PurchaseBill getPurchaseBill() {
-    return purchaseBill;
+  // Backward-compatible convenience methods for purchase bill corrections
+  // Maps to polymorphic document_type/document_id/line_item_id pattern
+
+  /**
+   * Sets purchase bill ID and document type.
+   * Convenience method for backward compatibility.
+   */
+  public void setPurchaseBillId(UUID purchaseBillId) {
+    this.documentType = "PURCHASE_BILL";
+    this.documentId = purchaseBillId;
   }
 
-  public PurchaseBillLine getPurchaseBillLine() {
-    return purchaseBillLine;
+  /**
+   * Gets purchase bill ID (alias for documentId when documentType is
+   * PURCHASE_BILL).
+   * Convenience method for backward compatibility.
+   */
+  public UUID getPurchaseBillId() {
+    return documentId;
+  }
+
+  /**
+   * Sets purchase bill line ID (alias for lineItemId).
+   * Convenience method for backward compatibility.
+   */
+  public void setPurchaseBillLineId(UUID purchaseBillLineId) {
+    this.lineItemId = purchaseBillLineId;
+  }
+
+  /**
+   * Gets purchase bill line ID (alias for lineItemId).
+   * Convenience method for backward compatibility.
+   */
+  public UUID getPurchaseBillLineId() {
+    return lineItemId;
   }
 }
-

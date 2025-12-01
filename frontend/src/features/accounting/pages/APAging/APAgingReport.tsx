@@ -52,7 +52,7 @@ import { Mail } from 'lucide-react'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]
 const BUCKET_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: 'All Buckets' },
+  { value: 'ALL', label: 'All Buckets' },
   { value: 'CURRENT', label: 'Current' },
   { value: 'DAYS_1_30', label: '1-30 Days' },
   { value: 'DAYS_31_60', label: '31-60 Days' },
@@ -75,7 +75,7 @@ export function APAgingReport() {
   const [period, setPeriod] = useState<number | undefined>(undefined)
   const [asOfDate, setAsOfDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [status, setStatus] = useState<string>('')
-  const [bucket, setBucket] = useState<string>('')
+  const [bucket, setBucket] = useState<string>('ALL')
 
   // Drill-down dialog
   const [billDetailsDialogOpen, setBillDetailsDialogOpen] = useState(false)
@@ -121,7 +121,7 @@ export function APAgingReport() {
         period,
         asOfDate: asOfDate || undefined,
         status: status || undefined,
-        bucket: bucket || undefined,
+        bucket: bucket === 'ALL' ? undefined : bucket || undefined,
         sort: sortParams.length > 0 ? sortParams : undefined,
       }
 
@@ -161,7 +161,7 @@ export function APAgingReport() {
         period,
         asOfDate: asOfDate || undefined,
         status: status || undefined,
-        bucket: bucket || undefined,
+        bucket: bucket === 'ALL' ? undefined : bucket || undefined,
       })
 
       const url = window.URL.createObjectURL(blob)
