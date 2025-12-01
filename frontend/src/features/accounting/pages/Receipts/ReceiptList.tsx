@@ -476,10 +476,12 @@ export default function ReceiptList() {
           <h1 className="text-3xl font-bold tracking-tight">Customer Receipts</h1>
           <p className="text-muted-foreground">Manage customer payment receipts and allocations</p>
         </div>
-        <Button onClick={() => {
-          setEditingReceiptId(undefined)
-          setFormSheetOpen(true)
-        }}>
+        <Button
+          onClick={() => {
+            setEditingReceiptId(undefined)
+            setFormSheetOpen(true)
+          }}
+        >
           <Plus className="mr-2 h-4 w-4" />
           New Receipt
         </Button>

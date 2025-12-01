@@ -25,7 +25,9 @@ export const arStatementService = {
   /**
    * Get statement for customer (summary or detailed format)
    */
-  async getStatement(params: GetStatementParams): Promise<ARStatementSummary | ARStatementDetailed> {
+  async getStatement(
+    params: GetStatementParams,
+  ): Promise<ARStatementSummary | ARStatementDetailed> {
     const queryParams = new URLSearchParams()
     if (params.format) queryParams.set('format', params.format)
     if (params.asOfDate) queryParams.set('asOfDate', params.asOfDate)
@@ -219,4 +221,3 @@ export const arStatementService = {
     }
   },
 }
-

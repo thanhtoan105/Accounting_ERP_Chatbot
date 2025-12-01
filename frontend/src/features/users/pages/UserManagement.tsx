@@ -133,8 +133,8 @@ export default function UserManagement() {
             err instanceof Error
               ? err.message
               : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-              (err as { message?: string })?.message ||
-              'Failed to load users'
+                (err as { message?: string })?.message ||
+                'Failed to load users'
           setError(errorMessage)
         }
       }
@@ -173,8 +173,8 @@ export default function UserManagement() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-          (err as { message?: string })?.message ||
-          'Failed to deactivate user'
+            (err as { message?: string })?.message ||
+            'Failed to deactivate user'
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
@@ -193,8 +193,8 @@ export default function UserManagement() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-          (err as { message?: string })?.message ||
-          'Failed to activate user'
+            (err as { message?: string })?.message ||
+            'Failed to activate user'
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
@@ -222,8 +222,8 @@ export default function UserManagement() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-          (err as { message?: string })?.message ||
-          'Failed to reset password'
+            (err as { message?: string })?.message ||
+            'Failed to reset password'
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {

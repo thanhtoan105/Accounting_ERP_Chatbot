@@ -119,7 +119,7 @@ export function ARAgingReport() {
         page,
         size: pageSize,
       }
-      
+
       if (customerId) params.customerId = customerId
       if (asOfDate) params.asOfDate = asOfDate
       if (status) params.status = status
@@ -137,21 +137,23 @@ export function ARAgingReport() {
       }
     } catch (err: any) {
       const status = err?.response?.status
-      let message = err?.response?.data?.error?.message || 
-                    err?.response?.data?.message || 
-                    err?.message || 
-                    'Unable to load aging report'
-      
+      let message =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'Unable to load aging report'
+
       // Handle specific status codes
       if (status === 403) {
-        message = 'Access denied: You do not have permission to view AR aging reports. Please contact your administrator.'
+        message =
+          'Access denied: You do not have permission to view AR aging reports. Please contact your administrator.'
       } else if (status === 401) {
         message = 'Authentication required. Please log in again.'
       } else if (status === 500) {
         message = `Server error: ${message}. Please try again or contact support.`
         console.error('AR Aging Report 500 Error:', err?.response?.data || err)
       }
-      
+
       setError(message)
       toast.error('Failed to load aging report', {
         description: message,
@@ -331,7 +333,7 @@ export function ARAgingReport() {
         ),
       },
     ],
-    []
+    [],
   )
 
   // Filter reports by search query (client-side)
@@ -341,7 +343,7 @@ export function ARAgingReport() {
     return reports.filter(
       (report) =>
         report.customerName.toLowerCase().includes(query) ||
-        report.customerCode.toLowerCase().includes(query)
+        report.customerCode.toLowerCase().includes(query),
     )
   }, [reports, searchQuery])
 
@@ -364,17 +366,10 @@ export function ARAgingReport() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">AR Aging Report</h1>
-          <p className="text-muted-foreground">
-            View accounts receivable aging by customer
-          </p>
+          <p className="text-muted-foreground">View accounts receivable aging by customer</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={loading}
-          >
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -438,10 +433,7 @@ export function ARAgingReport() {
         </div>
         <div>
           <label className="text-sm font-medium mb-1 block">As Of Date</label>
-          <DatePicker
-            value={asOfDate || undefined}
-            onChange={(date) => setAsOfDate(date || '')}
-          />
+          <DatePicker value={asOfDate || undefined} onChange={(date) => setAsOfDate(date || '')} />
         </div>
         <div>
           <label className="text-sm font-medium mb-1 block">Bucket</label>
@@ -491,10 +483,7 @@ export function ARAgingReport() {
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -516,20 +505,14 @@ export function ARAgingReport() {
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results found
                 </TableCell>
               </TableRow>
@@ -545,12 +528,7 @@ export function ARAgingReport() {
           {totalElements} results
         </div>
         <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage(0)}
-            disabled={page === 0}
-          >
+          <Button variant="outline" size="sm" onClick={() => setPage(0)} disabled={page === 0}>
             <ChevronsLeft className="h-4 w-4" />
           </Button>
           <Button

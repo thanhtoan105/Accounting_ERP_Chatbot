@@ -64,7 +64,10 @@ export function ExportStatementDialog({
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="format">Export Format</Label>
-            <Select value={exportFormat} onValueChange={(value) => setExportFormat(value as ExportFormat)}>
+            <Select
+              value={exportFormat}
+              onValueChange={(value) => setExportFormat(value as ExportFormat)}
+            >
               <SelectTrigger id="format">
                 <SelectValue />
               </SelectTrigger>
@@ -88,4 +91,3 @@ export function ExportStatementDialog({
     </Dialog>
   )
 }
-

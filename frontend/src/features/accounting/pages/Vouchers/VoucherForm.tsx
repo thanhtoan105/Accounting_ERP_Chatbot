@@ -241,7 +241,7 @@ function convertLedgerLinesToEntries(
   const sorted = [...ledgerLines].sort((a, b) => (a.lineNumber ?? 0) - (b.lineNumber ?? 0))
   const entries: VoucherEntryLine[] = []
 
-  for (let i = 0; i < sorted.length;) {
+  for (let i = 0; i < sorted.length; ) {
     const first = sorted[i]
     const second = sorted[i + 1]
     const debitLine =

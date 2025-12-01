@@ -159,4 +159,3 @@ describe('CreditNoteForm', () => {
     // Should have a link or button to view original invoice
   })
 })
-

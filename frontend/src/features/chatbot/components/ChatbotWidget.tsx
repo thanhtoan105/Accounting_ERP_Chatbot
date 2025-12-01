@@ -1,63 +1,63 @@
-import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card } from '@/components/ui/card';
-import { useChatbot } from '../hooks/useChatbot';
-import { ChatMessage } from './ChatMessage';
-import { cn } from '@/lib/utils';
+import { useState, useRef, useEffect } from 'react'
+import { MessageSquare, X, Send, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Card } from '@/components/ui/card'
+import { useChatbot } from '../hooks/useChatbot'
+import { ChatMessage } from './ChatMessage'
+import { cn } from '@/lib/utils'
 
 interface ChatbotWidgetProps {
   /** Enable/disable the widget (controlled by feature flag) */
-  enabled?: boolean;
+  enabled?: boolean
 }
 
 export function ChatbotWidget({ enabled = true }: ChatbotWidgetProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [inputValue, setInputValue] = useState('');
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const [inputValue, setInputValue] = useState('')
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const { messages, sendMessage, isLoading, clearHistory } = useChatbot();
+  const { messages, sendMessage, isLoading, clearHistory } = useChatbot()
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
       if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight;
+        scrollElement.scrollTop = scrollElement.scrollHeight
       }
     }
-  }, [messages]);
+  }, [messages])
 
   // Focus input when widget opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+      inputRef.current.focus()
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
+    e.preventDefault()
+    if (!inputValue.trim() || isLoading) return
 
-    sendMessage(inputValue.trim());
-    setInputValue('');
-  };
+    sendMessage(inputValue.trim())
+    setInputValue('')
+  }
 
   const handleToggle = () => {
-    setIsOpen(!isOpen);
-  };
+    setIsOpen(!isOpen)
+  }
 
   const handleClearHistory = () => {
     if (confirm('Bạn có chắc muốn xóa lịch sử trò chuyện?')) {
-      clearHistory();
+      clearHistory()
     }
-  };
+  }
 
   if (!enabled) {
-    return null;
+    return null
   }
 
   return (
@@ -71,7 +71,7 @@ export function ChatbotWidget({ enabled = true }: ChatbotWidgetProps) {
             'fixed bottom-6 right-6 rounded-full shadow-lg',
             'w-14 h-14 p-0',
             'transition-all hover:scale-110',
-            'z-50'
+            'z-50',
           )}
         >
           <MessageSquare className="w-6 h-6" />
@@ -91,7 +91,7 @@ export function ChatbotWidget({ enabled = true }: ChatbotWidgetProps) {
             'chatbot-widget-enter',
             // Mobile responsive
             'sm:w-[400px] sm:h-[600px] sm:max-h-[calc(100vh-48px)] sm:bottom-6 sm:right-6 sm:rounded-lg',
-            'max-sm:chatbot-widget-mobile'
+            'max-sm:chatbot-widget-mobile',
           )}
         >
           {/* Header */}
@@ -183,12 +183,10 @@ export function ChatbotWidget({ enabled = true }: ChatbotWidgetProps) {
                 <Send className="w-4 h-4" />
               </Button>
             </form>
-            <p className="text-xs text-gray-500 mt-2">
-              {inputValue.length}/5000 ký tự
-            </p>
+            <p className="text-xs text-gray-500 mt-2">{inputValue.length}/5000 ký tự</p>
           </div>
         </Card>
       )}
     </>
-  );
+  )
 }

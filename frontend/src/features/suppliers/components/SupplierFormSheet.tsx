@@ -48,11 +48,11 @@ const createSupplierFormSchema = (isEditMode: boolean) =>
     code: isEditMode
       ? z.string().min(1, 'Supplier code is required')
       : z
-        .string()
-        .optional()
-        .refine((val) => !val || val.trim().length > 0, {
-          message: 'Supplier code cannot be empty if provided',
-        }),
+          .string()
+          .optional()
+          .refine((val) => !val || val.trim().length > 0, {
+            message: 'Supplier code cannot be empty if provided',
+          }),
     name: z.string().min(1, 'Supplier name is required'),
     taxCode: z
       .string()
@@ -225,11 +225,11 @@ export default function SupplierFormSheet({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <DialogHeader>
-            <DialogTitle>{isEditMode ? t('suppliers.editSupplier') : t('suppliers.createSupplier')}</DialogTitle>
+            <DialogTitle>
+              {isEditMode ? t('suppliers.editSupplier') : t('suppliers.createSupplier')}
+            </DialogTitle>
             <DialogDescription>
-              {isEditMode
-                ? t('suppliers.updateDetails')
-                : t('suppliers.createDetails')}
+              {isEditMode ? t('suppliers.updateDetails') : t('suppliers.createDetails')}
             </DialogDescription>
           </DialogHeader>
 

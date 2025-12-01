@@ -210,7 +210,9 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
 
         {/* History entries */}
         {filteredHistory.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">{t('vouchers.noHistoryFound')}</div>
+          <div className="text-center py-8 text-muted-foreground">
+            {t('vouchers.noHistoryFound')}
+          </div>
         ) : (
           <div className="space-y-3">
             {filteredHistory.map((entry) => {

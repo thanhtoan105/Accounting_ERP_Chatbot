@@ -45,10 +45,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { getCompanyId } from '@/utils/axios'
 import type { SalesInvoiceDTO, SalesInvoiceCreateRequest, VatRate } from '@/types/salesInvoice'
-import {
-  createCreditNote,
-  getSalesInvoiceById,
-} from '@/services/salesInvoice'
+import { createCreditNote, getSalesInvoiceById } from '@/services/salesInvoice'
 import { getPostableAccounts } from '@/services/chartOfAccounts'
 import type { ChartOfAccount } from '@/types/chartOfAccount'
 import type { Customer } from '@/types/customer'
@@ -193,10 +190,7 @@ export default function CreditNoteForm() {
         form.setValue('customerId', invoice.customerId)
         form.setValue('invoiceDate', format(new Date(), 'yyyy-MM-dd'))
         form.setValue('dueDate', calculateDueDate(format(new Date(), 'yyyy-MM-dd')))
-        form.setValue(
-          'reference',
-          `Credit Note for ${invoice.invoiceNumber}`,
-        )
+        form.setValue('reference', `Credit Note for ${invoice.invoiceNumber}`)
         form.setValue(
           'description',
           `Credit note for invoice ${invoice.invoiceNumber} dated ${format(new Date(invoice.invoiceDate), 'dd/MM/yyyy')}`,
@@ -509,7 +503,10 @@ export default function CreditNoteForm() {
                             onSelect={(date) => {
                               if (date) {
                                 field.onChange(format(date, 'yyyy-MM-dd'))
-                                form.setValue('dueDate', calculateDueDate(format(date, 'yyyy-MM-dd')))
+                                form.setValue(
+                                  'dueDate',
+                                  calculateDueDate(format(date, 'yyyy-MM-dd')),
+                                )
                               }
                             }}
                             disabled={(date) => date > new Date()}
@@ -698,4 +695,3 @@ export default function CreditNoteForm() {
     </div>
   )
 }
-

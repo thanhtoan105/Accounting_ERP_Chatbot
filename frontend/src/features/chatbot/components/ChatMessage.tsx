@@ -1,25 +1,25 @@
-import { cn } from '@/lib/utils';
-import type { ChatMessage as ChatMessageType } from '../types/chatbot';
-import { CitationList } from './CitationList';
-import { FormattedMessage } from './FormattedMessage';
-import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Bot, User } from 'lucide-react';
+import { cn } from '@/lib/utils'
+import type { ChatMessage as ChatMessageType } from '../types/chatbot'
+import { CitationList } from './CitationList'
+import { FormattedMessage } from './FormattedMessage'
+import { Badge } from '@/components/ui/badge'
+import { AlertCircle, Bot, User } from 'lucide-react'
 
 interface ChatMessageProps {
-  message: ChatMessageType;
+  message: ChatMessageType
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
-  const isUser = message.type === 'user';
-  const isError = message.type === 'error';
-  const isAssistant = message.type === 'assistant';
+  const isUser = message.type === 'user'
+  const isError = message.type === 'error'
+  const isAssistant = message.type === 'assistant'
 
   return (
     <div
       className={cn(
         'flex gap-3 mb-4',
         isUser && 'flex-row-reverse',
-        isUser ? 'chatbot-message-user' : 'chatbot-message-assistant'
+        isUser ? 'chatbot-message-user' : 'chatbot-message-assistant',
       )}
     >
       {/* Avatar */}
@@ -28,7 +28,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
           'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
           isUser && 'bg-blue-500',
           isAssistant && 'bg-gray-200',
-          isError && 'bg-red-500'
+          isError && 'bg-red-500',
         )}
       >
         {isUser && <User className="w-4 h-4 text-white" />}
@@ -43,14 +43,12 @@ export function ChatMessage({ message }: ChatMessageProps) {
             'rounded-lg px-4 py-2 max-w-[85%] overflow-hidden',
             isUser && 'bg-blue-500 text-white inline-block',
             isAssistant && 'bg-gray-100 text-gray-900',
-            isError && 'bg-red-50 text-red-900 border border-red-200'
+            isError && 'bg-red-50 text-red-900 border border-red-200',
           )}
         >
           {/* Message Text */}
           {isUser ? (
-            <div className="whitespace-pre-wrap break-words">
-              {message.content}
-            </div>
+            <div className="whitespace-pre-wrap break-words">{message.content}</div>
           ) : (
             <FormattedMessage
               content={message.content}
@@ -94,7 +92,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
               'text-xs mt-1',
               isUser && 'text-blue-100',
               isAssistant && 'text-gray-500',
-              isError && 'text-red-600'
+              isError && 'text-red-600',
             )}
           >
             {message.timestamp.toLocaleTimeString('vi-VN', {
@@ -105,5 +103,5 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

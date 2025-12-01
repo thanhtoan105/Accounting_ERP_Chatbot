@@ -1,4 +1,10 @@
-export type PaymentStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'POSTED' | 'CANCELLED' | 'REJECTED' | 'REVERSED'
+export type PaymentStatus =
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'POSTED'
+  | 'CANCELLED'
+  | 'REJECTED'
+  | 'REVERSED'
 
 export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CHECK' | 'OTHER'
 

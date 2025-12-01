@@ -293,7 +293,10 @@ export function DisputeManagement() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusBadgeVariant(dispute.status)} data-testid="dispute-status">
+                    <Badge
+                      variant={getStatusBadgeVariant(dispute.status)}
+                      data-testid="dispute-status"
+                    >
                       {dispute.status}
                     </Badge>
                   </TableCell>
@@ -387,8 +390,10 @@ export function DisputeManagement() {
                 </p>
                 <p>
                   <span className="font-medium">Variance:</span>{' '}
-                  <span data-testid="dispute-variance">{selectedDispute.variance?.toLocaleString('vi-VN')}₫</span> (
-                  <span data-testid="dispute-variance-type">{selectedDispute.varianceType}</span>)
+                  <span data-testid="dispute-variance">
+                    {selectedDispute.variance?.toLocaleString('vi-VN')}₫
+                  </span>{' '}
+                  (<span data-testid="dispute-variance-type">{selectedDispute.varianceType}</span>)
                 </p>
                 {selectedDispute.notes && (
                   <p>
@@ -411,10 +416,18 @@ export function DisputeManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResolveDialogOpen(false)} disabled={resolving}>
+            <Button
+              variant="outline"
+              onClick={() => setResolveDialogOpen(false)}
+              disabled={resolving}
+            >
               Cancel
             </Button>
-            <Button onClick={handleResolve} disabled={resolving || !resolutionNotes.trim()} data-testid="resolve-dispute-button">
+            <Button
+              onClick={handleResolve}
+              disabled={resolving || !resolutionNotes.trim()}
+              data-testid="resolve-dispute-button"
+            >
               <CheckCircle2 className={`mr-2 h-4 w-4 ${resolving ? 'animate-spin' : ''}`} />
               {resolving ? 'Resolving...' : 'Resolve'}
             </Button>
@@ -424,4 +437,3 @@ export function DisputeManagement() {
     </div>
   )
 }
-

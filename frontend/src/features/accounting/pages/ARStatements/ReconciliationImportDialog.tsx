@@ -83,7 +83,8 @@ export function ReconciliationImportDialog({
   }
 
   const handleDownloadTemplate = () => {
-    const template = 'InvoiceNumber,CustomerAmount,CustomerPayment,Notes\nINV-001,100000,30000,Notes here'
+    const template =
+      'InvoiceNumber,CustomerAmount,CustomerPayment,Notes\nINV-001,100000,30000,Notes here'
     const blob = new Blob([template], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -144,7 +145,9 @@ export function ReconciliationImportDialog({
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Import completed: <span data-testid="matched-count">{result.matchedCount}</span> matched, <span data-testid="mismatch-count">{result.mismatchCount}</span> mismatches
+                  Import completed: <span data-testid="matched-count">{result.matchedCount}</span>{' '}
+                  matched, <span data-testid="mismatch-count">{result.mismatchCount}</span>{' '}
+                  mismatches
                 </AlertDescription>
               </Alert>
 
@@ -170,7 +173,9 @@ export function ReconciliationImportDialog({
                     <TableBody>
                       {result.mismatches.map((mismatch, idx) => (
                         <TableRow key={idx} data-testid="mismatch-row">
-                          <TableCell className="font-medium" data-testid="mismatch-invoice-number">{mismatch.invoiceNumber}</TableCell>
+                          <TableCell className="font-medium" data-testid="mismatch-invoice-number">
+                            {mismatch.invoiceNumber}
+                          </TableCell>
                           <TableCell className="text-right">
                             {mismatch.systemAmount.toLocaleString('vi-VN')}₫
                           </TableCell>
@@ -182,12 +187,16 @@ export function ReconciliationImportDialog({
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={mismatch.varianceType === 'SIGNIFICANT' ? 'destructive' : 'warning'}
+                              variant={
+                                mismatch.varianceType === 'SIGNIFICANT' ? 'destructive' : 'warning'
+                              }
                             >
                               {mismatch.varianceType}
                             </Badge>
                           </TableCell>
-                          <TableCell className="max-w-xs truncate">{mismatch.notes || '-'}</TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {mismatch.notes || '-'}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -203,7 +212,11 @@ export function ReconciliationImportDialog({
             {result ? 'Close' : 'Cancel'}
           </Button>
           {!result && (
-            <Button onClick={handleImport} disabled={importing || !file} data-testid="import-reconciliation-button">
+            <Button
+              onClick={handleImport}
+              disabled={importing || !file}
+              data-testid="import-reconciliation-button"
+            >
               <Upload className={`mr-2 h-4 w-4 ${importing ? 'animate-spin' : ''}`} />
               {importing ? 'Importing...' : 'Import'}
             </Button>
@@ -213,4 +226,3 @@ export function ReconciliationImportDialog({
     </Dialog>
   )
 }
-

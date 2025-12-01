@@ -192,7 +192,6 @@ export default function VoucherTemplateManagementPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
 
-
   const [deleteState, setDeleteState] = useState<DeleteState>({ open: false, template: null })
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [rowActionId, setRowActionId] = useState<string | null>(null)
@@ -262,10 +261,10 @@ export default function VoucherTemplateManagementPage() {
       const adjustedState =
         mode === 'duplicate'
           ? {
-            ...state,
-            name: `${state.name} (Copy)`,
-            isActive: false,
-          }
+              ...state,
+              name: `${state.name} (Copy)`,
+              isActive: false,
+            }
           : state
       setFormState(adjustedState)
       setEditingTemplateId(mode === 'edit' ? templateId : null)
@@ -707,7 +706,8 @@ export default function VoucherTemplateManagementPage() {
                 <div>
                   <p className="font-semibold text-sm">Template line accounts</p>
                   <p className="text-xs text-muted-foreground">
-                    Each line must have at least one account (debit or credit) and required conditions.
+                    Each line must have at least one account (debit or credit) and required
+                    conditions.
                   </p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addLine}>

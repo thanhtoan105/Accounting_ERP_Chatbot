@@ -278,10 +278,16 @@ export async function uploadReceiptAttachment(
 /**
  * Delete a receipt attachment.
  */
-export async function deleteReceiptAttachment(receiptId: string, attachmentId: string): Promise<void> {
-  const res = await fetchWithAuth(`${API_BASE}/ar/receipts/${receiptId}/attachments/${attachmentId}`, {
-    method: 'DELETE',
-  })
+export async function deleteReceiptAttachment(
+  receiptId: string,
+  attachmentId: string,
+): Promise<void> {
+  const res = await fetchWithAuth(
+    `${API_BASE}/ar/receipts/${receiptId}/attachments/${attachmentId}`,
+    {
+      method: 'DELETE',
+    },
+  )
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: 'Failed to delete attachment' }))
     throw error
@@ -291,10 +297,16 @@ export async function deleteReceiptAttachment(receiptId: string, attachmentId: s
 /**
  * Download a receipt attachment.
  */
-export async function downloadReceiptAttachment(receiptId: string, attachmentId: string): Promise<Blob> {
-  const res = await fetchWithAuth(`${API_BASE}/ar/receipts/${receiptId}/attachments/${attachmentId}/download`, {
-    method: 'GET',
-  })
+export async function downloadReceiptAttachment(
+  receiptId: string,
+  attachmentId: string,
+): Promise<Blob> {
+  const res = await fetchWithAuth(
+    `${API_BASE}/ar/receipts/${receiptId}/attachments/${attachmentId}/download`,
+    {
+      method: 'GET',
+    },
+  )
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: 'Failed to download attachment' }))
     throw error

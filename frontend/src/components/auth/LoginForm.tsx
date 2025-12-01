@@ -103,8 +103,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
       const errorData = err as { error?: { code?: string; message?: string }; message?: string }
       const message = errorData?.error?.message || errorData?.message || 'Login failed'
       const errorCode = errorData?.error?.code
-      if (errorCode === 'ACCOUNT_LOCKED')
-        setLockoutMessage(t('auth.accountLockedMessage'))
+      if (errorCode === 'ACCOUNT_LOCKED') setLockoutMessage(t('auth.accountLockedMessage'))
       else if (errorCode === 'ACCOUNT_DEACTIVATED' || message.toLowerCase().includes('deactivated'))
         setFormError(t('auth.accountDeactivated'))
       else if (errorCode === 'UNAUTHORIZED') setFormError(t('auth.invalidCredentials'))
@@ -158,9 +157,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
               {accountCreated && (
                 <Alert variant="default" className="mb-4">
                   <AlertTitle>{t('auth.accountCreated')}</AlertTitle>
-                  <AlertDescription>
-                    {t('auth.accountCreatedMessage')}
-                  </AlertDescription>
+                  <AlertDescription>{t('auth.accountCreatedMessage')}</AlertDescription>
                 </Alert>
               )}
               {lockoutMessage && (

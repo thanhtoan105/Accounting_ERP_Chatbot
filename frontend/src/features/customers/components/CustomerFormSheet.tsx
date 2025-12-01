@@ -48,11 +48,11 @@ const createCustomerFormSchema = (isEditMode: boolean) =>
     code: isEditMode
       ? z.string().min(1, 'Customer code is required')
       : z
-        .string()
-        .optional()
-        .refine((val) => !val || val.trim().length > 0, {
-          message: 'Customer code cannot be empty if provided',
-        }),
+          .string()
+          .optional()
+          .refine((val) => !val || val.trim().length > 0, {
+            message: 'Customer code cannot be empty if provided',
+          }),
     name: z.string().min(1, 'Customer name is required'),
     taxCode: z
       .string()
@@ -225,11 +225,11 @@ export default function CustomerFormSheet({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <DialogHeader>
-            <DialogTitle>{isEditMode ? t('customers.editCustomer') : t('customers.createCustomer')}</DialogTitle>
+            <DialogTitle>
+              {isEditMode ? t('customers.editCustomer') : t('customers.createCustomer')}
+            </DialogTitle>
             <DialogDescription>
-              {isEditMode
-                ? t('customers.updateDetails')
-                : t('customers.createDetails')}
+              {isEditMode ? t('customers.updateDetails') : t('customers.createDetails')}
             </DialogDescription>
           </DialogHeader>
 

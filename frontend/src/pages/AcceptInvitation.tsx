@@ -55,8 +55,8 @@ export default function AcceptInvitation() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-          (err as { message?: string })?.message ||
-          t('invitation.invalidOrExpired')
+            (err as { message?: string })?.message ||
+            t('invitation.invalidOrExpired')
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -103,8 +103,8 @@ export default function AcceptInvitation() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-          (err as { message?: string })?.message ||
-          t('invitation.failedToAccept')
+            (err as { message?: string })?.message ||
+            t('invitation.failedToAccept')
       setError(errorMessage)
     } finally {
       setSubmitting(false)
@@ -220,7 +220,13 @@ export default function AcceptInvitation() {
 
           <form onSubmit={handleSubmit}>
             <Stack spacing={2}>
-              <TextField label={t('auth.email')} type="email" value={invitation.email} disabled fullWidth />
+              <TextField
+                label={t('auth.email')}
+                type="email"
+                value={invitation.email}
+                disabled
+                fullWidth
+              />
               <TextField
                 label={t('invitation.fullName')}
                 value={fullName}
