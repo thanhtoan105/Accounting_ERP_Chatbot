@@ -1077,6 +1077,7 @@ export default function SalesInvoiceForm() {
 
           {/* VAT Corrections section - disabled for sales invoices (feature only available for purchase bills)
           TODO: Implement AR-specific VAT corrections API and enable this */}
+          {/* eslint-disable-next-line no-constant-binary-expression */}
           {false && isEditing && invoiceId && (
             <Card>
               <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -1424,6 +1425,7 @@ export default function SalesInvoiceForm() {
 
       {/* VAT Correction Dialogs - disabled for sales invoices (feature only available for purchase bills)
       TODO: Implement AR-specific VAT corrections API and enable this */}
+      {/* eslint-disable-next-line no-constant-binary-expression */}
       {false && invoiceId && (
         <>
           <VATCorrectionDialog

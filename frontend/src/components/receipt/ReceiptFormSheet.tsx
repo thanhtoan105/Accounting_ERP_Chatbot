@@ -216,7 +216,7 @@ export function ReceiptFormSheet({
     // Load receipt if editing
     useEffect(() => {
         if (!open || !isEditing || !receiptId || loadingAccounts) return
-        let mounted = true
+        const mounted = true
         setLoadingReceipt(true)
         getReceiptById(receiptId)
             .then((receipt) => {
@@ -270,7 +270,7 @@ export function ReceiptFormSheet({
             setOpenInvoices([])
             return
         }
-        let mounted = true
+        const mounted = true
         setLoadingOpenInvoices(true)
         getOpenInvoicesForCustomer(selectedCustomer.id)
             .then((invoices) => {
