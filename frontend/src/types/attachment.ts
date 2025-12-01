@@ -60,3 +60,25 @@ export interface SalesInvoiceAttachmentUploadResponse {
   data: SalesInvoiceAttachmentDTO
   message: string
 }
+
+// Receipt attachment types (AC6.2-08)
+export interface ReceiptAttachmentDTO {
+  id: string
+  receiptId: string
+  fileName: string
+  mimeType: string
+  fileSize: number
+  uploadedAt: string
+  uploadedBy: number | null
+  uploadedByName: string | null
+}
+
+export interface ReceiptAttachmentListResponse {
+  data: ReceiptAttachmentDTO[]
+  count: number
+}
+
+export interface ReceiptAttachmentUploadResponse {
+  data: ReceiptAttachmentDTO
+  message: string
+}

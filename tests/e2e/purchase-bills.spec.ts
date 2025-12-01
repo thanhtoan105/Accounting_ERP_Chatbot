@@ -27,7 +27,7 @@ test.describe('Purchase Bills - Entry, Edit, and Draft Management', () => {
     test('should create a new purchase bill with supplier and line items', async ({ page, supplierFactory, purchaseBillFactory }) => {
       // GIVEN: Supplier exists and user is authenticated
       const supplier = supplierFactory.createSupplier();
-      
+
       // Intercept supplier API calls BEFORE navigation
       await page.route('**/api/v1/suppliers*', async (route) => {
         await route.fulfill({
@@ -72,10 +72,10 @@ test.describe('Purchase Bills - Entry, Edit, and Draft Management', () => {
 
       // Wait for popover to open and search input to appear
       await page.waitForSelector('input[placeholder*="Search suppliers"]', { state: 'visible' });
-      
+
       // Type supplier name in search
       await page.fill('input[placeholder*="Search suppliers"]', supplier.name);
-      
+
       // Wait for supplier option to appear and click it
       await page.waitForSelector(`text=${supplier.name}`, { state: 'visible' });
       await page.click(`text=${supplier.name}`);
@@ -137,12 +137,10 @@ test.describe('Purchase Bills - Entry, Edit, and Draft Management', () => {
       const billNumberInput = page.getByLabel(/bill number/i);
       await billNumberInput.waitFor({ state: 'visible', timeout: 5000 });
       await billNumberInput.fill('BILL-2024-001');
-      
-      // For bill date, wait for the field to be available
-      await page.waitForTimeout(500); // Small wait for form to be ready
-      
-      // THEN: Form should be present (duplicate validation would trigger on save)
+
+      // THEN: Form should be ready and value set
       await expect(billNumberInput).toBeVisible();
+      await expect(billNumberInput).toHaveValue('BILL-2024-001');
       await expect(billNumberInput).toHaveValue('BILL-2024-001');
     });
   });
@@ -161,7 +159,7 @@ test.describe('Purchase Bills - Entry, Edit, and Draft Management', () => {
       // Find the bill date field - it's a button trigger for the calendar
       const billDateLabel = page.getByText('Bill Date', { exact: false }).first();
       await expect(billDateLabel).toBeVisible();
-      
+
       // Find the date picker button (it's inside the FormField)
       const datePickerButton = billDateLabel.locator('..').locator('..').getByRole('button').first();
       await datePickerButton.click();
@@ -211,7 +209,7 @@ test.describe('Purchase Bills - Entry, Edit, and Draft Management', () => {
       // The actual date selection would require more complex calendar interaction
       const billDateField = page.getByText('Bill Date', { exact: false }).first();
       await expect(billDateField).toBeVisible();
-      
+
       // Note: Due date auto-calculation happens when bill date changes
       // This test verifies the form is set up correctly for this feature
       // Full implementation would require calendar date selection
@@ -256,7 +254,7 @@ test.describe('Purchase Bills - Entry, Edit, and Draft Management', () => {
       await page.fill('input[placeholder*="Search suppliers"]', supplier.name);
       await page.waitForSelector(`text=${supplier.name}`, { state: 'visible' });
       await page.click(`text=${supplier.name}`);
-      
+
       // Note: VAT validation testing would require entering line items via the grid
       // This is a simplified test - full implementation would interact with line item grid
       // For now, verify form is loaded and ready for input
@@ -310,10 +308,7 @@ test.describe('Purchase Bills - Entry, Edit, and Draft Management', () => {
       await billNumberInput.waitFor({ state: 'visible', timeout: 5000 });
       await billNumberInput.fill(bill.billNumber);
 
-      // Wait a moment for the form to register the change and start autosave timer
-      await page.waitForTimeout(1000);
-
-      // Wait for autosave API call deterministically (max 40s, but resolves as soon as autosave fires)
+      // Wait for autosave API call deterministically (max 40s, resolves as soon as autosave fires)
       // The autosave triggers 30 seconds after the last change
       try {
         await page.waitForResponse(
@@ -331,7 +326,7 @@ test.describe('Purchase Bills - Entry, Edit, and Draft Management', () => {
         // The autosave feature is set up correctly even if it doesn't fire in test time
         // This can happen if autosave requires more specific conditions or longer wait time
         await expect(billNumberInput).toHaveValue(bill.billNumber);
-        
+
         // Verify the form is functional and autosave infrastructure is in place
         // The test passes if the form accepts input correctly
         // Note: Full autosave testing may require longer wait times or different test setup
@@ -420,15 +415,15 @@ test.describe('Purchase Bills - Entry, Edit, and Draft Management', () => {
       // THEN: Form fields should be read-only (posted bills cannot be edited)
       // Wait for form to load
       await page.waitForSelector('form', { state: 'visible', timeout: 10000 });
-      
+
       // Wait for form fields to be visible
       await expect(page.getByText('Bill Number', { exact: false }).first()).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('Bill Date', { exact: false }).first()).toBeVisible({ timeout: 10000 });
-      
+
       // Find inputs using getByLabel which is more reliable
       const billNumberInput = page.getByLabel(/bill number/i);
       await billNumberInput.waitFor({ state: 'visible', timeout: 5000 });
-      
+
       // For posted bills, inputs should be disabled
       // Note: The input might be in a disabled state or the form might be read-only
       // Check if it's disabled or if the form has read-only attributes
@@ -444,18 +439,18 @@ test.describe('Purchase Bills - Entry, Edit, and Draft Management', () => {
       } else {
         await expect(billNumberInput).toBeDisabled();
       }
-      
+
       // For bill date, it's a button that should be disabled
       // Find the button using the label structure
       const billDateLabel = page.getByText('Bill Date', { exact: false }).first();
       await expect(billDateLabel).toBeVisible({ timeout: 5000 });
-      
+
       // Find the date picker button - it's in the FormField structure
       // Try multiple strategies to find the disabled button
-      const billDateButton = page.locator('form').locator('button').filter({ 
-        has: page.locator('svg, [class*="calendar"]') 
+      const billDateButton = page.locator('form').locator('button').filter({
+        has: page.locator('svg, [class*="calendar"]')
       }).first();
-      
+
       // If button is found, verify it's disabled
       const buttonCount = await billDateButton.count();
       if (buttonCount > 0) {

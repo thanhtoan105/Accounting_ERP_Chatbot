@@ -92,7 +92,7 @@ class VoucherControllerIntegrationTest extends com.accounting.test.IntegrationTe
         private com.accounting.repository.AccountControlRepository accountControlRepository;
 
         @Autowired
-        private com.accounting.repository.VoucherAttachmentRepository voucherAttachmentRepository;
+        private com.accounting.repository.AttachmentRepository attachmentRepository;
 
         private Company testCompany;
         private Company otherCompany;
@@ -2748,7 +2748,8 @@ class VoucherControllerIntegrationTest extends com.accounting.test.IntegrationTe
                                                                 .multipart("/api/v1/vouchers/" + draftVoucher.getId()
                                                                                 + "/attachments")
                                                                 .file(file)
-                                                                .header("Authorization", "Bearer " + chiefAccountantToken)
+                                                                .header("Authorization",
+                                                                                "Bearer " + chiefAccountantToken)
                                                                 .header("X-Company-Id",
                                                                                 String.valueOf(testCompany.getId())))
                                 .andExpect(status().isCreated())

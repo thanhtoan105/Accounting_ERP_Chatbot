@@ -6,8 +6,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +24,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
+  private static final Logger logger = LoggerFactory.getLogger(CustomAccessDeniedHandler.class);
   private final ObjectMapper objectMapper;
 
   public CustomAccessDeniedHandler(ObjectMapper objectMapper) {
@@ -31,12 +38,26 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
       AccessDeniedException accessDeniedException)
       throws IOException {
 
+    // Log the access denied event with user context
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    String userRoles = "none";
+    if (auth != null && auth.getAuthorities() != null) {
+      userRoles = auth.getAuthorities().stream()
+          .map(GrantedAuthority::getAuthority)
+          .collect(Collectors.joining(", "));
+      logger.warn("Access denied for user {} with roles [{}] accessing {} {}", 
+          auth.getPrincipal(), userRoles, request.getMethod(), request.getRequestURI());
+    } else {
+      logger.warn("Access denied for unauthenticated user accessing {} {}", 
+          request.getMethod(), request.getRequestURI());
+    }
+
     // Extract required role from exception message or determine from request
     String requiredRole = extractRequiredRole(accessDeniedException, request);
     String errorMessage =
         requiredRole != null
-            ? "Access denied. Required role: " + requiredRole
-            : "Access denied. Insufficient permissions.";
+            ? String.format("Access denied. Required role: %s. Your current role(s): %s", requiredRole, userRoles)
+            : String.format("Access denied. Insufficient permissions. Your current role(s): %s", userRoles);
 
     // Build error response following the existing pattern
     Map<String, Object> errorResponse =

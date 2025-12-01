@@ -96,9 +96,8 @@ const formSchema = z.object({
   voucherDate: z.string().min(1, 'Voucher date is required'),
   description: z
     .string()
-    .max(500, 'Description can be up to 500 characters')
-    .optional()
-    .or(z.literal('')),
+    .min(1, 'Description is required')
+    .max(500, 'Description can be up to 500 characters'),
 })
 
 type VoucherFormValues = z.infer<typeof formSchema>
@@ -242,7 +241,7 @@ function convertLedgerLinesToEntries(
   const sorted = [...ledgerLines].sort((a, b) => (a.lineNumber ?? 0) - (b.lineNumber ?? 0))
   const entries: VoucherEntryLine[] = []
 
-  for (let i = 0; i < sorted.length; ) {
+  for (let i = 0; i < sorted.length;) {
     const first = sorted[i]
     const second = sorted[i + 1]
     const debitLine =
@@ -435,8 +434,8 @@ export default function VoucherForm() {
 
   function buildRequest(values: VoucherFormValues): VoucherCreateRequest {
     return {
-      voucherDate: values.voucherDate,
-      description: values.description ?? '',
+      date: values.voucherDate, // Backend expects 'date' field
+      description: values.description || '', // Backend requires non-blank description
       entryLines: entryLinePayload,
       currency: 'VND',
     }

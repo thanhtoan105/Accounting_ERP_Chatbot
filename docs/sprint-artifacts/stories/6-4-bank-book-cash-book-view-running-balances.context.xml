@@ -1,0 +1,254 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>4</storyId>
+    <title>Bank Book / Cash Book View &amp; Running Balances</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-27T08:22:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/6-4-bank-book-cash-book-view-running-balances.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>finance user</asA>
+    <iWant>to view cash/bank books with running balances and drill-down capabilities</iWant>
+    <soThat>I can analyze movements and verify balances accurately</soThat>
+    <tasks>
+      <task id="1" status="pending">Backend – CashBookService Implementation (AC: #1, #3, #7)</task>
+      <task id="2" status="pending">Backend – CashBookController Endpoints (AC: #1-#3, #6-#8)</task>
+      <task id="3" status="pending">Backend – CashBookExportService (AC: #4, #6, #8)</task>
+      <task id="4" status="pending">Backend – Async Export for Large Datasets (AC: #5)</task>
+      <task id="5" status="pending">Database – Index Optimization (AC: #7)</task>
+      <task id="6" status="pending">Frontend – CashBookList Page (AC: #1, #3, #5)</task>
+      <task id="7" status="pending">Frontend – Voucher Detail Modal (AC: #2)</task>
+      <task id="8" status="pending">Frontend – Multi-Account Summary View (AC: #3)</task>
+      <task id="9" status="pending">Frontend – Export Functionality (AC: #4-#5)</task>
+      <task id="10" status="pending">Frontend – Routes and Navigation (AC: #6)</task>
+      <task id="11" status="pending">Testing – Backend Unit and Integration (AC: #1-#8)</task>
+      <task id="12" status="pending">Testing – Frontend Component and E2E (AC: #1-#5)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC6.4-01">Per-account view: filters by date/type/reference; columns show opening balance, inflow, outflow, closing; running balance after each TX with signed values.</criterion>
+    <criterion id="AC6.4-02">Drill into any row to voucher detail with attachments; show posting user and timestamps; highlight negative balances with color and tooltip.</criterion>
+    <criterion id="AC6.4-03">Multi-account view yields aggregated totals; toggle grouping by account; quick switcher between bank/cash; remembers last view per user.</criterion>
+    <criterion id="AC6.4-04">Export to Excel/PDF; include company branding/logo, filter snapshot, timestamp, generated-by; file footer includes document hash.</criterion>
+    <criterion id="AC6.4-05">Pagination or virtual list for >5k rows; download full dataset asynchronously with notification when ready; rate-limited to prevent abuse.</criterion>
+    <criterion id="AC6.4-06">RBAC enforced for all queries/exports; attempts to export outside role scope fail and are audit-logged.</criterion>
+    <criterion id="AC6.4-07">Performance: initial load ≤2s for typical month (≤5k TX) with indexed queries; slow queries logged.</criterion>
+    <criterion id="AC6.4-08">All views/exports logged in audit with filters, user, IP, hash of snapshot data.</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-6.md</path>
+        <title>Epic 6 Technical Specification</title>
+        <section>Story 6.4: Bank/Cash Book View &amp; Running Balances</section>
+        <snippet>Per-account transaction ledger with running balances, drill-down to voucher details, multi-account aggregation, export to Excel/PDF with branding.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/data-architecture.md</path>
+        <title>Data Architecture</title>
+        <section>Multi-Tenancy Strategy</section>
+        <snippet>Row-level filtering via company_id on all tables. Spring Data JPA filter at repository level.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/security-architecture.md</path>
+        <title>Security Architecture</title>
+        <section>Authorization - RBAC Model</section>
+        <snippet>Role-Based Access Control (RBAC): Admin, Accountant, Chief Accountant, CFO. Spring Security method-level security.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/6-3-cash-payment-entry-posting.md</path>
+        <title>Story 6.3: Cash Payment Entry &amp; Posting</title>
+        <section>Learnings for Next Stories</section>
+        <snippet>Route role consistency, i18n translation patterns, sidebar navigation, GL account code integration, performance telemetry patterns.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-6-cash-bank-management.md</path>
+        <title>Epic 6: Cash &amp; Bank Management</title>
+        <section>Story 6.4: Bank Book / Cash Book View &amp; Running Balances</section>
+        <snippet>Per-account transaction ledger with running balances, drill-down to voucher details, multi-account aggregation, export capabilities.</snippet>
+      </doc>
+      <doc>
+        <path>docs/ux-component-spec-generic-data-table.md</path>
+        <title>UX Component Spec: Generic Data Table</title>
+        <section>Table Features</section>
+        <snippet>Server-side pagination, column sorting, filtering, export actions, row selection, responsive layout patterns.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/BankAccountService.java</path>
+        <kind>service-interface</kind>
+        <symbol>BankAccountService</symbol>
+        <lines>1-83</lines>
+        <reason>Bank account service interface - reuse for account lookups and balance queries</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/BankAccountServiceImpl.java</path>
+        <kind>service-impl</kind>
+        <symbol>BankAccountServiceImpl</symbol>
+        <lines>1-488</lines>
+        <reason>Bank account service implementation with company scoping, audit logging patterns, and GL account code validation</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/PaymentService.java</path>
+        <kind>service-interface</kind>
+        <symbol>PaymentService</symbol>
+        <lines>1-153</lines>
+        <reason>Payment service interface - reference for service method patterns</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/payment/PaymentServiceImpl.java</path>
+        <kind>service-impl</kind>
+        <symbol>PaymentServiceImpl</symbol>
+        <lines>1-205</lines>
+        <reason>Payment service implementation with company scoping, specification patterns, and query filtering</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/BankAccountController.java</path>
+        <kind>controller</kind>
+        <symbol>BankAccountController</symbol>
+        <lines>1-482</lines>
+        <reason>Bank account controller with Excel export, RBAC annotations, and audit logging patterns</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/payment/PaymentController.java</path>
+        <kind>controller</kind>
+        <symbol>PaymentController</symbol>
+        <lines>1-158</lines>
+        <reason>Payment controller with pagination, sorting, filtering patterns</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/sales/ReceiptController.java</path>
+        <kind>controller</kind>
+        <symbol>ReceiptController</symbol>
+        <lines>1-161</lines>
+        <reason>Receipt controller with RBAC, response wrapper patterns</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/Payments/PaymentList.tsx</path>
+        <kind>page-component</kind>
+        <symbol>PaymentList</symbol>
+        <lines>1-888</lines>
+        <reason>Payment list page - reference for data table, filters, pagination, i18n, localStorage persistence patterns</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/payment/PaymentAllocationGrid.tsx</path>
+        <kind>component</kind>
+        <symbol>PaymentAllocationGrid</symbol>
+        <lines>1-350</lines>
+        <reason>Grid component pattern for line item display</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <backend>
+        <dependency name="spring-boot" version="3.5.7">Core framework</dependency>
+        <dependency name="spring-data-jpa" version="3.5.x">Data access</dependency>
+        <dependency name="spring-security" version="6.x">Authentication/authorization</dependency>
+        <dependency name="postgresql" version="42.7.4">Database driver</dependency>
+        <dependency name="flyway" version="11.10.0">Database migrations</dependency>
+        <dependency name="apache-poi" version="5.3.0">Excel export</dependency>
+        <dependency name="jasperreports" version="6.21.3">PDF generation</dependency>
+      </backend>
+      <frontend>
+        <dependency name="react" version="19.1.x">UI framework</dependency>
+        <dependency name="typescript" version="5.9.x">Type safety</dependency>
+        <dependency name="@tanstack/react-table" version="8.21.x">Data tables</dependency>
+        <dependency name="react-hook-form" version="7.66.x">Form handling</dependency>
+        <dependency name="zod" version="4.1.x">Validation</dependency>
+        <dependency name="date-fns" version="4.1.x">Date formatting</dependency>
+        <dependency name="lucide-react" version="0.552.x">Icons</dependency>
+        <dependency name="i18next" version="25.6.x">Internationalization</dependency>
+        <dependency name="axios" version="1.7.x">HTTP client</dependency>
+        <dependency name="sonner" version="2.0.x">Toast notifications</dependency>
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Follow existing service layer patterns from PaymentServiceImpl and ReceiptServiceImpl</constraint>
+    <constraint type="pattern">Use CompanyContext for multi-tenant company scoping in all queries</constraint>
+    <constraint type="pattern">Apply @PreAuthorize annotations for RBAC enforcement at controller level</constraint>
+    <constraint type="pattern">Use standard response wrapper { data, meta, error } for all API responses</constraint>
+    <constraint type="pattern">Implement audit logging for all view and export operations</constraint>
+    <constraint type="pattern">Use TanStack Table with server-side pagination for large datasets</constraint>
+    <constraint type="pattern">Follow i18n translation pattern: add keys to vi/en common.json, use useTranslation hook</constraint>
+    <constraint type="pattern">Use localStorage for persisting user's last view preferences per company</constraint>
+    <constraint type="testing">Backend tests use JUnit 5 + TestContainers for integration tests</constraint>
+    <constraint type="testing">Frontend tests use Vitest + Testing Library + jsdom</constraint>
+    <constraint type="performance">Initial load target ≤2s for typical month (≤5k transactions)</constraint>
+    <constraint type="performance">Add query latency telemetry logging for performance monitoring</constraint>
+    <constraint type="security">All exports must include document hash (SHA256) for integrity verification</constraint>
+    <constraint type="security">Export throttling to prevent bulk data extraction abuse</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GET /api/v1/cash-book/:bankAccountId</name>
+      <kind>REST endpoint</kind>
+      <signature>Query: dateFrom, dateTo, type=receipt|payment|all, reference, page, size; Response: { data: { account, openingBalance, transactions[], closingBalance, totalInflow, totalOutflow }, meta }</signature>
+      <path>backend/src/main/java/com/accounting/controller/cashbook/CashBookController.java (NEW)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/cash-book/:bankAccountId/transactions/:voucherId</name>
+      <kind>REST endpoint</kind>
+      <signature>Response: { data: VoucherDetailDTO with lines and attachments }</signature>
+      <path>backend/src/main/java/com/accounting/controller/cashbook/CashBookController.java (NEW)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/cash-book/summary</name>
+      <kind>REST endpoint</kind>
+      <signature>Query: dateFrom, dateTo, accountIds; Response: { data: { accounts[], grandTotals } }</signature>
+      <path>backend/src/main/java/com/accounting/controller/cashbook/CashBookController.java (NEW)</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/cash-book/:bankAccountId/export</name>
+      <kind>REST endpoint</kind>
+      <signature>Query: format=EXCEL|PDF, dateFrom, dateTo; Response: Binary file with branding, hash</signature>
+      <path>backend/src/main/java/com/accounting/controller/cashbook/CashBookController.java (NEW)</path>
+    </interface>
+    <interface>
+      <name>CashBookService</name>
+      <kind>service interface</kind>
+      <signature>getCashBook(bankAccountId, filters, pageable), getCashBookSummary(accountIds, dateRange), getVoucherDetail(voucherId)</signature>
+      <path>backend/src/main/java/com/accounting/service/CashBookService.java (NEW)</path>
+    </interface>
+    <interface>
+      <name>CashBookExportService</name>
+      <kind>service interface</kind>
+      <signature>exportToExcel(bankAccountId, filters), exportToPdf(bankAccountId, filters), generateDocumentHash(data)</signature>
+      <path>backend/src/main/java/com/accounting/service/CashBookExportService.java (NEW)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend uses JUnit 5 with Spring Boot Test for unit tests and TestContainers for PostgreSQL integration tests.
+      Frontend uses Vitest with Testing Library and jsdom for component tests.
+      E2E tests use Playwright for workflow verification.
+      All tests must cover company scoping and RBAC enforcement.
+      Performance tests should verify query latency meets ≤2s target for typical datasets.
+    </standards>
+    <locations>
+      <location>backend/src/test/java/com/accounting/service/CashBookServiceTest.java (NEW)</location>
+      <location>backend/src/test/java/com/accounting/controller/CashBookControllerIntegrationTest.java (NEW)</location>
+      <location>frontend/src/features/accounting/pages/CashBook/__tests__/CashBookList.test.tsx (NEW)</location>
+      <location>tests/e2e/cash-book-workflow.spec.ts (NEW)</location>
+      <location>tests/api/cash-book-api.spec.ts (NEW)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC6.4-01">Test per-account query with date/type/reference filters, verify running balance calculation, test edge cases (same-date transactions)</idea>
+      <idea ac="AC6.4-02">Test voucher detail drill-down, verify attachments loaded, test negative balance highlighting</idea>
+      <idea ac="AC6.4-03">Test multi-account aggregation, verify grand totals, test account grouping toggle, test localStorage persistence</idea>
+      <idea ac="AC6.4-04">Test Excel/PDF export with branding, verify document hash in footer, test filter snapshot inclusion</idea>
+      <idea ac="AC6.4-05">Test pagination for large datasets (>5k rows), test async export with notification, test rate limiting</idea>
+      <idea ac="AC6.4-06">Test RBAC enforcement for all endpoints, verify unauthorized attempts blocked and logged</idea>
+      <idea ac="AC6.4-07">Performance test query latency, verify slow query logging threshold</idea>
+      <idea ac="AC6.4-08">Test audit log entries for views/exports, verify filters, user, IP captured</idea>
+    </ideas>
+  </tests>
+</story-context>

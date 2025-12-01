@@ -31,8 +31,9 @@ public class CustomerCodeGenerator {
         int currentYear = Year.now().getValue();
 
         // Call database function for thread-safe code generation
+        // Use accounting schema prefix to ensure function is found
         Query query = entityManager.createNativeQuery(
-                "SELECT get_next_customer_code(:companyId, :year)");
+                "SELECT accounting.get_next_customer_code(:companyId, :year)");
         query.setParameter("companyId", companyId);
         query.setParameter("year", currentYear);
 

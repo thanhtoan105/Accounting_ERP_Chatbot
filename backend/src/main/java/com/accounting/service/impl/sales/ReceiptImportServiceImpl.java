@@ -52,7 +52,8 @@ import org.springframework.web.server.ResponseStatusException;
  * Implementation of ReceiptImportService for Excel batch import.
  * Supports Excel (.xlsx, .xls) format with validated template.
  * Format: Each row represents one receipt.
- * Columns: Customer Code, Receipt Date, Account Code (Cash/Bank), Amount, Reference,
+ * Columns: Customer Code, Receipt Date, Account Code (Cash/Bank), Amount,
+ * Reference,
  * Payment Method, Payee, Receipt Proof URL (optional), Is Standalone (Y/N),
  * Invoice Numbers (comma-separated, optional - FIFO if empty)
  */
@@ -93,10 +94,20 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
 
   @Override
   public ImportResultDTO importReceipts(MultipartFile file) {
+    // AC6.2-07: Performance telemetry - track import latency
+    long startTime = System.currentTimeMillis();
+
     Long companyId = CompanyContext.getCompanyId();
     if (companyId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing company context");
     }
+
+    Long userId = SecurityUtils.getCurrentUserId();
+    String fileName = file.getOriginalFilename();
+    long fileSize = file.getSize();
+
+    logger.info("Starting receipt batch import: fileName={}, fileSize={}, userId={}, companyId={}",
+        fileName, fileSize, userId, companyId);
 
     List<ImportRowErrorDTO> errors = new ArrayList<>();
     List<ARPaymentCreateRequest> validRequests = new ArrayList<>();
@@ -209,7 +220,8 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
         String receiptProofUrl = getCellValueAsString(row.getCell(7));
         if (receiptProofUrl != null && !receiptProofUrl.isBlank()) {
           if (receiptProofUrl.length() > 500) {
-            rowErrors.add(new ImportRowErrorDTO(rowNumber, "receiptProofUrl", "Receipt proof URL must not exceed 500 characters"));
+            rowErrors.add(new ImportRowErrorDTO(rowNumber, "receiptProofUrl",
+                "Receipt proof URL must not exceed 500 characters"));
           } else {
             request.setReceiptProofUrl(receiptProofUrl.trim());
           }
@@ -217,7 +229,8 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
 
         // Parse is standalone (optional, column 8, default: false)
         String isStandaloneStr = getCellValueAsString(row.getCell(8));
-        boolean isStandalone = "Y".equalsIgnoreCase(isStandaloneStr) || "YES".equalsIgnoreCase(isStandaloneStr) || "TRUE".equalsIgnoreCase(isStandaloneStr);
+        boolean isStandalone = "Y".equalsIgnoreCase(isStandaloneStr) || "YES".equalsIgnoreCase(isStandaloneStr)
+            || "TRUE".equalsIgnoreCase(isStandaloneStr);
         request.setIsStandalone(isStandalone);
 
         // Parse invoice numbers for allocations (optional, column 9, comma-separated)
@@ -231,7 +244,8 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
           }
         }
 
-        // Validate the request (basic validations already done, skip comprehensive validation for import)
+        // Validate the request (basic validations already done, skip comprehensive
+        // validation for import)
         // Comprehensive validation will be done in ReceiptService.create()
 
         if (rowErrors.isEmpty()) {
@@ -283,14 +297,17 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
         // errorReportId = importErrorReportRepository.save(...).getId();
       }
 
-      // Log import audit event
-      try {
-        Long importedByUserId = SecurityUtils.getCurrentUserId();
-        // TODO: Add logReceiptImport method to AuditService
-        logger.info("Receipt import completed: {} successful, {} errors", successCount, errors.size());
-      } catch (Exception e) {
-        // Non-blocking: log error but don't break main flow
-        logger.error("Failed to log receipt import audit event: {}", e.getMessage(), e);
+      // AC6.2-07/AC6.2-10: Log import audit event with telemetry
+      long elapsedMs = System.currentTimeMillis() - startTime;
+      logger.info(
+          "Receipt import completed: successCount={}, errorCount={}, latencyMs={}, fileName={}, userId={}, companyId={}",
+          successCount, errors.size(), elapsedMs, fileName, userId, companyId);
+
+      // Warn if import takes too long
+      if (elapsedMs > 30000) {
+        logger.warn(
+            "Receipt import latency exceeded 30s: latencyMs={}, rowCount={}, fileName={}",
+            elapsedMs, validRequests.size(), fileName);
       }
 
       return new ImportResultDTO(successCount, 0, errors.size(), errors, errorReportId);
@@ -310,16 +327,16 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
       // Create header row
       Row headerRow = sheet.createRow(0);
       String[] headers = {
-        "Customer Code",
-        "Receipt Date (YYYY-MM-DD)",
-        "Account Code (Cash/Bank)",
-        "Amount",
-        "Reference",
-        "Payment Method (CASH/BANK_TRANSFER/CHECK/OTHER)",
-        "Payee",
-        "Receipt Proof URL",
-        "Is Standalone (Y/N)",
-        "Invoice Numbers (comma-separated, optional - FIFO if empty)"
+          "Customer Code",
+          "Receipt Date (YYYY-MM-DD)",
+          "Account Code (Cash/Bank)",
+          "Amount",
+          "Reference",
+          "Payment Method (CASH/BANK_TRANSFER/CHECK/OTHER)",
+          "Payee",
+          "Receipt Proof URL",
+          "Is Standalone (Y/N)",
+          "Invoice Numbers (comma-separated, optional - FIFO if empty)"
       };
 
       for (int i = 0; i < headers.length; i++) {
@@ -352,22 +369,23 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
 
   private void validateHeaders(Row headerRow, List<ImportRowErrorDTO> errors) {
     String[] expectedHeaders = {
-      "Customer Code",
-      "Receipt Date (YYYY-MM-DD)",
-      "Account Code (Cash/Bank)",
-      "Amount",
-      "Reference",
-      "Payment Method (CASH/BANK_TRANSFER/CHECK/OTHER)",
-      "Payee",
-      "Receipt Proof URL",
-      "Is Standalone (Y/N)",
-      "Invoice Numbers (comma-separated, optional - FIFO if empty)"
+        "Customer Code",
+        "Receipt Date (YYYY-MM-DD)",
+        "Account Code (Cash/Bank)",
+        "Amount",
+        "Reference",
+        "Payment Method (CASH/BANK_TRANSFER/CHECK/OTHER)",
+        "Payee",
+        "Receipt Proof URL",
+        "Is Standalone (Y/N)",
+        "Invoice Numbers (comma-separated, optional - FIFO if empty)"
     };
 
     for (int i = 0; i < expectedHeaders.length; i++) {
       String cellValue = getCellValueAsString(headerRow.getCell(i));
       if (cellValue == null || !cellValue.trim().equalsIgnoreCase(expectedHeaders[i])) {
-        errors.add(new ImportRowErrorDTO(1, "header", "Invalid header at column " + (i + 1) + ": expected '" + expectedHeaders[i] + "'"));
+        errors.add(new ImportRowErrorDTO(1, "header",
+            "Invalid header at column " + (i + 1) + ": expected '" + expectedHeaders[i] + "'"));
       }
     }
   }
@@ -444,7 +462,7 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
           .filter(inv -> inv.getInvoiceNumber() != null && inv.getInvoiceNumber().equalsIgnoreCase(invoiceNumberFinal))
           .filter(inv -> !inv.getIsDeleted())
           .findFirst();
-      
+
       if (invoiceOpt.isEmpty()) {
         rowErrors.add(new ImportRowErrorDTO(rowNumber, "invoiceNumbers", "Invoice not found: " + invoiceNumber));
         continue;
@@ -452,11 +470,13 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
 
       SalesInvoice invoice = invoiceOpt.get();
       if (!invoice.getCustomerId().equals(customerId)) {
-        rowErrors.add(new ImportRowErrorDTO(rowNumber, "invoiceNumbers", "Invoice " + invoiceNumber + " does not belong to customer"));
+        rowErrors.add(new ImportRowErrorDTO(rowNumber, "invoiceNumbers",
+            "Invoice " + invoiceNumber + " does not belong to customer"));
         continue;
       }
 
-      // Calculate remaining balance (use total amount as fallback - actual balance would be calculated by service)
+      // Calculate remaining balance (use total amount as fallback - actual balance
+      // would be calculated by service)
       BigDecimal remainingBalance = invoice.getTotalAmount();
       BigDecimal allocatedAmount = remainingBalance.min(receiptAmount.subtract(totalAllocated));
 
@@ -473,7 +493,7 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
 
     // Validate total allocated amount matches receipt amount
     if (totalAllocated.compareTo(receiptAmount) != 0) {
-      rowErrors.add(new ImportRowErrorDTO(rowNumber, "invoiceNumbers", 
+      rowErrors.add(new ImportRowErrorDTO(rowNumber, "invoiceNumbers",
           "Total allocated amount (" + totalAllocated + ") does not match receipt amount (" + receiptAmount + ")"));
     }
 
@@ -488,7 +508,7 @@ public class ReceiptImportServiceImpl implements ReceiptImportService {
     try {
       return PaymentMethod.valueOf(value.trim().toUpperCase());
     } catch (IllegalArgumentException e) {
-      rowErrors.add(new ImportRowErrorDTO(rowNumber, "paymentMethod", 
+      rowErrors.add(new ImportRowErrorDTO(rowNumber, "paymentMethod",
           "Invalid payment method: " + value + ". Valid values: CASH, BANK_TRANSFER, CHECK, OTHER"));
       return null;
     }

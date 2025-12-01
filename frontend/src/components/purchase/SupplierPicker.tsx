@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, Search, Plus } from 'lucide-react'
+import { Loader2, Plus, ChevronsUpDownIcon } from 'lucide-react'
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
@@ -79,9 +79,10 @@ export function SupplierPicker({
           disabled={disabled}
           role="combobox"
           aria-expanded={open}
+          aria-label="Supplier combobox"
         >
           <span className="truncate">{selectedLabel}</span>
-          <span className="text-xs">⌄</span>
+          <ChevronsUpDownIcon className="opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">

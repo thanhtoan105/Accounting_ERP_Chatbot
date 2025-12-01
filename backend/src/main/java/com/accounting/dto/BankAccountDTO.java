@@ -3,6 +3,7 @@ package com.accounting.dto;
 import com.accounting.entity.BankAccount;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 
 /**
  * DTO for BankAccount responses. Used in API endpoints.
@@ -17,10 +18,15 @@ public class BankAccountDTO {
   private BankAccount.AccountType type;
   private BigDecimal openingBalance;
   private Boolean active;
+  private String glAccountCode;
+  private Boolean openingBalanceLocked;
+  private LocalDate lastReconciledDate;
+  private BigDecimal lastReconciledBalance;
   private Instant createdAt;
   private Instant updatedAt;
 
-  public BankAccountDTO() {}
+  public BankAccountDTO() {
+  }
 
   public BankAccountDTO(
       Long id,
@@ -31,6 +37,10 @@ public class BankAccountDTO {
       BankAccount.AccountType type,
       BigDecimal openingBalance,
       Boolean active,
+      String glAccountCode,
+      Boolean openingBalanceLocked,
+      LocalDate lastReconciledDate,
+      BigDecimal lastReconciledBalance,
       Instant createdAt,
       Instant updatedAt) {
     this.id = id;
@@ -41,6 +51,10 @@ public class BankAccountDTO {
     this.type = type;
     this.openingBalance = openingBalance;
     this.active = active;
+    this.glAccountCode = glAccountCode;
+    this.openingBalanceLocked = openingBalanceLocked;
+    this.lastReconciledDate = lastReconciledDate;
+    this.lastReconciledBalance = lastReconciledBalance;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -109,6 +123,38 @@ public class BankAccountDTO {
     this.active = active;
   }
 
+  public String getGlAccountCode() {
+    return glAccountCode;
+  }
+
+  public void setGlAccountCode(String glAccountCode) {
+    this.glAccountCode = glAccountCode;
+  }
+
+  public Boolean getOpeningBalanceLocked() {
+    return openingBalanceLocked;
+  }
+
+  public void setOpeningBalanceLocked(Boolean openingBalanceLocked) {
+    this.openingBalanceLocked = openingBalanceLocked;
+  }
+
+  public LocalDate getLastReconciledDate() {
+    return lastReconciledDate;
+  }
+
+  public void setLastReconciledDate(LocalDate lastReconciledDate) {
+    this.lastReconciledDate = lastReconciledDate;
+  }
+
+  public BigDecimal getLastReconciledBalance() {
+    return lastReconciledBalance;
+  }
+
+  public void setLastReconciledBalance(BigDecimal lastReconciledBalance) {
+    this.lastReconciledBalance = lastReconciledBalance;
+  }
+
   public Instant getCreatedAt() {
     return createdAt;
   }
@@ -125,4 +171,3 @@ public class BankAccountDTO {
     this.updatedAt = updatedAt;
   }
 }
-

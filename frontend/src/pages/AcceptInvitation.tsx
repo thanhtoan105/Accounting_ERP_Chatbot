@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -20,6 +21,7 @@ import { getRoleDisplayName } from '../utils/roles'
  * Users can register via invitation link.
  */
 export default function AcceptInvitation() {
+  const { t } = useTranslation()
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
 
@@ -53,8 +55,8 @@ export default function AcceptInvitation() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-            (err as { message?: string })?.message ||
-            'Invalid or expired invitation. Please contact support.'
+          (err as { message?: string })?.message ||
+          t('invitation.invalidOrExpired')
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -66,22 +68,22 @@ export default function AcceptInvitation() {
     setError(null)
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters')
+      setError(t('invitation.passwordMinLength'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError(t('auth.passwordsDoNotMatch'))
       return
     }
 
     if (!fullName.trim()) {
-      setError('Full name is required')
+      setError(t('invitation.fullNameRequired'))
       return
     }
 
     if (!token) {
-      setError('Invalid invitation token')
+      setError(t('invitation.invalidToken'))
       return
     }
 
@@ -101,8 +103,8 @@ export default function AcceptInvitation() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-            (err as { message?: string })?.message ||
-            'Failed to accept invitation'
+          (err as { message?: string })?.message ||
+          t('invitation.failedToAccept')
       setError(errorMessage)
     } finally {
       setSubmitting(false)
@@ -119,7 +121,7 @@ export default function AcceptInvitation() {
           justifyContent: 'center',
         }}
       >
-        <Typography>Loading invitation...</Typography>
+        <Typography>{t('invitation.loading')}</Typography>
       </Box>
     )
   }
@@ -141,7 +143,7 @@ export default function AcceptInvitation() {
               {error}
             </Alert>
             <Button fullWidth variant="contained" onClick={() => navigate('/login')}>
-              Go to Login
+              {t('invitation.goToLogin')}
             </Button>
           </CardContent>
         </Card>
@@ -170,12 +172,12 @@ export default function AcceptInvitation() {
       <Card sx={{ maxWidth: 500, width: '100%' }}>
         <CardContent>
           <Typography variant="h5" component="h1" gutterBottom>
-            You've Been Invited!
+            {t('invitation.youveBeenInvited')}
           </Typography>
 
           {isExpired && (
             <Alert severity="warning" sx={{ mb: 2 }}>
-              This invitation has expired. Please contact your administrator for a new invitation.
+              {t('invitation.expired')}
             </Alert>
           )}
 
@@ -188,25 +190,25 @@ export default function AcceptInvitation() {
           <Stack spacing={2} sx={{ mb: 3 }}>
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Company
+                {t('invitation.company')}
               </Typography>
               <Typography variant="body1">{invitation.companyName}</Typography>
             </Box>
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Email
+                {t('auth.email')}
               </Typography>
               <Typography variant="body1">{invitation.email}</Typography>
             </Box>
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Role
+                {t('invitation.role')}
               </Typography>
               <Typography variant="body1">{getRoleDisplayName(invitation.role)}</Typography>
             </Box>
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Expires
+                {t('invitation.expires')}
               </Typography>
               <Typography variant="body1">
                 {expirationDate.toLocaleDateString()} at {expirationDate.toLocaleTimeString()}
@@ -218,9 +220,9 @@ export default function AcceptInvitation() {
 
           <form onSubmit={handleSubmit}>
             <Stack spacing={2}>
-              <TextField label="Email" type="email" value={invitation.email} disabled fullWidth />
+              <TextField label={t('auth.email')} type="email" value={invitation.email} disabled fullWidth />
               <TextField
-                label="Full Name"
+                label={t('invitation.fullName')}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
@@ -228,17 +230,17 @@ export default function AcceptInvitation() {
                 disabled={submitting || isExpired}
               />
               <TextField
-                label="Password"
+                label={t('auth.password')}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 fullWidth
                 disabled={submitting || isExpired}
-                helperText="Must be at least 8 characters"
+                helperText={t('invitation.passwordMinLength')}
               />
               <TextField
-                label="Confirm Password"
+                label={t('auth.confirmPassword')}
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -253,7 +255,7 @@ export default function AcceptInvitation() {
                 disabled={submitting || isExpired}
                 sx={{ mt: 2 }}
               >
-                {submitting ? 'Creating Account...' : 'Accept Invitation & Create Account'}
+                {submitting ? t('invitation.creatingAccount') : t('invitation.acceptAndCreate')}
               </Button>
             </Stack>
           </form>

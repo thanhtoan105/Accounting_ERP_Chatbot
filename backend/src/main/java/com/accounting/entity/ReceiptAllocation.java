@@ -17,12 +17,19 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * ReceiptAllocation entity representing the allocation of an AR receipt to sales invoices.
+ * ReceiptAllocation entity representing the allocation of an AR receipt to
+ * sales invoices.
  * Supports partial and full allocation to multiple invoices.
+ * Uses the unified transaction_allocations table with transaction_type =
+ * 'RECEIPT'.
  */
 @Entity
-@Table(name = "receipt_allocations")
+@Table(name = "transaction_allocations")
+@org.hibernate.annotations.SQLRestriction("transaction_type = 'RECEIPT'")
 public class ReceiptAllocation implements CompanyScopedEntity {
+
+  private static final String TRANSACTION_TYPE = "RECEIPT";
+  private static final String DOCUMENT_TYPE = "SALES_INVOICE";
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -32,12 +39,18 @@ public class ReceiptAllocation implements CompanyScopedEntity {
   @Column(name = "company_id", nullable = false)
   private Long companyId;
 
-  @NotNull
-  @Column(name = "receipt_id", nullable = false)
-  private UUID receiptId;
+  @Column(name = "transaction_type", nullable = false, length = 20)
+  private String transactionType = TRANSACTION_TYPE;
 
   @NotNull
-  @Column(name = "sales_invoice_id", nullable = false)
+  @Column(name = "transaction_id", nullable = false)
+  private UUID receiptId;
+
+  @Column(name = "document_type", nullable = false, length = 20)
+  private String documentType = DOCUMENT_TYPE;
+
+  @NotNull
+  @Column(name = "document_id", nullable = false)
   private UUID salesInvoiceId;
 
   @NotNull
@@ -54,16 +67,18 @@ public class ReceiptAllocation implements CompanyScopedEntity {
 
   // Relationships
   @ManyToOne
-  @JoinColumn(name = "receipt_id", insertable = false, updatable = false)
+  @JoinColumn(name = "transaction_id", insertable = false, updatable = false)
   private ARPayment receipt;
 
   @ManyToOne
-  @JoinColumn(name = "sales_invoice_id", insertable = false, updatable = false)
+  @JoinColumn(name = "document_id", insertable = false, updatable = false)
   private SalesInvoice salesInvoice;
 
   @PrePersist
   protected void onCreate() {
     createdAt = Instant.now();
+    transactionType = TRANSACTION_TYPE;
+    documentType = DOCUMENT_TYPE;
   }
 
   // Getters and setters

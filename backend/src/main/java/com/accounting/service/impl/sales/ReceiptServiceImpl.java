@@ -70,7 +70,7 @@ public class ReceiptServiceImpl implements ReceiptService {
 
   private static final int SCALE = 2;
   private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
-  private static final String RECEIPT_NUMBER_PREFIX = "RCP-";
+  private static final String RECEIPT_NUMBER_PREFIX = "CR-";
 
   private final ARPaymentRepository receiptRepository;
   private final ReceiptAllocationRepository allocationRepository;
@@ -86,6 +86,7 @@ public class ReceiptServiceImpl implements ReceiptService {
   private final CompanySettingsService companySettingsService;
   private final ObjectMapper objectMapper;
   private final EntityManager entityManager;
+  private final com.accounting.service.ARAgingService arAgingService;
 
   public ReceiptServiceImpl(
       ARPaymentRepository receiptRepository,
@@ -101,7 +102,8 @@ public class ReceiptServiceImpl implements ReceiptService {
       AuditService auditService,
       CompanySettingsService companySettingsService,
       ObjectMapper objectMapper,
-      EntityManager entityManager) {
+      EntityManager entityManager,
+      com.accounting.service.ARAgingService arAgingService) {
     this.receiptRepository = receiptRepository;
     this.allocationRepository = allocationRepository;
     this.salesInvoiceRepository = salesInvoiceRepository;
@@ -116,6 +118,7 @@ public class ReceiptServiceImpl implements ReceiptService {
     this.companySettingsService = companySettingsService;
     this.objectMapper = objectMapper;
     this.entityManager = entityManager;
+    this.arAgingService = arAgingService;
   }
 
   @Override
@@ -139,8 +142,14 @@ public class ReceiptServiceImpl implements ReceiptService {
     }
 
     if (filters.containsKey("status")) {
-      String statusStr = (String) filters.get("status");
-      predicates.add(cb.equal(root.get("status"), ReceiptStatus.valueOf(statusStr)));
+      Object statusObj = filters.get("status");
+      ReceiptStatus status;
+      if (statusObj instanceof ReceiptStatus) {
+        status = (ReceiptStatus) statusObj;
+      } else {
+        status = ReceiptStatus.valueOf(statusObj.toString());
+      }
+      predicates.add(cb.equal(root.get("status"), status));
     }
 
     if (filters.containsKey("dateFrom")) {
@@ -192,11 +201,56 @@ public class ReceiptServiceImpl implements ReceiptService {
         .setMaxResults(pageable.getPageSize())
         .getResultList();
 
-    // Get total count
+    // Get total count - rebuild predicates with countRoot
     CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
     Root<ARPayment> countRoot = countQuery.from(ARPayment.class);
     countQuery.select(cb.count(countRoot));
-    countQuery.where(predicates.toArray(new Predicate[0]));
+
+    // Rebuild predicates for count query using countRoot
+    List<Predicate> countPredicates = new ArrayList<>();
+    countPredicates.add(cb.equal(countRoot.get("companyId"), companyId));
+
+    // Apply filters with countRoot
+    if (filters.containsKey("customerId")) {
+      countPredicates.add(cb.equal(countRoot.get("customerId"), filters.get("customerId")));
+    }
+
+    if (filters.containsKey("status")) {
+      Object statusObj = filters.get("status");
+      ReceiptStatus status;
+      if (statusObj instanceof ReceiptStatus) {
+        status = (ReceiptStatus) statusObj;
+      } else {
+        status = ReceiptStatus.valueOf(statusObj.toString());
+      }
+      countPredicates.add(cb.equal(countRoot.get("status"), status));
+    }
+
+    if (filters.containsKey("dateFrom")) {
+      LocalDate dateFrom = (LocalDate) filters.get("dateFrom");
+      countPredicates.add(cb.greaterThanOrEqualTo(countRoot.get("receiptDate"), dateFrom));
+    }
+
+    if (filters.containsKey("dateTo")) {
+      LocalDate dateTo = (LocalDate) filters.get("dateTo");
+      countPredicates.add(cb.lessThanOrEqualTo(countRoot.get("receiptDate"), dateTo));
+    }
+
+    if (filters.containsKey("standalone")) {
+      Boolean standalone = (Boolean) filters.get("standalone");
+      countPredicates.add(cb.equal(countRoot.get("isStandalone"), standalone));
+    }
+
+    if (filters.containsKey("search") && filters.get("search") != null) {
+      String search = "%" + filters.get("search").toString().toLowerCase() + "%";
+      countPredicates.add(
+          cb.or(
+              cb.like(cb.lower(countRoot.get("receiptNumber")), search),
+              cb.like(cb.lower(countRoot.get("payee")), search),
+              cb.like(cb.lower(countRoot.get("reference")), search)));
+    }
+
+    countQuery.where(countPredicates.toArray(new Predicate[0]));
     Long totalCount = entityManager.createQuery(countQuery).getSingleResult();
 
     // Convert to DTOs
@@ -258,6 +312,18 @@ public class ReceiptServiceImpl implements ReceiptService {
             () -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Account not found: " + accountId));
 
+    // Validate account is active (AC6.2-03)
+    if (!Boolean.TRUE.equals(account.getActive())) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Cannot create receipt: selected account is inactive");
+    }
+
+    // Validate account has GL account code for posting (AC6.2-03)
+    if (account.getGlAccountCode() == null || account.getGlAccountCode().isBlank()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Cannot create receipt: account has no GL account code configured");
+    }
+
     // Create receipt entity
     ARPayment receipt = new ARPayment();
     receipt.setCompanyId(companyId);
@@ -287,6 +353,25 @@ public class ReceiptServiceImpl implements ReceiptService {
       saveAllocations(receipt.getId(), request.getAllocations());
     }
 
+    // AC6.2-09: Check if receipt amount exceeds threshold - requires approval
+    // before posting
+    BigDecimal approvalThreshold = getReceiptApprovalThreshold();
+    if (receipt.getAmount().compareTo(approvalThreshold) > 0) {
+      receipt.setStatus(ReceiptStatus.PENDING_APPROVAL);
+      receipt = receiptRepository.save(receipt);
+      logger.info(
+          "Receipt {} requires approval (amount: {}, threshold: {})",
+          receipt.getReceiptNumber(),
+          receipt.getAmount(),
+          approvalThreshold);
+    } else {
+      logger.info(
+          "Receipt {} auto-approved for posting (amount: {}, threshold: {})",
+          receipt.getReceiptNumber(),
+          receipt.getAmount(),
+          approvalThreshold);
+    }
+
     // Log audit event
     logAuditEvent(receipt, "CREATE", null, receipt);
 
@@ -306,10 +391,11 @@ public class ReceiptServiceImpl implements ReceiptService {
             () -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Receipt not found: " + receiptId));
 
-    // Only DRAFT receipts can be updated
-    if (receipt.getStatus() != ReceiptStatus.DRAFT) {
+    // Only DRAFT or PENDING_APPROVAL receipts can be updated
+    if (receipt.getStatus() != ReceiptStatus.DRAFT
+        && receipt.getStatus() != ReceiptStatus.PENDING_APPROVAL) {
       throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "Only DRAFT receipts can be updated");
+          HttpStatus.CONFLICT, "Only DRAFT or PENDING_APPROVAL receipts can be updated");
     }
 
     // Update fields
@@ -384,10 +470,11 @@ public class ReceiptServiceImpl implements ReceiptService {
             () -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Receipt not found: " + receiptId));
 
-    // Only DRAFT receipts can be allocated
-    if (receipt.getStatus() != ReceiptStatus.DRAFT) {
+    // Only DRAFT or PENDING_APPROVAL receipts can be allocated
+    if (receipt.getStatus() != ReceiptStatus.DRAFT
+        && receipt.getStatus() != ReceiptStatus.PENDING_APPROVAL) {
       throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "Only DRAFT receipts can have allocations modified");
+          HttpStatus.CONFLICT, "Only DRAFT or PENDING_APPROVAL receipts can have allocations modified");
     }
 
     // Validate allocations
@@ -418,6 +505,9 @@ public class ReceiptServiceImpl implements ReceiptService {
 
   @Override
   public ARPaymentDTO postReceipt(UUID receiptId) {
+    // AC6.2-07: Performance telemetry - track post latency
+    long startTime = System.currentTimeMillis();
+
     Long companyId = CompanyContext.getCompanyId();
     if (companyId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing company context");
@@ -432,20 +522,85 @@ public class ReceiptServiceImpl implements ReceiptService {
             () -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Receipt not found: " + receiptId));
 
-    // Validate receipt is in DRAFT status
-    if (receipt.getStatus() != ReceiptStatus.DRAFT) {
+    // Validate receipt is in DRAFT or PENDING_APPROVAL status
+    if (receipt.getStatus() != ReceiptStatus.DRAFT
+        && receipt.getStatus() != ReceiptStatus.PENDING_APPROVAL) {
       throw new ResponseStatusException(
           HttpStatus.CONFLICT,
-          "Cannot post receipt: only DRAFT receipts can be posted. Current status: "
+          "Cannot post receipt: only DRAFT or PENDING_APPROVAL receipts can be posted. Current status: "
               + receipt.getStatus());
+    }
+
+    // AC6.2-09: If receipt is PENDING_APPROVAL, validate approver role and
+    // maker-checker
+    if (receipt.getStatus() == ReceiptStatus.PENDING_APPROVAL) {
+      boolean isApprover = org.springframework.security.core.context.SecurityContextHolder.getContext()
+          .getAuthentication()
+          .getAuthorities()
+          .stream()
+          .anyMatch(
+              auth -> auth.getAuthority().equals("ROLE_CHIEF_ACCOUNTANT")
+                  || auth.getAuthority().equals("ROLE_CFO")
+                  || auth.getAuthority().equals("ROLE_ADMIN"));
+
+      if (!isApprover) {
+        throw new ResponseStatusException(
+            HttpStatus.FORBIDDEN,
+            "Cannot post receipt: PENDING_APPROVAL receipts require Chief Accountant, CFO, or Admin role");
+      }
+
+      // Validate approver ≠ creator (maker-checker pattern)
+      if (receipt.getCreatedById().equals(currentUserId)) {
+        throw new ResponseStatusException(
+            HttpStatus.FORBIDDEN,
+            "Cannot post receipt: approver must be different from creator (maker-checker pattern)");
+      }
+
+      logger.info(
+          "Receipt {} (PENDING_APPROVAL) approved by user {} (creator: {})",
+          receipt.getReceiptNumber(),
+          currentUserId,
+          receipt.getCreatedById());
     }
 
     // Get allocations
     List<ReceiptAllocation> allocations = allocationRepository.findByReceiptIdOrderByAllocationOrderAsc(receiptId);
 
+    // Validate and get bank account with GL account code
+    Long bankAccountEntityId = receipt.getCashAccountId() != null
+        ? receipt.getCashAccountId()
+        : receipt.getBankAccountId();
+    BankAccount bankAccount = bankAccountRepository
+        .findByCompanyIdAndId(companyId, bankAccountEntityId)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Bank/Cash account not found: " + bankAccountEntityId));
+
+    // Validate account is active (AC6.2-03)
+    if (!Boolean.TRUE.equals(bankAccount.getActive())) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Cannot post receipt: selected account is inactive");
+    }
+
+    // Validate account has GL account code (AC6.2-03)
+    if (bankAccount.getGlAccountCode() == null || bankAccount.getGlAccountCode().isBlank()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Cannot post receipt: account has no GL account code configured");
+    }
+
+    // Look up COA account ID from GL account code (AC6.2-04)
+    Long glDebitAccountId = chartOfAccountsRepository
+        .findByCompanyIdAndCode(companyId, bankAccount.getGlAccountCode())
+        .map(account -> account.getId())
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "GL account not found for code: " + bankAccount.getGlAccountCode()));
+
     // Create voucher for receipt posting
-    // Dr Cash/Bank 111/112 (Cash/Bank Account) - receipt amount
-    // Cr AR 131 (Accounts Receivable) - receipt amount per invoice allocation
+    // Dr Cash/Bank (via glAccountCode 1111/1121) - receipt amount
+    // Cr AR 131 (Accounts Receivable) for allocated receipts OR Cr 711 (Other
+    // Income) for standalone
     VoucherCreateRequest voucherRequest = new VoucherCreateRequest();
     voucherRequest.setDate(receipt.getReceiptDate());
     voucherRequest.setDescription(
@@ -457,13 +612,8 @@ public class ReceiptServiceImpl implements ReceiptService {
 
     List<VoucherEntryLineRequest> entryLines = new ArrayList<>();
 
-    // Get account ID (cash or bank)
-    Long accountId = receipt.getCashAccountId() != null
-        ? receipt.getCashAccountId()
-        : receipt.getBankAccountId();
-
     // For each allocation, create a voucher entry line:
-    // Debit: Cash/Bank account - allocated amount per invoice
+    // Debit: Cash/Bank (via glAccountCode) - allocated amount per invoice
     // Credit: AR 131 (Accounts Receivable) - allocated amount per invoice
     for (ReceiptAllocation allocation : allocations) {
       SalesInvoice invoice = salesInvoiceRepository
@@ -474,7 +624,7 @@ public class ReceiptServiceImpl implements ReceiptService {
                   "Sales invoice not found: " + allocation.getSalesInvoiceId()));
 
       VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
-      entryLine.setDebitAccountId(accountId); // Cash/Bank account
+      entryLine.setDebitAccountId(glDebitAccountId); // Cash/Bank GL account (via glAccountCode)
       entryLine.setCreditAccountId(
           getAccountsReceivableAccountId(receipt.getCompanyId())); // AR account (131)
       entryLine.setAmount(allocation.getAllocatedAmount());
@@ -494,11 +644,19 @@ public class ReceiptServiceImpl implements ReceiptService {
       BigDecimal unallocatedAmount = receipt.getAmount().subtract(totalAllocated);
       if (unallocatedAmount.compareTo(BigDecimal.ZERO) > 0) {
         VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
-        entryLine.setDebitAccountId(accountId); // Cash/Bank account
-        entryLine.setCreditAccountId(
-            getAccountsReceivableAccountId(receipt.getCompanyId())); // AR account (131)
+        entryLine.setDebitAccountId(glDebitAccountId); // Cash/Bank GL account (via glAccountCode)
+
+        // AC6.2-04: Standalone receipts credit Other Income (711), allocated receipts
+        // credit AR (131)
+        if (receipt.getIsStandalone()) {
+          entryLine.setCreditAccountId(getOtherIncomeAccountId(receipt.getCompanyId())); // Other Income (711)
+          entryLine.setDescription("Standalone receipt - Other income");
+        } else {
+          entryLine.setCreditAccountId(getAccountsReceivableAccountId(receipt.getCompanyId())); // AR (131)
+          entryLine.setDescription("Receipt - Unallocated/Advance payment");
+        }
+
         entryLine.setAmount(unallocatedAmount);
-        entryLine.setDescription("Receipt - Unallocated/Advance payment");
         entryLine.setCustomerId(receipt.getCustomerId());
         entryLines.add(entryLine);
       }
@@ -517,7 +675,7 @@ public class ReceiptServiceImpl implements ReceiptService {
     receipt.setPostedById(currentUserId);
     receipt = receiptRepository.save(receipt);
 
-    // Update invoice statuses and remaining balances
+    // Update invoice statuses and remaining balances (AC6.2-02/AC6.2-04)
     for (ReceiptAllocation allocation : allocations) {
       SalesInvoice invoice = salesInvoiceRepository
           .findById(allocation.getSalesInvoiceId())
@@ -526,11 +684,18 @@ public class ReceiptServiceImpl implements ReceiptService {
                   HttpStatus.NOT_FOUND,
                   "Sales invoice not found: " + allocation.getSalesInvoiceId()));
 
-      BigDecimal remainingBalance = calculateRemainingBalance(invoice.getId());
-      BigDecimal newRemainingBalance = remainingBalance.subtract(allocation.getAllocatedAmount());
+      // Calculate new remaining balance after this allocation
+      BigDecimal newRemainingBalance = calculateRemainingBalance(invoice.getId());
 
-      if (newRemainingBalance.compareTo(BigDecimal.ZERO) == 0) {
+      // Update invoice balance fields
+      BigDecimal newAmountPaid = invoice.getTotalAmount().subtract(newRemainingBalance);
+      invoice.setAmountPaid(newAmountPaid);
+      invoice.setRemainingBalance(newRemainingBalance);
+
+      // Update status based on remaining balance
+      if (newRemainingBalance.compareTo(BigDecimal.ZERO) <= 0) {
         invoice.setStatus(SalesInvoiceStatus.PAID);
+        invoice.setRemainingBalance(BigDecimal.ZERO); // Ensure no negative balance
       } else {
         invoice.setStatus(SalesInvoiceStatus.PARTIALLY_PAID);
       }
@@ -538,10 +703,30 @@ public class ReceiptServiceImpl implements ReceiptService {
       salesInvoiceRepository.save(invoice);
     }
 
-    // Note: AR aging cache invalidation would happen here if service is available
+    // Invalidate AR aging cache when receipt is posted
+    if (arAgingService != null) {
+      try {
+        arAgingService.invalidateAgingCache();
+      } catch (Exception e) {
+        logger.warn("Failed to invalidate AR aging cache after receipt post: {}", e.getMessage());
+      }
+    }
 
     // Log audit event
     logAuditEvent(receipt, "POST", null, receipt);
+
+    // AC6.2-07: Performance telemetry - log post latency
+    long elapsedMs = System.currentTimeMillis() - startTime;
+    logger.info(
+        "Receipt post completed: receiptId={}, receiptNumber={}, amount={}, latencyMs={}, companyId={}",
+        receiptId, receipt.getReceiptNumber(), receipt.getAmount(), elapsedMs, companyId);
+
+    // Warn if latency exceeds 10 second target (NFR)
+    if (elapsedMs > 10000) {
+      logger.warn(
+          "Receipt post latency exceeded 10s target: receiptId={}, latencyMs={}",
+          receiptId, elapsedMs);
+    }
 
     return convertToDTO(receipt);
   }
@@ -616,16 +801,19 @@ public class ReceiptServiceImpl implements ReceiptService {
 
     List<VoucherEntryLineRequest> entryLines = new ArrayList<>();
 
-    Long accountId = originalReceipt.getCashAccountId() != null
+    // Get GL account ID from bank account's glAccountCode (AC6.2-04)
+    Long bankAccountEntityId = originalReceipt.getCashAccountId() != null
         ? originalReceipt.getCashAccountId()
         : originalReceipt.getBankAccountId();
+    Long glCreditAccountId = getGlAccountIdFromBankAccount(companyId, bankAccountEntityId);
 
     // Create reversal voucher entries (opposite of original)
-    // Dr AR 131, Cr Cash/Bank 111/112
+    // Dr AR 131 (or Other Income 711 for standalone), Cr Cash/Bank (via
+    // glAccountCode)
     for (ReceiptAllocation originalAllocation : originalAllocations) {
       VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
       entryLine.setDebitAccountId(getAccountsReceivableAccountId(companyId)); // AR account (131)
-      entryLine.setCreditAccountId(accountId); // Cash/Bank account
+      entryLine.setCreditAccountId(glCreditAccountId); // Cash/Bank GL account (via glAccountCode)
       entryLine.setAmount(originalAllocation.getAllocatedAmount());
       entryLine.setDescription("Reversal - " + reason);
       entryLine.setCustomerId(originalReceipt.getCustomerId());
@@ -641,7 +829,7 @@ public class ReceiptServiceImpl implements ReceiptService {
       reversalAllocation.setCreatedAt(Instant.now());
       allocationRepository.save(reversalAllocation);
 
-      // Update invoice status back to POSTED or PARTIALLY_PAID
+      // Update invoice status and balance fields after reversal (AC6.2-05)
       SalesInvoice invoice = salesInvoiceRepository
           .findById(originalAllocation.getSalesInvoiceId())
           .orElseThrow(
@@ -649,15 +837,50 @@ public class ReceiptServiceImpl implements ReceiptService {
                   HttpStatus.NOT_FOUND,
                   "Sales invoice not found: " + originalAllocation.getSalesInvoiceId()));
 
-      BigDecimal remainingBalance = calculateRemainingBalance(invoice.getId());
-      if (remainingBalance.compareTo(BigDecimal.ZERO) > 0
-          && remainingBalance.compareTo(invoice.getTotalAmount()) < 0) {
+      // Recalculate remaining balance after reversal allocation
+      BigDecimal newRemainingBalance = calculateRemainingBalance(invoice.getId());
+
+      // Update invoice balance fields
+      BigDecimal newAmountPaid = invoice.getTotalAmount().subtract(newRemainingBalance);
+      invoice.setAmountPaid(newAmountPaid.max(BigDecimal.ZERO)); // Ensure no negative
+      invoice.setRemainingBalance(newRemainingBalance.min(invoice.getTotalAmount())); // Cap at total
+
+      // Update status based on remaining balance
+      if (newRemainingBalance.compareTo(BigDecimal.ZERO) > 0
+          && newRemainingBalance.compareTo(invoice.getTotalAmount()) < 0) {
         invoice.setStatus(SalesInvoiceStatus.PARTIALLY_PAID);
-      } else if (remainingBalance.compareTo(invoice.getTotalAmount()) >= 0) {
+      } else if (newRemainingBalance.compareTo(invoice.getTotalAmount()) >= 0) {
         invoice.setStatus(SalesInvoiceStatus.POSTED);
       }
 
       salesInvoiceRepository.save(invoice);
+    }
+
+    // Handle standalone receipt reversal or unallocated amount reversal
+    // (AC6.2-04/AC6.2-05)
+    BigDecimal totalAllocatedOriginal = originalAllocations.stream()
+        .map(ReceiptAllocation::getAllocatedAmount)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    if (originalReceipt.getIsStandalone() || totalAllocatedOriginal.compareTo(originalReceipt.getAmount()) < 0) {
+      BigDecimal unallocatedAmount = originalReceipt.getAmount().subtract(totalAllocatedOriginal);
+      if (unallocatedAmount.compareTo(BigDecimal.ZERO) > 0) {
+        VoucherEntryLineRequest entryLine = new VoucherEntryLineRequest();
+        entryLine.setCreditAccountId(glCreditAccountId); // Cash/Bank GL account (via glAccountCode)
+
+        // Reversal: Debit the account that was originally credited
+        if (originalReceipt.getIsStandalone()) {
+          entryLine.setDebitAccountId(getOtherIncomeAccountId(companyId)); // Other Income (711)
+          entryLine.setDescription("Reversal - Standalone receipt - " + reason);
+        } else {
+          entryLine.setDebitAccountId(getAccountsReceivableAccountId(companyId)); // AR (131)
+          entryLine.setDescription("Reversal - Unallocated/Advance payment - " + reason);
+        }
+
+        entryLine.setAmount(unallocatedAmount);
+        entryLine.setCustomerId(originalReceipt.getCustomerId());
+        entryLines.add(entryLine);
+      }
     }
 
     voucherRequest.setEntryLines(entryLines);
@@ -790,6 +1013,44 @@ public class ReceiptServiceImpl implements ReceiptService {
         .orElseThrow(
             () -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Accounts Receivable account (131) not found"));
+  }
+
+  /**
+   * Get Other Income GL account ID (711) for standalone receipts.
+   * AC6.2-04: Standalone receipts credit Other Income instead of AR.
+   */
+  private Long getOtherIncomeAccountId(Long companyId) {
+    return chartOfAccountsRepository
+        .findByCompanyIdAndCode(companyId, "711")
+        .map(account -> account.getId())
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Other Income account (711) not found"));
+  }
+
+  /**
+   * Look up GL account ID from bank account's glAccountCode.
+   * Used for voucher entries to ensure correct GL posting.
+   */
+  private Long getGlAccountIdFromBankAccount(Long companyId, Long bankAccountEntityId) {
+    BankAccount bankAccount = bankAccountRepository
+        .findByCompanyIdAndId(companyId, bankAccountEntityId)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Bank/Cash account not found: " + bankAccountEntityId));
+
+    if (bankAccount.getGlAccountCode() == null || bankAccount.getGlAccountCode().isBlank()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Bank account has no GL account code configured");
+    }
+
+    return chartOfAccountsRepository
+        .findByCompanyIdAndCode(companyId, bankAccount.getGlAccountCode())
+        .map(account -> account.getId())
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "GL account not found for code: " + bankAccount.getGlAccountCode()));
   }
 
   private String getCustomerName(Long customerId) {
@@ -962,5 +1223,25 @@ public class ReceiptServiceImpl implements ReceiptService {
       logger.error("Failed to serialize receipt to JSON: {}", e.getMessage());
       return objectMapper.createObjectNode();
     }
+  }
+
+  /**
+   * Get receipt approval threshold from company settings.
+   * Uses salesInvoiceApprovalThresholdAmount as receipts are AR operations.
+   * AC6.2-09: Receipts above this threshold require maker-checker approval.
+   *
+   * @return approval threshold amount, defaults to 100,000,000 VND
+   */
+  private BigDecimal getReceiptApprovalThreshold() {
+    try {
+      var settings = companySettingsService.getCurrentCompanySettings();
+      if (settings.getSalesInvoiceApprovalThresholdAmount() != null) {
+        return settings.getSalesInvoiceApprovalThresholdAmount();
+      }
+    } catch (Exception e) {
+      logger.warn("Failed to get receipt approval threshold from company settings: {}", e.getMessage());
+    }
+    // Default threshold: 100,000,000 VND (same as sales invoice threshold)
+    return new BigDecimal("100000000.00");
   }
 }

@@ -37,6 +37,9 @@ public class AuditServiceImpl implements AuditService {
     private final UserRepository userRepository;
     private final ImportAuditEntryRepository importAuditEntryRepository;
     private final ObjectMapper objectMapper;
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private AuditServiceImpl self; // Self-injection for proxy-based transaction
 
     public AuditServiceImpl(
             AuditLogRepository auditLogRepository,
@@ -156,6 +159,24 @@ public class AuditServiceImpl implements AuditService {
 
     @SuppressWarnings("null")
     private void persist(AuditLog log) {
+        // Delegate to public method with REQUIRES_NEW transaction via self-injection
+        // proxy
+        if (self != null) {
+            self.persistInNewTransaction(log);
+        } else {
+            // Fallback if self-injection not available (should not happen in normal
+            // operation)
+            persistInNewTransaction(log);
+        }
+    }
+
+    /**
+     * Persist audit log in a separate transaction to avoid issues with null
+     * identifier
+     * when the main transaction flushes before the audit log is saved.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void persistInNewTransaction(AuditLog log) {
         // Calculate chain hash before saving
         try {
             if (log.getCompanyId() != null) {
@@ -180,6 +201,8 @@ public class AuditServiceImpl implements AuditService {
         }
 
         auditLogRepository.save(log);
+        // Explicitly flush to ensure the entity is persisted and gets an ID
+        auditLogRepository.flush();
     }
 
     private String calculateSha256(String input) {
@@ -2559,6 +2582,169 @@ public class AuditServiceImpl implements AuditService {
             persist(log);
         } catch (Exception e) {
             logger.error("Failed to log sales invoice auto-approved: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logARReminderConfigUpdated(
+            Long companyId,
+            Long userId,
+            java.util.Map<String, String> oldValues,
+            java.util.Map<String, String> newValues,
+            HttpServletRequest request) {
+        AuditLog log = startLog("AR_REMINDER_CONFIG_UPDATED", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "COMPANY", companyId, companyId != null ? companyId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("companyId", companyId != null ? companyId : -1);
+        log.setMetadata(metadata);
+        ObjectNode changes = buildChangePayload(oldValues, newValues);
+        if (changes != null) {
+            log.setChanges(changes);
+        }
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logARReminderSent(
+            Long companyId,
+            Long userId,
+            Long customerId,
+            String customerEmail,
+            int invoiceCount,
+            java.math.BigDecimal totalAmount,
+            HttpServletRequest request) {
+        AuditLog log = startLog("AR_REMINDER_SENT", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "CUSTOMER", customerId, customerEmail);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("customerId", customerId);
+        metadata.put("customerEmail", customerEmail);
+        metadata.put("invoiceCount", invoiceCount);
+        metadata.put("totalAmount", totalAmount != null ? totalAmount.toPlainString() : "0");
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logARReminderBatchTriggered(
+            Long companyId,
+            Long userId,
+            int customerCount,
+            int totalInvoices,
+            int successCount,
+            int failureCount,
+            HttpServletRequest request) {
+        AuditLog log = startLog("AR_REMINDER_BATCH_TRIGGERED", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "COMPANY", companyId, companyId != null ? companyId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("customerCount", customerCount);
+        metadata.put("totalInvoices", totalInvoices);
+        metadata.put("successCount", successCount);
+        metadata.put("failureCount", failureCount);
+        log.setMetadata(metadata);
+        log.setSuccess(failureCount == 0);
+        if (failureCount > 0) {
+            log.setFailureReason(String.format("%d out of %d reminders failed", failureCount, customerCount));
+        }
+        persist(log);
+    }
+
+    @Override
+    public void logARAgingExport(
+            Long companyId,
+            Long userId,
+            String format,
+            Long customerId,
+            java.time.LocalDate asOfDate,
+            HttpServletRequest request) {
+        AuditLog log = startLog("AR_AGING_EXPORT", request);
+        assignActor(log, userId, null);
+        assignEntity(log, "COMPANY", companyId, companyId != null ? companyId.toString() : null);
+        ObjectNode metadata = buildMetadata();
+        metadata.put("format", format != null ? format : "EXCEL");
+        metadata.put("customerId", customerId != null ? customerId.toString() : "ALL");
+        metadata.put("asOfDate", asOfDate != null ? asOfDate.toString() : java.time.LocalDate.now().toString());
+        log.setMetadata(metadata);
+        log.setSuccess(Boolean.TRUE);
+        persist(log);
+    }
+
+    @Override
+    public void logCreditNoteCreation(
+            Long companyId,
+            Long userId,
+            UUID creditNoteId,
+            String creditNoteNumber,
+            UUID originalInvoiceId,
+            String originalInvoiceNumber,
+            HttpServletRequest request) {
+        try {
+            AuditLog log = startLog("CREDIT_NOTE_CREATED", request);
+            log.setEventType("CREDIT_NOTE");
+            log.setCompanyId(companyId);
+            assignActor(log, userId, null);
+            assignEntity(log, "CREDIT_NOTE", creditNoteId, creditNoteNumber);
+
+            ObjectNode metadata = buildMetadata();
+            if (creditNoteId != null) {
+                metadata.put("creditNoteId", creditNoteId.toString());
+            }
+            if (creditNoteNumber != null) {
+                metadata.put("creditNoteNumber", creditNoteNumber);
+            }
+            if (originalInvoiceId != null) {
+                metadata.put("originalInvoiceId", originalInvoiceId.toString());
+            }
+            if (originalInvoiceNumber != null) {
+                metadata.put("originalInvoiceNumber", originalInvoiceNumber);
+            }
+            log.setMetadata(metadata);
+            log.setSuccess(Boolean.TRUE);
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log credit note creation: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logCashBookOperation(
+            String action,
+            Long bankAccountId,
+            String details,
+            String clientIp) {
+        try {
+            Long companyId = com.accounting.security.CompanyContext.getCompanyId();
+            Long userId = com.accounting.security.SecurityUtils.getCurrentUserId();
+
+            AuditLog log = new AuditLog();
+            log.setEventType("CASH_BOOK");
+            log.setAction(action);
+            log.setCompanyId(companyId);
+            log.setUserId(userId);
+            log.setIpAddress(clientIp);
+            log.setCreatedAt(Instant.now());
+
+            if (bankAccountId != null) {
+                log.setEntityType("BANK_ACCOUNT");
+                log.setEntityId(bankAccountId.toString());
+            }
+
+            ObjectNode metadata = buildMetadata();
+            if (details != null) {
+                metadata.put("details", details);
+            }
+            if (bankAccountId != null) {
+                metadata.put("bankAccountId", bankAccountId);
+            }
+            log.setMetadata(metadata);
+            log.setSuccess(Boolean.TRUE);
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log cash book operation: {}", e.getMessage(), e);
         }
     }
 }

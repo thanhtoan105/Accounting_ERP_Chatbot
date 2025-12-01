@@ -103,10 +103,11 @@ test.describe('Sales Invoice Approval Workflow (Maker-Checker)', () => {
       await submitButton.waitFor({ state: 'visible', timeout: 5000 });
       await submitButton.click();
 
-      // Wait for success notification or status change
-      await page.waitForTimeout(1000);
-
       // THEN: Invoice status should change to PENDING_APPROVAL
+      // Wait for status badge or success notification
+      await expect(
+        page.locator('[data-testid="invoice-status"], [role="status"]').filter({ hasText: /pending|submitted|success/i })
+      ).toBeVisible({ timeout: 3000 });
       // Note: In real implementation, status badge would update
       // This test verifies the submit action completes successfully
       await expect(page.getByRole('heading', { name: /sales invoice/i })).toBeVisible();
@@ -207,10 +208,14 @@ test.describe('Sales Invoice Approval Workflow (Maker-Checker)', () => {
       const confirmButton = page.locator('[role="dialog"]').getByRole('button', { name: /reject invoice/i });
       await confirmButton.click();
 
-      // Wait for API call to complete
-      await page.waitForTimeout(1000);
-
       // THEN: Invoice should be rejected with reason
+      // Wait for dialog to close and rejection to process
+      await expect(page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 3000 });
+
+      // Verify rejection success
+      await expect(
+        page.locator('[data-testid="invoice-status"], [role="status"]').filter({ hasText: /rejected|cancelled/i })
+      ).toBeVisible({ timeout: 3000 });
       // Note: In real implementation, rejection reason would be displayed
       await expect(page.getByRole('heading', { name: /sales invoice/i })).toBeVisible();
     });
@@ -348,31 +353,23 @@ test.describe('Sales Invoice Approval Workflow (Maker-Checker)', () => {
         // Click approve button and wait for dialog
         await approveButton.click();
         await page.waitForSelector('[role="dialog"]', { state: 'visible', timeout: 5000 });
-        
+
         // Click approve in dialog
         const confirmApproveButton = page.locator('[role="dialog"]').getByRole('button', { name: /approve invoice/i });
         await confirmApproveButton.click();
 
-        // Wait for error toast notification
-        await page.waitForTimeout(1000);
-        
-        // Check for error message in toast or page
-        const errorToast = page.locator('[role="status"], [data-sonner-toast], [data-radix-toast]').filter({
-          hasText: /approver|cannot|same|creator|forbidden|error|maker-checker/i
-        });
-        
-        const hasError = await errorToast.isVisible().catch(() => false) ||
-          await page.getByText(/cannot approve your own invoice|forbidden|error/i).isVisible().catch(() => false);
-        
-        // THEN: Approval should be blocked
-        expect(hasError).toBeTruthy();
+        // THEN: Error toast should appear
+        await expect(
+          page.locator('[role="status"], [data-sonner-toast], [data-radix-toast]').filter({
+            hasText: /approver|cannot|same|creator|forbidden|error/i
+          })
+        ).toBeVisible({ timeout: 3000 });
       } else {
-        // If button is not visible, that's also valid - UI prevents self-approval
-        // This is acceptable behavior
+        // If button not visible, that's acceptable - UI prevents self-approval
+        test.skip();
       }
 
-      // THEN: Approval should be blocked with clear error message
-      // Note: UI should either hide approve button OR show error on click
+      // Verify still on invoice page
       await expect(page.getByRole('heading', { name: /sales invoice/i })).toBeVisible();
     });
   });
@@ -443,10 +440,11 @@ test.describe('Sales Invoice Approval Workflow (Maker-Checker)', () => {
       await approveButton.waitFor({ state: 'visible', timeout: 5000 });
       await approveButton.click();
 
-      // Wait for error message to appear
-      await page.waitForTimeout(1000);
-
       // THEN: Approval should be blocked with period close error
+      // Wait for error message about closed period
+      await expect(
+        page.locator('[role="alert"], [role="status"], [data-sonner-toast]').filter({ hasText: /closed|period/i })
+      ).toBeVisible({ timeout: 3000 });
       // Note: Error message should mention closed accounting period
       await expect(page.getByRole('heading', { name: /sales invoice/i })).toBeVisible();
     });

@@ -39,8 +39,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import jakarta.servlet.http.HttpServletRequest;
+import com.accounting.imports.model.ImportContext;
+import com.accounting.imports.model.ImportSummary;
+import com.accounting.imports.handler.impl.BankAccountImportHandler;
+import com.accounting.security.CompanyContext;
 
 /**
  * REST controller for BankAccount operations.
@@ -53,12 +58,15 @@ public class BankAccountController {
 
     private final BankAccountService bankAccountService;
     private final AuditService auditService;
+    private final BankAccountImportHandler importHandler;
 
     public BankAccountController(
             BankAccountService bankAccountService,
-            AuditService auditService) {
+            AuditService auditService,
+            BankAccountImportHandler importHandler) {
         this.bankAccountService = bankAccountService;
         this.auditService = auditService;
+        this.importHandler = importHandler;
     }
 
     /**
@@ -275,17 +283,28 @@ public class BankAccountController {
             if ("csv".equalsIgnoreCase(format)) {
                 // Export as CSV
                 try (PrintWriter writer = new PrintWriter(outputStream)) {
-                    // Write header
-                    writer.println("Account Number,Bank Name,Branch,Type,Opening Balance,Active,Created At,Updated At");
+                    // Write header with filter info
+                    writer.println("# Filters: type=" + (type != null ? type : "ALL") + ", status="
+                            + (status != null ? status : "ALL"));
+                    writer.println(
+                            "Account Number,Bank Name,Branch,Type,Opening Balance,GL Account Code,Opening Balance Locked,Last Reconciled Date,Last Reconciled Balance,Active,Created At,Updated At");
 
                     // Write data
                     for (BankAccountDTO account : bankAccounts.getContent()) {
-                        writer.printf("%s,%s,%s,%s,%s,%s,%s,%s%n",
+                        writer.printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s%n",
                                 escapeCsv(account.getAccountNumber()),
                                 escapeCsv(account.getBankName()),
                                 escapeCsv(account.getBranch() != null ? account.getBranch() : ""),
                                 account.getType().name(),
                                 account.getOpeningBalance().toString(),
+                                escapeCsv(account.getGlAccountCode() != null ? account.getGlAccountCode() : ""),
+                                account.getOpeningBalanceLocked() != null ? account.getOpeningBalanceLocked().toString()
+                                        : "false",
+                                account.getLastReconciledDate() != null ? account.getLastReconciledDate().toString()
+                                        : "",
+                                account.getLastReconciledBalance() != null
+                                        ? account.getLastReconciledBalance().toString()
+                                        : "",
                                 account.getActive() ? "Yes" : "No",
                                 account.getCreatedAt() != null ? account.getCreatedAt().toString() : "",
                                 account.getUpdatedAt() != null ? account.getUpdatedAt().toString() : "");
@@ -298,8 +317,10 @@ public class BankAccountController {
 
                     // Create header row
                     Row headerRow = sheet.createRow(0);
-                    String[] headers = { "Account Number", "Bank Name", "Branch", "Type", "Opening Balance", "Active",
-                            "Created At", "Updated At" };
+                    String[] headers = { "Account Number", "Bank Name", "Branch", "Type", "Opening Balance",
+                            "GL Account Code", "Opening Balance Locked", "Last Reconciled Date",
+                            "Last Reconciled Balance",
+                            "Active", "Created At", "Updated At" };
                     for (int i = 0; i < headers.length; i++) {
                         Cell cell = headerRow.createCell(i);
                         cell.setCellValue(headers[i]);
@@ -314,10 +335,24 @@ public class BankAccountController {
                         row.createCell(2).setCellValue(account.getBranch() != null ? account.getBranch() : "");
                         row.createCell(3).setCellValue(account.getType().name());
                         row.createCell(4).setCellValue(account.getOpeningBalance().doubleValue());
-                        row.createCell(5).setCellValue(account.getActive() ? "Yes" : "No");
+                        row.createCell(5)
+                                .setCellValue(account.getGlAccountCode() != null ? account.getGlAccountCode() : "");
                         row.createCell(6)
-                                .setCellValue(account.getCreatedAt() != null ? account.getCreatedAt().toString() : "");
+                                .setCellValue(account.getOpeningBalanceLocked() != null
+                                        ? account.getOpeningBalanceLocked().toString()
+                                        : "false");
                         row.createCell(7)
+                                .setCellValue(account.getLastReconciledDate() != null
+                                        ? account.getLastReconciledDate().toString()
+                                        : "");
+                        row.createCell(8)
+                                .setCellValue(account.getLastReconciledBalance() != null
+                                        ? account.getLastReconciledBalance().doubleValue()
+                                        : 0);
+                        row.createCell(9).setCellValue(account.getActive() ? "Yes" : "No");
+                        row.createCell(10)
+                                .setCellValue(account.getCreatedAt() != null ? account.getCreatedAt().toString() : "");
+                        row.createCell(11)
                                 .setCellValue(account.getUpdatedAt() != null ? account.getUpdatedAt().toString() : "");
                     }
 
@@ -357,6 +392,62 @@ public class BankAccountController {
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to export bank accounts: " + e.getMessage());
         }
+    }
+
+    /**
+     * Import bank accounts from CSV/Excel file.
+     * Atomic batch processing - all or nothing.
+     * Requires admin or chief accountant role.
+     *
+     * @param file uploaded file (CSV or XLSX)
+     * @return import summary with success/error counts
+     */
+    @PostMapping("/import")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT')")
+    public ResponseEntity<Map<String, Object>> importBankAccounts(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request) {
+        Long companyId = CompanyContext.getCompanyId();
+        Long userId = getCurrentUserId();
+        String filename = file.getOriginalFilename();
+
+        ImportContext context = new ImportContext(
+                companyId != null ? companyId : 0L,
+                userId != null ? userId : 0L,
+                filename,
+                java.time.Instant.now(),
+                "en",
+                java.util.UUID.randomUUID(),
+                request.getRemoteAddr(),
+                request.getHeader("User-Agent"));
+        ImportSummary summary = importHandler.handle(file, context);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", true);
+        body.put("successCount", summary.getSuccessCount());
+        body.put("message", "Successfully imported " + summary.getSuccessCount() + " bank account(s)");
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
+    }
+
+    /**
+     * Download import template for bank accounts.
+     * Requires authenticated user.
+     *
+     * @return CSV template file
+     */
+    @GetMapping("/import/template")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Resource> downloadImportTemplate() {
+        String template = "account_number,bank_name,branch,account_type,opening_balance,gl_account_code,active\n"
+                + "ACC-001,Vietcombank,Hanoi Branch,BANK,1000000,1121,true\n"
+                + "ACC-002,Cash Drawer,Main Office,CASH,500000,1111,true";
+
+        ByteArrayResource resource = new ByteArrayResource(template.getBytes());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"bank_accounts_import_template.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(resource);
     }
 
     /**

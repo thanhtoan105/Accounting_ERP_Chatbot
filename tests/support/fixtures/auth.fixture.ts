@@ -16,26 +16,26 @@ interface UserCredentials {
 
 const TEST_USERS: Record<string, UserCredentials> = {
   accountant: {
-    email: 'accountant@test.example.com',
-    password: 'Test@123456',
+    email: 'accountant@example.com',
+    password: 'password',
     role: 'accountant',
-    name: 'Test Accountant',
+    name: 'Accountant User',
   },
   chief_accountant: {
-    email: 'chief@test.example.com',
-    password: 'Test@123456',
+    email: 'chief@example.com',
+    password: 'password',
     role: 'chief_accountant',
-    name: 'Chief Accountant',
+    name: 'Chief User',
   },
   cfo: {
-    email: 'cfo@test.example.com',
-    password: 'Test@123456',
+    email: 'cfo@example.com',
+    password: 'password',
     role: 'cfo',
     name: 'CFO User',
   },
   admin: {
-    email: 'admin@test.example.com',
-    password: 'Test@123456',
+    email: 'admin@example.com',
+    password: 'password',
     role: 'admin',
     name: 'Admin User',
   },

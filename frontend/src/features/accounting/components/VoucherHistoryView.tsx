@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { format, parseISO } from 'date-fns'
 import {
   History,
@@ -33,6 +34,7 @@ interface VoucherHistoryViewProps {
 }
 
 export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
+  const { t } = useTranslation()
   const [history, setHistory] = useState<VoucherHistoryEntryDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(new Set())
@@ -51,7 +53,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
       setHistory(response.history)
     } catch (error) {
       console.error('Failed to load voucher history:', error)
-      toast.error('Không thể tải lịch sử chứng từ')
+      toast.error(t('vouchers.failedToLoadHistory'))
     } finally {
       setLoading(false)
     }
@@ -134,7 +136,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <History className="h-5 w-5" />
-            Lịch sử chứng từ
+            {t('vouchers.voucherHistory')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -152,7 +154,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <History className="h-5 w-5" />
-            Lịch sử chứng từ ({filteredHistory.length})
+            {t('vouchers.voucherHistory')} ({filteredHistory.length})
           </CardTitle>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => handleExport('json')}>
@@ -180,10 +182,10 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
           </div>
           <Select value={actionFilter} onValueChange={setActionFilter}>
             <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="All actions" />
+              <SelectValue placeholder={t('vouchers.allActions')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All actions</SelectItem>
+              <SelectItem value="all">{t('vouchers.allActions')}</SelectItem>
               {uniqueActions.map((action) => (
                 <SelectItem key={action} value={action}>
                   {action.replace('VOUCHER_', '').replace('_', ' ')}
@@ -193,10 +195,10 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
           </Select>
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="All users" />
+              <SelectValue placeholder={t('vouchers.allUsers')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All users</SelectItem>
+              <SelectItem value="all">{t('vouchers.allUsers')}</SelectItem>
               {uniqueUsers.map((user) => (
                 <SelectItem key={user} value={user}>
                   {user}
@@ -208,7 +210,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
 
         {/* History entries */}
         {filteredHistory.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">No history found</div>
+          <div className="text-center py-8 text-muted-foreground">{t('vouchers.noHistoryFound')}</div>
         ) : (
           <div className="space-y-3">
             {filteredHistory.map((entry) => {
@@ -269,7 +271,7 @@ export function VoucherHistoryView({ voucherId }: VoucherHistoryViewProps) {
                       {/* Field-level diff */}
                       {hasDiff && (
                         <div className="space-y-2">
-                          <h4 className="text-sm font-semibold">Change details:</h4>
+                          <h4 className="text-sm font-semibold">{t('vouchers.changeDetails')}:</h4>
                           <div className="space-y-1">
                             {Object.entries(entry.diff!).map(([field, diff]) => (
                               <div

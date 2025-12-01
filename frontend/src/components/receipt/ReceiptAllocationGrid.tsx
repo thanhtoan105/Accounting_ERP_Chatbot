@@ -244,7 +244,12 @@ export function ReceiptAllocationGrid({
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">Total Allocated:</span>
-          <span className={cn('font-bold', totals.totalAllocated > totalReceiptAmount && 'text-destructive')}>
+          <span
+            className={cn(
+              'font-bold',
+              totals.totalAllocated > totalReceiptAmount && 'text-destructive',
+            )}
+          >
             {formatCurrency(totals.totalAllocated)}
           </span>
         </div>
@@ -252,7 +257,11 @@ export function ReceiptAllocationGrid({
           <span className="font-medium">Unallocated Amount:</span>
           <Badge
             variant={
-              totals.unallocated < 0 ? 'destructive' : totals.unallocated === 0 ? 'default' : 'secondary'
+              totals.unallocated < 0
+                ? 'destructive'
+                : totals.unallocated === 0
+                  ? 'default'
+                  : 'secondary'
             }
           >
             {formatCurrency(totals.unallocated)}
@@ -261,13 +270,17 @@ export function ReceiptAllocationGrid({
         {totals.unallocated < 0 && (
           <div className="flex items-center gap-2 text-sm text-destructive border-t pt-2">
             <AlertCircle className="h-4 w-4" />
-            <span className="font-medium">Overpayment detected! Total allocated exceeds receipt amount.</span>
+            <span className="font-medium">
+              Overpayment detected! Total allocated exceeds receipt amount.
+            </span>
           </div>
         )}
         {totals.unallocated > 0 && allocations.length > 0 && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground border-t pt-2">
             <AlertCircle className="h-4 w-4" />
-            <span>Partial allocation. {formatCurrency(totals.unallocated)} remains unallocated.</span>
+            <span>
+              Partial allocation. {formatCurrency(totals.unallocated)} remains unallocated.
+            </span>
           </div>
         )}
       </div>

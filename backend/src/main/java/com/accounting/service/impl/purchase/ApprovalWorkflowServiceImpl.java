@@ -100,11 +100,10 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     Long companyId = CompanyContext.getCompanyId();
 
     // Load bill
-    PurchaseBill bill =
-        purchaseBillRepository
-            .findById(billId)
-            .orElseThrow(
-                () -> new IllegalArgumentException("Purchase bill not found: " + billId));
+    PurchaseBill bill = purchaseBillRepository
+        .findById(billId)
+        .orElseThrow(
+            () -> new IllegalArgumentException("Purchase bill not found: " + billId));
 
     // Validate bill status
     if (bill.getStatus() != PurchaseBillStatus.DRAFT) {
@@ -154,11 +153,10 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     Long companyId = CompanyContext.getCompanyId();
 
     // Load workflow
-    ApprovalWorkflow workflow =
-        approvalWorkflowRepository
-            .findById(targetWorkflowId)
-            .orElseThrow(
-                () -> new IllegalArgumentException("Approval workflow not found: " + workflowId));
+    ApprovalWorkflow workflow = approvalWorkflowRepository
+        .findById(targetWorkflowId)
+        .orElseThrow(
+            () -> new IllegalArgumentException("Approval workflow not found: " + workflowId));
 
     // Validate workflow status
     if (workflow.getStatus() != ApprovalWorkflowStatus.PENDING) {
@@ -177,15 +175,12 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     }
 
     // Load bill for period validation
-    UUID billId =
-        Objects.requireNonNull(workflow.getPurchaseBillId(), "Purchase bill reference is missing");
-    PurchaseBill bill =
-        purchaseBillRepository
-            .findById(billId)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Purchase bill not found: " + billId));
+    UUID billId = Objects.requireNonNull(workflow.getPurchaseBillId(), "Purchase bill reference is missing");
+    PurchaseBill bill = purchaseBillRepository
+        .findById(billId)
+        .orElseThrow(
+            () -> new IllegalStateException(
+                "Purchase bill not found: " + billId));
 
     // Validate period is open (bills have accounting period based on bill_date)
     if (!periodManagementService.isDateInOpenPeriod(bill.getBillDate())) {
@@ -197,19 +192,17 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
       throw new IllegalStateException(errorMessage);
     }
 
-    List<PurchaseBillLine> billLines =
-        purchaseBillLineRepository.findByCompanyIdAndPurchaseBillIdOrderByLineNumberAsc(
-            companyId, bill.getId());
+    List<PurchaseBillLine> billLines = purchaseBillLineRepository.findByCompanyIdAndPurchaseBillIdOrderByLineNumberAsc(
+        companyId, bill.getId());
     if (billLines.isEmpty()) {
       throw new IllegalStateException("Cannot approve bill: no line items available for posting");
     }
 
     VATValidationResultDTO vatValidation = vatService.validateVATSum(bill);
     if (!vatValidation.isValid()) {
-      String errorMessage =
-          vatValidation.getErrors().isEmpty()
-              ? "VAT validation failed"
-              : vatValidation.getErrors().get(0);
+      String errorMessage = vatValidation.getErrors().isEmpty()
+          ? "VAT validation failed"
+          : vatValidation.getErrors().get(0);
       throw new IllegalStateException(
           "Cannot approve bill: " + errorMessage);
     }
@@ -230,7 +223,8 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     bill.setPostedVoucherId(postedVoucherId);
     purchaseBillRepository.save(bill);
 
-    // Invalidate aging cache when bill is posted (new bill affects aging calculations)
+    // Invalidate aging cache when bill is posted (new bill affects aging
+    // calculations)
     if (agingService != null
         && agingService instanceof com.accounting.service.impl.ap.APAgingServiceImpl) {
       try {
@@ -259,11 +253,10 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     }
 
     // Load workflow
-    ApprovalWorkflow workflow =
-        approvalWorkflowRepository
-            .findById(targetWorkflowId)
-            .orElseThrow(
-                () -> new IllegalArgumentException("Approval workflow not found: " + workflowId));
+    ApprovalWorkflow workflow = approvalWorkflowRepository
+        .findById(targetWorkflowId)
+        .orElseThrow(
+            () -> new IllegalArgumentException("Approval workflow not found: " + workflowId));
 
     // Validate workflow status
     if (workflow.getStatus() != ApprovalWorkflowStatus.PENDING) {
@@ -282,15 +275,12 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     }
 
     // Load bill
-    UUID billId =
-        Objects.requireNonNull(workflow.getPurchaseBillId(), "Purchase bill reference is missing");
-    PurchaseBill bill =
-        purchaseBillRepository
-            .findById(billId)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Purchase bill not found: " + billId));
+    UUID billId = Objects.requireNonNull(workflow.getPurchaseBillId(), "Purchase bill reference is missing");
+    PurchaseBill bill = purchaseBillRepository
+        .findById(billId)
+        .orElseThrow(
+            () -> new IllegalStateException(
+                "Purchase bill not found: " + billId));
 
     // Update workflow
     workflow.setStatus(ApprovalWorkflowStatus.REJECTED);
@@ -319,7 +309,9 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     workflow.setCompanyId(companyId);
     workflow.setPurchaseBillId(bill.getId());
     workflow.setCreatedById(submitterId);
-    workflow.setApprovedById(submitterId); // Auto-approved by submitter
+    // Note: approved_by_id is NULL for AUTO_APPROVED (system approval, not human)
+    // This avoids violating chk_approval_workflows_approver_not_creator constraint
+    workflow.setApprovedById(null);
     workflow.setStatus(ApprovalWorkflowStatus.AUTO_APPROVED);
     workflow.setThresholdAmount(getApprovalThreshold());
     workflow.setBillAmount(bill.getTotalAmount());
@@ -339,8 +331,7 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
   @Override
   @Transactional(readOnly = true)
   public List<ApprovalWorkflowDTO> getPendingApprovals() {
-    List<ApprovalWorkflow> workflows =
-        approvalWorkflowRepository.findByStatus(ApprovalWorkflowStatus.PENDING);
+    List<ApprovalWorkflow> workflows = approvalWorkflowRepository.findByStatus(ApprovalWorkflowStatus.PENDING);
 
     return workflows.stream()
         .map(
@@ -392,23 +383,22 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
    * Convert ApprovalWorkflow entity to DTO.
    */
   private ApprovalWorkflowDTO toDTO(ApprovalWorkflow workflow, PurchaseBill bill) {
-    ApprovalWorkflowDTO dto =
-        new ApprovalWorkflowDTO(
-            workflow.getId(),
-            workflow.getCompanyId(),
-            workflow.getPurchaseBillId(),
-            workflow.getCreatedById(),
-            workflow.getApprovedById(),
-            workflow.getStatus(),
-            workflow.getThresholdAmount(),
-            workflow.getBillAmount(),
-            workflow.getIsSensitive(),
-            workflow.getApprovalReason(),
-            workflow.getRejectionReason(),
-            workflow.getCreatedAt(),
-            workflow.getUpdatedAt(),
-            workflow.getApprovedAt(),
-            workflow.getRejectedAt());
+    ApprovalWorkflowDTO dto = new ApprovalWorkflowDTO(
+        workflow.getId(),
+        workflow.getCompanyId(),
+        workflow.getPurchaseBillId(),
+        workflow.getCreatedById(),
+        workflow.getApprovedById(),
+        workflow.getStatus(),
+        workflow.getThresholdAmount(),
+        workflow.getBillAmount(),
+        workflow.getIsSensitive(),
+        workflow.getApprovalReason(),
+        workflow.getRejectionReason(),
+        workflow.getCreatedAt(),
+        workflow.getUpdatedAt(),
+        workflow.getApprovedAt(),
+        workflow.getRejectedAt());
 
     // Add nested info if available
     if (bill != null) {
@@ -520,10 +510,9 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
         .findByCompanyIdAndCode(companyId, code)
         .map(account -> account.getId())
         .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    label
-                        + " not found in chart of accounts. Please ensure TT200 accounts are configured."));
+            () -> new IllegalStateException(
+                label
+                    + " not found in chart of accounts. Please ensure TT200 accounts are configured."));
   }
 
   private BigDecimal safe(BigDecimal value) {

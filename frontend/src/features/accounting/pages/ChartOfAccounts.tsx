@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useMemo, useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Plus,
   Search,
@@ -66,6 +67,7 @@ type ChartOfAccountWithChildren = ChartOfAccount & {
 }
 
 export default function ChartOfAccounts() {
+  const { t } = useTranslation()
   const [accounts, setAccounts] = useState<ChartOfAccountWithChildren[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -655,10 +657,10 @@ export default function ChartOfAccounts() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Chart of Accounts</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('accounts.chartOfAccounts')}</h1>
         <Button onClick={handleAddClick}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Account
+          {t('accounts.addAccount')}
         </Button>
       </div>
 
@@ -666,7 +668,7 @@ export default function ChartOfAccounts() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by code or name..."
+            placeholder={t('vouchers.searchByCodeOrName')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8"
@@ -698,7 +700,7 @@ export default function ChartOfAccounts() {
         </div>
       ) : accounts.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          <p className="text-lg font-medium">No accounts found</p>
+          <p className="text-lg font-medium">{t('accounts.noAccountsFound')}</p>
           <p className="text-sm">
             {debouncedSearch
               ? 'Try adjusting your search criteria.'
@@ -746,7 +748,7 @@ export default function ChartOfAccounts() {
                             <TableCell colSpan={row.getVisibleCells().length} className="p-0">
                               {isLoading ? (
                                 <div className="p-4 text-center text-muted-foreground">
-                                  Loading children...
+                                  {t('accounts.loadingChildren')}
                                 </div>
                               ) : children.length > 0 ? (
                                 <div className="bg-muted/30">
@@ -871,7 +873,7 @@ export default function ChartOfAccounts() {
                                 </div>
                               ) : (
                                 <div className="p-4 text-center text-muted-foreground">
-                                  No child accounts found
+                                  {t('accounts.noChildAccounts')}
                                 </div>
                               )}
                             </TableCell>

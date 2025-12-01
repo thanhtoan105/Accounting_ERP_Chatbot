@@ -32,7 +32,11 @@ public class BankAccountCreateRequest {
 
   private Boolean active = true;
 
-  public BankAccountCreateRequest() {}
+  @Size(max = 20, message = "GL account code must be at most 20 characters")
+  private String glAccountCode;
+
+  public BankAccountCreateRequest() {
+  }
 
   public String getAccountNumber() {
     return accountNumber;
@@ -81,5 +85,12 @@ public class BankAccountCreateRequest {
   public void setActive(Boolean active) {
     this.active = active;
   }
-}
 
+  public String getGlAccountCode() {
+    return glAccountCode;
+  }
+
+  public void setGlAccountCode(String glAccountCode) {
+    this.glAccountCode = glAccountCode;
+  }
+}

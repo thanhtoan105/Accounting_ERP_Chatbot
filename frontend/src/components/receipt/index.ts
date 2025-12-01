@@ -3,3 +3,5 @@ export type { ReceiptAllocation, ReceiptAllocationGridProps } from './ReceiptAll
 
 export { ReceiptReversalDialog } from './ReceiptReversalDialog'
 export type { ReceiptReversalDialogProps } from './ReceiptReversalDialog'
+
+export { ReceiptFormSheet } from './ReceiptFormSheet'

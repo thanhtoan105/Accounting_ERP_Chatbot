@@ -46,12 +46,18 @@ const testInvoice = {
 test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
   let authToken: string;
 
+  // Helper to add required headers
+  const getHeaders = () => ({
+    Authorization: `Bearer ${authToken}`,
+    'X-Company-Id': '1', // Required for multi-tenancy
+  });
+
   test.beforeEach(async ({ request }) => {
     // Setup: Get auth token for accountant
     const loginResponse = await request.post(`${API_BASE}/auth/login`, {
       data: {
-        email: 'accountant@test.example.com',
-        password: 'Test@123456',
+        email: 'accountant@example.com',
+        password: 'password',
       },
     });
     expect(loginResponse.status()).toBe(200);
@@ -74,7 +80,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Creating receipt via API
       const response = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: receiptData,
       });
 
@@ -103,7 +109,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Creating receipt for customer without open invoices
       const response = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: receiptData,
       });
 
@@ -126,7 +132,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Creating first receipt
       const response1 = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: receiptData1,
       });
       expect(response1.status()).toBe(201);
@@ -136,7 +142,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
       // Create second receipt
       const receiptData2 = { ...receiptData1, amount: 2000000 };
       const response2 = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: receiptData2,
       });
       expect(response2.status()).toBe(201);
@@ -155,7 +161,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
     test('AC2.1: POST /receipts/{id}/allocate - should allocate to single invoice', async ({ request }) => {
       // GIVEN: Receipt in DRAFT status with open invoice
       const receiptCreateResp = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           receiptDate: '2025-01-15',
@@ -169,7 +175,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Allocating receipt to invoice
       const allocationResponse = await request.post(`${API_BASE}/ar/receipts/${receiptId}/allocate`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           allocations: [
             {
@@ -193,7 +199,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
     test('AC2.2: POST /receipts/{id}/allocate - should allocate to multiple invoices', async ({ request }) => {
       // GIVEN: Receipt with amount that covers multiple invoices
       const receiptCreateResp = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           receiptDate: '2025-01-15',
@@ -207,7 +213,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Allocating to multiple invoices
       const allocationResponse = await request.post(`${API_BASE}/ar/receipts/${receiptId}/allocate`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           allocations: [
             { salesInvoiceId: 'invoice-001', allocatedAmount: 10000000 },
@@ -225,7 +231,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
     test('AC2.3: POST /receipts/{id}/allocate - should prevent overpayment', async ({ request }) => {
       // GIVEN: Receipt attempting to allocate more than invoice balance
       const receiptCreateResp = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           receiptDate: '2025-01-15',
@@ -239,7 +245,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Attempting to allocate more than remaining balance
       const allocationResponse = await request.post(`${API_BASE}/ar/receipts/${receiptId}/allocate`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           allocations: [
             { salesInvoiceId: testInvoice.id, allocatedAmount: 20000000 }, // Exceeds remaining
@@ -256,7 +262,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
     test('AC2.4: POST /receipts/{id}/allocate - should support partial allocation', async ({ request }) => {
       // GIVEN: Receipt with partial amount for invoice
       const receiptCreateResp = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           receiptDate: '2025-01-15',
@@ -270,7 +276,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Allocating partial amount to invoice
       const allocationResponse = await request.post(`${API_BASE}/ar/receipts/${receiptId}/allocate`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           allocations: [
             { salesInvoiceId: testInvoice.id, allocatedAmount: 6000000 },
@@ -301,7 +307,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Admin creates standalone receipt
       const response = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: receiptData,
       });
 
@@ -326,7 +332,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Non-admin attempts standalone receipt
       const response = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` }, // Accountant token
+        headers: getHeaders(), // Accountant token
         data: receiptData,
       });
 
@@ -340,7 +346,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
     test('AC4-5.1: POST /receipts/{id}/post - should generate GL voucher', async ({ request }) => {
       // GIVEN: Receipt with allocations in DRAFT status
       const receiptCreateResp = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           receiptDate: '2025-01-15',
@@ -354,7 +360,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // Allocate to invoice first
       await request.post(`${API_BASE}/ar/receipts/${receiptId}/allocate`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           allocations: [
             { salesInvoiceId: testInvoice.id, allocatedAmount: 5000000 },
@@ -364,7 +370,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Posting receipt
       const postResponse = await request.post(`${API_BASE}/ar/receipts/${receiptId}/post`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       // THEN: GL voucher generated (Dr 111/112, Cr 131)
@@ -398,7 +404,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
     test('AC4-5.2: POST /receipts/{id}/post - should include dimensions in GL lines', async ({ request }) => {
       // GIVEN: Receipt for customer with cost center dimension
       const receiptCreateResp = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           receiptDate: '2025-01-15',
@@ -413,7 +419,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // Allocate and post
       await request.post(`${API_BASE}/ar/receipts/${receiptId}/allocate`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           allocations: [
             { salesInvoiceId: testInvoice.id, allocatedAmount: 5000000 },
@@ -422,7 +428,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
       });
 
       const postResponse = await request.post(`${API_BASE}/ar/receipts/${receiptId}/post`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       expect(postResponse.status()).toBe(200);
@@ -431,7 +437,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
       // Verify voucher dimensions included
       const voucherResponse = await request.get(
         `${API_BASE}/vouchers/${body.data.linkedVoucherId}`,
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { headers: getHeaders() }
       );
       const voucher = await voucherResponse.json();
       expect(voucher.data.lines[0].dimensions).toEqual(
@@ -445,7 +451,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
     test('AC6-7.1: POST /receipts/{id}/reverse - should generate linked reversal voucher', async ({ request }) => {
       // GIVEN: Posted receipt
       const receiptCreateResp = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           receiptDate: '2025-01-15',
@@ -459,7 +465,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // Allocate and post
       await request.post(`${API_BASE}/ar/receipts/${receiptId}/allocate`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           allocations: [
             { salesInvoiceId: testInvoice.id, allocatedAmount: 5000000 },
@@ -468,13 +474,13 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
       });
 
       const postResp = await request.post(`${API_BASE}/ar/receipts/${receiptId}/post`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
       const originalVoucherId = (await postResp.json()).data.linkedVoucherId;
 
       // WHEN: Reversing receipt with mandatory reason
       const reverseResponse = await request.post(`${API_BASE}/ar/receipts/${receiptId}/reverse`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: { reversalReason: 'Customer requested refund' },
       });
 
@@ -488,7 +494,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
       // Verify reversal voucher exists and is linked
       const voucherResponse = await request.get(
         `${API_BASE}/vouchers/${body.data.reversalVoucherId}`,
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { headers: getHeaders() }
       );
       const voucher = await voucherResponse.json();
       expect(voucher.data.linkedVoucherId).toBe(originalVoucherId);
@@ -497,7 +503,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
     test('AC6-7.2: POST /receipts/{id}/reverse - should require reversal reason', async ({ request }) => {
       // GIVEN: Posted receipt
       const receiptCreateResp = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           receiptDate: '2025-01-15',
@@ -511,7 +517,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // Post receipt
       await request.post(`${API_BASE}/ar/receipts/${receiptId}/allocate`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           allocations: [
             { salesInvoiceId: testInvoice.id, allocatedAmount: 5000000 },
@@ -519,12 +525,12 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
         },
       });
       await request.post(`${API_BASE}/ar/receipts/${receiptId}/post`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       // WHEN: Reversing without reason
       const reverseResponse = await request.post(`${API_BASE}/ar/receipts/${receiptId}/reverse`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: { reversalReason: '' }, // Empty reason
       });
 
@@ -573,7 +579,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // WHEN: Creating receipt
       const response = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: receiptData,
       });
 
@@ -583,7 +589,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
       // THEN: Audit log created with user, timestamp, old/new values
       const auditResponse = await request.get(
         `${API_BASE}/audit-logs?entityId=${receiptId}&action=CREATE`,
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { headers: getHeaders() }
       );
       expect(auditResponse.status()).toBe(200);
       const auditBody = await auditResponse.json();
@@ -599,7 +605,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
     test('AC11.1: POST /receipts/{id}/reverse - should audit log reversal with reason', async ({ request }) => {
       // GIVEN: Posted receipt
       const receiptCreateResp = await request.post(`${API_BASE}/ar/receipts`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           receiptDate: '2025-01-15',
@@ -613,7 +619,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
 
       // Allocate and post
       await request.post(`${API_BASE}/ar/receipts/${receiptId}/allocate`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           allocations: [
             { salesInvoiceId: testInvoice.id, allocatedAmount: 5000000 },
@@ -621,12 +627,12 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
         },
       });
       await request.post(`${API_BASE}/ar/receipts/${receiptId}/post`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       // WHEN: Reversing with reason
       const reverseResponse = await request.post(`${API_BASE}/ar/receipts/${receiptId}/reverse`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: { reversalReason: 'Duplicate payment received' },
       });
 
@@ -635,7 +641,7 @@ test.describe('Story 5.3: Customer Payment Receipts - API Tests', () => {
       // THEN: Audit log includes reversal reason and before/after state
       const auditResponse = await request.get(
         `${API_BASE}/audit-logs?entityId=${receiptId}&action=REVERSE`,
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { headers: getHeaders() }
       );
       expect(auditResponse.status()).toBe(200);
       const auditBody = await auditResponse.json();

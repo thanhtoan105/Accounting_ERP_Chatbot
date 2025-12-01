@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState, useEffect, useCallback } from 'react'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Plus,
   Search,
@@ -14,6 +15,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Download,
+  Upload,
+  Banknote,
+  Landmark,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -55,6 +61,8 @@ import {
   activateBankAccount,
   deactivateBankAccount,
   exportBankAccounts,
+  importBankAccounts,
+  downloadImportTemplate,
 } from '@/features/bankaccounts/services/bankAccount'
 import type { BankAccount, BankAccountQueryParams, AccountType } from '@/types/bankAccount'
 import { getStatusLabel, getTypeLabel } from '@/types/bankAccount'
@@ -64,6 +72,7 @@ import DeleteBankAccountDialog from '@/features/bankaccounts/components/DeleteBa
 const POLLING_INTERVAL = 5 * 60 * 1000 // 5 minutes
 
 export default function BankAccounts() {
+  const { t } = useTranslation()
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -83,6 +92,8 @@ export default function BankAccounts() {
   const [editingBankAccount, setEditingBankAccount] = useState<BankAccount | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [bankAccountToDelete, setBankAccountToDelete] = useState<BankAccount | null>(null)
+  const [importing, setImporting] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   // Debounce search
   useEffect(() => {
@@ -234,6 +245,49 @@ export default function BankAccounts() {
     }
   }
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setImporting(true)
+      const result = await importBankAccounts(file)
+      toast.success(result.message)
+      await loadBankAccounts()
+    } catch (err: any) {
+      const errorMessage = err?.error?.message || err?.message || 'Failed to import bank accounts'
+      toast.error('Import failed', { description: errorMessage })
+    } finally {
+      setImporting(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await downloadImportTemplate()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'bank_accounts_import_template.csv'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      toast.success('Template downloaded')
+    } catch (err: any) {
+      const errorMessage = err?.error?.message || err?.message || 'Failed to download template'
+      toast.error('Failed to download template', { description: errorMessage })
+    }
+  }
+
   // Separate active and inactive bank accounts for display
   const activeBankAccounts = useMemo(() => bankAccounts.filter((ba) => ba.active), [bankAccounts])
   const inactiveBankAccounts = useMemo(
@@ -249,70 +303,101 @@ export default function BankAccounts() {
   const columns = useMemo<ColumnDef<BankAccount>[]>(
     () => [
       {
-        header: 'Account Number',
-        accessorKey: 'accountNumber',
-        cell: ({ row }) => (
-          <div className="font-medium">{row.getValue<string>('accountNumber')}</div>
-        ),
-      },
-      {
-        header: 'Bank Name',
-        accessorKey: 'bankName',
-        cell: ({ row }) => row.getValue<string>('bankName'),
-      },
-      {
-        header: 'Branch',
-        accessorKey: 'branch',
-        cell: ({ row }) => {
-          const branch = row.getValue<string | undefined>('branch')
-          return <div className="text-muted-foreground">{branch || '-'}</div>
-        },
-      },
-      {
-        header: 'Type',
+        header: t('bankAccounts.columns.type'),
         accessorKey: 'type',
         cell: ({ row }) => {
           const type = row.getValue<AccountType>('type')
-          return <Badge variant="outline">{getTypeLabel(type)}</Badge>
+          return (
+            <div className="flex items-center gap-2">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${type === 'CASH' ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                }`}>
+                {type === 'CASH' ? <Banknote className="h-4 w-4" /> : <Landmark className="h-4 w-4" />}
+              </div>
+              <span className="text-sm font-medium">
+                {type === 'CASH' ? t('bankAccounts.types.cash') : t('bankAccounts.types.bank')}
+              </span>
+            </div>
+          )
         },
       },
       {
-        header: 'Opening Balance',
+        header: t('bankAccounts.columns.accountNumberOrCode'),
+        accessorKey: 'accountNumber',
+        cell: ({ row }) => {
+          const type = row.original.type
+          const accountNumber = row.getValue<string>('accountNumber')
+          // For CASH, show shorter format if it's auto-generated
+          if (type === 'CASH' && accountNumber.startsWith('CASH-')) {
+            return <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{accountNumber}</code>
+          }
+          return <div className="font-medium font-mono">{accountNumber}</div>
+        },
+      },
+      {
+        header: t('bankAccounts.columns.nameOrBank'),
+        accessorKey: 'bankName',
+        cell: ({ row }) => {
+          const type = row.original.type
+          const name = row.getValue<string>('bankName')
+          return (
+            <div>
+              <div className="font-medium">{name}</div>
+              {type === 'BANK' && row.original.branch && (
+                <div className="text-xs text-muted-foreground">{row.original.branch}</div>
+              )}
+            </div>
+          )
+        },
+      },
+      {
+        header: t('bankAccounts.columns.openingBalance'),
         accessorKey: 'openingBalance',
         cell: ({ row }) => {
           const balance = row.getValue<number>('openingBalance')
-          return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-          }).format(balance)
+          return (
+            <div className="text-right font-mono">
+              {new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(balance)}
+            </div>
+          )
+        },
+      },
+      {
+        header: t('bankAccounts.columns.glAccount'),
+        accessorKey: 'glAccountCode',
+        cell: ({ row }) => {
+          const glCode = row.original.glAccountCode
+          return glCode ? (
+            <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{glCode}</code>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          )
         },
       },
       {
         id: 'status',
-        header: 'Status',
+        header: t('bankAccounts.columns.status'),
         accessorKey: 'active',
         cell: ({ row }) => {
           const active = row.original.active
-          const label = getStatusLabel(active)
           return active ? (
-            <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5">
-              <span
-                className="size-1.5 rounded-full bg-green-600 dark:bg-green-400"
-                aria-hidden="true"
-              />
-              {label}
-            </Badge>
+            <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+              <CheckCircle className="h-4 w-4" />
+              <span className="text-sm">{t('bankAccounts.status.active')}</span>
+            </div>
           ) : (
-            <Badge className="bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive rounded-full border-none focus-visible:outline-none">
-              <span className="bg-destructive size-1.5 rounded-full" aria-hidden="true" />
-              {label}
-            </Badge>
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <XCircle className="h-4 w-4" />
+              <span className="text-sm">{t('bankAccounts.status.inactive')}</span>
+            </div>
           )
         },
       },
       {
         id: 'actions',
-        header: () => <div className="text-right">Actions</div>,
+        header: () => <div className="text-right"></div>,
         cell: ({ row }) => {
           const bankAccount = row.original
           return (
@@ -326,17 +411,17 @@ export default function BankAccounts() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => handleEditClick(bankAccount)}>
                     <Edit className="mr-2 h-4 w-4" />
-                    Edit
+                    {t('bankAccounts.actions.edit')}
                   </DropdownMenuItem>
                   {bankAccount.active ? (
                     <DropdownMenuItem onClick={() => handleDeactivateClick(bankAccount)}>
-                      <Ban className="mr-2 h-4 w-4" />
-                      Deactivate
+                      <XCircle className="mr-2 h-4 w-4" />
+                      {t('bankAccounts.actions.deactivate')}
                     </DropdownMenuItem>
                   ) : (
                     <DropdownMenuItem onClick={() => handleActivateClick(bankAccount)}>
-                      <Ban className="mr-2 h-4 w-4 rotate-180" />
-                      Activate
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      {t('bankAccounts.actions.activate')}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
@@ -344,7 +429,7 @@ export default function BankAccounts() {
                     onClick={() => handleDeleteClick(bankAccount)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
+                    {t('bankAccounts.actions.delete')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -353,7 +438,7 @@ export default function BankAccounts() {
         },
       },
     ],
-    [],
+    [t],
   )
 
   const table = useReactTable({
@@ -367,15 +452,40 @@ export default function BankAccounts() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Bank Accounts</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('bankAccounts.title')}</h1>
         <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={importing}>
+                <Upload className="mr-2 h-4 w-4" />
+                {importing ? 'Importing...' : t('common.import')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleImportClick}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import from file
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownloadTemplate}>
+                <Download className="mr-2 h-4 w-4" />
+                Download template
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".csv,.xlsx,.xls"
+            className="hidden"
+          />
           <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
-            Export
+            {t('common.export')}
           </Button>
           <Button onClick={handleAddClick}>
             <Plus className="mr-2 h-4 w-4" />
-            Add
+            {t('common.add')}
           </Button>
         </div>
       </div>
@@ -384,7 +494,7 @@ export default function BankAccounts() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by account number or bank name..."
+            placeholder={t('bankAccounts.searchBankAccounts')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8"
@@ -392,36 +502,28 @@ export default function BankAccounts() {
         </div>
         <Select value={typeFilter} onValueChange={(value: any) => setTypeFilter(value)}>
           <SelectTrigger
-            className="w-32"
-            aria-label={
-              typeFilter === 'all' ? 'All Types' : typeFilter === 'CASH' ? 'Cash' : 'Bank'
-            }
+            className="w-36"
+            aria-label={t('bankAccounts.filters.allTypes')}
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="CASH">Cash</SelectItem>
-            <SelectItem value="BANK">Bank</SelectItem>
+            <SelectItem value="all">{t('bankAccounts.filters.allTypes')}</SelectItem>
+            <SelectItem value="CASH">{t('bankAccounts.types.cash')}</SelectItem>
+            <SelectItem value="BANK">{t('bankAccounts.types.bank')}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
           <SelectTrigger
-            className="w-32"
-            aria-label={
-              statusFilter === 'all'
-                ? 'All Status'
-                : statusFilter === 'active'
-                  ? 'Active'
-                  : 'Inactive'
-            }
+            className="w-40"
+            aria-label={t('bankAccounts.filters.allStatus')}
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="all">{t('bankAccounts.filters.allStatus')}</SelectItem>
+            <SelectItem value="active">{t('bankAccounts.filters.active')}</SelectItem>
+            <SelectItem value="inactive">{t('bankAccounts.filters.inactive')}</SelectItem>
           </SelectContent>
         </Select>
         <Select
@@ -432,14 +534,14 @@ export default function BankAccounts() {
             setSortOrder(order as 'asc' | 'desc')
           }}
         >
-          <SelectTrigger className="w-40" aria-label="Sort">
+          <SelectTrigger className="w-36" aria-label="Sort">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="bankName-asc">Bank Name (A-Z)</SelectItem>
-            <SelectItem value="bankName-desc">Bank Name (Z-A)</SelectItem>
-            <SelectItem value="accountNumber-asc">Account # (A-Z)</SelectItem>
-            <SelectItem value="accountNumber-desc">Account # (Z-A)</SelectItem>
+            <SelectItem value="bankName-asc">{t('bankAccounts.sort.nameAsc')}</SelectItem>
+            <SelectItem value="bankName-desc">{t('bankAccounts.sort.nameDesc')}</SelectItem>
+            <SelectItem value="accountNumber-asc">{t('bankAccounts.sort.accountAsc')}</SelectItem>
+            <SelectItem value="accountNumber-desc">{t('bankAccounts.sort.accountDesc')}</SelectItem>
           </SelectContent>
         </Select>
         <Button
@@ -467,11 +569,11 @@ export default function BankAccounts() {
         </div>
       ) : bankAccounts.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          <p className="text-lg font-medium">No bank accounts found</p>
+          <p className="text-lg font-medium">{t('bankAccounts.emptyState.title')}</p>
           <p className="text-sm">
             {debouncedSearch
-              ? 'Try adjusting your search criteria.'
-              : 'Get started by creating your first bank account.'}
+              ? t('bankAccounts.emptyState.searchHint')
+              : t('bankAccounts.emptyState.createHint')}
           </p>
         </div>
       ) : (
@@ -520,7 +622,7 @@ export default function BankAccounts() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-sm text-muted-foreground">
-                Showing {bankAccounts.length} of {total} bank accounts
+                {t('bankAccounts.pagination.showing')} {bankAccounts.length} {t('bankAccounts.pagination.of')} {total} {t('bankAccounts.pagination.items')}
               </p>
               <Select
                 value={String(pageSize)}
@@ -540,7 +642,7 @@ export default function BankAccounts() {
                   <SelectItem value="100">100</SelectItem>
                 </SelectContent>
               </Select>
-              <span className="text-sm text-muted-foreground">per page</span>
+              <span className="text-sm text-muted-foreground">{t('bankAccounts.pagination.perPage')}</span>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1}>

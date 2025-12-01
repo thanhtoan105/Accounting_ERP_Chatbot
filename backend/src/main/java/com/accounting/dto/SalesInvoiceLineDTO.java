@@ -2,7 +2,6 @@ package com.accounting.dto;
 
 import com.accounting.entity.VatRate;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -18,9 +17,8 @@ public class SalesInvoiceLineDTO {
     @NotNull(message = "Account ID is required")
     private Long accountId;
 
-    @NotBlank(message = "Description is required")
     @Size(max = 500, message = "Description must not exceed 500 characters")
-    private String description;
+    private String description; // Optional - can be derived from account/item
 
     @NotNull(message = "Quantity is required")
     @Min(value = 0, message = "Quantity must be non-negative")

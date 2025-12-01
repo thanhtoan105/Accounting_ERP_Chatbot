@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Dashboard } from '@/features/dashboard'
+import { Dashboard as AnalyticsDashboard } from '@/features/analytics'
 import { CompanySettings } from '@/features/company'
 import { Login, ForgotPassword, ResetPassword } from '@/features/auth'
 import { UserManagement } from '@/features/users'
@@ -17,16 +18,25 @@ import {
   PurchaseBillForm,
   SalesInvoiceList,
   SalesInvoiceForm,
+  CreditNoteForm,
   PaymentList,
   PaymentForm,
   ReceiptList,
   ReceiptForm,
   APAgingReport,
+  ARAgingReport,
   VATReportList,
   VATCorrectionList,
+  OutputVATReportList,
   APAuditTimeline,
   APAuditAbuseView,
   APAuditBackupList,
+  StatementView,
+  DisputeManagement,
+  StatementHistory,
+  TrialBalance,
+  CashBookPage,
+  CashBookSummaryPage,
 } from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
@@ -185,6 +195,16 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/sales-invoices/:originalInvoiceId/credit-note"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <CreditNoteForm />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
         path="/accounting/receipts"
         element={
           <ProtectedLayout>
@@ -198,7 +218,7 @@ export default function AppRoutes() {
         path="/accounting/receipts/new"
         element={
           <ProtectedLayout>
-            <RoleGuard requiredRoles={['admin', 'accountant']}>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant']}>
               <ReceiptForm />
             </RoleGuard>
           </ProtectedLayout>
@@ -218,7 +238,7 @@ export default function AppRoutes() {
         path="/accounting/receipts/:receiptId/edit"
         element={
           <ProtectedLayout>
-            <RoleGuard requiredRoles={['admin', 'accountant']}>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant']}>
               <ReceiptForm />
             </RoleGuard>
           </ProtectedLayout>
@@ -238,7 +258,7 @@ export default function AppRoutes() {
         path="/payments/new"
         element={
           <ProtectedLayout>
-            <RoleGuard requiredRoles={['admin', 'accountant']}>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
               <PaymentForm />
             </RoleGuard>
           </ProtectedLayout>
@@ -258,7 +278,7 @@ export default function AppRoutes() {
         path="/payments/:paymentId/edit"
         element={
           <ProtectedLayout>
-            <RoleGuard requiredRoles={['admin', 'accountant']}>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
               <PaymentForm />
             </RoleGuard>
           </ProtectedLayout>
@@ -275,6 +295,46 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/accounting/ar-aging"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <ARAgingReport />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/ar-statements"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <StatementView />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/ar-statements/disputes"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <DisputeManagement />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/ar-statements/history"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <StatementHistory />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
         path="/vat/reports/input"
         element={
           <ProtectedLayout>
@@ -285,11 +345,51 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/vat/reports/output"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <OutputVATReportList />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
         path="/vat/corrections"
         element={
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
               <VATCorrectionList />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/trial-balance"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
+              <TrialBalance />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/cash-book"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <CashBookPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/cash-book/summary"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <CashBookSummaryPage />
             </RoleGuard>
           </ProtectedLayout>
         }
@@ -408,6 +508,16 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
               <AuditLogs />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'cfo', 'chief_accountant']}>
+              <AnalyticsDashboard />
             </RoleGuard>
           </ProtectedLayout>
         }

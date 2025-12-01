@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
-import { CheckIcon, LockIcon } from 'lucide-react'
+import { CheckIcon, LockIcon, ChevronsUpDownIcon } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 export type AccountBalanceSide = 'debit' | 'credit' | 'both'
@@ -84,13 +84,13 @@ export function AccountPicker({
                   disabled={disabled || isLocked}
                   role="combobox"
                   aria-expanded={open}
-                  aria-label="Select accounting account"
+                  aria-label="Account combobox"
                 >
                   <span className="truncate">{selectedLabel}</span>
                   {isLocked ? (
                     <LockIcon className="size-4 opacity-60" />
                   ) : (
-                    <span className="text-xs">⌄</span>
+                    <ChevronsUpDownIcon className="opacity-50" />
                   )}
                 </Button>
               </PopoverTrigger>

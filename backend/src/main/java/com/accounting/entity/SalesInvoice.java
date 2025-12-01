@@ -98,6 +98,9 @@ public class SalesInvoice implements CompanyScopedEntity {
   @Column(name = "posted_voucher_id")
   private UUID postedVoucherId;
 
+  @Column(name = "original_invoice_id")
+  private UUID originalInvoiceId;
+
   @NotNull
   @Column(name = "is_sensitive", nullable = false)
   private Boolean isSensitive = false;
@@ -270,6 +273,14 @@ public class SalesInvoice implements CompanyScopedEntity {
 
   public void setPostedVoucherId(UUID postedVoucherId) {
     this.postedVoucherId = postedVoucherId;
+  }
+
+  public UUID getOriginalInvoiceId() {
+    return originalInvoiceId;
+  }
+
+  public void setOriginalInvoiceId(UUID originalInvoiceId) {
+    this.originalInvoiceId = originalInvoiceId;
   }
 
   public Boolean getIsSensitive() {

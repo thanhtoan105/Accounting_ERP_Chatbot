@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -47,11 +48,11 @@ const createCustomerFormSchema = (isEditMode: boolean) =>
     code: isEditMode
       ? z.string().min(1, 'Customer code is required')
       : z
-          .string()
-          .optional()
-          .refine((val) => !val || val.trim().length > 0, {
-            message: 'Customer code cannot be empty if provided',
-          }),
+        .string()
+        .optional()
+        .refine((val) => !val || val.trim().length > 0, {
+          message: 'Customer code cannot be empty if provided',
+        }),
     name: z.string().min(1, 'Customer name is required'),
     taxCode: z
       .string()
@@ -81,6 +82,7 @@ export default function CustomerFormSheet({
   onSuccess,
   customer,
 }: CustomerFormSheetProps) {
+  const { t } = useTranslation()
   const isEditMode = !!customer
   const [formError, setFormError] = useState<string | null>(null)
   const [duplicateError, setDuplicateError] = useState<string | null>(null)
@@ -223,11 +225,11 @@ export default function CustomerFormSheet({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <DialogHeader>
-            <DialogTitle>{isEditMode ? 'Edit Customer' : 'Create Customer'}</DialogTitle>
+            <DialogTitle>{isEditMode ? t('customers.editCustomer') : t('customers.createCustomer')}</DialogTitle>
             <DialogDescription>
               {isEditMode
-                ? 'Update the customer details below.'
-                : 'Create a new customer. Customer code will be auto-generated.'}
+                ? t('customers.updateDetails')
+                : t('customers.createDetails')}
             </DialogDescription>
           </DialogHeader>
 
@@ -254,13 +256,13 @@ export default function CustomerFormSheet({
             <div className="space-y-4">
               <div className="flex items-center gap-2 pb-2 border-b">
                 <Building2 className="h-5 w-5 text-primary" />
-                <h3 className="text-base font-semibold">Primary Information</h3>
+                <h3 className="text-base font-semibold">{t('customers.primaryInfo')}</h3>
               </div>
               <FieldGroup className="space-y-4">
                 {/* Customer Name - Most Important */}
                 <Field className="gap-2">
                   <FieldLabel htmlFor="name" className="text-sm font-medium">
-                    Customer Name <span className="text-destructive">*</span>
+                    {t('customers.customerName')} <span className="text-destructive">*</span>
                   </FieldLabel>
                   <FieldContent>
                     <Input
@@ -280,7 +282,7 @@ export default function CustomerFormSheet({
                 {isEditMode && (
                   <Field className="gap-2">
                     <FieldLabel htmlFor="code" className="text-sm font-medium">
-                      Customer Code <span className="text-destructive">*</span>
+                      {t('customers.customerCode')} <span className="text-destructive">*</span>
                     </FieldLabel>
                     <FieldContent>
                       <Input
@@ -340,7 +342,7 @@ export default function CustomerFormSheet({
                 {/* Tax Code */}
                 <Field className="gap-2">
                   <FieldLabel htmlFor="taxCode" className="text-sm font-medium">
-                    Tax Code
+                    {t('customers.taxCode')}
                   </FieldLabel>
                   <FieldContent>
                     <Input

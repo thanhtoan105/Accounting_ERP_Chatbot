@@ -139,4 +139,35 @@ public interface SalesInvoiceRepository
             @Param("companyId") Long companyId,
             @Param("customerId") Long customerId);
 
+    /**
+     * Find sales invoices by company, customer, and invoice date less than or equal to given date.
+     * Optimized query for statement generation.
+     *
+     * @param companyId  company ID
+     * @param customerId customer ID
+     * @param dateTo     end date (inclusive)
+     * @return list of sales invoices
+     */
+    List<SalesInvoice> findByCompanyIdAndCustomerIdAndInvoiceDateLessThanEqual(
+            Long companyId, Long customerId, LocalDate dateTo);
+
+    /**
+     * Find sales invoice by company, customer, and invoice number (case-insensitive).
+     * Used for reconciliation import matching.
+     *
+     * @param companyId     company ID
+     * @param customerId    customer ID
+     * @param invoiceNumber invoice number (case-insensitive match)
+     * @return optional sales invoice
+     */
+    @Query("SELECT si FROM SalesInvoice si " +
+            "WHERE si.companyId = :companyId " +
+            "AND si.customerId = :customerId " +
+            "AND LOWER(TRIM(si.invoiceNumber)) = LOWER(TRIM(:invoiceNumber)) " +
+            "AND si.isDeleted = false")
+    Optional<SalesInvoice> findByCompanyIdAndCustomerIdAndInvoiceNumberIgnoreCase(
+            @Param("companyId") Long companyId,
+            @Param("customerId") Long customerId,
+            @Param("invoiceNumber") String invoiceNumber);
+
 }

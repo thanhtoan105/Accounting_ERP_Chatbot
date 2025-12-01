@@ -1425,4 +1425,116 @@ public interface AuditService {
                         UUID invoiceId,
                         java.math.BigDecimal invoiceAmount,
                         java.math.BigDecimal thresholdAmount);
+
+        /**
+         * Log AR reminder configuration update.
+         *
+         * @param companyId company ID
+         * @param userId    user who updated the configuration
+         * @param oldValues old configuration values
+         * @param newValues new configuration values
+         * @param request   HTTP request for IP address and user agent
+         */
+        void logARReminderConfigUpdated(
+                        Long companyId,
+                        Long userId,
+                        java.util.Map<String, String> oldValues,
+                        java.util.Map<String, String> newValues,
+                        HttpServletRequest request);
+
+        /**
+         * Log AR reminder sent event.
+         *
+         * @param companyId     company ID
+         * @param userId        user who triggered the reminder
+         * @param customerId    customer ID who received the reminder
+         * @param customerEmail customer email address
+         * @param invoiceCount  number of invoices in the reminder
+         * @param totalAmount   total amount due
+         * @param request       HTTP request for IP address and user agent
+         */
+        void logARReminderSent(
+                        Long companyId,
+                        Long userId,
+                        Long customerId,
+                        String customerEmail,
+                        int invoiceCount,
+                        java.math.BigDecimal totalAmount,
+                        HttpServletRequest request);
+
+        /**
+         * Log AR reminder batch trigger event.
+         *
+         * @param companyId     company ID
+         * @param userId        user who triggered the batch
+         * @param customerCount number of customers receiving reminders
+         * @param totalInvoices total number of invoices across all reminders
+         * @param successCount  number of successful sends
+         * @param failureCount  number of failed sends
+         * @param request       HTTP request for IP address and user agent
+         */
+        void logARReminderBatchTriggered(
+                        Long companyId,
+                        Long userId,
+                        int customerCount,
+                        int totalInvoices,
+                        int successCount,
+                        int failureCount,
+                        HttpServletRequest request);
+
+        /**
+         * Log AR aging report export event.
+         *
+         * @param companyId  company ID
+         * @param userId     user who triggered the export
+         * @param format     export format (EXCEL or PDF)
+         * @param customerId optional customer ID filter
+         * @param asOfDate   as-of date for aging calculation
+         * @param request    HTTP request for IP address and user agent
+         */
+        void logARAgingExport(
+                        Long companyId,
+                        Long userId,
+                        String format,
+                        Long customerId,
+                        java.time.LocalDate asOfDate,
+                        HttpServletRequest request);
+
+        /**
+         * Log credit note creation with cross-reference to original invoice
+         * (AC-VAT-004).
+         * Records credit note ID, original invoice ID, user, timestamp, and IP address.
+         *
+         * @param companyId             company ID
+         * @param userId                user who created the credit note
+         * @param creditNoteId          credit note invoice ID
+         * @param creditNoteNumber      credit note invoice number
+         * @param originalInvoiceId     original invoice ID being credited
+         * @param originalInvoiceNumber original invoice number
+         * @param request               HTTP request for IP address and user agent
+         */
+        void logCreditNoteCreation(
+                        Long companyId,
+                        Long userId,
+                        java.util.UUID creditNoteId,
+                        String creditNoteNumber,
+                        java.util.UUID originalInvoiceId,
+                        String originalInvoiceNumber,
+                        HttpServletRequest request);
+
+        /**
+         * Log cash book view/export operation (AC6.4-08).
+         * Records action, bank account, filters, user, timestamp, and IP address.
+         *
+         * @param action        action type (e.g., CASH_BOOK_VIEW,
+         *                      CASH_BOOK_SUMMARY_VIEW, CASH_BOOK_EXPORT)
+         * @param bankAccountId bank account ID (null for summary views)
+         * @param details       operation details (filters applied, format, etc.)
+         * @param clientIp      client IP address
+         */
+        void logCashBookOperation(
+                        String action,
+                        Long bankAccountId,
+                        String details,
+                        String clientIp);
 }

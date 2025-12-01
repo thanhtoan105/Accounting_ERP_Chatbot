@@ -5,7 +5,9 @@ import com.accounting.dto.BankAccountCreateRequest;
 import com.accounting.dto.BankAccountDTO;
 import com.accounting.dto.BankAccountUpdateRequest;
 import com.accounting.entity.BankAccount;
+import com.accounting.entity.ChartOfAccount;
 import com.accounting.repository.BankAccountRepository;
+import com.accounting.repository.ChartOfAccountsRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AuditService;
 import com.accounting.service.BankAccountService;
@@ -37,12 +39,15 @@ import org.springframework.web.server.ResponseStatusException;
 public class BankAccountServiceImpl implements BankAccountService {
 
   private final BankAccountRepository bankAccountRepository;
+  private final ChartOfAccountsRepository chartOfAccountsRepository;
   private final AuditService auditService;
 
   public BankAccountServiceImpl(
       BankAccountRepository bankAccountRepository,
+      ChartOfAccountsRepository chartOfAccountsRepository,
       AuditService auditService) {
     this.bankAccountRepository = bankAccountRepository;
+    this.chartOfAccountsRepository = chartOfAccountsRepository;
     this.auditService = auditService;
   }
 
@@ -50,8 +55,7 @@ public class BankAccountServiceImpl implements BankAccountService {
    * Get current HTTP request from RequestContextHolder.
    */
   private HttpServletRequest getCurrentRequest() {
-    ServletRequestAttributes attributes =
-        (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+    ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
     return attributes != null ? attributes.getRequest() : null;
   }
 
@@ -71,6 +75,57 @@ public class BankAccountServiceImpl implements BankAccountService {
     }
   }
 
+  /**
+   * Validate GL account code for a bank account (AC6.1-01).
+   * GL account must exist, be postable (leaf account), and belong to valid
+   * cash/bank categories.
+   *
+   * @param companyId     company ID
+   * @param glAccountCode GL account code to validate
+   * @param accountType   bank account type (CASH or BANK)
+   * @throws ResponseStatusException if validation fails
+   */
+  private void validateGlAccountCode(Long companyId, String glAccountCode, BankAccount.AccountType accountType) {
+    if (glAccountCode == null || glAccountCode.isBlank()) {
+      return; // GL account is optional for now
+    }
+
+    // Find the GL account
+    ChartOfAccount glAccount = chartOfAccountsRepository
+        .findByCompanyIdAndCode(companyId, glAccountCode)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "GL account code '" + glAccountCode + "' does not exist in Chart of Accounts"));
+
+    // Verify account is postable (leaf account)
+    if (!Boolean.TRUE.equals(glAccount.getPostable())) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "GL account '" + glAccountCode
+              + "' is not a postable (leaf) account. Only leaf accounts can be linked to bank accounts.");
+    }
+
+    // Validate account type matches bank account type
+    // Cash accounts: 1111, 1112 (Vietnamese dong and foreign currency cash)
+    // Bank accounts: 1121, 1122 (Bank deposits in dong and foreign currency)
+    String code = glAccount.getCode();
+    if (accountType == BankAccount.AccountType.CASH) {
+      if (!code.startsWith("1111") && !code.startsWith("1112")) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "GL account '" + glAccountCode
+                + "' is not a valid cash account. Cash accounts must be under 1111 or 1112.");
+      }
+    } else if (accountType == BankAccount.AccountType.BANK) {
+      if (!code.startsWith("1121") && !code.startsWith("1122")) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "GL account '" + glAccountCode
+                + "' is not a valid bank account. Bank accounts must be under 1121 or 1122.");
+      }
+    }
+  }
+
   @Override
   public Page<BankAccountDTO> findAll(Pageable pageable, String type, Boolean status, String search) {
     Long companyId = CompanyContext.getCompanyId();
@@ -82,7 +137,8 @@ public class BankAccountServiceImpl implements BankAccountService {
     // If search is provided, use native query with unaccent function
     if (search != null && !search.isBlank()) {
       String trimmedSearch = search.trim();
-      List<BankAccount> bankAccounts = bankAccountRepository.searchByAccountNumberOrBankNameNative(companyId, trimmedSearch);
+      List<BankAccount> bankAccounts = bankAccountRepository.searchByAccountNumberOrBankNameNative(companyId,
+          trimmedSearch);
 
       // Apply filters in-memory
       List<BankAccount> filtered = bankAccounts.stream()
@@ -160,6 +216,9 @@ public class BankAccountServiceImpl implements BankAccountService {
           "Bank account with account number '" + request.getAccountNumber() + "' already exists for this company");
     }
 
+    // Validate GL account code (AC6.1-01)
+    validateGlAccountCode(companyId, request.getGlAccountCode(), request.getType());
+
     // Create bank account entity
     BankAccount bankAccount = new BankAccount();
     bankAccount.setCompanyId(companyId);
@@ -169,9 +228,11 @@ public class BankAccountServiceImpl implements BankAccountService {
     bankAccount.setType(request.getType());
     bankAccount.setOpeningBalance(request.getOpeningBalance());
     bankAccount.setActive(request.getActive() != null ? request.getActive() : true);
+    bankAccount.setGlAccountCode(request.getGlAccountCode() != null ? request.getGlAccountCode().trim() : null);
+    bankAccount.setOpeningBalanceLocked(false); // New accounts are not locked
 
     BankAccount saved = bankAccountRepository.save(bankAccount);
-    
+
     Map<String, String> newValues = new HashMap<>();
     newValues.put("accountNumber", saved.getAccountNumber());
     newValues.put("bankName", saved.getBankName());
@@ -179,10 +240,11 @@ public class BankAccountServiceImpl implements BankAccountService {
     newValues.put("type", saved.getType().name());
     newValues.put("openingBalance", saved.getOpeningBalance().toPlainString());
     newValues.put("active", String.valueOf(saved.getActive()));
+    newValues.put("glAccountCode", saved.getGlAccountCode() != null ? saved.getGlAccountCode() : "");
 
     auditService.logBankAccountCreated(
         saved.getId(), saved.getAccountNumber(), getCurrentUserId(), newValues, getCurrentRequest());
-    
+
     return toDTO(saved);
   }
 
@@ -205,6 +267,32 @@ public class BankAccountServiceImpl implements BankAccountService {
     oldValues.put("type", bankAccount.getType().name());
     oldValues.put("openingBalance", bankAccount.getOpeningBalance().toString());
     oldValues.put("active", String.valueOf(bankAccount.getActive()));
+    oldValues.put("glAccountCode", bankAccount.getGlAccountCode() != null ? bankAccount.getGlAccountCode() : "");
+
+    // Check opening balance lock (AC6.1-10)
+    if (request.getOpeningBalance() != null && Boolean.TRUE.equals(bankAccount.getOpeningBalanceLocked())) {
+      // Opening balance is locked - require admin override with reason
+      if (request.getReason() == null || request.getReason().isBlank()) {
+        throw new ResponseStatusException(
+            HttpStatus.FORBIDDEN,
+            "Opening balance is locked after period close. Admin override requires a reason.");
+      }
+      // Log the override attempt with HIGH priority
+      auditService.logBankAccountUpdated(
+          bankAccount.getId(),
+          bankAccount.getAccountNumber(),
+          getCurrentUserId(),
+          Map.of("action", "OPENING_BALANCE_OVERRIDE_ATTEMPT", "reason", request.getReason()),
+          Map.of("newOpeningBalance", request.getOpeningBalance().toString()),
+          "Admin override: " + request.getReason(),
+          getCurrentRequest());
+    }
+
+    // Validate GL account code if being changed (AC6.1-01)
+    if (request.getGlAccountCode() != null) {
+      BankAccount.AccountType effectiveType = request.getType() != null ? request.getType() : bankAccount.getType();
+      validateGlAccountCode(companyId, request.getGlAccountCode(), effectiveType);
+    }
 
     // Update fields (only non-null fields)
     if (request.getBankName() != null) {
@@ -219,9 +307,12 @@ public class BankAccountServiceImpl implements BankAccountService {
     if (request.getOpeningBalance() != null) {
       bankAccount.setOpeningBalance(request.getOpeningBalance());
     }
+    if (request.getGlAccountCode() != null) {
+      bankAccount.setGlAccountCode(request.getGlAccountCode().trim());
+    }
 
     BankAccount updated = bankAccountRepository.save(bankAccount);
-    
+
     // Capture new values for audit
     Map<String, String> newValues = new HashMap<>();
     newValues.put("bankName", updated.getBankName());
@@ -229,17 +320,18 @@ public class BankAccountServiceImpl implements BankAccountService {
     newValues.put("type", updated.getType().name());
     newValues.put("openingBalance", updated.getOpeningBalance().toString());
     newValues.put("active", String.valueOf(updated.getActive()));
-    
+    newValues.put("glAccountCode", updated.getGlAccountCode() != null ? updated.getGlAccountCode() : "");
+
     // Audit log
     auditService.logBankAccountUpdated(
-        updated.getId(), 
-        updated.getAccountNumber(), 
-        getCurrentUserId(), 
-        oldValues, 
-        newValues, 
+        updated.getId(),
+        updated.getAccountNumber(),
+        getCurrentUserId(),
+        oldValues,
+        newValues,
         request.getReason(),
         getCurrentRequest());
-    
+
     return toDTO(updated);
   }
 
@@ -255,20 +347,37 @@ public class BankAccountServiceImpl implements BankAccountService {
         .findByCompanyIdAndId(companyId, bankAccountId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bank account not found"));
 
-    // <CHANGE> Enforce referential integrity policy: deletion is blocked to preserve history.
-    // Until voucher/period/reconciliation entities are integrated, enforce a strict policy:
-    // do not allow hard deletes of bank accounts; require deactivation instead.
+    // Check for posted references (AC6.1-04)
+    if (bankAccount.getGlAccountCode() != null) {
+      long postedCount = bankAccountRepository.countPostedReferencesByGlAccountCode(
+          companyId, bankAccount.getGlAccountCode());
+      if (postedCount > 0) {
+        List<String> examples = bankAccountRepository.findPostedTransactionExamples(
+            companyId, bankAccount.getGlAccountCode(), 5);
+        String exampleText = examples.isEmpty() ? "" : " Examples: " + String.join(", ", examples);
+        auditService.logBankAccountDeleted(
+            bankAccountId,
+            bankAccount.getAccountNumber(),
+            "Deletion blocked: " + postedCount + " posted transaction(s) reference this account",
+            getCurrentUserId(),
+            getCurrentRequest());
+        throw new ResponseStatusException(
+            HttpStatus.CONFLICT,
+            "Cannot delete bank account: " + postedCount + " posted transaction(s) reference this account."
+                + exampleText +
+                " Please deactivate the account instead to preserve financial history.");
+      }
+    }
+
+    // If no references, allow deletion (but still log the action)
     String accountNumber = bankAccount.getAccountNumber();
+    bankAccountRepository.delete(bankAccount);
     auditService.logBankAccountDeleted(
         bankAccountId,
         accountNumber,
-        "Deletion blocked by policy: Use deactivation to preserve linked transaction history",
+        "Bank account deleted successfully",
         getCurrentUserId(),
         getCurrentRequest());
-    throw new ResponseStatusException(
-        HttpStatus.CONFLICT,
-        "Cannot delete bank account: Deletion is blocked to preserve financial history. "
-            + "Please deactivate the account instead. Deactivation preserves linked transaction data.");
   }
 
   @Override
@@ -285,9 +394,10 @@ public class BankAccountServiceImpl implements BankAccountService {
 
     bankAccount.setActive(true);
     bankAccountRepository.save(bankAccount);
-    
+
     // Audit log
-    auditService.logBankAccountActivated(bankAccountId, bankAccount.getAccountNumber(), getCurrentUserId(), getCurrentRequest());
+    auditService.logBankAccountActivated(bankAccountId, bankAccount.getAccountNumber(), getCurrentUserId(),
+        getCurrentRequest());
   }
 
   @Override
@@ -302,11 +412,27 @@ public class BankAccountServiceImpl implements BankAccountService {
         .findByCompanyIdAndId(companyId, bankAccountId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bank account not found"));
 
+    // Check for unposted transactions referencing this account (AC6.1-03)
+    if (bankAccount.getGlAccountCode() != null) {
+      long unpostedCount = bankAccountRepository.countUnpostedTransactionsByGlAccountCode(
+          companyId, bankAccount.getGlAccountCode());
+      if (unpostedCount > 0) {
+        List<String> examples = bankAccountRepository.findUnpostedTransactionExamples(
+            companyId, bankAccount.getGlAccountCode(), 5);
+        String exampleText = examples.isEmpty() ? "" : " Examples: " + String.join(", ", examples);
+        throw new ResponseStatusException(
+            HttpStatus.CONFLICT,
+            "Cannot deactivate bank account: " + unpostedCount + " unposted transaction(s) reference this account."
+                + exampleText);
+      }
+    }
+
     bankAccount.setActive(false);
     bankAccountRepository.save(bankAccount);
-    
+
     // Audit log
-    auditService.logBankAccountDeactivated(bankAccountId, bankAccount.getAccountNumber(), getCurrentUserId(), getCurrentRequest());
+    auditService.logBankAccountDeactivated(bankAccountId, bankAccount.getAccountNumber(), getCurrentUserId(),
+        getCurrentRequest());
   }
 
   @Override
@@ -322,14 +448,20 @@ public class BankAccountServiceImpl implements BankAccountService {
         .findByCompanyIdAndId(companyId, bankAccountId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bank account not found"));
 
-    // TODO: Implement actual balance calculation when period/transaction entities are available
-    // For MVP, return placeholder values
+    // Get last transaction date if GL account code is set
+    java.time.LocalDate lastTxDate = null;
+    if (bankAccount.getGlAccountCode() != null) {
+      lastTxDate = bankAccountRepository.findLastTransactionDate(companyId, bankAccount.getGlAccountCode());
+    }
+
+    // For MVP, current balance = opening balance (actual calculation requires
+    // journal entries integration)
+    // TODO: Implement actual balance calculation: opening_balance + SUM(credits) -
+    // SUM(debits)
     return new BalanceTooltipDTO(
-        bankAccount.getOpeningBalance(), // Current balance placeholder
-        BigDecimal.ZERO, // Prior balance placeholder
-        "Current Period", // Current period placeholder
-        "Prior Period" // Prior period placeholder
-    );
+        bankAccount.getOpeningBalance(),
+        lastTxDate,
+        bankAccount.getLastReconciledDate());
   }
 
   /**
@@ -345,8 +477,11 @@ public class BankAccountServiceImpl implements BankAccountService {
         bankAccount.getType(),
         bankAccount.getOpeningBalance(),
         bankAccount.getActive(),
+        bankAccount.getGlAccountCode(),
+        bankAccount.getOpeningBalanceLocked(),
+        bankAccount.getLastReconciledDate(),
+        bankAccount.getLastReconciledBalance(),
         bankAccount.getCreatedAt(),
         bankAccount.getUpdatedAt());
   }
 }
-

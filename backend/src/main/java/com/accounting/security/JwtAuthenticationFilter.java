@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,6 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+  private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
   private final JwtTokenProvider jwtTokenProvider;
 
   public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
@@ -48,15 +51,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       // Convert role string to Role enum and then to Spring Security authority
       Role role = Role.fromString(roleStr);
       if (role == null) {
-        // Invalid role - authentication fails
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         return;
       }
 
       String authority = role.toAuthority();
-      UsernamePasswordAuthenticationToken authentication =
-          new UsernamePasswordAuthenticationToken(
-              userId, null, Collections.singletonList(new SimpleGrantedAuthority(authority)));
+      UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+          userId, null, Collections.singletonList(new SimpleGrantedAuthority(authority)));
       authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
       SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -73,4 +74,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     return null;
   }
 }
-

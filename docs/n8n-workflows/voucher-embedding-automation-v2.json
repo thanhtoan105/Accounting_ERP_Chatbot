@@ -1,0 +1,296 @@
+{
+    "name": "Voucher Embedding Automation - Accounting RAG",
+    "description": "Receives voucher data from backend webhook and stores embeddings in Pinecone using Azure OpenAI for the accounting RAG chatbot. Uses n8n langchain nodes for better integration.",
+    "n8n_workflow_id": "Cf26BZwsq8r9wuPB",
+    "nodes": [
+        {
+            "id": "webhook-trigger",
+            "name": "Voucher Webhook",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {
+                    "rawBody": false
+                },
+                "path": "voucher-embedding",
+                "responseMode": "onReceived"
+            },
+            "position": [
+                240,
+                300
+            ],
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "webhookId": "voucher-embedding"
+        },
+        {
+            "id": "validate-payload",
+            "name": "Validate Payload",
+            "parameters": {
+                "conditions": {
+                    "combinator": "and",
+                    "conditions": [
+                        {
+                            "id": "company-id-check",
+                            "leftValue": "={{ $json.body.company_id }}",
+                            "operator": {
+                                "operation": "notEmpty",
+                                "type": "string"
+                            },
+                            "rightValue": ""
+                        },
+                        {
+                            "id": "voucher-id-check",
+                            "leftValue": "={{ $json.body.voucher_id }}",
+                            "operator": {
+                                "operation": "notEmpty",
+                                "type": "string"
+                            },
+                            "rightValue": ""
+                        }
+                    ],
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    }
+                }
+            },
+            "position": [
+                460,
+                300
+            ],
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2
+        },
+        {
+            "id": "prepare-document",
+            "name": "Prepare Document for Embedding",
+            "parameters": {
+                "jsCode": "// Extract voucher data from webhook payload\nconst payload = $input.first().json.body;\n\n// Build comprehensive text representation for embedding\nconst header = payload.header;\nconst lines = payload.lines || [];\nconst summary = payload.summary;\n\n// Format lines into readable text\nconst lineTexts = lines.map((line, idx) => {\n  const debit = line.debit_amount ? `Nợ: ${line.debit_amount.toLocaleString('vi-VN')} VND` : '';\n  const credit = line.credit_amount ? `Có: ${line.credit_amount.toLocaleString('vi-VN')} VND` : '';\n  return `  - ${line.account_code} (${line.account_name}): ${debit} ${credit} - ${line.description || ''}`;\n}).join('\\n');\n\n// Create embedding text in Vietnamese for better semantic search\nconst embeddingText = `\nPhiếu kế toán số: ${header.voucher_number}\nLoại chứng từ: ${header.voucher_type || 'Phiếu kế toán'}\nNgày lập: ${header.voucher_date}\nMô tả: ${header.description || 'Không có mô tả'}\n\nChi tiết bút toán:\n${lineTexts}\n\nTổng hợp:\n- Tổng Nợ: ${summary.total_debit?.toLocaleString('vi-VN') || 0} VND\n- Tổng Có: ${summary.total_credit?.toLocaleString('vi-VN') || 0} VND\n${payload.related_entity ? `Đối tượng liên quan: ${payload.related_entity.name} (${payload.related_entity.type})` : ''}\n`.trim();\n\n// Build metadata for Pinecone filtering\nconst metadata = {\n  voucher_id: payload.voucher_id,\n  voucher_number: header.voucher_number,\n  voucher_type: header.voucher_type || 'GENERAL',\n  voucher_date: header.voucher_date,\n  company_id: payload.company_id,\n  total_debit: summary.total_debit || 0,\n  total_credit: summary.total_credit || 0,\n  account_codes: lines.map(l => l.account_code).join(','),\n  description: header.description || '',\n  created_at: new Date().toISOString()\n};\n\nreturn {\n  json: {\n    text: embeddingText,\n    metadata: metadata,\n    id: `voucher_${payload.voucher_id}`,\n    namespace: `company_${payload.company_id}`\n  }\n};"
+            },
+            "position": [
+                680,
+                200
+            ],
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2
+        },
+        {
+            "credentials": {
+                "azureOpenAiApi": {
+                    "id": "azure-openai-creds",
+                    "name": "Azure OpenAI API"
+                }
+            },
+            "id": "azure-embeddings",
+            "name": "Azure OpenAI Embeddings",
+            "parameters": {
+                "model": "text-embedding-ada-002",
+                "options": {
+                    "batchSize": 512,
+                    "dimensions": 1536
+                }
+            },
+            "position": [
+                900,
+                200
+            ],
+            "type": "@n8n/n8n-nodes-langchain.embeddingsAzureOpenAi",
+            "typeVersion": 1
+        },
+        {
+            "credentials": {
+                "pineconeApi": {
+                    "id": "pinecone-creds",
+                    "name": "Pinecone API"
+                }
+            },
+            "id": "pinecone-upsert",
+            "name": "Pinecone Upsert",
+            "parameters": {
+                "mode": "insert",
+                "options": {
+                    "clearNamespace": false,
+                    "pineconeNamespace": "={{ $json.namespace }}"
+                },
+                "pineconeIndex": {
+                    "__rl": true,
+                    "mode": "id",
+                    "value": "accounting-embeddings"
+                }
+            },
+            "position": [
+                1120,
+                200
+            ],
+            "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+            "typeVersion": 1
+        },
+        {
+            "id": "success-response",
+            "name": "Success Response",
+            "parameters": {
+                "fields": {
+                    "values": [
+                        {
+                            "name": "status",
+                            "stringValue": "success"
+                        },
+                        {
+                            "name": "message",
+                            "stringValue": "Voucher embedded successfully"
+                        },
+                        {
+                            "name": "voucher_id",
+                            "stringValue": "={{ $('Prepare Document for Embedding').item.json.metadata.voucher_id }}"
+                        },
+                        {
+                            "name": "timestamp",
+                            "stringValue": "={{ new Date().toISOString() }}"
+                        }
+                    ]
+                },
+                "mode": "manual"
+            },
+            "position": [
+                1340,
+                200
+            ],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4
+        },
+        {
+            "id": "error-handler",
+            "name": "Error Handler",
+            "parameters": {
+                "fields": {
+                    "values": [
+                        {
+                            "name": "status",
+                            "stringValue": "error"
+                        },
+                        {
+                            "name": "message",
+                            "stringValue": "Invalid payload: missing company_id or voucher_id"
+                        },
+                        {
+                            "name": "timestamp",
+                            "stringValue": "={{ new Date().toISOString() }}"
+                        }
+                    ]
+                },
+                "mode": "manual"
+            },
+            "position": [
+                680,
+                400
+            ],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4
+        },
+        {
+            "id": "sticky-note-1",
+            "name": "Workflow Info",
+            "parameters": {
+                "content": "## Voucher Embedding Automation\n\n**Purpose:** Receives voucher data from backend webhook and stores embeddings in Pinecone.\n\n**Webhook URL:** POST /webhook/voucher-embedding\n\n**Expected Payload:**\n```json\n{\n  \"company_id\": \"uuid\",\n  \"voucher_id\": \"long\",\n  \"header\": {\n    \"voucher_number\": \"PC-2024-001\",\n    \"voucher_date\": \"2024-01-15\",\n    \"description\": \"...\"\n  },\n  \"lines\": [...],\n  \"summary\": {...}\n}\n```\n\n**Pinecone Namespace:** company_{company_id}"
+            },
+            "position": [
+                240,
+                100
+            ],
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1
+        }
+    ],
+    "connections": {
+        "Azure OpenAI Embeddings": {
+            "ai_embedding": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Pinecone Upsert",
+                        "type": "ai_embedding"
+                    }
+                ]
+            ]
+        },
+        "Pinecone Upsert": {
+            "main": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Success Response",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Prepare Document for Embedding": {
+            "main": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Pinecone Upsert",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Validate Payload": {
+            "main": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Prepare Document for Embedding",
+                        "type": "main"
+                    }
+                ],
+                [
+                    {
+                        "index": 0,
+                        "node": "Error Handler",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Voucher Webhook": {
+            "main": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Validate Payload",
+                        "type": "main"
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1",
+        "timezone": "Asia/Ho_Chi_Minh",
+        "saveDataErrorExecution": "all",
+        "saveDataSuccessExecution": "all",
+        "saveExecutionProgress": true
+    },
+    "tags": [
+        {
+            "name": "chatbot"
+        },
+        {
+            "name": "embedding"
+        },
+        {
+            "name": "voucher"
+        },
+        {
+            "name": "rag"
+        },
+        {
+            "name": "azure-openai"
+        },
+        {
+            "name": "pinecone"
+        }
+    ]
+}

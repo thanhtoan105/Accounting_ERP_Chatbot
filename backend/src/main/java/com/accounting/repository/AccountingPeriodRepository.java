@@ -92,14 +92,15 @@ public interface AccountingPeriodRepository
    * Used for the period selector to show current + 3 prior/next open periods.
    *
    * @param companyId company ID
+   * @param status period status
    * @param currentDate current date
-   * @return list of open periods
+   * @return list of open periods ordered by start date descending
    */
-  @Query(value = "SELECT * FROM accounting_periods p WHERE p.company_id = :companyId AND p.status = CAST(:status AS VARCHAR) " +
+  @Query(value = "SELECT * FROM accounting_periods p WHERE p.company_id = :companyId AND p.status = :status " +
          "ORDER BY p.start_date DESC", nativeQuery = true)
   List<AccountingPeriod> findOpenPeriodsAroundDate(
       @Param("companyId") Long companyId,
-      @Param("status") PeriodStatus status,
+      @Param("status") String status,
       @Param("currentDate") LocalDate currentDate);
 
   /**

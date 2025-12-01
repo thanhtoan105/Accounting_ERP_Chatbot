@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Send,
   RefreshCw,
+  FileX,
 } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
@@ -61,11 +62,7 @@ import type { AccountSummary } from '@/components/account/AccountPicker'
 import useUndoRedo from '@/hooks/useUndoRedo'
 import { useAuth } from '@/hooks/useAuth'
 import { getCompanyId } from '@/utils/axios'
-import type {
-  SalesInvoiceDTO,
-  SalesInvoiceCreateRequest,
-  VatRate,
-} from '@/types/salesInvoice'
+import type { SalesInvoiceDTO, SalesInvoiceCreateRequest, VatRate } from '@/types/salesInvoice'
 import {
   createSalesInvoice,
   validateSalesInvoice,
@@ -378,6 +375,19 @@ export default function SalesInvoiceForm() {
     }))
   }, [lines])
 
+  // Calculate VAT totals for validation (AC-VAT-003)
+  const vatTotals = useMemo(() => {
+    const sumOfLineVAT = lines.reduce((sum, line) => sum + (line.vatAmount ?? 0), 0)
+    // Header VAT should equal sum of line VAT (in this form, header VAT = sum of line VAT)
+    const headerVAT = sumOfLineVAT
+    const variance = Math.abs(headerVAT - sumOfLineVAT) // Should be 0, but calculate for validation
+    return {
+      headerVAT,
+      sumOfLineVAT,
+      variance,
+    }
+  }, [lines])
+
   const vatIssues = useMemo<VatIssue[]>(() => {
     const issues: VatIssue[] = []
     lines.forEach((line, index) => {
@@ -421,28 +431,46 @@ export default function SalesInvoiceForm() {
         })
       }
     })
+
+    // Add VAT variance validation (AC-VAT-003)
+    if (vatTotals.variance >= VAT_SUM_TOLERANCE) {
+      issues.push({
+        severity: 'error',
+        message: `VAT rounding variance: ${Intl.NumberFormat('vi-VN').format(Math.round(vatTotals.variance))} VND. Header VAT (${Intl.NumberFormat('vi-VN').format(Math.round(vatTotals.headerVAT))}₫) differs from sum of line VAT (${Intl.NumberFormat('vi-VN').format(Math.round(vatTotals.sumOfLineVAT))}₫) by ${Intl.NumberFormat('vi-VN').format(Math.round(vatTotals.variance))}₫, exceeding tolerance of 1,000₫. Posting is blocked.`,
+      })
+    } else if (vatTotals.variance > 0) {
+      issues.push({
+        severity: 'warning',
+        message: `VAT rounding variance: ${Intl.NumberFormat('vi-VN').format(Math.round(vatTotals.variance))} VND. Header VAT (${Intl.NumberFormat('vi-VN').format(Math.round(vatTotals.headerVAT))}₫) differs from sum of line VAT (${Intl.NumberFormat('vi-VN').format(Math.round(vatTotals.sumOfLineVAT))}₫) by ${Intl.NumberFormat('vi-VN').format(Math.round(vatTotals.variance))}₫ (within tolerance).`,
+      })
+    }
+
     return issues
-  }, [lines])
+  }, [lines, vatTotals])
 
   const hasBlockingVatIssues = vatIssues.some((issue) => issue.severity === 'error')
 
+  // VAT corrections for sales invoices - feature not yet implemented
+  // TODO: Implement AR-specific VAT corrections API and enable this
   const loadVatCorrections = useCallback(async () => {
-    if (!invoiceId) return
-    try {
-      setVatCorrectionsLoading(true)
-      const list = await vatService.listCorrections({ billId: invoiceId })
-      setVatCorrections(list)
-    } catch (error) {
-      toast.error(`Failed to load VAT corrections: ${String(error)}`)
-    } finally {
-      setVatCorrectionsLoading(false)
-    }
-  }, [invoiceId])
+    // Disabled: VAT corrections API currently only supports purchase bills
+    // if (!invoiceId) return
+    // try {
+    //   setVatCorrectionsLoading(true)
+    //   const list = await vatService.listCorrections({ billId: invoiceId })
+    //   setVatCorrections(list)
+    // } catch (error) {
+    //   toast.error(`Failed to load VAT corrections: ${String(error)}`)
+    // } finally {
+    //   setVatCorrectionsLoading(false)
+    // }
+  }, [])
 
-  useEffect(() => {
-    if (!invoiceId) return
-    loadVatCorrections()
-  }, [invoiceId, loadVatCorrections])
+  // Disabled: VAT corrections not yet supported for sales invoices
+  // useEffect(() => {
+  //   if (!invoiceId) return
+  //   loadVatCorrections()
+  // }, [invoiceId, loadVatCorrections])
 
   function buildRequest(values: SalesInvoiceFormValues): SalesInvoiceCreateRequest {
     return {
@@ -787,6 +815,16 @@ export default function SalesInvoiceForm() {
               )}
             </div>
           )}
+          {/* Create Credit Note button for POSTED invoices (AC-VAT-004) */}
+          {isEditing && editingInvoice?.status === 'POSTED' && (
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/sales-invoices/${invoiceId}/credit-note`)}
+            >
+              <FileX className="mr-2 h-4 w-4" />
+              Create Credit Note
+            </Button>
+          )}
           {canUndo && (
             <Button variant="outline" size="sm" onClick={undo}>
               <RotateCcw className="mr-2 h-4 w-4" />
@@ -1032,11 +1070,14 @@ export default function SalesInvoiceForm() {
                 readOnly={isReadOnly}
                 loading={loadingAccounts}
                 onCalculateVAT={calculateVAT}
+                defaultVatRate={COMPANY_DEFAULT_VAT_RATE}
               />
             </CardContent>
           </Card>
 
-          {isEditing && invoiceId && (
+          {/* VAT Corrections section - disabled for sales invoices (feature only available for purchase bills)
+          TODO: Implement AR-specific VAT corrections API and enable this */}
+          {false && isEditing && invoiceId && (
             <Card>
               <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -1161,38 +1202,90 @@ export default function SalesInvoiceForm() {
               <CardTitle>Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-end gap-8">
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Total Amount</div>
-                  <div className="text-lg font-semibold">
-                    {new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    }).format(totalAmount)}
+              <div className="space-y-4">
+                {/* VAT Totals Summary (AC-VAT-003) */}
+                <div className="rounded-md border bg-muted/50 p-4">
+                  <div className="text-sm font-medium mb-2">VAT Totals Validation</div>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <div className="text-muted-foreground">Header VAT</div>
+                      <div className="font-mono font-semibold">
+                        {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(vatTotals.headerVAT)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Sum of Line VAT</div>
+                      <div className="font-mono font-semibold">
+                        {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(vatTotals.sumOfLineVAT)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Variance</div>
+                      <div
+                        className={cn(
+                          'font-mono font-semibold',
+                          vatTotals.variance >= VAT_SUM_TOLERANCE
+                            ? 'text-destructive'
+                            : vatTotals.variance > 0
+                              ? 'text-amber-600'
+                              : 'text-green-600',
+                        )}
+                      >
+                        {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(vatTotals.variance)}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Total VAT</div>
-                  <div className="text-lg font-semibold">
-                    {new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    }).format(totalVAT)}
+
+                {/* Invoice Totals */}
+                <div className="flex justify-end gap-8">
+                  <div className="text-right">
+                    <div className="text-sm text-muted-foreground">Total Amount</div>
+                    <div className="text-lg font-semibold">
+                      {new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(totalAmount)}
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Grand Total</div>
-                  <div className="text-xl font-bold">
-                    {new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    }).format(totalAmount + totalVAT)}
+                  <div className="text-right">
+                    <div className="text-sm text-muted-foreground">Total VAT</div>
+                    <div className="text-lg font-semibold">
+                      {new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(totalVAT)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-muted-foreground">Grand Total</div>
+                    <div className="text-xl font-bold">
+                      {new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(totalAmount + totalVAT)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1304,32 +1397,34 @@ export default function SalesInvoiceForm() {
               editingInvoice?.status === 'PENDING_APPROVAL' &&
               canApprove &&
               activeWorkflowId && (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setApprovalDialogAction('reject')}
-                  className="border-red-200 text-red-600 hover:bg-red-50"
-                >
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Reject
-                </Button>
-                <Button
-                  type="button"
-                  variant="default"
-                  onClick={() => setApprovalDialogAction('approve')}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Approve
-                </Button>
-              </>
-            )}
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setApprovalDialogAction('reject')}
+                    className="border-red-200 text-red-600 hover:bg-red-50"
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Reject
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={() => setApprovalDialogAction('approve')}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Approve
+                  </Button>
+                </>
+              )}
           </div>
         </form>
       </Form>
 
-      {invoiceId && (
+      {/* VAT Correction Dialogs - disabled for sales invoices (feature only available for purchase bills)
+      TODO: Implement AR-specific VAT corrections API and enable this */}
+      {false && invoiceId && (
         <>
           <VATCorrectionDialog
             open={correctionDialogOpen}

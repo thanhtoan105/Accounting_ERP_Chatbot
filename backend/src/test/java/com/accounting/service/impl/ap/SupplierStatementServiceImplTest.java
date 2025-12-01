@@ -32,23 +32,34 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Unit tests for SupplierStatementServiceImpl.
- * Tests statement generation, export, import, reconciliation, and dispute management.
+ * Tests statement generation, export, import, reconciliation, and dispute
+ * management.
  */
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class SupplierStatementServiceImplTest {
 
-  @Mock private PurchaseBillRepository billRepository;
-  @Mock private APPaymentRepository paymentRepository;
-  @Mock private PaymentAllocationRepository allocationRepository;
-  @Mock private SupplierRepository supplierRepository;
-  @Mock private UserRepository userRepository;
-  @Mock private SupplierStatementHistoryRepository historyRepository;
-  @Mock private SupplierStatementDisputeRepository disputeRepository;
-  @Mock private AuditService auditService;
-  @Mock private ObjectMapper objectMapper;
+  @Mock
+  private PurchaseBillRepository billRepository;
+  @Mock
+  private APPaymentRepository paymentRepository;
+  @Mock
+  private PaymentAllocationRepository allocationRepository;
+  @Mock
+  private SupplierRepository supplierRepository;
+  @Mock
+  private UserRepository userRepository;
+  @Mock
+  private SupplierStatementHistoryRepository historyRepository;
+  @Mock
+  private SupplierStatementDisputeRepository disputeRepository;
+  @Mock
+  private AuditService auditService;
+  @Mock
+  private ObjectMapper objectMapper;
 
-  @InjectMocks private SupplierStatementServiceImpl statementService;
+  @InjectMocks
+  private SupplierStatementServiceImpl statementService;
 
   private static final Long COMPANY_ID = 1L;
   private static final Long SUPPLIER_ID = 100L;
@@ -78,10 +89,10 @@ class SupplierStatementServiceImplTest {
     user.setFullName("Test User");
 
     // Setup SecurityContext
-    org.springframework.security.core.context.SecurityContext securityContext =
-        org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
-    org.springframework.security.core.Authentication authentication =
-        org.mockito.Mockito.mock(org.springframework.security.core.Authentication.class);
+    org.springframework.security.core.context.SecurityContext securityContext = org.springframework.security.core.context.SecurityContextHolder
+        .createEmptyContext();
+    org.springframework.security.core.Authentication authentication = org.mockito.Mockito
+        .mock(org.springframework.security.core.Authentication.class);
     when(authentication.getName()).thenReturn("test@example.com");
     when(authentication.isAuthenticated()).thenReturn(true);
     securityContext.setAuthentication(authentication);
@@ -116,8 +127,7 @@ class SupplierStatementServiceImplTest {
         });
 
     // Execute
-    SupplierStatementDTO result =
-        statementService.generateSummaryStatement(SUPPLIER_ID, startDate, endDate);
+    SupplierStatementDTO result = statementService.generateSummaryStatement(SUPPLIER_ID, startDate, endDate);
 
     // Assert
     assertThat(result).isNotNull();
@@ -153,8 +163,7 @@ class SupplierStatementServiceImplTest {
         });
 
     // Execute
-    SupplierStatementDTO result =
-        statementService.generateSummaryStatement(SUPPLIER_ID, startDate, endDate);
+    SupplierStatementDTO result = statementService.generateSummaryStatement(SUPPLIER_ID, startDate, endDate);
 
     // Assert
     assertThat(result).isNotNull();
@@ -181,8 +190,7 @@ class SupplierStatementServiceImplTest {
         });
 
     // Execute
-    DetailedStatementDTO result =
-        statementService.generateDetailedStatement(SUPPLIER_ID, startDate, endDate);
+    DetailedStatementDTO result = statementService.generateDetailedStatement(SUPPLIER_ID, startDate, endDate);
 
     // Assert
     assertThat(result).isNotNull();
@@ -207,7 +215,7 @@ class SupplierStatementServiceImplTest {
 
     // Execute & Assert
     assertThatThrownBy(
-            () -> statementService.generateSummaryStatement(SUPPLIER_ID, startDate, endDate))
+        () -> statementService.generateSummaryStatement(SUPPLIER_ID, startDate, endDate))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Missing company context");
   }
@@ -220,7 +228,7 @@ class SupplierStatementServiceImplTest {
 
     // Execute & Assert
     assertThatThrownBy(
-            () -> statementService.generateSummaryStatement(SUPPLIER_ID, startDate, endDate))
+        () -> statementService.generateSummaryStatement(SUPPLIER_ID, startDate, endDate))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Supplier not found");
   }
@@ -236,9 +244,8 @@ class SupplierStatementServiceImplTest {
     when(historyRepository.save(any(SupplierStatementHistory.class))).thenReturn(history);
 
     // Execute
-    byte[] result =
-        statementService.exportStatement(
-            statementId, SupplierStatementHistory.ExportFormat.EXCEL);
+    byte[] result = statementService.exportStatement(
+        statementId, SupplierStatementHistory.ExportFormat.EXCEL);
 
     // Assert
     assertThat(result).isNotNull();
@@ -258,8 +265,7 @@ class SupplierStatementServiceImplTest {
     when(historyRepository.save(any(SupplierStatementHistory.class))).thenReturn(history);
 
     // Execute
-    byte[] result =
-        statementService.exportStatement(statementId, SupplierStatementHistory.ExportFormat.PDF);
+    byte[] result = statementService.exportStatement(statementId, SupplierStatementHistory.ExportFormat.PDF);
 
     // Assert
     assertThat(result).isNotNull();
@@ -297,19 +303,19 @@ class SupplierStatementServiceImplTest {
     headerRow.createCell(0).setCellValue("Bill Number");
     headerRow.createCell(1).setCellValue("Bill Date");
     headerRow.createCell(2).setCellValue("Amount");
-    
+
     org.apache.poi.ss.usermodel.Row dataRow = sheet.createRow(1);
     dataRow.createCell(0).setCellValue("BILL001");
     dataRow.createCell(1).setCellValue("01/01/2024");
     dataRow.createCell(2).setCellValue(1000.00);
-    
+
     java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
     workbook.write(baos);
     workbook.close();
-    
+
     MultipartFile file = new MockMultipartFile(
-        "file", "statement.xlsx", 
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+        "file", "statement.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         baos.toByteArray());
 
     PurchaseBill systemBill = createPurchaseBill(
@@ -319,8 +325,7 @@ class SupplierStatementServiceImplTest {
     when(billRepository.findByCompanyId(COMPANY_ID)).thenReturn(List.of(systemBill));
 
     // Execute
-    ReconciliationResultDTO result =
-        statementService.importSupplierStatement(SUPPLIER_ID, file, "EXCEL");
+    ReconciliationResultDTO result = statementService.importSupplierStatement(SUPPLIER_ID, file, "EXCEL");
 
     // Assert
     assertThat(result).isNotNull();
@@ -335,23 +340,20 @@ class SupplierStatementServiceImplTest {
     results.setMismatchedCount(2);
     results.setMissingCount(1);
 
-    ReconciliationResultDTO.ReconciliationItemDTO mismatch1 =
-        new ReconciliationResultDTO.ReconciliationItemDTO();
+    ReconciliationResultDTO.ReconciliationItemDTO mismatch1 = new ReconciliationResultDTO.ReconciliationItemDTO();
     mismatch1.setBillNumber("BILL001");
     mismatch1.setSupplierAmount(new BigDecimal("1000.00"));
     mismatch1.setSystemAmount(new BigDecimal("900.00"));
     mismatch1.setStatus("MISMATCHED");
     mismatch1.setNotes("Amount difference");
 
-    ReconciliationResultDTO.ReconciliationItemDTO mismatch2 =
-        new ReconciliationResultDTO.ReconciliationItemDTO();
+    ReconciliationResultDTO.ReconciliationItemDTO mismatch2 = new ReconciliationResultDTO.ReconciliationItemDTO();
     mismatch2.setBillNumber("BILL002");
     mismatch2.setSupplierAmount(new BigDecimal("2000.00"));
     mismatch2.setSystemAmount(new BigDecimal("1900.00"));
     mismatch2.setStatus("MISMATCHED");
 
-    ReconciliationResultDTO.ReconciliationItemDTO missing =
-        new ReconciliationResultDTO.ReconciliationItemDTO();
+    ReconciliationResultDTO.ReconciliationItemDTO missing = new ReconciliationResultDTO.ReconciliationItemDTO();
     missing.setBillNumber("BILL999");
     missing.setSupplierAmount(new BigDecimal("500.00"));
     missing.setStatus("MISSING");
@@ -384,11 +386,10 @@ class SupplierStatementServiceImplTest {
     dispute.setId(disputeId);
     dispute.setCompanyId(COMPANY_ID);
     dispute.setSupplierId(SUPPLIER_ID);
-    dispute.setStatus(SupplierStatementDispute.DisputeStatus.OPEN);
+    dispute.setStatusEnum(SupplierStatementDispute.DisputeStatus.OPEN);
     dispute.setDisputeReason("Amount mismatch");
 
-    com.accounting.dto.UpdateDisputeRequest request =
-        new com.accounting.dto.UpdateDisputeRequest();
+    com.accounting.dto.UpdateDisputeRequest request = new com.accounting.dto.UpdateDisputeRequest();
     request.setStatus(SupplierStatementDispute.DisputeStatus.RESOLVED);
     request.setResolutionNotes("Resolved by adjusting amount");
 
@@ -401,8 +402,8 @@ class SupplierStatementServiceImplTest {
 
     // Assert
     verify(disputeRepository, times(1)).save(dispute);
-    assertThat(dispute.getStatus()).isEqualTo(SupplierStatementDispute.DisputeStatus.RESOLVED);
-    assertThat(dispute.getResolvedBy()).isEqualTo(USER_ID);
+    assertThat(dispute.getStatusEnum()).isEqualTo(SupplierStatementDispute.DisputeStatus.RESOLVED);
+    assertThat(dispute.getResolvedById()).isEqualTo(USER_ID);
     assertThat(dispute.getResolvedAt()).isNotNull();
   }
 
@@ -411,22 +412,20 @@ class SupplierStatementServiceImplTest {
     // Setup
     SupplierStatementHistory history1 = createStatementHistory(UUID.randomUUID());
     SupplierStatementHistory history2 = createStatementHistory(UUID.randomUUID());
-    Page<SupplierStatementHistory> page =
-        new PageImpl<>(List.of(history1, history2), PageRequest.of(0, 20), 2);
+    Page<SupplierStatementHistory> page = new PageImpl<>(List.of(history1, history2), PageRequest.of(0, 20), 2);
 
-    when(historyRepository.findByCompanyIdAndSupplierIdAndStatementType(
-            COMPANY_ID, SUPPLIER_ID, SupplierStatementHistory.StatementType.SUMMARY,
-            PageRequest.of(0, 20)))
+    when(historyRepository.findByCompanyIdAndPartyIdAndStatementType(
+        COMPANY_ID, SUPPLIER_ID, "SUMMARY",
+        PageRequest.of(0, 20)))
         .thenReturn(page);
 
     // Execute
-    Page<com.accounting.dto.SupplierStatementHistoryDTO> result =
-        statementService.findAllStatements(
-            SUPPLIER_ID,
-            null,
-            null,
-            SupplierStatementHistory.StatementType.SUMMARY,
-            PageRequest.of(0, 20));
+    Page<com.accounting.dto.SupplierStatementHistoryDTO> result = statementService.findAllStatements(
+        SUPPLIER_ID,
+        null,
+        null,
+        SupplierStatementHistory.StatementType.SUMMARY,
+        PageRequest.of(0, 20));
 
     // Assert
     assertThat(result).isNotNull();
@@ -450,8 +449,7 @@ class SupplierStatementServiceImplTest {
     when(billRepository.findByCompanyId(COMPANY_ID)).thenReturn(Collections.emptyList());
 
     // Execute
-    byte[] result =
-        statementService.downloadStatementBatch(List.of(statementId1, statementId2));
+    byte[] result = statementService.downloadStatementBatch(List.of(statementId1, statementId2));
 
     // Assert
     assertThat(result).isNotNull();
@@ -502,10 +500,10 @@ class SupplierStatementServiceImplTest {
     history.setId(id);
     history.setCompanyId(COMPANY_ID);
     history.setSupplierId(SUPPLIER_ID);
-    history.setStatementType(SupplierStatementHistory.StatementType.SUMMARY);
+    history.setStatementTypeEnum(SupplierStatementHistory.StatementType.SUMMARY);
     history.setGenerationDate(Instant.now());
-    history.setGeneratedBy(USER_ID);
-    history.setFormat(SupplierStatementHistory.ExportFormat.EXCEL);
+    history.setGeneratedById(USER_ID);
+    history.setExportFormatEnum(SupplierStatementHistory.ExportFormat.EXCEL);
     history.setHash("test-hash");
     history.setStartDate(startDate);
     history.setEndDate(endDate);
@@ -514,4 +512,3 @@ class SupplierStatementServiceImplTest {
     return history;
   }
 }
-

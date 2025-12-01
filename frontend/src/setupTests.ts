@@ -43,17 +43,17 @@ Object.defineProperty(global, 'localStorage', {
 
 // Mock ResizeObserver for tests (required by Radix UI components)
 global.ResizeObserver = class ResizeObserver {
-  observe() { }
-  unobserve() { }
-  disconnect() { }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 }
 
 // Mock pointer capture methods for Radix UI Select components
 if (typeof Element !== 'undefined') {
   Element.prototype.hasPointerCapture = Element.prototype.hasPointerCapture || (() => false)
-  Element.prototype.setPointerCapture = Element.prototype.setPointerCapture || (() => { })
-  Element.prototype.releasePointerCapture = Element.prototype.releasePointerCapture || (() => { })
-  Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => { })
+  Element.prototype.setPointerCapture = Element.prototype.setPointerCapture || (() => {})
+  Element.prototype.releasePointerCapture = Element.prototype.releasePointerCapture || (() => {})
+  Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {})
 }
 
 // Mock window.matchMedia for tests (required by use-mobile hook and useTheme hook)

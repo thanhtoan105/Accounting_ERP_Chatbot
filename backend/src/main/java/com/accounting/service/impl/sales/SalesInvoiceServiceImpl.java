@@ -18,13 +18,20 @@ import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.service.AuditService;
+import com.accounting.service.ARVATService;
 import com.accounting.service.SalesInvoiceApprovalService;
 import com.accounting.service.SalesInvoiceService;
 import com.accounting.service.SalesInvoiceValidationService;
+import com.accounting.service.VoucherService;
+import com.accounting.service.voucher.VoucherPostingService;
 import com.accounting.service.util.SalesInvoiceAuditHelper;
+import com.accounting.dto.VoucherCreateRequest;
+import com.accounting.dto.VoucherDTO;
+import com.accounting.dto.VoucherEntryLineRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -66,6 +73,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
   private final SalesInvoiceValidationService salesInvoiceValidationService;
   private final SalesInvoiceAuditHelper salesInvoiceAuditHelper;
   private final SalesInvoiceApprovalService salesInvoiceApprovalService;
+  private final ARVATService arVatService;
+  private final VoucherService voucherService;
+  private final VoucherPostingService voucherPostingService;
 
   @PersistenceContext
   private EntityManager entityManager;
@@ -78,7 +88,10 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
       AuditService auditService,
       SalesInvoiceValidationService salesInvoiceValidationService,
       SalesInvoiceAuditHelper salesInvoiceAuditHelper,
-      SalesInvoiceApprovalService salesInvoiceApprovalService) {
+      SalesInvoiceApprovalService salesInvoiceApprovalService,
+      ARVATService arVatService,
+      VoucherService voucherService,
+      VoucherPostingService voucherPostingService) {
     this.salesInvoiceRepository = salesInvoiceRepository;
     this.salesInvoiceLineRepository = salesInvoiceLineRepository;
     this.customerRepository = customerRepository;
@@ -87,6 +100,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
     this.salesInvoiceValidationService = salesInvoiceValidationService;
     this.salesInvoiceAuditHelper = salesInvoiceAuditHelper;
     this.salesInvoiceApprovalService = salesInvoiceApprovalService;
+    this.arVatService = arVatService;
+    this.voucherService = voucherService;
+    this.voucherPostingService = voucherPostingService;
   }
 
   @Override
@@ -233,6 +249,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
       invoice.setStatus(request.getStatus() != null ? request.getStatus() : SalesInvoiceStatus.DRAFT);
       invoice.setTotalAmount(totalAmount.setScale(SCALE, ROUNDING_MODE));
       invoice.setVatAmount(vatAmount.setScale(SCALE, ROUNDING_MODE));
+      // Initialize remaining balance = total amount (no payments yet)
+      invoice.setRemainingBalance(totalAmount.setScale(SCALE, ROUNDING_MODE));
+      invoice.setAmountPaid(BigDecimal.ZERO);
       invoice.setCreatedById(createdById);
       invoice.setCreatedAt(Instant.now());
       invoice.setUpdatedAt(Instant.now());
@@ -400,6 +419,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
 
       invoice.setTotalAmount(totalAmount.setScale(SCALE, ROUNDING_MODE));
       invoice.setVatAmount(vatAmount.setScale(SCALE, ROUNDING_MODE));
+      // Recalculate remaining balance = total - already paid
+      BigDecimal amountPaid = invoice.getAmountPaid() != null ? invoice.getAmountPaid() : BigDecimal.ZERO;
+      invoice.setRemainingBalance(totalAmount.subtract(amountPaid).setScale(SCALE, ROUNDING_MODE));
 
       // Delete existing lines
       salesInvoiceLineRepository.deleteBySalesInvoiceId(invoiceId);
@@ -780,5 +802,166 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
           });
     }
     return sb.toString();
+  }
+
+  @Override
+  public SalesInvoiceDTO createCreditNote(UUID originalInvoiceId, SalesInvoiceCreateRequest request) {
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new IllegalStateException("Missing company context");
+    }
+
+    Long createdById = SecurityUtils.getCurrentUserId();
+    if (createdById == null) {
+      throw new IllegalStateException("User not authenticated");
+    }
+
+    // Validate original invoice exists and is POSTED (AC-VAT-004)
+    SalesInvoice originalInvoice = salesInvoiceRepository
+        .findByCompanyIdAndId(companyId, originalInvoiceId)
+        .orElseThrow(
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Original invoice not found: " + originalInvoiceId));
+
+    if (originalInvoice.getStatus() != SalesInvoiceStatus.POSTED) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Credit notes can only be created for POSTED invoices. Current status: "
+              + originalInvoice.getStatus());
+    }
+
+    // Validate credit note request
+    SalesInvoiceValidationResult validationResult = salesInvoiceValidationService.validate(request, null);
+    if (!validationResult.isValid()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Validation failed: " + formatValidationErrors(validationResult));
+    }
+
+    // Verify customer matches original invoice
+    if (!request.getCustomerId().equals(originalInvoice.getCustomerId())) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Credit note customer must match original invoice customer");
+    }
+
+    // Calculate totals from line items
+    BigDecimal totalAmount = BigDecimal.ZERO;
+    BigDecimal vatAmount = BigDecimal.ZERO;
+
+    for (SalesInvoiceLineDTO lineDto : request.getLines()) {
+      BigDecimal lineAmount = lineDto.getAmount() != null ? lineDto.getAmount() : BigDecimal.ZERO;
+      totalAmount = totalAmount.add(lineAmount);
+      BigDecimal lineVat = lineDto.getVatAmount() != null ? lineDto.getVatAmount() : BigDecimal.ZERO;
+      vatAmount = vatAmount.add(lineVat);
+    }
+
+    // Create credit note invoice entity
+    SalesInvoice creditNote = new SalesInvoice();
+    creditNote.setCompanyId(companyId);
+    creditNote.setCustomerId(request.getCustomerId());
+    creditNote.setInvoiceNumber(request.getInvoiceNumber());
+    creditNote.setInvoiceDate(request.getInvoiceDate());
+    creditNote.setDueDate(request.getDueDate());
+    // Ensure reference is not blank (required by entity validation)
+    String reference = request.getReference();
+    if (reference == null || reference.trim().isEmpty()) {
+      reference = "Credit Note for " + originalInvoice.getInvoiceNumber();
+    }
+    creditNote.setReference(reference);
+    creditNote.setDescription(request.getDescription());
+    creditNote.setStatus(SalesInvoiceStatus.DRAFT); // Credit notes start as DRAFT
+    creditNote.setTotalAmount(totalAmount.setScale(SCALE, ROUNDING_MODE));
+    creditNote.setVatAmount(vatAmount.setScale(SCALE, ROUNDING_MODE));
+    // Credit notes have negative remaining balance (reduces customer debt)
+    creditNote.setRemainingBalance(totalAmount.setScale(SCALE, ROUNDING_MODE));
+    creditNote.setAmountPaid(BigDecimal.ZERO);
+    creditNote.setOriginalInvoiceId(originalInvoiceId); // Link to original invoice
+    creditNote.setCreatedById(createdById);
+    creditNote.setCreatedAt(Instant.now());
+    creditNote.setUpdatedAt(Instant.now());
+
+    // Save credit note invoice
+    creditNote = salesInvoiceRepository.save(creditNote);
+
+    // Save credit note lines
+    int lineNumber = 1;
+    List<SalesInvoiceLine> lines = new ArrayList<>();
+    for (SalesInvoiceLineDTO lineDto : request.getLines()) {
+      SalesInvoiceLine line = new SalesInvoiceLine();
+      line.setSalesInvoiceId(creditNote.getId());
+      line.setLineNumber(lineNumber++);
+      line.setAccountId(lineDto.getAccountId());
+      line.setDescription(lineDto.getDescription());
+      line.setQuantity(lineDto.getQuantity() != null ? lineDto.getQuantity() : BigDecimal.ONE);
+      line.setUnitPrice(lineDto.getUnitPrice().setScale(SCALE, ROUNDING_MODE));
+      line.setAmount(lineDto.getAmount().setScale(SCALE, ROUNDING_MODE));
+      line.setVatRate(lineDto.getVatRate() != null ? lineDto.getVatRate() : VatRate.ZERO);
+      line.setVatAmount(
+          lineDto.getVatAmount() != null
+              ? lineDto.getVatAmount().setScale(SCALE, ROUNDING_MODE)
+              : BigDecimal.ZERO);
+      line.setCostCenterId(lineDto.getCostCenterId());
+      line.setItemId(lineDto.getItemId());
+      line.setCompanyId(companyId);
+      lines.add(line);
+    }
+    salesInvoiceLineRepository.saveAll(lines);
+
+    // Generate inverted GL splits using ARVATService (AC-VAT-004)
+    List<VoucherEntryLineRequest> entryLines = arVatService.generateCreditNoteGLSplit(creditNote, originalInvoice);
+
+    if (entryLines.isEmpty()) {
+      throw new IllegalStateException(
+          "Credit note " + creditNote.getInvoiceNumber()
+              + " has no monetary value to post. Cannot create voucher.");
+    }
+
+    // Create and post voucher with inverted GL splits
+    VoucherCreateRequest voucherRequest = new VoucherCreateRequest();
+    voucherRequest.setDate(creditNote.getInvoiceDate());
+    voucherRequest.setDescription(
+        String.format(
+            "Credit Note %s for Invoice %s - %s",
+            creditNote.getInvoiceNumber(),
+            originalInvoice.getInvoiceNumber(),
+            creditNote.getReference() != null ? creditNote.getReference() : "Credit note posting"));
+    voucherRequest.setEntryLines(entryLines);
+
+    VoucherDTO voucher = voucherService.create(voucherRequest);
+    voucherPostingService.postVoucher(voucher.getId(), null);
+
+    // Update credit note with posted voucher ID and status
+    creditNote.setPostedVoucherId(voucher.getId());
+    creditNote.setStatus(SalesInvoiceStatus.POSTED);
+    creditNote.setApprovedById(createdById); // Credit notes are auto-approved
+    creditNote = salesInvoiceRepository.save(creditNote);
+
+    logger.info(
+        "Created and posted credit note {} (voucher {}) for original invoice {}",
+        creditNote.getInvoiceNumber(),
+        voucher.getVoucherNumber(),
+        originalInvoice.getInvoiceNumber());
+
+    // Audit logging: Link credit note to original invoice (AC-VAT-004)
+    // Note: HttpServletRequest is not available in service layer, pass null
+    // The audit service should handle null request gracefully
+    try {
+      auditService.logCreditNoteCreation(
+          companyId,
+          createdById,
+          creditNote.getId(),
+          creditNote.getInvoiceNumber(),
+          originalInvoice.getId(),
+          originalInvoice.getInvoiceNumber(),
+          null); // HttpServletRequest not available in service layer
+    } catch (Exception e) {
+      logger.warn("Failed to log credit note creation audit: {}", e.getMessage());
+      // Don't fail the entire operation if audit logging fails
+    }
+
+    // Convert to DTO and return
+    return toDTO(creditNote);
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Plus,
   Search,
@@ -72,6 +73,7 @@ const POLLING_INTERVAL = import.meta.env.VITE_SUPPLIER_POLLING_INTERVAL
   : 5 * 60 * 1000 // 5 minutes default
 
 export default function Suppliers() {
+  const { t } = useTranslation()
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -407,19 +409,19 @@ export default function Suppliers() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Suppliers</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('suppliers.title')}</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setImportWizardOpen(true)}>
             <Upload className="mr-2 h-4 w-4" />
-            Import
+            {t('common.import')}
           </Button>
           <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
-            Export
+            {t('common.export')}
           </Button>
           <Button onClick={handleAddClick}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Supplier
+            {t('suppliers.addSupplier')}
           </Button>
         </div>
       </div>
@@ -428,7 +430,7 @@ export default function Suppliers() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, code, tax code..."
+            placeholder={t('suppliers.searchSuppliers')}
             value={searchTerm}
             onChange={(e) => {
               const v = e.target.value

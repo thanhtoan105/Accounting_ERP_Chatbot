@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,7 @@ export default function DeleteSupplierDialog({
   supplier,
   onConfirm,
 }: DeleteSupplierDialogProps) {
+  const { t } = useTranslation()
   const [error, setError] = useState<string | null>(null)
 
   const handleConfirm = async () => {
@@ -46,10 +48,10 @@ export default function DeleteSupplierDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Supplier</AlertDialogTitle>
+          <AlertDialogTitle>{t('suppliers.deleteConfirmTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete supplier &quot;{supplier.code} - {supplier.name}
-            &quot;? This action cannot be undone.
+            {t('suppliers.deleteConfirmMessage')} "{supplier.code} - {supplier.name}"?
+            {t('suppliers.cannotBeUndone')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && (
@@ -58,12 +60,12 @@ export default function DeleteSupplierDialog({
           </Alert>
         )}
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setError(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => setError(null)}>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            Delete
+            {t('common.delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

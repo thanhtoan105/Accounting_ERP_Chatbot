@@ -71,7 +71,8 @@ export interface VoucherValidationResult {
 export type VoucherValidationErrorMap = Record<number, Record<string, string[]>>
 
 export interface VoucherCreateRequest {
-  voucherDate: string // ISO (YYYY-MM-DD)
+  date: string // ISO (YYYY-MM-DD) - Backend field name
+  voucherDate?: string // ISO (YYYY-MM-DD) - Deprecated, use 'date' instead
   description: string
   currency?: string
   periodId?: string | null
@@ -108,8 +109,8 @@ export interface VoucherTemplateLineDTO {
 
 export interface VoucherTemplateLineInput {
   lineNumber?: number
-  debitAccountId: string
-  creditAccountId: string
+  debitAccountId?: string
+  creditAccountId?: string
   defaultDescription?: string
   requiresCustomer?: boolean
   requiresSupplier?: boolean

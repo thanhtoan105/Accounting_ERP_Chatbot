@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { apAuditService } from '@/services/apAudit'
-import type{ APAuditBackup } from '@/types/apAudit'
+import type { APAuditBackup } from '@/types/apAudit'
 
 export function APAuditBackupList() {
   const [loading, setLoading] = useState(false)

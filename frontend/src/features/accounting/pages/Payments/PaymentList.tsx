@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Calendar,
   RefreshCw,
@@ -17,6 +18,7 @@ import {
   Send,
   Eye,
   Edit,
+  CheckCircle,
   XCircle,
   AlertTriangle,
 } from 'lucide-react'
@@ -72,12 +74,15 @@ import { useDebounce } from '@/hooks/use-debounce'
 import { PaymentApprovalDialog } from '@/components/payment'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]
-const STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: 'all', label: 'All Status' },
-  { value: 'DRAFT', label: 'Draft' },
-  { value: 'PENDING_APPROVAL', label: 'Pending Approval' },
-  { value: 'POSTED', label: 'Posted' },
-  { value: 'CANCELLED', label: 'Cancelled' },
+// Status options - labels will be translated in component
+const STATUS_KEYS = [
+  { value: 'all', labelKey: 'payments.allStatus' },
+  { value: 'DRAFT', labelKey: 'payments.statusDraft' },
+  { value: 'PENDING_APPROVAL', labelKey: 'payments.statusPendingApproval' },
+  { value: 'POSTED', labelKey: 'payments.statusPosted' },
+  { value: 'CANCELLED', labelKey: 'payments.statusCancelled' },
+  { value: 'REJECTED', labelKey: 'payments.statusRejected' },
+  { value: 'REVERSED', labelKey: 'payments.statusReversed' },
 ]
 
 // localStorage key prefix for payment list filters
@@ -137,27 +142,36 @@ function getStatusBadgeVariant(status: PaymentStatus) {
       return 'default'
     case 'CANCELLED':
       return 'destructive'
+    case 'REJECTED':
+      return 'destructive'
+    case 'REVERSED':
+      return 'outline'
     default:
       return 'outline'
   }
 }
 
-function getStatusLabel(status: PaymentStatus) {
+function getStatusLabelKey(status: PaymentStatus): string {
   switch (status) {
     case 'DRAFT':
-      return 'Draft'
+      return 'payments.statusDraft'
     case 'PENDING_APPROVAL':
-      return 'Pending Approval'
+      return 'payments.statusPendingApproval'
     case 'POSTED':
-      return 'Posted'
+      return 'payments.statusPosted'
     case 'CANCELLED':
-      return 'Cancelled'
+      return 'payments.statusCancelled'
+    case 'REJECTED':
+      return 'payments.statusRejected'
+    case 'REVERSED':
+      return 'payments.statusReversed'
     default:
       return status
   }
 }
 
 export default function PaymentList() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [payments, setPayments] = useState<APPaymentListDTO[]>([])
   const [loading, setLoading] = useState(true)
@@ -270,12 +284,12 @@ export default function PaymentList() {
       setTotalElements(response.data.totalElements)
       setTotalPages(response.data.totalPages)
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || 'Unable to load payments'
+      const message = err?.response?.data?.message || err?.message || t('payments.unableToLoad')
       setError(message)
-      toast.error('Failed to load payments', {
+      toast.error(t('payments.failedToLoad'), {
         description: message,
         action: {
-          label: 'Retry',
+          label: t('payments.retry'),
           onClick: () => loadPayments(),
         },
       })
@@ -290,7 +304,7 @@ export default function PaymentList() {
 
   const handleRefresh = async () => {
     await loadPayments()
-    toast.success('Payments refreshed')
+    toast.success(t('payments.paymentsRefreshed'))
   }
 
   const handleDelete = async () => {
@@ -299,14 +313,14 @@ export default function PaymentList() {
     try {
       setDeleting(true)
       await deletePayment(paymentToDelete.id)
-      toast.success('Payment deleted successfully')
+      toast.success(t('payments.paymentDeleted'))
       setDeleteDialogOpen(false)
       setPaymentToDelete(null)
       // Refresh data
       await loadPayments()
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || 'Failed to delete payment'
-      toast.error('Failed to delete payment', { description: message })
+      const message = err?.response?.data?.message || err?.message || t('payments.failedToDelete')
+      toast.error(t('payments.failedToDelete'), { description: message })
     } finally {
       setDeleting(false)
     }
@@ -318,16 +332,16 @@ export default function PaymentList() {
     try {
       setPosting(true)
       await postPayment(paymentToPost.id)
-      toast.success('Payment posted successfully', {
-        description: 'Voucher has been generated and bills updated',
+      toast.success(t('payments.paymentPosted'), {
+        description: t('payments.voucherGenerated'),
       })
       setPostDialogOpen(false)
       setPaymentToPost(null)
       // Refresh data
       await loadPayments()
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || 'Failed to post payment'
-      toast.error('Failed to post payment', { description: message })
+      const message = err?.response?.data?.message || err?.message || t('payments.failedToPost')
+      toast.error(t('payments.failedToPost'), { description: message })
     } finally {
       setPosting(false)
     }
@@ -348,12 +362,12 @@ export default function PaymentList() {
     () => [
       {
         accessorKey: 'paymentNumber',
-        header: 'Payment Number',
+        header: t('payments.paymentNumber'),
         enableSorting: true,
       },
       {
         accessorKey: 'supplierName',
-        header: 'Supplier',
+        header: t('payments.supplier'),
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <span>{row.original.supplierName || row.original.supplierCode || '-'}</span>
@@ -363,7 +377,7 @@ export default function PaymentList() {
                 className="text-xs border-orange-500 text-orange-700 bg-orange-50 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-400"
               >
                 <AlertTriangle className="mr-1 h-3 w-3" />
-                Standalone
+                {t('payments.standalone')}
               </Badge>
             )}
           </div>
@@ -372,19 +386,19 @@ export default function PaymentList() {
       },
       {
         accessorKey: 'paymentDate',
-        header: 'Payment Date',
+        header: t('payments.paymentDate'),
         cell: ({ row }) => formatDate(row.original.paymentDate),
         enableSorting: true,
       },
       {
         accessorKey: 'amount',
-        header: 'Amount',
+        header: t('payments.amount'),
         cell: ({ row }) => formatCurrency(row.original.amount),
         enableSorting: true,
       },
       {
         accessorKey: 'account',
-        header: 'Account',
+        header: t('payments.account'),
         cell: ({ row }) => {
           const accountName = row.original.cashAccountName || row.original.bankAccountName
           return accountName || '-'
@@ -392,20 +406,20 @@ export default function PaymentList() {
       },
       {
         accessorKey: 'paymentMethod',
-        header: 'Method',
+        header: t('payments.method'),
         cell: ({ row }) => {
           const method = row.original.paymentMethod
-          return method === 'BANK_TRANSFER' ? 'Bank' : method === 'CASH' ? 'Cash' : method
+          return method === 'BANK_TRANSFER' ? t('payments.methodBank') : method === 'CASH' ? t('payments.methodCash') : method
         },
       },
       {
         accessorKey: 'allocationCount',
-        header: 'Allocations',
+        header: t('payments.allocations'),
         cell: ({ row }) => {
           const count = row.original.allocationCount || 0
           return count > 0 ? (
             <Badge variant="outline">
-              {count} bill{count !== 1 ? 's' : ''}
+              {count} {count !== 1 ? t('payments.bills') : t('payments.bill')}
             </Badge>
           ) : (
             <span className="text-muted-foreground">-</span>
@@ -414,17 +428,17 @@ export default function PaymentList() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('payments.status'),
         cell: ({ row }) => (
           <Badge variant={getStatusBadgeVariant(row.original.status)}>
-            {getStatusLabel(row.original.status)}
+            {t(getStatusLabelKey(row.original.status))}
           </Badge>
         ),
         enableSorting: true,
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: t('payments.actions'),
         cell: ({ row }) => {
           const payment = row.original
           const canEdit = payment.status === 'DRAFT'
@@ -441,12 +455,12 @@ export default function PaymentList() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => navigate(`/payments/${payment.id}`)}>
                   <Eye className="mr-2 h-4 w-4" />
-                  View
+                  {t('payments.view')}
                 </DropdownMenuItem>
                 {canEdit && (
                   <DropdownMenuItem onClick={() => navigate(`/payments/${payment.id}/edit`)}>
                     <Edit className="mr-2 h-4 w-4" />
-                    Edit
+                    {t('payments.edit')}
                   </DropdownMenuItem>
                 )}
                 {canPost && (
@@ -458,7 +472,7 @@ export default function PaymentList() {
                     }}
                   >
                     <Send className="mr-2 h-4 w-4" />
-                    Post Payment
+                    {t('payments.postPayment')}
                   </DropdownMenuItem>
                 )}
                 {canApprove && (
@@ -470,7 +484,7 @@ export default function PaymentList() {
                     }}
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
-                    Approve Payment
+                    {t('payments.approvePayment')}
                   </DropdownMenuItem>
                 )}
                 {canDelete && (
@@ -485,7 +499,7 @@ export default function PaymentList() {
                       className="text-destructive"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
+                      {t('payments.delete')}
                     </DropdownMenuItem>
                   </>
                 )}
@@ -495,7 +509,7 @@ export default function PaymentList() {
         },
       },
     ],
-    [navigate],
+    [navigate, t],
   )
 
   const table = useReactTable({
@@ -518,25 +532,24 @@ export default function PaymentList() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Wallet className="h-6 w-6 text-primary" />
-            AP Payments{' '}
-            <span className="text-muted-foreground text-lg">/ Thanh toán nhà cung cấp</span>
+            {t('payments.apPayments')}
           </h1>
           <p className="text-muted-foreground">
-            View, search, and manage supplier payments with server-side pagination.
+            {t('payments.subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('payments.refresh')}
           </Button>
           <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
             <Upload className="mr-2 h-4 w-4" />
-            Import
+            {t('payments.import')}
           </Button>
           <Button onClick={() => navigate('/payments/new')}>
             <Plus className="mr-2 h-4 w-4" />
-            Create Payment
+            {t('payments.createPayment')}
           </Button>
         </div>
       </div>
@@ -544,11 +557,11 @@ export default function PaymentList() {
       {/* Filters */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Search</label>
+          <label className="text-sm font-medium">{t('payments.search')}</label>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Payment number, reference, payee..."
+              placeholder={t('payments.searchPlaceholder')}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value)
@@ -559,7 +572,7 @@ export default function PaymentList() {
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Status</label>
+          <label className="text-sm font-medium">{t('payments.status')}</label>
           <Select
             value={status}
             onValueChange={(value) => {
@@ -568,12 +581,12 @@ export default function PaymentList() {
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="All Status" />
+              <SelectValue placeholder={t('payments.allStatus')} />
             </SelectTrigger>
             <SelectContent>
-              {STATUS_OPTIONS.map((option) => (
+              {STATUS_KEYS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.labelKey)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -582,7 +595,7 @@ export default function PaymentList() {
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Date From
+            {t('payments.dateFrom')}
           </label>
           <DatePicker
             value={dateFrom}
@@ -590,13 +603,13 @@ export default function PaymentList() {
               setDateFrom(value)
               setPage(0)
             }}
-            placeholder="Select start date"
+            placeholder={t('payments.selectStartDate')}
           />
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Date To
+            {t('payments.dateTo')}
           </label>
           <DatePicker
             value={dateTo}
@@ -604,14 +617,14 @@ export default function PaymentList() {
               setDateTo(value)
               setPage(0)
             }}
-            placeholder="Select end date"
+            placeholder={t('payments.selectEndDate')}
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Supplier ID</label>
+          <label className="text-sm font-medium">{t('payments.supplierId')}</label>
           <Input
             type="number"
-            placeholder="Supplier ID"
+            placeholder={t('payments.supplierId')}
             value={supplier || ''}
             onChange={(e) => {
               const value = e.target.value ? Number(e.target.value) : undefined
@@ -621,7 +634,7 @@ export default function PaymentList() {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Standalone</label>
+          <label className="text-sm font-medium">{t('payments.standalone')}</label>
           <Select
             value={standalone === undefined ? 'all' : standalone ? 'yes' : 'no'}
             onValueChange={(value) => {
@@ -631,12 +644,12 @@ export default function PaymentList() {
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="All" />
+              <SelectValue placeholder={t('payments.all')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="yes">Standalone Only</SelectItem>
-              <SelectItem value="no">Linked Only</SelectItem>
+              <SelectItem value="all">{t('payments.all')}</SelectItem>
+              <SelectItem value="yes">{t('payments.standaloneOnly')}</SelectItem>
+              <SelectItem value="no">{t('payments.linkedOnly')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -647,7 +660,7 @@ export default function PaymentList() {
           <AlertDescription className="flex items-center justify-between">
             <span>{error}</span>
             <Button variant="outline" size="sm" onClick={loadPayments}>
-              Retry
+              {t('payments.retry')}
             </Button>
           </AlertDescription>
         </Alert>
@@ -657,20 +670,20 @@ export default function PaymentList() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Payment</DialogTitle>
+            <DialogTitle>{t('payments.deleteConfirmTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete payment{' '}
-              <strong>{paymentToDelete?.paymentNumber}</strong>? This action cannot be undone.
+              {t('payments.deleteConfirmMessage')}{' '}
+              <strong>{paymentToDelete?.paymentNumber}</strong>? {t('payments.cannotBeUndone')}
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
+              {t('payments.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? t('payments.deleting') : t('payments.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -680,34 +693,34 @@ export default function PaymentList() {
       <Dialog open={postDialogOpen} onOpenChange={setPostDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Post Payment</DialogTitle>
+            <DialogTitle>{t('payments.postConfirmTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Are you sure you want to post payment <strong>{paymentToPost?.paymentNumber}</strong>?
-              This will:
+              {t('payments.postConfirmMessage')} <strong>{paymentToPost?.paymentNumber}</strong>?
+              {t('payments.postConfirmDetails')}
             </p>
             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-              <li>Generate a voucher (Dr AP 331, Cr cash/bank)</li>
-              <li>Update bill statuses to PAID/PARTIALLY_PAID</li>
-              <li>Update remaining balances</li>
-              <li>Mark payment as POSTED</li>
+              <li>{t('payments.postDetail1')}</li>
+              <li>{t('payments.postDetail2')}</li>
+              <li>{t('payments.postDetail3')}</li>
+              <li>{t('payments.postDetail4')}</li>
             </ul>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPostDialogOpen(false)}>
-              Cancel
+              {t('payments.cancel')}
             </Button>
             <Button onClick={handlePost} disabled={posting}>
               {posting ? (
                 <>
                   <Send className="mr-2 h-4 w-4 animate-spin" />
-                  Posting...
+                  {t('payments.posting')}
                 </>
               ) : (
                 <>
                   <Send className="mr-2 h-4 w-4" />
-                  Post Payment
+                  {t('payments.postPayment')}
                 </>
               )}
             </Button>
@@ -773,7 +786,7 @@ export default function PaymentList() {
             ) : isEmpty ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No payments found.
+                  {t('payments.noPaymentsFound')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -799,8 +812,8 @@ export default function PaymentList() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">
-            Showing {payments.length > 0 ? page * pageSize + 1 : 0} to{' '}
-            {Math.min((page + 1) * pageSize, totalElements)} of {totalElements} payments
+            {t('payments.showing')} {payments.length > 0 ? page * pageSize + 1 : 0} {t('payments.to')}{' '}
+            {Math.min((page + 1) * pageSize, totalElements)} {t('payments.of')} {totalElements}
           </span>
           <Select
             value={String(pageSize)}
@@ -820,7 +833,7 @@ export default function PaymentList() {
               ))}
             </SelectContent>
           </Select>
-          <span className="text-sm text-muted-foreground">per page</span>
+          <span className="text-sm text-muted-foreground">{t('payments.perPage')}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -840,7 +853,7 @@ export default function PaymentList() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm">
-            Page {page + 1} of {totalPages || 1}
+            {t('payments.page')} {page + 1} {t('payments.of')} {totalPages || 1}
           </span>
           <Button
             variant="outline"
@@ -865,7 +878,7 @@ export default function PaymentList() {
       {importDialogOpen && (
         <Alert>
           <AlertDescription>
-            Payment import dialog will be implemented here. For now, use the API endpoint directly.
+            {t('payments.importDialogPlaceholder')}
           </AlertDescription>
         </Alert>
       )}

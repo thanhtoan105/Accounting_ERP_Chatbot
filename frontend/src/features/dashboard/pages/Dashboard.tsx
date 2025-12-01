@@ -1,54 +1,31 @@
-import { Box, Typography, Paper, Stack } from '@mui/material'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
 import { useRole } from '@/hooks/useRole'
+import { AROverdueTiles } from '@/components/ar-aging/AROverdueTiles'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 
 export default function Dashboard() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const { getRoleDisplayName } = useRole()
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Dashboard
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Welcome, {user?.fullName || 'User'}!
-      </Typography>
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+        <p className="text-muted-foreground mt-2">
+          {t('dashboard.welcome', { name: user?.fullName || 'User' })}
+        </p>
+      </div>
 
-      <Stack spacing={3}>
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            User Information
-          </Typography>
-          <Stack spacing={1}>
-            <Typography variant="body2">
-              <strong>Email:</strong> {user?.email || 'N/A'}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Role:</strong> {getRoleDisplayName()}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Company ID:</strong>{' '}
-              {user?.companyId ? user.companyId : 'No company assigned'}
-            </Typography>
-          </Stack>
-        </Paper>
+      <Separator />
 
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Quick Actions
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Dashboard content will be expanded with accounting features such as:
-          </Typography>
-          <Stack component="ul" spacing={1} sx={{ mt: 2, pl: 3 }}>
-            <li>Financial overview and summaries</li>
-            <li>Recent transactions</li>
-            <li>Pending approvals</li>
-            <li>Reports and analytics</li>
-          </Stack>
-        </Paper>
-      </Stack>
-    </Box>
+      {/* AR Overdue Summary */}
+      <div>
+        <AROverdueTiles />
+      </div>
+    </div>
   )
 }

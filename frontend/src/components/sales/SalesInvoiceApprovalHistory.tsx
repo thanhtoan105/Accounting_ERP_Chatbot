@@ -146,7 +146,7 @@ export function SalesInvoiceApprovalHistory({ invoiceId }: SalesInvoiceApprovalH
                 <div>
                   <p className="font-medium text-muted-foreground">Invoice Amount</p>
                   <p className="font-semibold">
-                    {workflow.invoiceAmount.toLocaleString('vi-VN', {
+                    {(workflow.billAmount ?? 0).toLocaleString('vi-VN', {
                       style: 'currency',
                       currency: 'VND',
                     })}
@@ -155,7 +155,7 @@ export function SalesInvoiceApprovalHistory({ invoiceId }: SalesInvoiceApprovalH
                 <div>
                   <p className="font-medium text-muted-foreground">Threshold</p>
                   <p className="font-semibold">
-                    {workflow.thresholdAmount.toLocaleString('vi-VN', {
+                    {(workflow.thresholdAmount ?? 0).toLocaleString('vi-VN', {
                       style: 'currency',
                       currency: 'VND',
                     })}

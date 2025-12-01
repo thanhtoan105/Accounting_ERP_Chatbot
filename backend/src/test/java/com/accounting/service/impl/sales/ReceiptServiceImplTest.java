@@ -158,18 +158,61 @@ class ReceiptServiceImplTest {
     }
 
     @Test
+    @DisplayName("Should reject receipt creation with inactive bank account - AC6.2-03")
+    void shouldRejectReceiptCreationWithInactiveBankAccount() {
+      // GIVEN
+      ARPaymentCreateRequest request = createValidRequest();
+      Customer customer = createMockCustomer();
+      BankAccount inactiveAccount = createMockBankAccount();
+      inactiveAccount.setActive(false);
+
+      when(customerRepository.findByCompanyIdAndId(COMPANY_ID, CUSTOMER_ID)).thenReturn(Optional.of(customer));
+      when(bankAccountRepository.findByCompanyIdAndId(COMPANY_ID, BANK_ACCOUNT_ID))
+          .thenReturn(Optional.of(inactiveAccount));
+
+      // WHEN/THEN
+      ResponseStatusException exception = assertThrows(
+          ResponseStatusException.class,
+          () -> receiptService.create(request));
+      assertThat(exception.getMessage()).containsIgnoringCase("inactive");
+      verify(receiptRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should reject receipt creation with missing glAccountCode - AC6.2-03")
+    void shouldRejectReceiptCreationWithMissingGlAccountCode() {
+      // GIVEN
+      ARPaymentCreateRequest request = createValidRequest();
+      Customer customer = createMockCustomer();
+      BankAccount accountWithoutGl = createMockBankAccount();
+      accountWithoutGl.setGlAccountCode(null); // Missing GL account code
+
+      when(customerRepository.findByCompanyIdAndId(COMPANY_ID, CUSTOMER_ID)).thenReturn(Optional.of(customer));
+      when(bankAccountRepository.findByCompanyIdAndId(COMPANY_ID, BANK_ACCOUNT_ID))
+          .thenReturn(Optional.of(accountWithoutGl));
+
+      // WHEN/THEN
+      ResponseStatusException exception = assertThrows(
+          ResponseStatusException.class,
+          () -> receiptService.create(request));
+      assertThat(exception.getMessage()).containsIgnoringCase("GL account code");
+      verify(receiptRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("Should generate receipt number with correct format")
     void shouldGenerateReceiptNumberWithCorrectFormat() {
       // GIVEN
       LocalDate receiptDate = LocalDate.of(2025, 1, 15);
-      mockReceiptNumberGeneration(List.of("RCP-2025-00005"));
+      mockReceiptNumberGeneration(List.of("CR-2025-00005"));
 
       // WHEN
       String receiptNumber = receiptService.generateReceiptNumber(receiptDate);
 
       // THEN
-      assertThat(receiptNumber).startsWith("RCP-2025-");
-      assertThat(receiptNumber).isEqualTo("RCP-2025-00006");
+      // AC6.2-01: Receipt number format is CR-YYYY-NNNNN
+      assertThat(receiptNumber).startsWith("CR-2025-");
+      assertThat(receiptNumber).isEqualTo("CR-2025-00006");
     }
   }
 
@@ -424,19 +467,30 @@ class ReceiptServiceImplTest {
       VoucherDTO voucherDTO = new VoucherDTO();
       voucherDTO.setId(voucherId);
 
+      // Mock bank account with glAccountCode
+      BankAccount bankAccount = createMockBankAccount();
+
+      // Mock GL accounts
+      ChartOfAccount bankGlAccount = new ChartOfAccount();
+      bankGlAccount.setId(2000L);
+      bankGlAccount.setCode("1121");
+
       ChartOfAccount arAccount = new ChartOfAccount();
       arAccount.setId(1000L);
       arAccount.setCode("131");
 
       when(receiptRepository.findByCompanyIdAndId(COMPANY_ID, receiptId)).thenReturn(Optional.of(receipt));
+      when(bankAccountRepository.findByCompanyIdAndId(COMPANY_ID, BANK_ACCOUNT_ID))
+          .thenReturn(Optional.of(bankAccount));
       when(allocationRepository.findByReceiptIdOrderByAllocationOrderAsc(receiptId))
           .thenReturn(List.of(allocation));
       when(salesInvoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
       when(allocationRepository.sumAllocatedAmountBySalesInvoiceIdAndPostedReceipts(invoiceId))
           .thenReturn(BigDecimal.valueOf(5_000_000));
+      when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "1121"))
+          .thenReturn(Optional.of(bankGlAccount));
       when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "131"))
           .thenReturn(Optional.of(arAccount));
-      // Skip validation in unit test
       when(voucherService.create(any(VoucherCreateRequest.class))).thenReturn(voucherDTO);
       when(receiptRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -466,16 +520,28 @@ class ReceiptServiceImplTest {
       allocation.setSalesInvoiceId(invoiceId);
       allocation.setAllocatedAmount(BigDecimal.valueOf(5_000_000));
 
+      // Mock bank account with glAccountCode
+      BankAccount bankAccount = createMockBankAccount();
+
+      // Mock GL accounts
+      ChartOfAccount bankGlAccount = new ChartOfAccount();
+      bankGlAccount.setId(2000L);
+      bankGlAccount.setCode("1121");
+
       ChartOfAccount arAccount = new ChartOfAccount();
       arAccount.setId(1000L);
       arAccount.setCode("131");
 
       when(receiptRepository.findByCompanyIdAndId(COMPANY_ID, receiptId)).thenReturn(Optional.of(receipt));
+      when(bankAccountRepository.findByCompanyIdAndId(COMPANY_ID, BANK_ACCOUNT_ID))
+          .thenReturn(Optional.of(bankAccount));
       when(allocationRepository.findByReceiptIdOrderByAllocationOrderAsc(receiptId))
           .thenReturn(List.of(allocation));
       when(salesInvoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
       when(allocationRepository.sumAllocatedAmountBySalesInvoiceIdAndPostedReceipts(invoiceId))
           .thenReturn(BigDecimal.valueOf(5_000_000));
+      when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "1121"))
+          .thenReturn(Optional.of(bankGlAccount));
       when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "131"))
           .thenReturn(Optional.of(arAccount));
       when(voucherService.create(any())).thenReturn(new VoucherDTO());
@@ -505,6 +571,96 @@ class ReceiptServiceImplTest {
       assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
       verify(voucherService, never()).create(any());
     }
+
+    @Test
+    @DisplayName("Should use bank account glAccountCode for voucher debit entry - AC6.2-04")
+    void shouldUseBankAccountGlAccountCodeForVoucherDebitEntry() {
+      // GIVEN
+      UUID receiptId = UUID.randomUUID();
+      UUID voucherId = UUID.randomUUID();
+      ARPayment receipt = createMockReceipt(ReceiptStatus.DRAFT);
+      receipt.setAmount(BigDecimal.valueOf(5_000_000));
+      receipt.setIsStandalone(false);
+
+      UUID invoiceId = UUID.randomUUID();
+      SalesInvoice invoice = createMockInvoice(invoiceId, BigDecimal.valueOf(5_000_000));
+
+      ReceiptAllocation allocation = new ReceiptAllocation();
+      allocation.setSalesInvoiceId(invoiceId);
+      allocation.setAllocatedAmount(BigDecimal.valueOf(5_000_000));
+
+      VoucherDTO voucherDTO = new VoucherDTO();
+      voucherDTO.setId(voucherId);
+
+      // Mock bank account with glAccountCode
+      BankAccount bankAccount = createMockBankAccount();
+      bankAccount.setGlAccountCode("1121"); // Bank GL account
+
+      // Mock GL account lookup for bank account
+      ChartOfAccount bankGlAccount = new ChartOfAccount();
+      bankGlAccount.setId(2000L);
+      bankGlAccount.setCode("1121");
+
+      ChartOfAccount arAccount = new ChartOfAccount();
+      arAccount.setId(1000L);
+      arAccount.setCode("131");
+
+      when(receiptRepository.findByCompanyIdAndId(COMPANY_ID, receiptId)).thenReturn(Optional.of(receipt));
+      when(bankAccountRepository.findByCompanyIdAndId(COMPANY_ID, BANK_ACCOUNT_ID))
+          .thenReturn(Optional.of(bankAccount));
+      when(allocationRepository.findByReceiptIdOrderByAllocationOrderAsc(receiptId))
+          .thenReturn(List.of(allocation));
+      when(salesInvoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
+      when(allocationRepository.sumAllocatedAmountBySalesInvoiceIdAndPostedReceipts(invoiceId))
+          .thenReturn(BigDecimal.valueOf(5_000_000));
+      // AC6.2-04: GL account lookup uses bank account's glAccountCode
+      when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "1121"))
+          .thenReturn(Optional.of(bankGlAccount));
+      when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "131"))
+          .thenReturn(Optional.of(arAccount));
+
+      when(voucherService.create(any(VoucherCreateRequest.class))).thenReturn(voucherDTO);
+      when(receiptRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+      when(salesInvoiceRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+      // WHEN
+      receiptService.postReceipt(receiptId);
+
+      // THEN
+      // Verify voucher creation used GL account ID from glAccountCode lookup
+      verify(voucherService).create(argThat(request -> {
+        if (request.getEntryLines() == null || request.getEntryLines().isEmpty()) {
+          return false;
+        }
+        // Check that debit account ID is the bank GL account (2000L)
+        return request.getEntryLines().stream()
+            .allMatch(line -> line.getDebitAccountId().equals(2000L));
+      }));
+    }
+
+    @Test
+    @DisplayName("Should reject posting when bank account is inactive - AC6.2-03")
+    void shouldRejectPostingWhenBankAccountIsInactive() {
+      // GIVEN
+      UUID receiptId = UUID.randomUUID();
+      ARPayment receipt = createMockReceipt(ReceiptStatus.DRAFT);
+
+      BankAccount inactiveAccount = createMockBankAccount();
+      inactiveAccount.setActive(false);
+
+      when(receiptRepository.findByCompanyIdAndId(COMPANY_ID, receiptId)).thenReturn(Optional.of(receipt));
+      when(allocationRepository.findByReceiptIdOrderByAllocationOrderAsc(receiptId))
+          .thenReturn(Collections.emptyList());
+      when(bankAccountRepository.findByCompanyIdAndId(COMPANY_ID, BANK_ACCOUNT_ID))
+          .thenReturn(Optional.of(inactiveAccount));
+
+      // WHEN/THEN
+      ResponseStatusException exception = assertThrows(
+          ResponseStatusException.class,
+          () -> receiptService.postReceipt(receiptId));
+      assertThat(exception.getMessage()).containsIgnoringCase("inactive");
+      verify(voucherService, never()).create(any());
+    }
   }
 
   @Nested
@@ -520,7 +676,27 @@ class ReceiptServiceImplTest {
       receipt.setLinkedVoucherId(UUID.randomUUID());
       String reason = "Customer requested refund";
 
+      // Mock bank account with glAccountCode for reversal voucher
+      BankAccount bankAccount = createMockBankAccount();
+
+      // Mock GL accounts
+      ChartOfAccount bankGlAccount = new ChartOfAccount();
+      bankGlAccount.setId(2000L);
+      bankGlAccount.setCode("1121");
+
+      ChartOfAccount arAccount = new ChartOfAccount();
+      arAccount.setId(1000L);
+      arAccount.setCode("131");
+
       when(receiptRepository.findByCompanyIdAndId(COMPANY_ID, receiptId)).thenReturn(Optional.of(receipt));
+      when(bankAccountRepository.findByCompanyIdAndId(COMPANY_ID, BANK_ACCOUNT_ID))
+          .thenReturn(Optional.of(bankAccount));
+      when(allocationRepository.findByReceiptIdOrderByAllocationOrderAsc(receiptId))
+          .thenReturn(Collections.emptyList());
+      when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "1121"))
+          .thenReturn(Optional.of(bankGlAccount));
+      when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, "131"))
+          .thenReturn(Optional.of(arAccount));
       when(voucherService.create(any())).thenReturn(new VoucherDTO());
       when(receiptRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -590,6 +766,135 @@ class ReceiptServiceImplTest {
     }
   }
 
+  @Nested
+  @DisplayName("Threshold-Based Maker-Checker Tests - AC6.2-09")
+  class ThresholdMakerCheckerTests {
+
+    @Test
+    @DisplayName("Should set PENDING_APPROVAL status when receipt amount exceeds threshold")
+    void shouldSetPendingApprovalWhenAmountExceedsThreshold() {
+      // GIVEN
+      ARPaymentCreateRequest request = createValidRequest();
+      request.setAmount(new BigDecimal("150000000")); // Above 100M threshold
+      Customer customer = createMockCustomer();
+      BankAccount bankAccount = createMockBankAccount();
+
+      CompanySettingsDto settings = new CompanySettingsDto();
+      settings.setSalesInvoiceApprovalThresholdAmount(new BigDecimal("100000000")); // 100M threshold
+
+      when(customerRepository.findByCompanyIdAndId(COMPANY_ID, CUSTOMER_ID)).thenReturn(Optional.of(customer));
+      when(bankAccountRepository.findByCompanyIdAndId(COMPANY_ID, BANK_ACCOUNT_ID))
+          .thenReturn(Optional.of(bankAccount));
+      when(companySettingsService.getCurrentCompanySettings()).thenReturn(settings);
+      when(receiptRepository.save(any(ARPayment.class))).thenAnswer(inv -> {
+        ARPayment receipt = inv.getArgument(0);
+        receipt.setId(UUID.randomUUID());
+        return receipt;
+      });
+
+      mockReceiptNumberGeneration(Collections.emptyList());
+
+      // WHEN
+      ARPaymentDTO result = receiptService.create(request);
+
+      // THEN
+      verify(receiptRepository, atLeast(2))
+          .save(argThat(receipt -> receipt.getStatus() == ReceiptStatus.PENDING_APPROVAL));
+    }
+
+    @Test
+    @DisplayName("Should keep DRAFT status when receipt amount is below threshold")
+    void shouldKeepDraftWhenAmountBelowThreshold() {
+      // GIVEN
+      ARPaymentCreateRequest request = createValidRequest();
+      request.setAmount(new BigDecimal("50000000")); // Below 100M threshold
+      Customer customer = createMockCustomer();
+      BankAccount bankAccount = createMockBankAccount();
+
+      CompanySettingsDto settings = new CompanySettingsDto();
+      settings.setSalesInvoiceApprovalThresholdAmount(new BigDecimal("100000000")); // 100M threshold
+
+      when(customerRepository.findByCompanyIdAndId(COMPANY_ID, CUSTOMER_ID)).thenReturn(Optional.of(customer));
+      when(bankAccountRepository.findByCompanyIdAndId(COMPANY_ID, BANK_ACCOUNT_ID))
+          .thenReturn(Optional.of(bankAccount));
+      when(companySettingsService.getCurrentCompanySettings()).thenReturn(settings);
+      when(receiptRepository.save(any(ARPayment.class))).thenAnswer(inv -> {
+        ARPayment receipt = inv.getArgument(0);
+        receipt.setId(UUID.randomUUID());
+        return receipt;
+      });
+
+      mockReceiptNumberGeneration(Collections.emptyList());
+
+      // WHEN
+      ARPaymentDTO result = receiptService.create(request);
+
+      // THEN - only saved once with DRAFT status
+      verify(receiptRepository, times(1)).save(argThat(receipt -> receipt.getStatus() == ReceiptStatus.DRAFT));
+    }
+
+    @Test
+    @DisplayName("Should reject PENDING_APPROVAL posting when approver is same as creator (maker-checker)")
+    void shouldRejectPendingApprovalWhenApproverIsSameAsCreator() {
+      // GIVEN
+      UUID receiptId = UUID.randomUUID();
+      ARPayment receipt = createMockReceipt(ReceiptStatus.PENDING_APPROVAL);
+      receipt.setCreatedById(USER_ID); // Same as current user
+
+      BankAccount bankAccount = createMockBankAccount();
+
+      when(receiptRepository.findByCompanyIdAndId(COMPANY_ID, receiptId)).thenReturn(Optional.of(receipt));
+
+      // Mock current user has approver role
+      mockSecurityContext("ROLE_CHIEF_ACCOUNTANT");
+
+      // WHEN/THEN
+      ResponseStatusException exception = assertThrows(
+          ResponseStatusException.class,
+          () -> receiptService.postReceipt(receiptId));
+      assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+      assertThat(exception.getMessage()).containsIgnoringCase("maker-checker");
+      verify(voucherService, never()).create(any());
+    }
+
+    @Test
+    @DisplayName("Should reject PENDING_APPROVAL posting without approver role")
+    void shouldRejectPendingApprovalWithoutApproverRole() {
+      // GIVEN
+      UUID receiptId = UUID.randomUUID();
+      ARPayment receipt = createMockReceipt(ReceiptStatus.PENDING_APPROVAL);
+      receipt.setCreatedById(999L); // Different user created it
+
+      when(receiptRepository.findByCompanyIdAndId(COMPANY_ID, receiptId)).thenReturn(Optional.of(receipt));
+
+      // Mock current user has only ACCOUNTANT role (not sufficient for approval)
+      mockSecurityContext("ROLE_ACCOUNTANT");
+
+      // WHEN/THEN
+      ResponseStatusException exception = assertThrows(
+          ResponseStatusException.class,
+          () -> receiptService.postReceipt(receiptId));
+      assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+      assertThat(exception.getMessage()).containsIgnoringCase("Chief Accountant");
+      verify(voucherService, never()).create(any());
+    }
+
+    /**
+     * Helper to set up SecurityContext with specific role for approval tests.
+     * Note: These tests verify that role and maker-checker validation triggers
+     * before any repository calls for allocations/accounts.
+     */
+    private void mockSecurityContext(String role) {
+      var authentication = mock(org.springframework.security.core.Authentication.class);
+      var authority = new org.springframework.security.core.authority.SimpleGrantedAuthority(role);
+
+      doReturn(List.of(authority)).when(authentication).getAuthorities();
+
+      org.springframework.security.core.context.SecurityContextHolder.getContext()
+          .setAuthentication(authentication);
+    }
+  }
+
   // Helper methods
 
   private ARPaymentCreateRequest createValidRequest() {
@@ -609,7 +914,7 @@ class ReceiptServiceImplTest {
     receipt.setId(UUID.randomUUID());
     receipt.setCompanyId(COMPANY_ID);
     receipt.setCustomerId(CUSTOMER_ID);
-    receipt.setReceiptNumber("RCP-2025-0001");
+    receipt.setReceiptNumber("CR-2025-0001");
     receipt.setReceiptDate(LocalDate.now());
     receipt.setBankAccountId(BANK_ACCOUNT_ID);
     receipt.setAmount(BigDecimal.valueOf(1_000_000));
@@ -637,6 +942,7 @@ class ReceiptServiceImplTest {
     account.setBankName("Test Bank");
     account.setCompanyId(COMPANY_ID);
     account.setActive(true);
+    account.setGlAccountCode("1121"); // AC6.2-04: GL account code for posting
     return account;
   }
 

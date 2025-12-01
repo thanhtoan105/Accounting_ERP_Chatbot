@@ -90,6 +90,13 @@ npx playwright test --project=chromium
 
 # Run tests with specific tags
 npx playwright test --grep @smoke
+
+# Run by priority (AR Aging example)
+npx playwright test --grep "@P0" ar-aging
+npx playwright test --grep "@P0|@P1" ar-aging
+
+# Run AR aging tests
+npx playwright test ar-aging
 ```
 
 ### Environment-Specific Execution

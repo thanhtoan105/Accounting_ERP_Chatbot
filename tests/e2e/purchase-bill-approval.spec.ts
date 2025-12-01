@@ -84,12 +84,13 @@ test.describe('Purchase Bill Approval Workflow (Maker-Checker)', () => {
       await submitButton.waitFor({ state: 'visible', timeout: 5000 });
       await submitButton.click();
 
-      // Wait for success notification or status change
-      await page.waitForTimeout(1000);
-
       // THEN: Bill status should change to PENDING_APPROVAL
-      // Note: In real implementation, status badge would update
-      // This test verifies the submit action completes successfully
+      // Wait for status badge or success notification
+      await expect(
+        page.locator('[data-testid="bill-status"], [role="status"]').filter({ hasText: /pending|submitted|success/i })
+      ).toBeVisible({ timeout: 3000 });
+
+      // Verify page remains on bill view
       await expect(page.getByRole('heading', { name: /purchase bill/i })).toBeVisible();
     });
   });
@@ -170,12 +171,14 @@ test.describe('Purchase Bill Approval Workflow (Maker-Checker)', () => {
       const confirmButton = page.locator('[role="dialog"]').getByRole('button', { name: /reject/i });
       await confirmButton.click();
 
-      // Wait for API call to complete
-      await page.waitForTimeout(1000);
-
       // THEN: Bill should be rejected with reason
-      // Note: In real implementation, rejection reason would be displayed
-      await expect(page.getByRole('heading', { name: /purchase bill/i })).toBeVisible();
+      // Wait for dialog to close and rejection to process
+      await expect(page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 3000 });
+
+      // Verify rejection success (status badge or notification)
+      await expect(
+        page.locator('[data-testid="bill-status"], [role="status"]').filter({ hasText: /rejected|cancelled/i })
+      ).toBeVisible({ timeout: 3000 });
     });
   });
 
@@ -230,25 +233,23 @@ test.describe('Purchase Bill Approval Workflow (Maker-Checker)', () => {
         // Click approve button and wait for dialog
         await approveButton.click();
         await page.waitForSelector('[role="dialog"]', { state: 'visible', timeout: 5000 });
-        
+
         // Click approve in dialog
         const confirmApproveButton = page.locator('[role="dialog"]').getByRole('button', { name: /approve/i });
         await confirmApproveButton.click();
 
-        // Wait for error toast notification (Sonner toasts appear in [data-sonner-toast] or similar)
-        // The error should appear as a toast notification
-        await page.waitForTimeout(1000); // Wait for toast to appear
-        
-        // Check for error message in toast or page
-        // Sonner toasts typically have role="status" or are in a toast container
+        // THEN: Error toast should appear immediately
+        // Check for error message in toast or page (deterministic wait)
         const errorToast = page.locator('[role="status"], [data-sonner-toast], [data-radix-toast]').filter({
           hasText: /approver|cannot|same|creator|forbidden|error/i
         });
-        
+
+        await expect(errorToast).toBeVisible({ timeout: 3000 });
+
         // If toast not found, check for error in dialog or page
         const hasError = await errorToast.isVisible().catch(() => false) ||
           await page.getByText(/approver cannot be the same as creator|forbidden|error/i).isVisible().catch(() => false);
-        
+
         // THEN: Approval should be blocked
         expect(hasError).toBeTruthy();
       } else {
@@ -310,11 +311,13 @@ test.describe('Purchase Bill Approval Workflow (Maker-Checker)', () => {
       await approveButton.waitFor({ state: 'visible', timeout: 5000 });
       await approveButton.click();
 
-      // Wait for error message to appear
-      await page.waitForTimeout(1000);
-
       // THEN: Approval should be blocked with period close error
-      // Note: Error message should mention closed accounting period
+      // Wait for error message about closed period
+      await expect(
+        page.locator('[role="alert"], [role="status"], [data-sonner-toast]').filter({ hasText: /closed|period/i })
+      ).toBeVisible({ timeout: 3000 });
+
+      // Verify still on bill page
       await expect(page.getByRole('heading', { name: /purchase bill/i })).toBeVisible();
     });
   });

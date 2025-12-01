@@ -37,7 +37,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * REST controller for AP Payment operations.
- * All authenticated users with Accountant+ role can view payments; edit requires Accountant+ role;
+ * All authenticated users with Accountant+ role can view payments; edit
+ * requires Accountant+ role;
  * standalone payments require Admin role.
  */
 @RestController
@@ -54,18 +55,22 @@ public class PaymentController {
 
   /**
    * Get paginated, filtered, sorted payment list.
-   * Supports query params: page, size, supplier, status, dateFrom, dateTo, search, standalone, sort.
+   * Supports query params: page, size, supplier, status, dateFrom, dateTo,
+   * search, standalone, sort.
    * Requires authenticated user with Accountant+ role.
    *
-   * @param page page number (0-based, default: 0)
-   * @param size page size (default: 20, max: 100)
-   * @param supplier filter by supplier ID (optional)
-   * @param status filter by status (optional: DRAFT, PENDING_APPROVAL, POSTED, CANCELLED)
-   * @param dateFrom filter by date from (optional, format: YYYY-MM-DD)
-   * @param dateTo filter by date to (optional, format: YYYY-MM-DD)
-   * @param search search term for payment number, reference, or payee (optional)
+   * @param page       page number (0-based, default: 0)
+   * @param size       page size (default: 20, max: 100)
+   * @param supplier   filter by supplier ID (optional)
+   * @param status     filter by status (optional: DRAFT, PENDING_APPROVAL,
+   *                   POSTED, CANCELLED)
+   * @param dateFrom   filter by date from (optional, format: YYYY-MM-DD)
+   * @param dateTo     filter by date to (optional, format: YYYY-MM-DD)
+   * @param search     search term for payment number, reference, or payee
+   *                   (optional)
    * @param standalone filter by standalone flag (optional)
-   * @param sort sort parameters (optional, format: field,direction e.g., paymentDate,desc)
+   * @param sort       sort parameters (optional, format: field,direction e.g.,
+   *                   paymentDate,desc)
    * @return paginated payment list
    */
   @GetMapping
@@ -97,8 +102,8 @@ public class PaymentController {
           if (field.isEmpty()) {
             continue;
           }
-          Sort.Direction direction =
-              "desc".equalsIgnoreCase(parts[1].trim()) ? Sort.Direction.DESC : Sort.Direction.ASC;
+          Sort.Direction direction = "desc".equalsIgnoreCase(parts[1].trim()) ? Sort.Direction.DESC
+              : Sort.Direction.ASC;
           orders.add(new Sort.Order(direction, field));
         }
       }
@@ -111,10 +116,11 @@ public class PaymentController {
     Pageable pageable = PageRequest.of(page, size, sortObj);
 
     // Call service
-    Page<APPaymentListDTO> payments =
-        paymentService.findAll(pageable, supplier, status, dateFrom, dateTo, search, standalone);
+    Page<APPaymentListDTO> payments = paymentService.findAll(pageable, supplier, status, dateFrom, dateTo, search,
+        standalone);
 
-    // Build response matching spec format: { data: { content: APPaymentListDTO[], totalElements: number, totalPages: number }, meta: {...} }
+    // Build response matching spec format: { data: { content: APPaymentListDTO[],
+    // totalElements: number, totalPages: number }, meta: {...} }
     Map<String, Object> data = new HashMap<>();
     data.put("content", payments.getContent());
     data.put("totalElements", payments.getTotalElements());
@@ -147,9 +153,8 @@ public class PaymentController {
         .findById(id)
         .map(ResponseEntity::ok)
         .orElseThrow(
-            () ->
-                new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Payment not found: " + id));
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Payment not found: " + id));
   }
 
   /**
@@ -174,7 +179,7 @@ public class PaymentController {
    * Only DRAFT payments can be updated.
    * Requires authenticated user with Accountant+ role.
    *
-   * @param id payment ID
+   * @param id      payment ID
    * @param request payment update request
    * @return updated payment DTO
    */
@@ -207,7 +212,7 @@ public class PaymentController {
    * Only DRAFT payments can be modified.
    * Requires authenticated user with Accountant+ role.
    *
-   * @param id payment ID
+   * @param id          payment ID
    * @param allocations list of allocation requests
    * @return updated payment DTO
    */
@@ -252,7 +257,8 @@ public class PaymentController {
 
   /**
    * Get open/unpaid bills for a supplier.
-   * Returns bills with status=POSTED and remaining_balance > 0, sorted by due_date ASC.
+   * Returns bills with status=POSTED and remaining_balance > 0, sorted by
+   * due_date ASC.
    * Used for supplier picker in payment form.
    * Requires authenticated user with Accountant+ role.
    *
@@ -269,12 +275,13 @@ public class PaymentController {
 
   /**
    * Allocate payment using FIFO algorithm.
-   * Fetches open/unpaid bills sorted by due_date ASC and allocates payment amount.
+   * Fetches open/unpaid bills sorted by due_date ASC and allocates payment
+   * amount.
    * Returns suggested allocations (does not save).
    * Requires authenticated user with Accountant+ role.
    *
    * @param paymentAmount total payment amount
-   * @param supplierId supplier ID
+   * @param supplierId    supplier ID
    * @return list of suggested allocation DTOs
    */
   @PostMapping("/allocate-fifo")
@@ -287,8 +294,10 @@ public class PaymentController {
   }
 
   /**
-   * Submit payment for approval (if payment exceeds threshold, status changes to PENDING_APPROVAL).
-   * This is automatically handled during payment creation, but can be called explicitly.
+   * Submit payment for approval (if payment exceeds threshold, status changes to
+   * PENDING_APPROVAL).
+   * This is automatically handled during payment creation, but can be called
+   * explicitly.
    * Requires authenticated user with Accountant+ role.
    *
    * @param id payment ID
@@ -302,20 +311,23 @@ public class PaymentController {
     APPaymentDTO payment = paymentService.findById(id)
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Payment not found: " + id));
-    
+
     // If payment is DRAFT and exceeds threshold, update to PENDING_APPROVAL
-    // This logic is already in create(), but we provide this endpoint for explicit submission
+    // This logic is already in create(), but we provide this endpoint for explicit
+    // submission
     return ResponseEntity.ok(payment);
   }
 
   /**
    * Batch import payments from Excel file.
    * Requires authenticated user with Accountant+ role.
-   * Validates all rows before saving (atomic transaction: all valid rows or none).
+   * Validates all rows before saving (atomic transaction: all valid rows or
+   * none).
    * Auto-adds unknown suppliers as draft suppliers pending confirmation.
    *
    * @param file Excel file to import
-   * @return import result with success count, error count, error details, and error report ID
+   * @return import result with success count, error count, error details, and
+   *         error report ID
    */
   @PostMapping("/batch-import")
   @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
@@ -343,5 +355,57 @@ public class PaymentController {
     headers.setContentLength(template.length);
     return ResponseEntity.ok().headers(headers).body(template);
   }
-}
 
+  /**
+   * Approve a payment pending approval.
+   * AC6.3-08: Only CHIEF_ACCOUNTANT, CFO, or ADMIN can approve.
+   * Enforces maker-checker pattern (approver ≠ creator).
+   *
+   * @param id payment ID
+   * @return approved payment DTO
+   */
+  @PostMapping("/{id}/approve")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<APPaymentDTO> approvePayment(@PathVariable("id") UUID id) {
+    APPaymentDTO payment = paymentService.approvePayment(id);
+    return ResponseEntity.ok(payment);
+  }
+
+  /**
+   * Reject a payment pending approval.
+   * AC6.3-08: Only CHIEF_ACCOUNTANT, CFO, or ADMIN can reject.
+   * Requires a rejection reason.
+   *
+   * @param id      payment ID
+   * @param request rejection request with reason
+   * @return rejected payment DTO
+   */
+  @PostMapping("/{id}/reject")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<APPaymentDTO> rejectPayment(
+      @PathVariable("id") UUID id,
+      @RequestBody Map<String, String> request) {
+    String reason = request.get("reason");
+    APPaymentDTO payment = paymentService.rejectPayment(id, reason);
+    return ResponseEntity.ok(payment);
+  }
+
+  /**
+   * Reverse a posted payment.
+   * AC6.3-10: Creates reversing voucher and updates bill/allocation states.
+   * Requires a reversal reason (mandatory).
+   *
+   * @param id      payment ID
+   * @param request reversal request with reason
+   * @return reversed payment DTO
+   */
+  @PostMapping("/{id}/reverse")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<APPaymentDTO> reversePayment(
+      @PathVariable("id") UUID id,
+      @RequestBody Map<String, String> request) {
+    String reason = request.get("reason");
+    APPaymentDTO payment = paymentService.reversePayment(id, reason);
+    return ResponseEntity.ok(payment);
+  }
+}
