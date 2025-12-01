@@ -198,22 +198,22 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     url: string
     requiredRoles: Role[]
   }> = [
-      {
-        titleKey: 'nav.chartOfAccounts',
-        url: '/chart-of-accounts',
-        requiredRoles: ['admin', 'chief_accountant'],
-      },
-      {
-        titleKey: 'nav.voucherTemplates',
-        url: '/voucher-templates',
-        requiredRoles: ['admin', 'chief_accountant', 'cfo'],
-      },
-      {
-        titleKey: 'nav.voucherTypes',
-        url: '/voucher-types',
-        requiredRoles: ['admin', 'chief_accountant'],
-      },
-    ]
+    {
+      titleKey: 'nav.chartOfAccounts',
+      url: '/chart-of-accounts',
+      requiredRoles: ['admin', 'chief_accountant'],
+    },
+    {
+      titleKey: 'nav.voucherTemplates',
+      url: '/voucher-templates',
+      requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.voucherTypes',
+      url: '/voucher-types',
+      requiredRoles: ['admin', 'chief_accountant'],
+    },
+  ]
 
   // Reports items for sidebar menu (with translation keys)
   const reportsItems: Array<{
@@ -221,42 +221,42 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     url: string
     requiredRoles: Role[]
   }> = [
-      {
-        titleKey: 'nav.apAging',
-        url: '/ap-aging',
-        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
-      },
-      {
-        titleKey: 'nav.arAging',
-        url: '/accounting/ar-aging',
-        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
-      },
-      {
-        titleKey: 'nav.inputVat',
-        url: '/vat/reports/input',
-        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
-      },
-      {
-        titleKey: 'nav.outputVat',
-        url: '/vat/reports/output',
-        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
-      },
-      {
-        titleKey: 'nav.trialBalance',
-        url: '/accounting/trial-balance',
-        requiredRoles: ['admin', 'chief_accountant', 'cfo'],
-      },
-      {
-        titleKey: 'nav.cashBook',
-        url: '/accounting/cash-book',
-        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
-      },
-      {
-        titleKey: 'nav.cashBookSummary',
-        url: '/accounting/cash-book/summary',
-        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
-      },
-    ]
+    {
+      titleKey: 'nav.apAging',
+      url: '/ap-aging',
+      requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.arAging',
+      url: '/accounting/ar-aging',
+      requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.inputVat',
+      url: '/vat/reports/input',
+      requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.outputVat',
+      url: '/vat/reports/output',
+      requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.trialBalance',
+      url: '/accounting/trial-balance',
+      requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.cashBook',
+      url: '/accounting/cash-book',
+      requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.cashBookSummary',
+      url: '/accounting/cash-book/summary',
+      requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
+  ]
 
   // Filter category items based on role
   const visibleCategoryItems = categoryItems.filter((item) => {
@@ -276,7 +276,13 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
 
   // Build sidebar items with Purchase and Sales menu structure (using translations)
   const sidebarItems = visibleNavItems
-    .filter((i) => i.path !== '/company' && i.path !== '/reports' && i.path !== '/accounting/receipts' && i.path !== '/payments')
+    .filter(
+      (i) =>
+        i.path !== '/company' &&
+        i.path !== '/reports' &&
+        i.path !== '/accounting/receipts' &&
+        i.path !== '/payments',
+    )
     .map((i) => {
       // Check if this is Purchase Bills - create Purchase menu with Payments
       if (i.path === '/purchase-bills') {
@@ -368,7 +374,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   <span className="font-medium text-foreground">{company.name}</span>
                 )}
                 {currentPeriod && (
-                  <span className="text-muted-foreground text-xs">{t('common.period')}: {currentPeriod}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {t('common.period')}: {currentPeriod}
+                  </span>
                 )}
               </div>
             )}
@@ -397,7 +405,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       {/* Chatbot Widget - Floating on all pages with error boundary */}
       <ChatbotErrorBoundary
         onError={(error, errorInfo) => {
-          console.error('Chatbot crashed:', error, errorInfo);
+          console.error('Chatbot crashed:', error, errorInfo)
           // TODO: Send to error tracking service (Sentry, etc.)
         }}
       >

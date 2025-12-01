@@ -1,43 +1,41 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, TrendingUp } from 'lucide-react';
-import { getEmbeddedDashboardUrl } from '../services/analytics';
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Loader2, TrendingUp } from 'lucide-react'
+import { getEmbeddedDashboardUrl } from '../services/analytics'
 
 /**
  * Analytics Dashboard page with embedded Metabase dashboards.
  * Displays key financial metrics and KPIs in real-time.
  */
 export default function Dashboard() {
-  const { t } = useTranslation();
-  const [dashboardUrl, setDashboardUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation()
+  const [dashboardUrl, setDashboardUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // For MVP, we'll use a hardcoded dashboard ID
   // In production, this would come from configuration or user preferences
-  const MAIN_DASHBOARD_ID = 1;
+  const MAIN_DASHBOARD_ID = 1
 
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        const response = await getEmbeddedDashboardUrl(MAIN_DASHBOARD_ID);
-        setDashboardUrl(response.url);
+        setLoading(true)
+        setError(null)
+        const response = await getEmbeddedDashboardUrl(MAIN_DASHBOARD_ID)
+        setDashboardUrl(response.url)
       } catch (err) {
-        console.error('Failed to load dashboard:', err);
-        setError(
-          t('analytics.loadError')
-        );
+        console.error('Failed to load dashboard:', err)
+        setError(t('analytics.loadError'))
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    loadDashboard();
-  }, []);
+    loadDashboard()
+  }, [])
 
   if (loading) {
     return (
@@ -47,7 +45,7 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground">{t('dashboard.loading')}</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -55,7 +53,7 @@ export default function Dashboard() {
       <Alert variant="destructive">
         <AlertDescription>{error}</AlertDescription>
       </Alert>
-    );
+    )
   }
 
   return (
@@ -63,9 +61,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title')}</h1>
-          <p className="text-muted-foreground">
-            {t('analytics.subtitle')}
-          </p>
+          <p className="text-muted-foreground">{t('analytics.subtitle')}</p>
         </div>
         <TrendingUp className="h-8 w-8 text-primary" />
       </div>
@@ -73,9 +69,7 @@ export default function Dashboard() {
       <Card>
         <CardHeader>
           <CardTitle>{t('analytics.financialOverview')}</CardTitle>
-          <CardDescription>
-            {t('analytics.financialOverviewDesc')}
-          </CardDescription>
+          <CardDescription>{t('analytics.financialOverviewDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {dashboardUrl ? (
@@ -88,9 +82,7 @@ export default function Dashboard() {
             />
           ) : (
             <Alert>
-              <AlertDescription>
-                {t('analytics.dashboardNotAvailable')}
-              </AlertDescription>
+              <AlertDescription>{t('analytics.dashboardNotAvailable')}</AlertDescription>
             </Alert>
           )}
         </CardContent>
@@ -99,10 +91,14 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">{t('analytics.revenueVsExpenses')}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t('analytics.revenueVsExpenses')}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">{t('analytics.currentPeriodComparison')}</p>
+            <p className="text-xs text-muted-foreground">
+              {t('analytics.currentPeriodComparison')}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -123,5 +119,5 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

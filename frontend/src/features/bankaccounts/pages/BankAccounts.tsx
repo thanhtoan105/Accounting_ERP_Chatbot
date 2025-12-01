@@ -309,9 +309,18 @@ export default function BankAccounts() {
           const type = row.getValue<AccountType>('type')
           return (
             <div className="flex items-center gap-2">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${type === 'CASH' ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                }`}>
-                {type === 'CASH' ? <Banknote className="h-4 w-4" /> : <Landmark className="h-4 w-4" />}
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                  type === 'CASH'
+                    ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
+                    : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                }`}
+              >
+                {type === 'CASH' ? (
+                  <Banknote className="h-4 w-4" />
+                ) : (
+                  <Landmark className="h-4 w-4" />
+                )}
               </div>
               <span className="text-sm font-medium">
                 {type === 'CASH' ? t('bankAccounts.types.cash') : t('bankAccounts.types.bank')}
@@ -501,10 +510,7 @@ export default function BankAccounts() {
           />
         </div>
         <Select value={typeFilter} onValueChange={(value: any) => setTypeFilter(value)}>
-          <SelectTrigger
-            className="w-36"
-            aria-label={t('bankAccounts.filters.allTypes')}
-          >
+          <SelectTrigger className="w-36" aria-label={t('bankAccounts.filters.allTypes')}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -514,10 +520,7 @@ export default function BankAccounts() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-          <SelectTrigger
-            className="w-40"
-            aria-label={t('bankAccounts.filters.allStatus')}
-          >
+          <SelectTrigger className="w-40" aria-label={t('bankAccounts.filters.allStatus')}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -622,7 +625,8 @@ export default function BankAccounts() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-sm text-muted-foreground">
-                {t('bankAccounts.pagination.showing')} {bankAccounts.length} {t('bankAccounts.pagination.of')} {total} {t('bankAccounts.pagination.items')}
+                {t('bankAccounts.pagination.showing')} {bankAccounts.length}{' '}
+                {t('bankAccounts.pagination.of')} {total} {t('bankAccounts.pagination.items')}
               </p>
               <Select
                 value={String(pageSize)}
@@ -642,7 +646,9 @@ export default function BankAccounts() {
                   <SelectItem value="100">100</SelectItem>
                 </SelectContent>
               </Select>
-              <span className="text-sm text-muted-foreground">{t('bankAccounts.pagination.perPage')}</span>
+              <span className="text-sm text-muted-foreground">
+                {t('bankAccounts.pagination.perPage')}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1}>

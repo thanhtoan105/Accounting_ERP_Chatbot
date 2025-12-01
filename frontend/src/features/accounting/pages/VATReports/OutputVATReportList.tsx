@@ -342,7 +342,8 @@ export function OutputVATReportList() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
-            Output VAT Report <span className="text-muted-foreground text-lg">/ Báo cáo VAT đầu ra</span>
+            Output VAT Report{' '}
+            <span className="text-muted-foreground text-lg">/ Báo cáo VAT đầu ra</span>
           </h1>
           <p className="text-muted-foreground">
             Generate and export output VAT reports for sales invoices (ND123 compliant)
@@ -466,7 +467,9 @@ export function OutputVATReportList() {
                     </div>
                     <div>
                       <div className="text-muted-foreground">Total VAT Collected</div>
-                      <div className="font-semibold">{formatCurrency(report.totalVatCollected)}</div>
+                      <div className="font-semibold">
+                        {formatCurrency(report.totalVatCollected)}
+                      </div>
                     </div>
                     <div>
                       <div className="text-muted-foreground">Generated</div>
@@ -640,7 +643,8 @@ export function OutputVATReportList() {
               {filteredItems.length > 0 && (
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">
-                    Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, filteredItems.length)} of{' '}
+                    Showing {page * pageSize + 1} to{' '}
+                    {Math.min((page + 1) * pageSize, filteredItems.length)} of{' '}
                     {filteredItems.length} records
                   </div>
                   <div className="flex items-center gap-2">
@@ -672,8 +676,7 @@ export function OutputVATReportList() {
                         onClick={() => setPage(0)}
                         disabled={page === 0}
                       >
-                        <span className="sr-only">First page</span>
-                        «
+                        <span className="sr-only">First page</span>«
                       </Button>
                       <Button
                         variant="outline"
@@ -681,8 +684,7 @@ export function OutputVATReportList() {
                         onClick={() => setPage((p) => Math.max(0, p - 1))}
                         disabled={page === 0}
                       >
-                        <span className="sr-only">Previous page</span>
-                        ‹
+                        <span className="sr-only">Previous page</span>‹
                       </Button>
                       <span className="text-sm px-2">
                         Page {page + 1} of {totalPages}
@@ -693,8 +695,7 @@ export function OutputVATReportList() {
                         onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                         disabled={page >= totalPages - 1}
                       >
-                        <span className="sr-only">Next page</span>
-                        ›
+                        <span className="sr-only">Next page</span>›
                       </Button>
                       <Button
                         variant="outline"
@@ -702,8 +703,7 @@ export function OutputVATReportList() {
                         onClick={() => setPage(totalPages - 1)}
                         disabled={page >= totalPages - 1}
                       >
-                        <span className="sr-only">Last page</span>
-                        »
+                        <span className="sr-only">Last page</span>»
                       </Button>
                     </div>
                   </div>
@@ -753,9 +753,7 @@ export function OutputVATReportList() {
                           {format(new Date(item.startDate), 'dd/MM/yyyy')} –{' '}
                           {format(new Date(item.endDate), 'dd/MM/yyyy')}
                         </TableCell>
-                        <TableCell>
-                          {item.supplierName || item.customerName || 'All'}
-                        </TableCell>
+                        <TableCell>{item.supplierName || item.customerName || 'All'}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{item.format}</Badge>
                         </TableCell>
@@ -816,7 +814,9 @@ export function OutputVATReportList() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => setHistoryPage((p) => Math.min(historyTotalPages - 1, p + 1))}
+                        onClick={() =>
+                          setHistoryPage((p) => Math.min(historyTotalPages - 1, p + 1))
+                        }
                         disabled={historyPage >= historyTotalPages - 1}
                       >
                         ›
@@ -865,10 +865,7 @@ export function OutputVATReportList() {
               </div>
               <div className="space-y-2">
                 <Label>VAT Class (optional)</Label>
-                <Select
-                  value={formVatClass}
-                  onValueChange={(value: any) => setFormVatClass(value)}
-                >
+                <Select value={formVatClass} onValueChange={(value: any) => setFormVatClass(value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -895,12 +892,12 @@ export function OutputVATReportList() {
                       {format(new Date(report.endDate), 'dd/MM/yyyy')}
                     </div>
                     <div>
-                      <strong>Customer:</strong>{' '}
-                      {report.customerName || 'All Customers'}
+                      <strong>Customer:</strong> {report.customerName || 'All Customers'}
                       {report.customerTaxCode && ` (${report.customerTaxCode})`}
                     </div>
                     <div>
-                      <strong>Total VAT Collected:</strong> {formatCurrency(report.totalVatCollected)}
+                      <strong>Total VAT Collected:</strong>{' '}
+                      {formatCurrency(report.totalVatCollected)}
                     </div>
                     <div className="pt-2">
                       <strong>Revenue by VAT Rate:</strong>
@@ -959,4 +956,3 @@ export function OutputVATReportList() {
     </div>
   )
 }
-

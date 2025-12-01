@@ -409,7 +409,11 @@ export default function PaymentList() {
         header: t('payments.method'),
         cell: ({ row }) => {
           const method = row.original.paymentMethod
-          return method === 'BANK_TRANSFER' ? t('payments.methodBank') : method === 'CASH' ? t('payments.methodCash') : method
+          return method === 'BANK_TRANSFER'
+            ? t('payments.methodBank')
+            : method === 'CASH'
+              ? t('payments.methodCash')
+              : method
         },
       },
       {
@@ -534,9 +538,7 @@ export default function PaymentList() {
             <Wallet className="h-6 w-6 text-primary" />
             {t('payments.apPayments')}
           </h1>
-          <p className="text-muted-foreground">
-            {t('payments.subtitle')}
-          </p>
+          <p className="text-muted-foreground">{t('payments.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleRefresh} disabled={loading}>
@@ -674,8 +676,8 @@ export default function PaymentList() {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t('payments.deleteConfirmMessage')}{' '}
-              <strong>{paymentToDelete?.paymentNumber}</strong>? {t('payments.cannotBeUndone')}
+              {t('payments.deleteConfirmMessage')} <strong>{paymentToDelete?.paymentNumber}</strong>
+              ? {t('payments.cannotBeUndone')}
             </p>
           </div>
           <DialogFooter>
@@ -812,8 +814,9 @@ export default function PaymentList() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">
-            {t('payments.showing')} {payments.length > 0 ? page * pageSize + 1 : 0} {t('payments.to')}{' '}
-            {Math.min((page + 1) * pageSize, totalElements)} {t('payments.of')} {totalElements}
+            {t('payments.showing')} {payments.length > 0 ? page * pageSize + 1 : 0}{' '}
+            {t('payments.to')} {Math.min((page + 1) * pageSize, totalElements)} {t('payments.of')}{' '}
+            {totalElements}
           </span>
           <Select
             value={String(pageSize)}
@@ -877,9 +880,7 @@ export default function PaymentList() {
       {/* Import Dialog - TODO: Create PaymentImportDialog component */}
       {importDialogOpen && (
         <Alert>
-          <AlertDescription>
-            {t('payments.importDialogPlaceholder')}
-          </AlertDescription>
+          <AlertDescription>{t('payments.importDialogPlaceholder')}</AlertDescription>
         </Alert>
       )}
     </div>

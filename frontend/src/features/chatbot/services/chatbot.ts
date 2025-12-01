@@ -5,8 +5,8 @@
  * Uses axios instance with authentication for all requests.
  */
 
-import axios from '@/utils/axios';
-import type { ChatbotQueryRequest, ChatbotQueryResponse } from '../types/chatbot';
+import axios from '@/utils/axios'
+import type { ChatbotQueryRequest, ChatbotQueryResponse } from '../types/chatbot'
 
 /**
  * Submit a chatbot query to the backend.
@@ -15,14 +15,9 @@ import type { ChatbotQueryRequest, ChatbotQueryResponse } from '../types/chatbot
  * @returns Promise resolving to chatbot response with answer and citations
  * @throws Error if request fails (network error, validation error, etc.)
  */
-export async function submitQuery(
-  request: ChatbotQueryRequest
-): Promise<ChatbotQueryResponse> {
-  const response = await axios.post<ChatbotQueryResponse>(
-    '/chatbot/query',
-    request
-  );
-  return response.data;
+export async function submitQuery(request: ChatbotQueryRequest): Promise<ChatbotQueryResponse> {
+  const response = await axios.post<ChatbotQueryResponse>('/chatbot/query', request)
+  return response.data
 }
 
 /**
@@ -31,12 +26,12 @@ export async function submitQuery(
  * @returns Promise resolving to health status object
  */
 export async function checkHealth(): Promise<{
-  status: 'UP' | 'DOWN';
-  service: string;
-  message: string;
+  status: 'UP' | 'DOWN'
+  service: string
+  message: string
 }> {
-  const response = await axios.get('/chatbot/health');
-  return response.data;
+  const response = await axios.get('/chatbot/health')
+  return response.data
 }
 
 /**
@@ -51,5 +46,5 @@ export async function checkHealth(): Promise<{
 export async function getHistory(sessionId: string): Promise<ChatbotQueryResponse[]> {
   // Placeholder for future implementation
   // For MVP, history is maintained client-side only
-  throw new Error('Session history API not implemented in MVP');
+  throw new Error('Session history API not implemented in MVP')
 }

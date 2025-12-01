@@ -194,16 +194,18 @@ export function StatementHistory() {
               ) : (
                 history.map((item) => (
                   <TableRow key={item.id} data-testid="history-row">
-                    <TableCell>
-                      {format(new Date(item.generatedAt), 'dd/MM/yyyy HH:mm')}
-                    </TableCell>
+                    <TableCell>{format(new Date(item.generatedAt), 'dd/MM/yyyy HH:mm')}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{item.format}</Badge>
                     </TableCell>
                     <TableCell>{format(new Date(item.asOfDate), 'dd/MM/yyyy')}</TableCell>
                     <TableCell>{item.generatedByName || '-'}</TableCell>
-                    <TableCell className="text-center" data-testid="history-export-count">{item.exportCount}</TableCell>
-                    <TableCell className="text-center" data-testid="history-sent-count">{item.sentCount}</TableCell>
+                    <TableCell className="text-center" data-testid="history-export-count">
+                      {item.exportCount}
+                    </TableCell>
+                    <TableCell className="text-center" data-testid="history-sent-count">
+                      {item.sentCount}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -275,4 +277,3 @@ export function StatementHistory() {
     </div>
   )
 }
-

@@ -146,4 +146,3 @@ export interface DisputeFilterParams {
 export interface ResolveDisputeRequest {
   resolutionNotes: string
 }
-

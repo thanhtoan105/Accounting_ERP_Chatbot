@@ -42,29 +42,46 @@ interface BankAccountFormSheetProps {
 }
 
 // Schema with conditional validation based on account type
-const bankAccountFormSchema = z.object({
-  type: z.enum(['CASH', 'BANK'], { message: 'Account type is required' }),
-  // For CASH: optional (will auto-generate). For BANK: required
-  accountNumber: z.string().max(50, 'Account number must be at most 50 characters').optional().or(z.literal('')),
-  // For CASH: Fund name. For BANK: Bank name
-  bankName: z
-    .string()
-    .min(1, 'This field is required')
-    .max(255, 'Must be at most 255 characters'),
-  branch: z.string().max(255, 'Branch must be at most 255 characters').optional().or(z.literal('')),
-  openingBalance: z.number().min(0, 'Opening balance must be non-negative'),
-  glAccountCode: z.string().max(20, 'GL account code must be at most 20 characters').optional().or(z.literal('')),
-  active: z.boolean(),
-}).refine((data) => {
-  // For BANK type, accountNumber is required
-  if (data.type === 'BANK') {
-    return data.accountNumber && data.accountNumber.length > 0
-  }
-  return true
-}, {
-  message: 'Account number is required for bank accounts',
-  path: ['accountNumber'],
-})
+const bankAccountFormSchema = z
+  .object({
+    type: z.enum(['CASH', 'BANK'], { message: 'Account type is required' }),
+    // For CASH: optional (will auto-generate). For BANK: required
+    accountNumber: z
+      .string()
+      .max(50, 'Account number must be at most 50 characters')
+      .optional()
+      .or(z.literal('')),
+    // For CASH: Fund name. For BANK: Bank name
+    bankName: z
+      .string()
+      .min(1, 'This field is required')
+      .max(255, 'Must be at most 255 characters'),
+    branch: z
+      .string()
+      .max(255, 'Branch must be at most 255 characters')
+      .optional()
+      .or(z.literal('')),
+    openingBalance: z.number().min(0, 'Opening balance must be non-negative'),
+    glAccountCode: z
+      .string()
+      .max(20, 'GL account code must be at most 20 characters')
+      .optional()
+      .or(z.literal('')),
+    active: z.boolean(),
+  })
+  .refine(
+    (data) => {
+      // For BANK type, accountNumber is required
+      if (data.type === 'BANK') {
+        return data.accountNumber && data.accountNumber.length > 0
+      }
+      return true
+    },
+    {
+      message: 'Account number is required for bank accounts',
+      path: ['accountNumber'],
+    },
+  )
 
 type BankAccountFormValues = z.infer<typeof bankAccountFormSchema>
 
@@ -111,7 +128,8 @@ export default function BankAccountFormSheet({
   useEffect(() => {
     const currentGlCode = watch('glAccountCode')
     // Only auto-set if glAccountCode is empty or matches the other type's default
-    const shouldAutoSet = !currentGlCode ||
+    const shouldAutoSet =
+      !currentGlCode ||
       (accountType === 'BANK' && currentGlCode.startsWith('111')) ||
       (accountType === 'CASH' && currentGlCode.startsWith('112'))
 
@@ -174,7 +192,11 @@ export default function BankAccountFormSheet({
           glAccountCode: values.glAccountCode?.trim() || undefined,
         }
         await updateBankAccount(bankAccount.id, request)
-        toast.success(values.type === 'CASH' ? 'Cập nhật quỹ thành công' : 'Cập nhật tài khoản ngân hàng thành công')
+        toast.success(
+          values.type === 'CASH'
+            ? 'Cập nhật quỹ thành công'
+            : 'Cập nhật tài khoản ngân hàng thành công',
+        )
       } else {
         // For CASH type, auto-generate account number if not provided
         let accountNumber = values.accountNumber?.trim() || ''
@@ -193,7 +215,11 @@ export default function BankAccountFormSheet({
           active: values.active,
         }
         await createBankAccount(request)
-        toast.success(values.type === 'CASH' ? 'Tạo quỹ tiền mặt thành công' : 'Tạo tài khoản ngân hàng thành công')
+        toast.success(
+          values.type === 'CASH'
+            ? 'Tạo quỹ tiền mặt thành công'
+            : 'Tạo tài khoản ngân hàng thành công',
+        )
       }
       onSuccess()
     } catch (err: any) {
@@ -223,7 +249,9 @@ export default function BankAccountFormSheet({
           <DialogHeader>
             <DialogTitle>
               {isEditMode
-                ? (accountType === 'CASH' ? 'Chỉnh sửa Quỹ tiền mặt' : 'Chỉnh sửa Tài khoản ngân hàng')
+                ? accountType === 'CASH'
+                  ? 'Chỉnh sửa Quỹ tiền mặt'
+                  : 'Chỉnh sửa Tài khoản ngân hàng'
                 : 'Tạo Quỹ / Tài khoản ngân hàng'}
             </DialogTitle>
             <DialogDescription>
@@ -273,7 +301,7 @@ export default function BankAccountFormSheet({
                           field.value === 'CASH'
                             ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
                             : 'border-muted bg-background',
-                          isSubmitting && 'cursor-not-allowed opacity-50'
+                          isSubmitting && 'cursor-not-allowed opacity-50',
                         )}
                       >
                         {field.value === 'CASH' && (
@@ -281,22 +309,26 @@ export default function BankAccountFormSheet({
                             <Check className="h-4 w-4 text-primary" />
                           </div>
                         )}
-                        <div className={cn(
-                          'flex h-12 w-12 items-center justify-center rounded-full',
-                          field.value === 'CASH' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                        )}>
+                        <div
+                          className={cn(
+                            'flex h-12 w-12 items-center justify-center rounded-full',
+                            field.value === 'CASH'
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-muted text-muted-foreground',
+                          )}
+                        >
                           <Banknote className="h-6 w-6" />
                         </div>
                         <div>
-                          <p className={cn(
-                            'font-semibold',
-                            field.value === 'CASH' ? 'text-primary' : 'text-foreground'
-                          )}>
+                          <p
+                            className={cn(
+                              'font-semibold',
+                              field.value === 'CASH' ? 'text-primary' : 'text-foreground',
+                            )}
+                          >
                             Quỹ tiền mặt
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            TK 111 - Tiền mặt
-                          </p>
+                          <p className="text-xs text-muted-foreground">TK 111 - Tiền mặt</p>
                         </div>
                       </button>
 
@@ -310,7 +342,7 @@ export default function BankAccountFormSheet({
                           field.value === 'BANK'
                             ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
                             : 'border-muted bg-background',
-                          isSubmitting && 'cursor-not-allowed opacity-50'
+                          isSubmitting && 'cursor-not-allowed opacity-50',
                         )}
                       >
                         {field.value === 'BANK' && (
@@ -318,22 +350,26 @@ export default function BankAccountFormSheet({
                             <Check className="h-4 w-4 text-primary" />
                           </div>
                         )}
-                        <div className={cn(
-                          'flex h-12 w-12 items-center justify-center rounded-full',
-                          field.value === 'BANK' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                        )}>
+                        <div
+                          className={cn(
+                            'flex h-12 w-12 items-center justify-center rounded-full',
+                            field.value === 'BANK'
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-muted text-muted-foreground',
+                          )}
+                        >
                           <Landmark className="h-6 w-6" />
                         </div>
                         <div>
-                          <p className={cn(
-                            'font-semibold',
-                            field.value === 'BANK' ? 'text-primary' : 'text-foreground'
-                          )}>
+                          <p
+                            className={cn(
+                              'font-semibold',
+                              field.value === 'BANK' ? 'text-primary' : 'text-foreground',
+                            )}
+                          >
                             Tài khoản ngân hàng
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            TK 112 - Tiền gửi NH
-                          </p>
+                          <p className="text-xs text-muted-foreground">TK 112 - Tiền gửi NH</p>
                         </div>
                       </button>
                     </div>
@@ -346,11 +382,17 @@ export default function BankAccountFormSheet({
             {/* Show current type in edit mode */}
             {isEditMode && (
               <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-                <div className={cn(
-                  'flex h-10 w-10 items-center justify-center rounded-full',
-                  'bg-primary/10 text-primary'
-                )}>
-                  {accountType === 'CASH' ? <Banknote className="h-5 w-5" /> : <Landmark className="h-5 w-5" />}
+                <div
+                  className={cn(
+                    'flex h-10 w-10 items-center justify-center rounded-full',
+                    'bg-primary/10 text-primary',
+                  )}
+                >
+                  {accountType === 'CASH' ? (
+                    <Banknote className="h-5 w-5" />
+                  ) : (
+                    <Landmark className="h-5 w-5" />
+                  )}
                 </div>
                 <div>
                   <p className="font-medium">
@@ -399,14 +441,17 @@ export default function BankAccountFormSheet({
                 {/* Bank Name / Fund Name - Dynamic label based on type */}
                 <Field className="gap-2">
                   <FieldLabel htmlFor="bankName" className="text-sm font-medium">
-                    {accountType === 'CASH' ? 'Tên quỹ' : 'Tên ngân hàng'} <span className="text-destructive">*</span>
+                    {accountType === 'CASH' ? 'Tên quỹ' : 'Tên ngân hàng'}{' '}
+                    <span className="text-destructive">*</span>
                   </FieldLabel>
                   <FieldContent>
                     <Input
                       id="bankName"
-                      placeholder={accountType === 'CASH'
-                        ? 'VD: Quỹ tiền mặt VND, Quỹ USD'
-                        : 'VD: Vietcombank, Agribank, BIDV'}
+                      placeholder={
+                        accountType === 'CASH'
+                          ? 'VD: Quỹ tiền mặt VND, Quỹ USD'
+                          : 'VD: Vietcombank, Agribank, BIDV'
+                      }
                       {...register('bankName')}
                       aria-invalid={!!errors.bankName}
                       disabled={isSubmitting}

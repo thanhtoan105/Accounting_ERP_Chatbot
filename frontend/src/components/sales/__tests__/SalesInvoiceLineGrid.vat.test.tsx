@@ -115,4 +115,3 @@ describe('SalesInvoiceLineGrid - VAT Rate Override', () => {
     // The dialog should allow confirming the override
   })
 })
-

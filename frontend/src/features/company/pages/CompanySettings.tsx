@@ -736,9 +736,9 @@ export default function CompanySettings() {
                                   <CalendarIcon className="mr-2 h-4 w-4" />
                                   {values.fiscal_year_start
                                     ? format(
-                                      new Date(`${values.fiscal_year_start}T00:00:00`),
-                                      'PPP',
-                                    )
+                                        new Date(`${values.fiscal_year_start}T00:00:00`),
+                                        'PPP',
+                                      )
                                     : 'Pick a date'}
                                 </Button>
                               </PopoverTrigger>

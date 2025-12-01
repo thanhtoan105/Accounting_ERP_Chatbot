@@ -1,18 +1,18 @@
-import { ExternalLink, FileText } from 'lucide-react';
-import type { Citation } from '../types/chatbot';
-import { Card } from '@/components/ui/card';
+import { ExternalLink, FileText } from 'lucide-react'
+import type { Citation } from '../types/chatbot'
+import { Card } from '@/components/ui/card'
 
 interface CitationListProps {
-  citations: Citation[];
+  citations: Citation[]
 }
 
 export function CitationList({ citations }: CitationListProps) {
-  if (citations.length === 0) return null;
+  if (citations.length === 0) return null
 
   // Open voucher in new tab to preserve chat state
   const handleCitationClick = (link: string) => {
-    window.open(link, '_blank', 'noopener,noreferrer');
-  };
+    window.open(link, '_blank', 'noopener,noreferrer')
+  }
 
   return (
     <div className="space-y-2">
@@ -42,9 +42,7 @@ export function CitationList({ citations }: CitationListProps) {
                 </div>
 
                 {/* Excerpt */}
-                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                  {citation.excerpt}
-                </p>
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{citation.excerpt}</p>
 
                 {/* Relevance Score */}
                 {citation.relevanceScore > 0 && (
@@ -58,5 +56,5 @@ export function CitationList({ citations }: CitationListProps) {
         ))}
       </div>
     </div>
-  );
+  )
 }

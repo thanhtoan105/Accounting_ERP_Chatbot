@@ -138,7 +138,9 @@ export default function CustomerDetailsPanel({
                 </div>
                 <div className="space-y-4">
                   <Field className="gap-2">
-                    <FieldLabel className="text-sm font-medium">{t('customers.customerCode')}</FieldLabel>
+                    <FieldLabel className="text-sm font-medium">
+                      {t('customers.customerCode')}
+                    </FieldLabel>
                     <FieldContent>
                       <div className="px-3 py-2 rounded-md border bg-muted/30">
                         <span className="text-sm font-medium">{customerData.code}</span>
@@ -147,7 +149,9 @@ export default function CustomerDetailsPanel({
                   </Field>
 
                   <Field className="gap-2">
-                    <FieldLabel className="text-sm font-medium">{t('customers.customerName')}</FieldLabel>
+                    <FieldLabel className="text-sm font-medium">
+                      {t('customers.customerName')}
+                    </FieldLabel>
                     <FieldContent>
                       <div className="px-3 py-2 rounded-md border bg-muted/30">
                         <span className="text-sm font-medium">{customerData.name}</span>
@@ -157,7 +161,9 @@ export default function CustomerDetailsPanel({
 
                   {customerData.taxCode && (
                     <Field className="gap-2">
-                      <FieldLabel className="text-sm font-medium">{t('customers.taxCode')}</FieldLabel>
+                      <FieldLabel className="text-sm font-medium">
+                        {t('customers.taxCode')}
+                      </FieldLabel>
                       <FieldContent>
                         <div className="px-3 py-2 rounded-md border bg-muted/30">
                           <span className="text-sm font-medium">{customerData.taxCode}</span>

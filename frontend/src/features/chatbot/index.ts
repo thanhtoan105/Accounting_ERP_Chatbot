@@ -5,14 +5,18 @@
  */
 
 // Components
-export { ChatbotWidget } from './components/ChatbotWidget';
-export { ChatMessage } from './components/ChatMessage';
-export { CitationList } from './components/CitationList';
-export { ChatSkeleton, ChatbotLoadingSkeleton } from './components/ChatSkeleton';
-export { ChatbotErrorBoundary, ChatbotErrorFallback, ChatbotUnavailableFallback } from './components/ChatbotErrorBoundary';
+export { ChatbotWidget } from './components/ChatbotWidget'
+export { ChatMessage } from './components/ChatMessage'
+export { CitationList } from './components/CitationList'
+export { ChatSkeleton, ChatbotLoadingSkeleton } from './components/ChatSkeleton'
+export {
+  ChatbotErrorBoundary,
+  ChatbotErrorFallback,
+  ChatbotUnavailableFallback,
+} from './components/ChatbotErrorBoundary'
 
 // Hooks
-export { useChatbot } from './hooks/useChatbot';
+export { useChatbot } from './hooks/useChatbot'
 
 // Types
 export type {
@@ -22,7 +26,7 @@ export type {
   ChatMessage as ChatMessageType,
   ChatbotConfig,
   ChatbotState,
-} from './types/chatbot';
+} from './types/chatbot'
 
 // Services
-export { submitQuery, checkHealth } from './services/chatbot';
+export { submitQuery, checkHealth } from './services/chatbot'

@@ -38,12 +38,12 @@ export async function getTrialBalance(periodId: string): Promise<TrialBalanceRes
   const res = await fetchWithAuth(`${API_BASE}/reports/trial-balance?periodId=${periodId}`, {
     method: 'GET',
   })
-  
+
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: 'Failed to fetch trial balance' }))
     throw new Error(error.message || 'Failed to fetch trial balance')
   }
-  
+
   return await res.json()
 }
 
@@ -52,7 +52,7 @@ export async function exportTrialBalance(periodId: string): Promise<void> {
     `${API_BASE}/reports/trial-balance/export?periodId=${periodId}&format=xlsx`,
     {
       method: 'GET',
-    }
+    },
   )
 
   if (!res.ok) {
@@ -71,4 +71,3 @@ export async function exportTrialBalance(periodId: string): Promise<void> {
   window.URL.revokeObjectURL(url)
   document.body.removeChild(a)
 }
-

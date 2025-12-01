@@ -891,10 +891,17 @@ export default function ReceiptForm() {
                 <div>
                   <CardTitle>Invoice Allocations</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Allocated: {formatCurrency(allocations.reduce((sum, a) => sum + a.allocatedAmount, 0))} / {formatCurrency(receiptAmount)}
+                    Allocated:{' '}
+                    {formatCurrency(allocations.reduce((sum, a) => sum + a.allocatedAmount, 0))} /{' '}
+                    {formatCurrency(receiptAmount)}
                     {allocations.reduce((sum, a) => sum + a.allocatedAmount, 0) < receiptAmount && (
                       <span className="text-amber-600 ml-2">
-                        (Unallocated: {formatCurrency(receiptAmount - allocations.reduce((sum, a) => sum + a.allocatedAmount, 0))})
+                        (Unallocated:{' '}
+                        {formatCurrency(
+                          receiptAmount -
+                            allocations.reduce((sum, a) => sum + a.allocatedAmount, 0),
+                        )}
+                        )
                       </span>
                     )}
                   </p>

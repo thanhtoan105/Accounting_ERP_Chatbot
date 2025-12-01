@@ -39,15 +39,23 @@ export const periodService = {
 
         // If it's a 403 Forbidden error, show authorization error to user
         if (error.response.status === 403) {
-          console.error('🚫 AUTHORIZATION ERROR: You do not have permission to access open periods.')
+          console.error(
+            '🚫 AUTHORIZATION ERROR: You do not have permission to access open periods.',
+          )
           console.error('Required role: ACCOUNTANT, CHIEF_ACCOUNTANT, ADMIN, or CFO')
-          console.error('Error details:', error.response.data?.error?.message || 'No additional details')
+          console.error(
+            'Error details:',
+            error.response.data?.error?.message || 'No additional details',
+          )
 
-          const errorMsg = error.response.data?.error?.message ||
+          const errorMsg =
+            error.response.data?.error?.message ||
             'Access denied. You do not have permission to view accounting periods. Required role: ACCOUNTANT, CHIEF_ACCOUNTANT, ADMIN, or CFO.'
           toast.error(errorMsg)
         } else {
-          toast.error(`Failed to fetch periods: ${error.response.status} ${error.response.statusText}`)
+          toast.error(
+            `Failed to fetch periods: ${error.response.status} ${error.response.statusText}`,
+          )
         }
       } else if (error.request) {
         console.error('No response received:', error.request)
@@ -64,7 +72,9 @@ export const periodService = {
   // Get period by ID
   async getPeriodById(periodId: string): Promise<AccountingPeriod | null> {
     try {
-      const response = await api.get<PeriodApiResponse<AccountingPeriod>>(`${PERIODS_BASE}/${periodId}`)
+      const response = await api.get<PeriodApiResponse<AccountingPeriod>>(
+        `${PERIODS_BASE}/${periodId}`,
+      )
       return response.data.data
     } catch (error) {
       console.error(`Failed to fetch period ${periodId}:`, error)

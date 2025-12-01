@@ -152,7 +152,12 @@ export function StatementView() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={loading || !selectedCustomerId} data-testid="refresh-button">
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={loading || !selectedCustomerId}
+            data-testid="refresh-button"
+          >
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -201,7 +206,11 @@ export function StatementView() {
             </SelectTrigger>
             <SelectContent>
               {customers.map((customer) => (
-                <SelectItem key={customer.id} value={customer.id.toString()} data-testid="customer-option">
+                <SelectItem
+                  key={customer.id}
+                  value={customer.id.toString()}
+                  data-testid="customer-option"
+                >
                   {customer.name} ({customer.code})
                 </SelectItem>
               ))}
@@ -277,24 +286,42 @@ export function StatementView() {
           <div className="rounded-md border p-4 bg-muted/50">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="font-semibold" data-testid="statement-customer-name">{statement.customerName}</h3>
+                <h3 className="font-semibold" data-testid="statement-customer-name">
+                  {statement.customerName}
+                </h3>
                 <p className="text-sm text-muted-foreground">{statement.customerCode}</p>
                 {statement.customerAddress && (
-                  <p className="text-sm text-muted-foreground mt-1" data-testid="statement-customer-address">{statement.customerAddress}</p>
+                  <p
+                    className="text-sm text-muted-foreground mt-1"
+                    data-testid="statement-customer-address"
+                  >
+                    {statement.customerAddress}
+                  </p>
                 )}
                 {statement.customerTaxCode && (
-                  <p className="text-sm text-muted-foreground" data-testid="statement-customer-tax-code">Tax Code: {statement.customerTaxCode}</p>
+                  <p
+                    className="text-sm text-muted-foreground"
+                    data-testid="statement-customer-tax-code"
+                  >
+                    Tax Code: {statement.customerTaxCode}
+                  </p>
                 )}
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">As of Date</p>
-                <p className="font-semibold">{format(new Date(statement.asOfDate), 'dd/MM/yyyy')}</p>
+                <p className="font-semibold">
+                  {format(new Date(statement.asOfDate), 'dd/MM/yyyy')}
+                </p>
                 {statement.generatedAt && (
                   <>
                     <p className="text-sm text-muted-foreground mt-2">Generated</p>
-                    <p className="text-sm">{format(new Date(statement.generatedAt), 'dd/MM/yyyy HH:mm')}</p>
+                    <p className="text-sm">
+                      {format(new Date(statement.generatedAt), 'dd/MM/yyyy HH:mm')}
+                    </p>
                     {statement.generatedByName && (
-                      <p className="text-xs text-muted-foreground">by {statement.generatedByName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        by {statement.generatedByName}
+                      </p>
                     )}
                   </>
                 )}
@@ -327,8 +354,12 @@ export function StatementView() {
                     <>
                       {statement.invoices.map((invoice) => (
                         <TableRow key={invoice.invoiceId} data-testid="statement-row">
-                          <TableCell className="font-medium" data-testid="statement-invoice-number">{invoice.invoiceNumber}</TableCell>
-                          <TableCell>{format(new Date(invoice.invoiceDate), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell className="font-medium" data-testid="statement-invoice-number">
+                            {invoice.invoiceNumber}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(invoice.invoiceDate), 'dd/MM/yyyy')}
+                          </TableCell>
                           <TableCell className="text-right" data-testid="statement-invoice-amount">
                             {invoice.invoiceAmount.toLocaleString('vi-VN')}₫
                           </TableCell>
@@ -343,7 +374,10 @@ export function StatementView() {
                           </TableCell>
                         </TableRow>
                       ))}
-                      <TableRow className="bg-muted/50 font-semibold" data-testid="statement-totals">
+                      <TableRow
+                        className="bg-muted/50 font-semibold"
+                        data-testid="statement-totals"
+                      >
                         <TableCell colSpan={2}>Totals</TableCell>
                         <TableCell className="text-right" data-testid="total-invoices">
                           {statement.totalInvoices.toLocaleString('vi-VN')}₫
@@ -351,7 +385,11 @@ export function StatementView() {
                         <TableCell className="text-right" data-testid="total-paid">
                           {statement.totalPaid.toLocaleString('vi-VN')}₫
                         </TableCell>
-                        <TableCell colSpan={2} className="text-right" data-testid="total-outstanding">
+                        <TableCell
+                          colSpan={2}
+                          className="text-right"
+                          data-testid="total-outstanding"
+                        >
                           {statement.totalOutstanding.toLocaleString('vi-VN')}₫
                         </TableCell>
                       </TableRow>
@@ -393,7 +431,9 @@ export function StatementView() {
                               {tx.type}
                             </Badge>
                           </TableCell>
-                          <TableCell>{format(new Date(tx.transactionDate), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>
+                            {format(new Date(tx.transactionDate), 'dd/MM/yyyy')}
+                          </TableCell>
                           <TableCell>{tx.reference || '-'}</TableCell>
                           <TableCell>{tx.description || '-'}</TableCell>
                           <TableCell className="text-right">
@@ -471,4 +511,3 @@ export function StatementView() {
     </div>
   )
 }
-

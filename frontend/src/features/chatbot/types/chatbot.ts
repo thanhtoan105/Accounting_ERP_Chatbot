@@ -15,22 +15,22 @@
  */
 export interface Citation {
   /** Entity type (voucher, sales_invoice, purchase_bill, receipt, payment) */
-  entityType: 'voucher' | 'sales_invoice' | 'purchase_bill' | 'receipt' | 'payment';
+  entityType: 'voucher' | 'sales_invoice' | 'purchase_bill' | 'receipt' | 'payment'
 
   /** Unique entity ID (UUID) */
-  entityId: string;
+  entityId: string
 
   /** Human-readable voucher number (e.g., "PC-2023-001") */
-  voucherNumber: string;
+  voucherNumber: string
 
   /** Short excerpt from voucher data providing context */
-  excerpt: string;
+  excerpt: string
 
   /** Semantic relevance score from Pinecone (0.0-1.0) */
-  relevanceScore: number;
+  relevanceScore: number
 
   /** Clickable link to voucher detail page */
-  link: string;
+  link: string
 }
 
 /**
@@ -40,16 +40,16 @@ export interface Citation {
  */
 export interface ChatbotQueryRequest {
   /** Natural language query text in Vietnamese or English (max 5000 chars) */
-  query: string;
+  query: string
 
   /** Session ID for conversation threading (UUID) */
-  sessionId: string;
+  sessionId: string
 
   /** Language code for query and response ('vi' or 'en') */
-  language: 'vi' | 'en';
+  language: 'vi' | 'en'
 
   /** Optional metadata filters (e.g., period_id, voucher_type) */
-  contextFilters?: Record<string, string>;
+  contextFilters?: Record<string, string>
 }
 
 /**
@@ -59,22 +59,22 @@ export interface ChatbotQueryRequest {
  */
 export interface ChatbotQueryResponse {
   /** Unique query ID (UUID) for tracking and audit */
-  queryId: string;
+  queryId: string
 
   /** AI-generated answer in Vietnamese or English */
-  answer: string;
+  answer: string
 
   /** List of citations supporting the answer (ordered by relevance) */
-  citations: Citation[];
+  citations: Citation[]
 
   /** Confidence score (0.0-1.0) based on retrieval quality */
-  confidenceScore: number;
+  confidenceScore: number
 
   /** Confidence level indicator (HIGH/MEDIUM/LOW) for UI display */
-  confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW'
 
   /** Query processing time in milliseconds */
-  responseTimeMs: number;
+  responseTimeMs: number
 }
 
 /**
@@ -84,28 +84,28 @@ export interface ChatbotQueryResponse {
  */
 export interface ChatMessage {
   /** Unique message ID (for React keys) */
-  id: string;
+  id: string
 
   /** Message type determines styling and rendering */
-  type: 'user' | 'assistant' | 'error' | 'system';
+  type: 'user' | 'assistant' | 'error' | 'system'
 
   /** Message content (text for user/system, full response for assistant) */
-  content: string;
+  content: string
 
   /** Citations (only for assistant messages) */
-  citations?: Citation[];
+  citations?: Citation[]
 
   /** Confidence score (only for assistant messages) */
-  confidenceScore?: number;
+  confidenceScore?: number
 
   /** Confidence level (only for assistant messages) */
-  confidenceLevel?: 'HIGH' | 'MEDIUM' | 'LOW';
+  confidenceLevel?: 'HIGH' | 'MEDIUM' | 'LOW'
 
   /** Timestamp of message creation */
-  timestamp: Date;
+  timestamp: Date
 
   /** Loading state (for optimistic UI updates) */
-  isLoading?: boolean;
+  isLoading?: boolean
 }
 
 /**
@@ -115,19 +115,19 @@ export interface ChatMessage {
  */
 export interface ChatbotConfig {
   /** Enable/disable chatbot widget */
-  enabled: boolean;
+  enabled: boolean
 
   /** Default language for queries */
-  defaultLanguage: 'vi' | 'en';
+  defaultLanguage: 'vi' | 'en'
 
   /** Max query length (characters) */
-  maxQueryLength: number;
+  maxQueryLength: number
 
   /** Placeholder text for input field */
-  placeholder?: string;
+  placeholder?: string
 
   /** Welcome message on widget open */
-  welcomeMessage?: string;
+  welcomeMessage?: string
 }
 
 /**
@@ -135,20 +135,20 @@ export interface ChatbotConfig {
  */
 export interface ChatbotState {
   /** Conversation message history */
-  messages: ChatMessage[];
+  messages: ChatMessage[]
 
   /** Session ID for current conversation */
-  sessionId: string;
+  sessionId: string
 
   /** Is chatbot widget open? */
-  isOpen: boolean;
+  isOpen: boolean
 
   /** Is query being processed? */
-  isLoading: boolean;
+  isLoading: boolean
 
   /** Current error message (if any) */
-  error: string | null;
+  error: string | null
 
   /** Current language */
-  language: 'vi' | 'en';
+  language: 'vi' | 'en'
 }

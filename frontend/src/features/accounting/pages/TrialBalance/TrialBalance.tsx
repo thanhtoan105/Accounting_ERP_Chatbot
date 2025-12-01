@@ -24,7 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { getTrialBalance, exportTrialBalance, type TrialBalanceResponseDTO } from '@/services/trialBalance'
+import {
+  getTrialBalance,
+  exportTrialBalance,
+  type TrialBalanceResponseDTO,
+} from '@/services/trialBalance'
 import { periodService } from '@/services/period'
 import type { AccountingPeriod } from '@/types/accountingPeriod'
 
@@ -156,9 +160,7 @@ export function TrialBalance() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Trial Balance (S06-DN)</h1>
-          <p className="text-muted-foreground mt-1">
-            View account balances for selected period
-          </p>
+          <p className="text-muted-foreground mt-1">View account balances for selected period</p>
         </div>
       </div>
 
@@ -275,22 +277,34 @@ export function TrialBalance() {
                             <TableCell className="font-mono">{account.accountCode}</TableCell>
                             <TableCell>{account.accountName}</TableCell>
                             <TableCell className="text-right">
-                              {account.openingDebit !== 0 ? formatCurrency(account.openingDebit) : '-'}
+                              {account.openingDebit !== 0
+                                ? formatCurrency(account.openingDebit)
+                                : '-'}
                             </TableCell>
                             <TableCell className="text-right">
-                              {account.openingCredit !== 0 ? formatCurrency(account.openingCredit) : '-'}
+                              {account.openingCredit !== 0
+                                ? formatCurrency(account.openingCredit)
+                                : '-'}
                             </TableCell>
                             <TableCell className="text-right">
-                              {account.periodDebit !== 0 ? formatCurrency(account.periodDebit) : '-'}
+                              {account.periodDebit !== 0
+                                ? formatCurrency(account.periodDebit)
+                                : '-'}
                             </TableCell>
                             <TableCell className="text-right">
-                              {account.periodCredit !== 0 ? formatCurrency(account.periodCredit) : '-'}
+                              {account.periodCredit !== 0
+                                ? formatCurrency(account.periodCredit)
+                                : '-'}
                             </TableCell>
                             <TableCell className="text-right">
-                              {account.closingDebit !== 0 ? formatCurrency(account.closingDebit) : '-'}
+                              {account.closingDebit !== 0
+                                ? formatCurrency(account.closingDebit)
+                                : '-'}
                             </TableCell>
                             <TableCell className="text-right">
-                              {account.closingCredit !== 0 ? formatCurrency(account.closingCredit) : '-'}
+                              {account.closingCredit !== 0
+                                ? formatCurrency(account.closingCredit)
+                                : '-'}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -401,4 +415,3 @@ export function TrialBalance() {
     </div>
   )
 }
-

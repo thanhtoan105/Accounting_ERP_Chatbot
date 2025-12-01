@@ -72,8 +72,8 @@ export default function UserProfile() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-          (err as { message?: string })?.message ||
-          t('users.failedToLoadProfile')
+            (err as { message?: string })?.message ||
+            t('users.failedToLoadProfile')
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -106,8 +106,8 @@ export default function UserProfile() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-          (err as { message?: string })?.message ||
-          t('users.failedToUpdateProfile')
+            (err as { message?: string })?.message ||
+            t('users.failedToUpdateProfile')
       setError(errorMessage)
     } finally {
       setSaving(false)
@@ -166,8 +166,8 @@ export default function UserProfile() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-          (err as { message?: string })?.message ||
-          t('users.failedToChangePassword')
+            (err as { message?: string })?.message ||
+            t('users.failedToChangePassword')
       setError(errorMessage)
     } finally {
       setSaving(false)

@@ -81,9 +81,7 @@ export function SendStatementDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Send Statement to Customer</DialogTitle>
-          <DialogDescription>
-            Send the statement to {customerName} via email
-          </DialogDescription>
+          <DialogDescription>Send the statement to {customerName} via email</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
@@ -108,7 +106,11 @@ export function SendStatementDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
             Cancel
           </Button>
-          <Button onClick={handleSend} disabled={sending || !email.trim()} data-testid="confirm-send-button">
+          <Button
+            onClick={handleSend}
+            disabled={sending || !email.trim()}
+            data-testid="confirm-send-button"
+          >
             <Send className={`mr-2 h-4 w-4 ${sending ? 'animate-spin' : ''}`} />
             {sending ? 'Sending...' : 'Send'}
           </Button>
@@ -117,4 +119,3 @@ export function SendStatementDialog({
     </Dialog>
   )
 }
-

@@ -86,9 +86,7 @@ export default function ForgotPassword({ onSuccess }: ForgotPasswordProps = {}) 
         <Card>
           <CardHeader className="space-y-3">
             <CardTitle className="text-3xl">{t('auth.forgotPasswordTitle')}</CardTitle>
-            <CardDescription>
-              {t('auth.forgotPasswordDescription')}
-            </CardDescription>
+            <CardDescription>{t('auth.forgotPasswordDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
