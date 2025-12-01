@@ -17,20 +17,39 @@ import { test, expect } from '../support/fixtures';
  * Story: 4.3 (Cash Payments - Linked to Bills, Standalone)
  */
 test.describe('Cash Payments API', () => {
+  let authToken: string;
+
+  // Helper to add required headers
+  const getHeaders = () => ({
+    Authorization: `Bearer ${authToken}`,
+    'X-Company-Id': '1', // Required for multi-tenancy
+  });
+
+  test.beforeEach(async ({ request }) => {
+    const loginResponse = await request.post('http://localhost:8080/api/v1/auth/login', {
+      data: {
+        email: 'accountant@example.com',
+        password: 'password',
+      },
+    });
+    const loginBody = await loginResponse.json();
+    authToken = loginBody.data.accessToken;
+  });
+
   // AC#1: Supplier picker API
   test.describe('4.3-API-001: Get Open Bills for Supplier', () => {
-    test('GET /api/v1/ap-payments/suppliers/{supplierId}/open-bills - should return only open/unpaid bills', async ({ 
-      request, 
-      supplierFactory, 
-      purchaseBillFactory 
+    test('GET /api/v1/ap-payments/suppliers/{supplierId}/open-bills - should return only open/unpaid bills', async ({
+      request,
+      supplierFactory,
+      purchaseBillFactory
     }) => {
       // GIVEN: Supplier with open and paid bills exists
       const supplier = supplierFactory.createSupplier();
-      const openBill = purchaseBillFactory.createPostedBill({ 
+      const openBill = purchaseBillFactory.createPostedBill({
         supplierId: supplier.id!,
         status: 'POSTED' // Open (not fully paid)
       });
-      const paidBill = purchaseBillFactory.createPostedBill({ 
+      const paidBill = purchaseBillFactory.createPostedBill({
         supplierId: supplier.id!,
         status: 'PAID' // Fully paid
       });
@@ -49,21 +68,21 @@ test.describe('Cash Payments API', () => {
 
   // AC#2: FIFO allocation algorithm
   test.describe('4.3-API-002: FIFO Allocation Algorithm', () => {
-    test('POST /api/v1/ap-payments/{id}/allocate - should allocate payment to bills in FIFO order (oldest due date first)', async ({ 
-      request, 
-      supplierFactory, 
+    test('POST /api/v1/ap-payments/{id}/allocate - should allocate payment to bills in FIFO order (oldest due date first)', async ({
+      request,
+      supplierFactory,
       purchaseBillFactory,
       paymentFactory
     }) => {
       // GIVEN: Supplier with multiple bills having different due dates
       const supplier = supplierFactory.createSupplier();
-      const bill1 = purchaseBillFactory.createPostedBill({ 
+      const bill1 = purchaseBillFactory.createPostedBill({
         supplierId: supplier.id!,
         dueDate: '2024-01-15', // Oldest
         totalAmount: 1000000,
         status: 'POSTED'
       });
-      const bill2 = purchaseBillFactory.createPostedBill({ 
+      const bill2 = purchaseBillFactory.createPostedBill({
         supplierId: supplier.id!,
         dueDate: '2024-02-15', // Newer
         totalAmount: 2000000,
@@ -95,15 +114,15 @@ test.describe('Cash Payments API', () => {
 
   // AC#4: Overpayment prevention
   test.describe('4.3-API-004: Overpayment Prevention', () => {
-    test('POST /api/v1/ap-payments - should reject payment when allocated amount exceeds bill remaining balance', async ({ 
-      request, 
-      supplierFactory, 
+    test('POST /api/v1/ap-payments - should reject payment when allocated amount exceeds bill remaining balance', async ({
+      request,
+      supplierFactory,
       purchaseBillFactory,
       paymentFactory
     }) => {
       // GIVEN: Bill with remaining balance of 1M VND
       const supplier = supplierFactory.createSupplier();
-      const bill = purchaseBillFactory.createPostedBill({ 
+      const bill = purchaseBillFactory.createPostedBill({
         supplierId: supplier.id!,
         totalAmount: 1000000,
         status: 'POSTED'
@@ -131,15 +150,15 @@ test.describe('Cash Payments API', () => {
       expect(body.error).toContain('exceeds remaining balance');
     });
 
-    test('POST /api/v1/ap-payments/{id}/allocate - should reject manual allocation exceeding bill remaining balance', async ({ 
-      request, 
-      supplierFactory, 
+    test('POST /api/v1/ap-payments/{id}/allocate - should reject manual allocation exceeding bill remaining balance', async ({
+      request,
+      supplierFactory,
       purchaseBillFactory,
       paymentFactory
     }) => {
       // GIVEN: Payment and bill with known remaining balance
       const supplier = supplierFactory.createSupplier();
-      const bill = purchaseBillFactory.createPostedBill({ 
+      const bill = purchaseBillFactory.createPostedBill({
         supplierId: supplier.id!,
         totalAmount: 1000000,
         status: 'POSTED'
@@ -169,8 +188,8 @@ test.describe('Cash Payments API', () => {
 
   // AC#8: Account balance validation
   test.describe('4.3-API-008: Account Balance Validation', () => {
-    test('POST /api/v1/ap-payments - should validate sufficient account balance before creating payment', async ({ 
-      request, 
+    test('POST /api/v1/ap-payments - should validate sufficient account balance before creating payment', async ({
+      request,
       supplierFactory,
       purchaseBillFactory,
       paymentFactory
@@ -211,15 +230,15 @@ test.describe('Cash Payments API', () => {
 
   // AC#9: Voucher posting integration
   test.describe('4.3-API-009: Voucher Posting Integration', () => {
-    test('POST /api/v1/ap-payments/{id}/post - should generate voucher with correct journal entries (Dr AP 331, Cr cash/bank 111/112)', async ({ 
-      request, 
+    test('POST /api/v1/ap-payments/{id}/post - should generate voucher with correct journal entries (Dr AP 331, Cr cash/bank 111/112)', async ({
+      request,
       supplierFactory,
       purchaseBillFactory,
       paymentFactory
     }) => {
       // GIVEN: Posted payment with allocations
       const supplier = supplierFactory.createSupplier();
-      const bill = purchaseBillFactory.createPostedBill({ 
+      const bill = purchaseBillFactory.createPostedBill({
         supplierId: supplier.id!,
         totalAmount: 1000000,
         status: 'POSTED'
@@ -248,14 +267,14 @@ test.describe('Cash Payments API', () => {
       // Verify voucher journal entries
       const voucherResponse = await request.get(`/api/v1/vouchers/${body.data.linkedVoucherId}`);
       const voucher = await voucherResponse.json();
-      
+
       // Debit: AP 331 (Accounts Payable)
       const debitEntry = voucher.data.entries.find((e: any) => e.accountCode === '331' && e.debitAmount > 0);
       expect(debitEntry).toBeDefined();
       expect(debitEntry.debitAmount).toBe(1000000);
 
       // Credit: Cash/Bank 111/112
-      const creditEntry = voucher.data.entries.find((e: any) => 
+      const creditEntry = voucher.data.entries.find((e: any) =>
         (e.accountCode === '111' || e.accountCode === '112') && e.creditAmount > 0
       );
       expect(creditEntry).toBeDefined();
@@ -265,8 +284,8 @@ test.describe('Cash Payments API', () => {
 
   // AC#7: Payment approval workflow
   test.describe('4.3-API-007: Payment Approval Workflow', () => {
-    test('POST /api/v1/ap-payments - should create approval workflow for payments exceeding threshold', async ({ 
-      request, 
+    test('POST /api/v1/ap-payments - should create approval workflow for payments exceeding threshold', async ({
+      request,
       supplierFactory,
       purchaseBillFactory,
       paymentFactory
@@ -292,8 +311,8 @@ test.describe('Cash Payments API', () => {
       expect(body.data).toHaveProperty('approvalWorkflowId');
     });
 
-    test('POST /api/v1/ap-payments/{id}/approve - should approve payment and post voucher', async ({ 
-      request, 
+    test('POST /api/v1/ap-payments/{id}/approve - should approve payment and post voucher', async ({
+      request,
       supplierFactory,
       purchaseBillFactory,
       paymentFactory
@@ -327,8 +346,8 @@ test.describe('Cash Payments API', () => {
 
   // AC#10: Audit trail
   test.describe('4.3-API-010: Audit Trail', () => {
-    test('POST /api/v1/ap-payments - should create audit log entry for payment creation', async ({ 
-      request, 
+    test('POST /api/v1/ap-payments - should create audit log entry for payment creation', async ({
+      request,
       supplierFactory,
       purchaseBillFactory,
       paymentFactory
@@ -350,7 +369,7 @@ test.describe('Cash Payments API', () => {
       // THEN: Audit log entry is created
       expect(response.status()).toBe(201);
       const body = await response.json();
-      
+
       // Verify audit log exists
       const auditLogResponse = await request.get(`/api/v1/audit-logs?entityType=APPayment&entityId=${body.data.id}`);
       const auditLogs = await auditLogResponse.json();

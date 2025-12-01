@@ -133,7 +133,7 @@ public class PeriodControllerIntegrationTest {
         // Given
         List<AccountingPeriod> openPeriods = List.of(testPeriod);
         LocalDate currentDate = LocalDate.now();
-        when(periodRepository.findOpenPeriodsAroundDate(1L, PeriodStatus.OPEN, currentDate))
+        when(periodRepository.findOpenPeriodsAroundDate(1L, PeriodStatus.OPEN.name(), currentDate))
                 .thenReturn(openPeriods);
 
         // When & Then

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Box,
   Paper,
@@ -27,6 +28,7 @@ import { getRoleDisplayName } from '../utils/roles'
  * User Profile page for users to view and edit their own profile and change password.
  */
 export default function UserProfile() {
+  const { t } = useTranslation()
   const { user: currentUser } = useAuth()
   const [profile, setProfile] = useState(currentUser)
   const [loading, setLoading] = useState(true)
@@ -70,8 +72,8 @@ export default function UserProfile() {
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-            (err as { message?: string })?.message ||
-            'Failed to load profile'
+          (err as { message?: string })?.message ||
+          t('users.failedToLoadProfile')
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -86,7 +88,7 @@ export default function UserProfile() {
     setSuccess(null)
 
     if (!fullName || fullName.trim().length === 0) {
-      setError('Full name is required')
+      setError(t('invitation.fullNameRequired'))
       return
     }
 
@@ -98,14 +100,14 @@ export default function UserProfile() {
       const updatedProfile = await updateProfile(request)
       setProfile(updatedProfile)
       setIsEditingProfile(false)
-      setSuccess('Profile updated successfully')
+      setSuccess(t('users.profileUpdated'))
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-            (err as { message?: string })?.message ||
-            'Failed to update profile'
+          (err as { message?: string })?.message ||
+          t('users.failedToUpdateProfile')
       setError(errorMessage)
     } finally {
       setSaving(false)
@@ -116,19 +118,19 @@ export default function UserProfile() {
     const errors: typeof passwordErrors = {}
 
     if (!currentPassword) {
-      errors.current = 'Current password is required'
+      errors.current = t('users.currentPasswordRequired')
     }
 
     if (!newPassword) {
-      errors.new = 'New password is required'
+      errors.new = t('users.newPasswordRequired')
     } else if (newPassword.length < 8) {
-      errors.new = 'Password must be at least 8 characters'
+      errors.new = t('invitation.passwordMinLength')
     }
 
     if (!confirmPassword) {
-      errors.confirm = 'Please confirm your new password'
+      errors.confirm = t('users.confirmNewPassword')
     } else if (newPassword && confirmPassword !== newPassword) {
-      errors.confirm = 'Passwords do not match'
+      errors.confirm = t('auth.passwordsDoNotMatch')
     }
 
     setPasswordErrors(errors)
@@ -158,14 +160,14 @@ export default function UserProfile() {
       setConfirmPassword('')
       setIsChangingPassword(false)
       setPasswordErrors({})
-      setSuccess('Password changed successfully')
+      setSuccess(t('users.passwordChanged'))
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? err.message
           : (err as { error?: { message?: string }; message?: string })?.error?.message ||
-            (err as { message?: string })?.message ||
-            'Failed to change password'
+          (err as { message?: string })?.message ||
+          t('users.failedToChangePassword')
       setError(errorMessage)
     } finally {
       setSaving(false)
@@ -179,18 +181,18 @@ export default function UserProfile() {
       return { label: '', color: 'error' }
     }
     if (password.length < 8) {
-      return { label: 'Weak', color: 'error' }
+      return { label: t('users.weak'), color: 'error' }
     }
     if (password.length < 12) {
-      return { label: 'Medium', color: 'warning' }
+      return { label: t('users.medium'), color: 'warning' }
     }
-    return { label: 'Strong', color: 'success' }
+    return { label: t('users.strong'), color: 'success' }
   }
 
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Typography>Loading profile...</Typography>
+        <Typography>{t('users.loadingProfile')}</Typography>
       </Box>
     )
   }
@@ -198,7 +200,7 @@ export default function UserProfile() {
   if (!profile) {
     return (
       <Box>
-        <Alert severity="error">Failed to load profile</Alert>
+        <Alert severity="error">{t('users.failedToLoadProfile')}</Alert>
       </Box>
     )
   }
@@ -208,7 +210,7 @@ export default function UserProfile() {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
-        My Profile
+        {t('users.myProfile')}
       </Typography>
 
       {error && (
@@ -229,10 +231,10 @@ export default function UserProfile() {
           <Card>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Profile Information</Typography>
+                <Typography variant="h6">{t('users.profileInfo')}</Typography>
                 {!isEditingProfile && (
                   <Button variant="outlined" size="small" onClick={() => setIsEditingProfile(true)}>
-                    Edit
+                    {t('common.edit')}
                   </Button>
                 )}
               </Box>
@@ -240,14 +242,14 @@ export default function UserProfile() {
               {isEditingProfile ? (
                 <form onSubmit={handleSaveProfile}>
                   <TextField
-                    label="Email"
+                    label={t('auth.email')}
                     fullWidth
                     disabled
                     value={profile.email || ''}
                     sx={{ mb: 2 }}
                   />
                   <TextField
-                    label="Full Name"
+                    label={t('invitation.fullName')}
                     fullWidth
                     required
                     value={fullName}
@@ -263,7 +265,7 @@ export default function UserProfile() {
                       startIcon={<SaveIcon />}
                       disabled={saving}
                     >
-                      {saving ? 'Saving...' : 'Save'}
+                      {saving ? t('common.saving') : t('common.save')}
                     </Button>
                     <Button
                       onClick={() => {
@@ -280,26 +282,26 @@ export default function UserProfile() {
                 <Box>
                   <Box mb={2}>
                     <Typography variant="body2" color="text.secondary">
-                      Email
+                      {t('auth.email')}
                     </Typography>
                     <Typography variant="body1">{profile.email}</Typography>
                   </Box>
                   <Box mb={2}>
                     <Typography variant="body2" color="text.secondary">
-                      Full Name
+                      {t('invitation.fullName')}
                     </Typography>
                     <Typography variant="body1">{profile.fullName}</Typography>
                   </Box>
                   <Box mb={2}>
                     <Typography variant="body2" color="text.secondary">
-                      Role
+                      {t('invitation.role')}
                     </Typography>
                     <Chip label={getRoleDisplayName(profile.role)} size="small" sx={{ mt: 0.5 }} />
                   </Box>
                   {profile.companyId && (
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        Company ID
+                        {t('invitation.company')} ID
                       </Typography>
                       <Typography variant="body1">{profile.companyId}</Typography>
                     </Box>
@@ -315,7 +317,7 @@ export default function UserProfile() {
           <Card>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Change Password</Typography>
+                <Typography variant="h6">{t('users.changePassword')}</Typography>
                 {!isChangingPassword && (
                   <Button
                     variant="outlined"
@@ -323,7 +325,7 @@ export default function UserProfile() {
                     startIcon={<LockIcon />}
                     onClick={() => setIsChangingPassword(true)}
                   >
-                    Change Password
+                    {t('users.changePassword')}
                   </Button>
                 )}
               </Box>
@@ -331,7 +333,7 @@ export default function UserProfile() {
               {isChangingPassword ? (
                 <form onSubmit={handleChangePassword}>
                   <TextField
-                    label="Current Password"
+                    label={t('users.currentPassword')}
                     type="password"
                     fullWidth
                     required
@@ -347,7 +349,7 @@ export default function UserProfile() {
                     autoFocus
                   />
                   <TextField
-                    label="New Password"
+                    label={t('auth.newPassword')}
                     type="password"
                     fullWidth
                     required
@@ -366,14 +368,14 @@ export default function UserProfile() {
                           color={passwordStrength.color}
                           component="span"
                         >
-                          Password strength: {passwordStrength.label}
+                          {t('users.passwordStrength')}: {passwordStrength.label}
                         </Typography>
                       ))
                     }
                     sx={{ mb: 2 }}
                   />
                   <TextField
-                    label="Confirm New Password"
+                    label={t('auth.confirmPassword')}
                     type="password"
                     fullWidth
                     required
@@ -389,7 +391,7 @@ export default function UserProfile() {
                   />
                   <Box display="flex" gap={2}>
                     <Button type="submit" variant="contained" disabled={saving}>
-                      {saving ? 'Changing...' : 'Change Password'}
+                      {saving ? t('common.saving') : t('users.changePassword')}
                     </Button>
                     <Button
                       onClick={() => {

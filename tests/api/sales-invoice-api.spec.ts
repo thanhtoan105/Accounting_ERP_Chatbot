@@ -39,12 +39,18 @@ const closedPeriod = {
 test.describe('Story 5.1: Sales Invoice API', () => {
   let authToken: string;
 
+  // Helper to add required headers
+  const getHeaders = () => ({
+    Authorization: `Bearer ${authToken}`,
+    'X-Company-Id': '1',
+  });
+
   test.beforeEach(async ({ request }) => {
     // Setup: Get auth token for accountant
     const loginResponse = await request.post(`${API_BASE}/auth/login`, {
       data: {
-        email: 'accountant@test.example.com',
-        password: 'Test@123456',
+        email: 'accountant@example.com',
+        password: 'password',
       },
     });
 
@@ -74,7 +80,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Creating invoice via API
       const response = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: invoiceData,
       });
 
@@ -135,7 +141,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Creating first invoice
       const response1 = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: invoiceData1,
       });
 
@@ -144,7 +150,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Creating second invoice
       const response2 = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: invoiceData2,
       });
 
@@ -178,7 +184,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
       };
 
       const firstResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: invoiceData,
       });
 
@@ -195,7 +201,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
       };
 
       const duplicateResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: duplicateData,
       });
 
@@ -226,7 +232,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Creating invoice in closed period
       const response = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: invoiceData,
       });
 
@@ -241,7 +247,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
     test('AC1.5: POST /invoices - should validate required fields', async ({ request }) => {
       // Test missing customer
       let response = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           date: '2025-01-15',
           dueDate: '2025-02-15',
@@ -255,7 +261,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // Test missing date
       response = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           dueDate: '2025-02-15',
@@ -269,7 +275,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // Test missing line items
       response = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           date: '2025-01-15',
@@ -323,7 +329,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Creating invoice
       const response = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: invoiceData,
       });
 
@@ -343,7 +349,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
     test('AC1.7: PUT /invoices/{id} - should allow draft editing', async ({ request }) => {
       // GIVEN: Draft invoice exists
       const createResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           date: '2025-01-15',
@@ -380,7 +386,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
       };
 
       const updateResponse = await request.put(`${API_BASE}/invoices/${invoice.id}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: updateData,
       });
 
@@ -400,7 +406,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
     test('AC1.8: DELETE /invoices/{id} - should delete draft invoice only', async ({ request }) => {
       // GIVEN: Draft invoice exists
       const createResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           date: '2025-01-15',
@@ -422,7 +428,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Deleting draft
       const deleteResponse = await request.delete(`${API_BASE}/invoices/${invoice.id}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       // THEN: Draft is deleted
@@ -430,7 +436,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // Verify invoice is deleted
       const getResponse = await request.get(`${API_BASE}/invoices/${invoice.id}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       expect(getResponse.status()).toBe(404);
@@ -439,7 +445,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
     test('AC1.9: POST /invoices/{id}/submit - should post invoice and create GL entries', async ({ request }) => {
       // GIVEN: Draft invoice exists
       const createResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           date: '2025-01-15',
@@ -461,7 +467,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Posting invoice
       const submitResponse = await request.post(`${API_BASE}/invoices/${invoice.id}/submit`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       // THEN: Invoice status changes to Posted and GL entries are created
@@ -475,7 +481,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
       // Cr Revenue (511001) -1,000,000
       // Cr VAT Output (3331) -100,000
       const glResponse = await request.get(`${API_BASE}/gl/entries?documentId=${invoice.id}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       expect(glResponse.status()).toBe(200);
@@ -518,7 +524,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Creating invoice with VAT mismatch
       const response = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: invoiceData,
       });
 
@@ -534,7 +540,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
     test('AC2.2: Authorization - only creator/admin can edit draft', async ({ request, context }) => {
       // GIVEN: Accountant created draft
       const createResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           date: '2025-01-15',
@@ -557,8 +563,8 @@ test.describe('Story 5.1: Sales Invoice API', () => {
       // WHEN: Chief Accountant attempts to edit
       const chiefLoginResponse = await request.post(`${API_BASE}/auth/login`, {
         data: {
-          email: 'chief@test.example.com',
-          password: 'Test@123456',
+          email: 'chief@example.com',
+          password: 'password',
         },
       });
 
@@ -598,7 +604,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Creating invoice
       const response = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: invoiceData,
       });
 
@@ -613,7 +619,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
     test('AC2.4: Idempotent posting - cannot post invoice twice', async ({ request }) => {
       // GIVEN: Posted invoice
       const createResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           date: '2025-01-15',
@@ -635,14 +641,14 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // Post it first time
       const submitResponse1 = await request.post(`${API_BASE}/invoices/${invoice.id}/submit`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       expect(submitResponse1.status()).toBe(200);
 
       // WHEN: Attempting to post again
       const submitResponse2 = await request.post(`${API_BASE}/invoices/${invoice.id}/submit`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       // THEN: Second post is rejected
@@ -655,7 +661,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
     test('AC2.5: Audit trail - all actions logged with diff and actor', async ({ request }) => {
       // GIVEN: Invoice is created and updated
       const createResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           date: '2025-01-15',
@@ -678,7 +684,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // Update it
       const updateResponse = await request.put(`${API_BASE}/invoices/${invoice.id}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           referenceText: 'Updated',
         },
@@ -688,7 +694,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Fetching audit log
       const auditResponse = await request.get(`${API_BASE}/invoices/${invoice.id}/audit`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       // THEN: Audit entries show all actions
@@ -713,7 +719,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
     test('AC2.6: Posting to closed period should be rejected', async ({ request }) => {
       // GIVEN: Draft invoice in open period is created
       const createResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           date: '2025-01-15',
@@ -738,7 +744,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
 
       // WHEN: Attempting to post after period closed
       const submitResponse = await request.post(`${API_BASE}/invoices/${invoice.id}/submit`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       // THEN: Posting is rejected
@@ -753,7 +759,7 @@ test.describe('Story 5.1: Sales Invoice API', () => {
     test('GET /invoices - should list invoices with pagination and filters', async ({ request }) => {
       // WHEN: Fetching invoices list
       const response = await request.get(`${API_BASE}/invoices?page=1&pageSize=10&status=Draft`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       // THEN: List is returned with pagination
@@ -780,7 +786,7 @@ customer-2,2025-01-15,2025-02-15,INV-003,Service 3,2,150000,10,511001`;
 
       // WHEN: Importing invoices
       const response = await request.post(`${API_BASE}/invoices/import`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: formData,
       });
 
@@ -795,7 +801,7 @@ customer-2,2025-01-15,2025-02-15,INV-003,Service 3,2,150000,10,511001`;
       let completed = false;
       for (let i = 0; i < 10; i++) {
         const statusResponse = await request.get(`${API_BASE}/invoices/import/${body.jobId}`, {
-          headers: { Authorization: `Bearer ${authToken}` },
+          headers: getHeaders(),
         });
 
         const statusBody = await statusResponse.json();
@@ -805,7 +811,8 @@ customer-2,2025-01-15,2025-02-15,INV-003,Service 3,2,150000,10,511001`;
           break;
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // No hard wait - waitForResponse better, but if polling needed, use minimal delay
+        if (i < 9) await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
       expect(completed).toBe(true);
@@ -814,7 +821,7 @@ customer-2,2025-01-15,2025-02-15,INV-003,Service 3,2,150000,10,511001`;
     test('GET /invoices/{id} - should fetch invoice with all details', async ({ request }) => {
       // GIVEN: Invoice exists
       const createResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: {
           customerId: testCustomer.id,
           date: '2025-01-15',
@@ -837,7 +844,7 @@ customer-2,2025-01-15,2025-02-15,INV-003,Service 3,2,150000,10,511001`;
 
       // WHEN: Fetching invoice
       const getResponse = await request.get(`${API_BASE}/invoices/${invoice.id}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       // THEN: Complete invoice is returned
@@ -877,7 +884,7 @@ customer-2,2025-01-15,2025-02-15,INV-003,Service 3,2,150000,10,511001`;
       };
 
       const response = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: invoiceData,
       });
 
@@ -919,7 +926,7 @@ customer-2,2025-01-15,2025-02-15,INV-003,Service 3,2,150000,10,511001`;
 
       // WHEN: Creating and posting
       const createResponse = await request.post(`${API_BASE}/invoices`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
         data: invoiceData,
       });
 
@@ -927,14 +934,14 @@ customer-2,2025-01-15,2025-02-15,INV-003,Service 3,2,150000,10,511001`;
       const invoice = await createResponse.json();
 
       const submitResponse = await request.post(`${API_BASE}/invoices/${invoice.id}/submit`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       expect(submitResponse.status()).toBe(200);
 
       // THEN: Fetch GL entries and verify balance
       const glResponse = await request.get(`${API_BASE}/gl/entries?documentId=${invoice.id}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: getHeaders(),
       });
 
       const entries = await glResponse.json();

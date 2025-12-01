@@ -3,9 +3,11 @@ package com.accounting.controller.sales;
 import com.accounting.dto.ARPaymentCreateRequest;
 import com.accounting.dto.ARPaymentDTO;
 import com.accounting.dto.ARPaymentListDTO;
+import com.accounting.dto.AttachmentDTO;
 import com.accounting.dto.ImportResultDTO;
 import com.accounting.dto.ReceiptAllocationRequest;
 import com.accounting.entity.ReceiptStatus;
+import com.accounting.service.AttachmentService;
 import com.accounting.service.ReceiptImportService;
 import com.accounting.service.ReceiptService;
 import com.accounting.service.ReceiptValidationService;
@@ -49,14 +51,17 @@ public class ReceiptController {
   private final ReceiptService receiptService;
   private final ReceiptValidationService receiptValidationService;
   private final ReceiptImportService receiptImportService;
+  private final AttachmentService attachmentService;
 
   public ReceiptController(
       ReceiptService receiptService,
       ReceiptValidationService receiptValidationService,
-      ReceiptImportService receiptImportService) {
+      ReceiptImportService receiptImportService,
+      AttachmentService attachmentService) {
     this.receiptService = receiptService;
     this.receiptValidationService = receiptValidationService;
     this.receiptImportService = receiptImportService;
+    this.attachmentService = attachmentService;
   }
 
   /**
@@ -350,5 +355,82 @@ public class ReceiptController {
     headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
     headers.setContentDispositionFormData("attachment", "receipt-import-template.xlsx");
     return ResponseEntity.ok().headers(headers).body(template);
+  }
+
+  // ==================== Attachment endpoints (AC6.2-08) ====================
+
+  /**
+   * List attachments for a receipt.
+   * AC6.2-08: Up to 10 files and ≤ 20 MB total per receipt.
+   *
+   * @param id receipt ID
+   * @return list of attachment DTOs
+   */
+  @GetMapping("/{id}/attachments")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Map<String, Object>> listAttachments(@PathVariable UUID id) {
+    // Verify receipt exists
+    receiptService.findById(id);
+    List<AttachmentDTO> attachments = attachmentService.listReceiptAttachments(id);
+    Map<String, Object> response = new HashMap<>();
+    response.put("data", attachments);
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Upload attachment for a receipt.
+   * AC6.2-08: Up to 10 files and ≤ 20 MB total per receipt.
+   *
+   * @param id   receipt ID
+   * @param file file to upload
+   * @return created attachment DTO
+   */
+  @PostMapping("/{id}/attachments")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT')")
+  public ResponseEntity<AttachmentDTO> uploadAttachment(
+      @PathVariable UUID id, @RequestParam("file") MultipartFile file) {
+    // Verify receipt exists
+    receiptService.findById(id);
+    AttachmentDTO attachment = attachmentService.uploadReceiptAttachment(id, file);
+    return ResponseEntity.status(HttpStatus.CREATED).body(attachment);
+  }
+
+  /**
+   * Download attachment for a receipt (generates signed URL).
+   *
+   * @param id           receipt ID
+   * @param attachmentId attachment ID
+   * @return signed URL for download
+   */
+  @GetMapping("/{id}/attachments/{attachmentId}/download")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Map<String, String>> downloadAttachment(
+      @PathVariable UUID id, @PathVariable UUID attachmentId) {
+    // Verify receipt exists
+    receiptService.findById(id);
+    String signedUrl = attachmentService.generateReceiptAttachmentUrl(id, attachmentId);
+    Map<String, String> response = new HashMap<>();
+    response.put("url", signedUrl);
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Delete attachment for a receipt.
+   *
+   * @param id           receipt ID
+   * @param attachmentId attachment ID
+   * @param reason       deletion reason (optional)
+   * @return no content
+   */
+  @DeleteMapping("/{id}/attachments/{attachmentId}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT')")
+  public ResponseEntity<Void> deleteAttachment(
+      @PathVariable UUID id,
+      @PathVariable UUID attachmentId,
+      @RequestParam(required = false) String reason) {
+    // Verify receipt exists
+    receiptService.findById(id);
+    attachmentService.deleteReceiptAttachment(id, attachmentId, reason != null ? reason : "Deleted by user");
+    return ResponseEntity.noContent().build();
   }
 }

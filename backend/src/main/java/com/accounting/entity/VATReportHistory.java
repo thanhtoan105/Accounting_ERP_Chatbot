@@ -45,7 +45,10 @@ public class VATReportHistory implements CompanyScopedEntity {
   private UUID periodId;
 
   @Column(name = "supplier_id")
-  private Long supplierId; // Optional: null means all suppliers
+  private Long supplierId; // Optional: for INPUT_VAT reports, null means all suppliers
+
+  @Column(name = "customer_id")
+  private Long customerId; // Optional: for OUTPUT_VAT reports, null means all customers
 
   @Size(max = 50)
   @Column(name = "vat_class", length = 50)
@@ -103,6 +106,10 @@ public class VATReportHistory implements CompanyScopedEntity {
   @ManyToOne
   @JoinColumn(name = "supplier_id", insertable = false, updatable = false)
   private Supplier supplier;
+
+  @ManyToOne
+  @JoinColumn(name = "customer_id", insertable = false, updatable = false)
+  private Customer customer;
 
   @PrePersist
   protected void onCreate() {
@@ -188,6 +195,14 @@ public class VATReportHistory implements CompanyScopedEntity {
 
   public void setSupplierId(Long supplierId) {
     this.supplierId = supplierId;
+  }
+
+  public Long getCustomerId() {
+    return customerId;
+  }
+
+  public void setCustomerId(Long customerId) {
+    this.customerId = customerId;
   }
 
   public String getVatClass() {
@@ -292,6 +307,10 @@ public class VATReportHistory implements CompanyScopedEntity {
 
   public Supplier getSupplier() {
     return supplier;
+  }
+
+  public Customer getCustomer() {
+    return customer;
   }
 }
 

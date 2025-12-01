@@ -1,14 +1,13 @@
 package com.accounting.dto;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class VoucherTemplateLineRequest {
 
-  @NotNull(message = "debitAccountId is required")
+  // At least one of debitAccountId or creditAccountId must be provided (validated
+  // in service)
   private Long debitAccountId;
 
-  @NotNull(message = "creditAccountId is required")
   private Long creditAccountId;
 
   @Size(max = 500, message = "defaultDescription must be 500 characters or less")
@@ -75,4 +74,3 @@ public class VoucherTemplateLineRequest {
     this.lockAccounts = lockAccounts;
   }
 }
-

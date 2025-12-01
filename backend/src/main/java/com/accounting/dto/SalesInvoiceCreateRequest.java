@@ -44,6 +44,8 @@ public class SalesInvoiceCreateRequest {
 
     private UUID id; // For updates
 
+    private UUID originalInvoiceId; // For credit notes - references the original invoice
+
     public SalesInvoiceCreateRequest() {
     }
 
@@ -149,5 +151,13 @@ public class SalesInvoiceCreateRequest {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getOriginalInvoiceId() {
+        return originalInvoiceId;
+    }
+
+    public void setOriginalInvoiceId(UUID originalInvoiceId) {
+        this.originalInvoiceId = originalInvoiceId;
     }
 }

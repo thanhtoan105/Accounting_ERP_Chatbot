@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>6</storyId>
+    <title>Revenue &amp; VAT Handling</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-31T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/5-6-revenue-vat-handling.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>an accountant/auditor</asA>
+    <iWant>correct revenue and output VAT accounting and reporting</iWant>
+    <soThat>statutory filings and financial statements are accurate</soThat>
+    <tasks>
+      - Backend: ARVATService and VAT calculation logic (AC: #1, #2, #3, #4)
+      - Backend: VAT correction entity and service (AC: #6)
+      - Backend: Output VAT report service (AC: #5)
+      - Backend: Integration with SalesInvoiceService (AC: #1, #2, #3, #7)
+      - Backend: VAT correction API endpoints (AC: #6)
+      - Backend: Output VAT report API endpoints (AC: #5)
+      - Backend: Audit logging integration (AC: #1, #4, #6)
+      - Frontend: VAT rate override warning UI (AC: #1)
+      - Frontend: VAT validation and totals display (AC: #2, #3)
+      - Frontend: Credit note creation UI (AC: #4)
+      - Frontend: Output VAT report page (AC: #5)
+      - Frontend: VAT correction management (AC: #6)
+      - Testing: Backend and frontend coverage (AC: #1–#7)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. (AC-VAT-001) Each invoice line has VAT rate (default from settings, override with warning); supports 0/5/10/exempt only. When user overrides the default VAT rate, system shows warning: "You are overriding the default VAT rate from {oldRate}% to {newRate}%. Ensure this is correct per customer agreement." Confirmation required before saving.
+    2. (AC-VAT-002) GL splits on post: Dr AR (131), Cr Revenue (511+), Cr VAT Output (3331); rounding rules applied consistently. When invoice posted, for each line, system creates GL split: Dr 131 (AR), Cr 5xx (revenue per line.revenueAccountCode), Cr 3331 (output VAT). Example: line with lineTotal=100, VAT=10, creates: Dr 131 100, Cr 511 90, Cr 3331 10 (balanced).
+    3. (AC-VAT-003) Totals validation: header VAT equals sum of line VAT and GL VAT; block post if mismatch beyond tolerance. System computes VAT to 2 decimal places (VND cents). Rounding rules: line VAT rounded to nearest 100 VND (per Circular 200 interpretation). If header VAT ≠ sum of line VAT after rounding, system flags with warning: "VAT rounding variance: {variance} VND." Allow posting if variance &lt; 1000 VND; block if ≥ 1000 VND.
+    4. (AC-VAT-004) Credit notes/negative invoices supported; must reference original; all linked with audit cross-references. Negative invoice (credit note) supported; must reference original invoice (field: originalInvoiceID). VAT computed as negative. GL splits inverted: Cr 131 (reverses AR), Dr 5xx (reverses revenue), Dr 3331 (reverses VAT). Linked via audit trail: credit note AuditLog references original invoice ID.
+    5. (AC-VAT-005) Output VAT report: filter by period/customer/VAT class; Excel export in ND123 format. GET /api/v1/ar-vat-report?period=2025-01 returns data for output VAT report. Response: array of { invoiceNumber, invoiceDate, customerName, customerTaxCode, revenue0pct, revenue5pct, revenue10pct, revenueExempt, total_vat_collected }. GET /api/v1/ar-vat-report/export?format=EXCEL exports in standard Excel format per Circular 200 spec.
+    6. (AC-VAT-006) Admin VAT corrections allowed with reason and diff audit; overrides require approval if above threshold. Admin/Chief Accountant can create VAT corrections for posted invoices. Correction requires reason (max 500 chars, required) and displays diff (old VAT amount, new VAT amount, variance). If correction amount variance &gt; threshold (default 10M VND, configurable), correction requires Chief Accountant/CFO approval before application. All corrections logged to audit trail with before/after snapshots.
+    7. (AC-VAT-007) API enforces idempotent posting and blocks double-booking. Invoice post endpoint is idempotent (POST /api/v1/sales-invoices/:id/post can be called multiple times without duplicate voucher creation, enforced via unique constraint on (invoiceID, voucherID) pair). System prevents double-booking by checking invoice status before posting and validating voucher uniqueness.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-5.md</path>
+        <title>Epic Technical Specification: Sales Invoice Entry &amp; AR Management</title>
+        <section>Revenue &amp; VAT Handling (AC-VAT-001 to AC-VAT-005)</section>
+        <snippet>Detailed acceptance criteria for VAT rate validation (0/5/10/exempt, company default, override warnings), GL split generation (Dr 131, Cr 5xx, Cr 3331), VAT rounding tolerance validation, credit note support with inverted GL splits, and ND123-compliant output VAT report generation with Excel export.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-5-accounts-receivable-ar-module.md</path>
+        <title>Epic 5: Accounts Receivable (AR) Module</title>
+        <section>Story 5.6: Revenue &amp; VAT Handling</section>
+        <snippet>Business requirements for revenue and output VAT accounting and reporting, ensuring accurate statutory filings and financial statements. Includes VAT rate validation, GL splits, credit notes, output VAT reports, and VAT corrections with approval workflow.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-6-vat-handling-and-reporting.md</path>
+        <title>Story 4.6: VAT Handling and Reporting (AP Module)</title>
+        <section>VAT Validation Patterns and VAT Correction Workflow</section>
+        <snippet>Established patterns for VAT validation (rate validation, sum validation, ratio validation), TT200 GL mapping to account 3331 (Input VAT for AP), VAT correction entity and approval workflow, ND123-compliant input VAT reports. Story 5.6 should mirror these patterns but adapt for AR context: output VAT (vs. input VAT), revenue accounts 5xx (vs. expense accounts 6xx/7xx for AP), customer-centric reporting (vs. supplier-centric for AP).</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/5-1-sales-invoice-entry-edit-and-draft-management.md</path>
+        <title>Story 5.1: Sales Invoice Entry, Edit, and Draft Management</title>
+        <section>SalesInvoice Entity and Service Patterns</section>
+        <snippet>SalesInvoice and SalesInvoiceLine entities with VAT rate fields available. VAT validation should integrate with existing invoice validation logic. Query POSTED invoices for VAT reporting. Basic VAT rate validation (0/5/10/exempt) at line item level implemented. Story 5.6 should extend this with company default VAT rates, override warnings, and comprehensive sum validation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/5-5-customer-statement-reconciliation.md</path>
+        <title>Story 5.5: Customer Statement &amp; Reconciliation</title>
+        <section>Export Patterns and Service Patterns</section>
+        <snippet>Established patterns for Excel/PDF export with Apache POI/iText, audit logging for all operations, RBAC enforcement at service and API levels, and Redis caching. All export operations include metadata, timestamp, and audit trail. Report generation uses ARStatementService patterns. VAT reports should follow the same patterns using Apache POI for Excel and text-based PDF generation for MVP. Include metadata (period, customer, generation timestamp) in exported files.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/data-architecture.md</path>
+        <title>Data Architecture</title>
+        <section>Multi-tenancy Strategy</section>
+        <snippet>Multi-tenancy via CompanyScopedEntity pattern with company_id filtering. All AR VAT entities (ARVATCorrection, ARVATReportHistory) must implement CompanyScopedEntity and always filter by company_id in repositories and APIs.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/security-architecture.md</path>
+        <title>Security Architecture</title>
+        <section>Authorization</section>
+        <snippet>JWT-based authentication and RBAC: Admin and Chief Accountant have broader rights for VAT corrections; all authenticated users can view VAT reports for their company; all API endpoints operate in the context of the authenticated company.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/implementation-patterns.md</path>
+        <title>Implementation Patterns</title>
+        <section>Naming Conventions and Package Structure</section>
+        <snippet>REST API endpoints with /api/v1/ar-vat-... prefix, snake_case for database tables (ar_vat_corrections, ar_vat_report_history), PascalCase for Java entities (ARVATCorrection, ARVATReportHistory), and PascalCase for React components (ARVATCorrectionDialog, OutputVATReportList). Follow service layer patterns with @Transactional, @Cacheable, and proper exception handling.</snippet>
+      </doc>
+    </docs>
+    
+    <code>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/SalesInvoice.java</path>
+        <kind>entity</kind>
+        <symbol>SalesInvoice</symbol>
+        <reason>SalesInvoice entity with invoice details (invoice_number, invoice_date, due_date, total_amount, vat_amount, amount_paid, status, voucher_id) required for VAT calculation and GL split generation. Status values: DRAFT, PENDING_APPROVAL, POSTED, REJECTED, PAID, PARTIALLY_PAID. VAT amount field stores sum of line VAT amounts.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/SalesInvoiceLine.java</path>
+        <kind>entity</kind>
+        <symbol>SalesInvoiceLine</symbol>
+        <reason>SalesInvoiceLine entity with line item details (line_number, description, quantity, unit_price, vat_rate, revenue_account_code, line_total, line_vat) required for VAT calculation per line. VAT rate enum: 0, 5, 10, EXEMPT. Revenue account code must be leaf account in 5xx range per TT200.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/SalesInvoiceRepository.java</path>
+        <kind>repository</kind>
+        <symbol>SalesInvoiceRepository</symbol>
+        <reason>SalesInvoice repository with queries for filtering invoices by customer, status (POSTED only for VAT reporting), date range, and company scoping for VAT report data aggregation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/repository/SalesInvoiceLineRepository.java</path>
+        <kind>repository</kind>
+        <symbol>SalesInvoiceLineRepository</symbol>
+        <reason>SalesInvoiceLine repository with queries for retrieving invoice lines by invoice ID for VAT calculation, GL split generation, and VAT report aggregation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/SalesInvoiceService.java</path>
+        <kind>service</kind>
+        <symbol>SalesInvoiceService</symbol>
+        <reason>SalesInvoice service interface with postInvoice method that needs to integrate VAT validation and GL split generation. Service should call ARVATService.validateVATSum() before posting and ARVATService.generateGLSplit() to create voucher lines.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/sales/SalesInvoiceServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>SalesInvoiceServiceImpl</symbol>
+        <reason>SalesInvoice service implementation with postInvoice method that needs to be extended to call VAT validation, block post if VAT validation fails, create voucher via VoucherService with idempotency check, and update invoice status to POSTED only after voucher creation succeeds.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/VoucherService.java</path>
+        <kind>service</kind>
+        <symbol>VoucherService</symbol>
+        <reason>Voucher service interface for creating vouchers with journal entry lines. ARVATService.generateGLSplit() should return list of journal entry lines that can be passed to VoucherService.create() to create balanced vouchers (Dr 131, Cr 5xx, Cr 3331).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/VoucherServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>VoucherServiceImpl</symbol>
+        <reason>Voucher service implementation with create method that accepts journal entry lines and creates balanced vouchers. Supports idempotent posting via unique constraint on (invoiceID, voucherID) pair. Enforces double-entry balance, leaf-only account enforcement, and period closure checks.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/AuditService.java</path>
+        <kind>service</kind>
+        <symbol>AuditService</symbol>
+        <reason>Audit service interface defining logging methods to be extended for AR VAT operations: logVatRateOverride, logVatCorrection, logCreditNoteCreation. All VAT operations (override, correction, credit note) must be logged with before/after snapshots and event hashes.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>AuditServiceImpl</symbol>
+        <reason>Audit service implementation for logging all AR VAT operations (VAT rate override, VAT correction, credit note creation) with user, timestamp, IP address, and change details. Should be extended with AR-specific methods: logVatRateOverride, logVatCorrection, logCreditNoteCreation.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/service/impl/ap/VATServiceImpl.java</path>
+        <kind>service</kind>
+        <symbol>VATServiceImpl (AP)</symbol>
+        <reason>AP VAT service implementation with VAT validation patterns (validateVATRate, validateVATSum, validateVATRatio), TT200 GL mapping (mapVATToGL), and VAT correction workflow. Story 5.6 should create ARVATService following similar patterns but adapted for AR context (output VAT, revenue accounts 5xx, customer-centric).</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/CompanySettings.java</path>
+        <kind>entity</kind>
+        <symbol>CompanySettings</symbol>
+        <reason>CompanySettings entity that should store default VAT rate per company. ARVATService.validateVATRate() should read company default VAT rate from CompanySettings (default 10% if not configured). TODO: Add defaultVatRate field to CompanySettings in future story.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/entity/ChartOfAccounts.java</path>
+        <kind>entity</kind>
+        <symbol>ChartOfAccounts</symbol>
+        <reason>ChartOfAccounts entity with account codes for TT200 compliance. Account 131 (AR), accounts 511-519 (Revenue), account 3331 (Output VAT) must exist and be leaf accounts for GL split generation. ARVATService.generateGLSplit() should validate revenue account codes are in 5xx range and are leaf accounts.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/src/main/java/com/accounting/controller/sales/SalesInvoiceController.java</path>
+        <kind>controller</kind>
+        <symbol>SalesInvoiceController</symbol>
+        <reason>Controller patterns with @PreAuthorize annotations, company-scoped filtering, and standard error response format. POST /api/v1/sales-invoices/:id/post endpoint should integrate VAT validation before posting. Credit note creation endpoint should call ARVATService.generateCreditNoteGLSplit().</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/SalesInvoices/SalesInvoiceForm.tsx</path>
+        <kind>component</kind>
+        <symbol>SalesInvoiceForm</symbol>
+        <reason>Sales invoice form component that needs to integrate VAT rate override warning dialog, VAT validation display (header VAT, sum of line VAT, variance), and blocking logic for posting when variance ≥ 1000 VND. Should display GL split preview before posting.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/voucher/InvoiceLineGrid.tsx</path>
+        <kind>component</kind>
+        <symbol>InvoiceLineGrid</symbol>
+        <reason>Invoice line item grid component that needs to display VAT rate override warning dialog when user overrides default VAT rate, show warning badge on line item if override detected, and require confirmation before saving line item.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/services/arStatement.ts</path>
+        <kind>service</kind>
+        <symbol>arStatement service</symbol>
+        <reason>Frontend export service pattern using fetchWithAuth and Blob response for file download to reuse for VAT report exports. Pattern established for Excel/PDF export with proper filename handling and error handling.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/features/accounting/pages/ARAging/ARAgingReport.tsx</path>
+        <kind>component</kind>
+        <symbol>ARAgingReport</symbol>
+        <reason>Frontend report component pattern with DataTable, filtering, export buttons, and drill-down functionality to reuse for output VAT report list and VAT correction management components.</reason>
+      </artifact>
+    </code>
+    
+    <dependencies>
+      <backend>
+        <package name="org.springframework.boot:spring-boot-starter-web" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-data-jpa" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-security" version="3.5.7" />
+        <package name="org.springframework.boot:spring-boot-starter-validation" version="3.5.7" />
+        <package name="org.apache.poi:poi" version="5.3.0" note="For Excel export generation (ND123 format)" />
+        <package name="com.itextpdf:itext7-core" version="8.0.5" note="For PDF export with legal footer and hash (optional for MVP)" />
+        <package name="org.postgresql:postgresql" version="42.7.4" />
+        <package name="org.flywaydb:flyway-core" version="11.10.0" note="For database migrations (ar_vat_corrections, ar_vat_report_history)" />
+        <package name="io.jsonwebtoken:jjwt-api" version="0.12.5" note="For JWT authentication" />
+      </backend>
+      <frontend>
+        <package name="react" version="^19.1.1" />
+        <package name="react-router-dom" version="^7.9.5" />
+        <package name="@tanstack/react-table" version="^8.21.3" note="For data tables" />
+        <package name="@radix-ui/react-dialog" version="^1.1.15" note="For dialog components (VAT correction, credit note)" />
+        <package name="axios" version="^1.7.9" note="For HTTP requests" />
+        <package name="zod" version="^4.1.12" note="For validation" />
+        <package name="react-hook-form" version="^7.66.0" note="For forms" />
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Multi-Tenancy: All AR VAT entities (ARVATCorrection, ARVATReportHistory) must extend CompanyScopedEntity interface and implement company_id field. All queries must be filtered by CompanyContext.getCompanyId(). This is consistent with the overall data architecture and AP module patterns.</constraint>
+    <constraint>RBAC and Security: Apply JWT-based authentication and RBAC: Admin and Chief Accountant have broader rights for VAT corrections; all authenticated users can view VAT reports for their company; all API endpoints operate in the context of the authenticated company. Use @PreAuthorize annotations at service and controller methods.</constraint>
+    <constraint>TT200 Compliance: VAT GL mapping must follow TT200 format requirements including automatic booking to account 3331 (Output VAT), proper Vietnamese formatting (currency, dates), and ND123-compliant report structure. Use established patterns from AP VAT reports (Story 4.6). Revenue accounts must be in 5xx range (511-519) and must be leaf accounts.</constraint>
+    <constraint>Voucher Engine Integration: GL splits must integrate with VoucherService from Epic 3, ensuring double-entry balance, leaf-only account enforcement, and period closure checks. Credit note vouchers must be properly linked to original invoice vouchers in audit trail.</constraint>
+    <constraint>Consistency with AP VAT: Story 5.6 should mirror patterns from Story 4.6 (AP VAT) but adapt for AR context: output VAT (vs. input VAT), revenue accounts 5xx (vs. expense accounts 6xx/7xx for AP), customer-centric reporting (vs. supplier-centric for AP).</constraint>
+    <constraint>Service Layer Patterns: Use @Transactional for data modifications, @Cacheable for read operations where appropriate (frequently accessed VAT reports), and @PreAuthorize for RBAC enforcement. Follow naming convention: ARVATService with ARVATServiceImpl in service/impl/sales/ package.</constraint>
+    <constraint>Database Design: Create new entities for VAT corrections (ARVATCorrection) and report history tracking (ARVATReportHistory) with proper indexes on customer_id, company_id, invoice_id, status (for ARVATCorrection), and period for query performance.</constraint>
+    <constraint>Export Patterns: Use Apache POI (XSSFWorkbook) for Excel generation with ND123-compliant formatting. Include metadata (period, customer, timestamp) and hash in exported files. Follow patterns from Story 5.5 (customer statement exports) and Story 4.6 (AP VAT reports).</constraint>
+    <constraint>VAT Rounding Rules: Line VAT rounded to nearest 100 VND per Circular 200 interpretation. Header VAT must equal sum of line VAT after rounding within tolerance (allow posting if variance &lt; 1000 VND; block if ≥ 1000 VND). System computes VAT to 2 decimal places (VND cents).</constraint>
+    <constraint>Idempotency: Invoice post endpoint must be idempotent (POST /api/v1/sales-invoices/:id/post can be called multiple times without duplicate voucher creation, enforced via unique constraint on (invoiceID, voucherID) pair). System prevents double-booking by checking invoice status before posting and validating voucher uniqueness.</constraint>
+    <constraint>Frontend Structure: Create feature under features/accounting/pages/VATReports/ following feature-first structure. Reuse existing DataTable components, export functionality, and dialog patterns from ARAging and SalesInvoices components. Use shadcn/ui components consistently.</constraint>
+    <constraint>Credit Note Support: Credit notes must reference original invoice (field: originalInvoiceID). VAT computed as negative. GL splits inverted: Cr 131 (reverses AR), Dr 5xx (reverses revenue), Dr 3331 (reverses VAT). Linked via audit trail: credit note AuditLog references original invoice ID.</constraint>
+    <constraint>VAT Correction Approval: If correction amount variance &gt; threshold (default 10M VND, configurable), correction requires Chief Accountant/CFO approval before application. All corrections logged to audit trail with before/after snapshots. Correction reason required (max 500 chars).</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>ARVATService</name>
+      <kind>service interface</kind>
+      <signature>
+        VATValidationResult validateVATRate(VatRate rate, UUID companyId)
+        BigDecimal calculateVAT(BigDecimal lineTotal, VatRate vatRate)
+        VATValidationResult validateVATSum(SalesInvoice invoice)
+        List&lt;JournalEntryLine&gt; generateGLSplit(SalesInvoice invoice)
+        List&lt;JournalEntryLine&gt; generateCreditNoteGLSplit(SalesInvoice creditNote, SalesInvoice originalInvoice)
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/ARVATService.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARVATCorrectionService</name>
+      <kind>service interface</kind>
+      <signature>
+        ARVATCorrectionDTO createCorrection(ARVATCorrectionCreateRequest request)
+        ARVATCorrectionDTO approveCorrection(UUID correctionId, UUID approverId)
+        ARVATCorrectionDTO rejectCorrection(UUID correctionId, String reason)
+        Page&lt;ARVATCorrectionDTO&gt; getCorrections(UUID invoiceId, CorrectionStatus status, Pageable pageable)
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/ARVATCorrectionService.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARVATReportService</name>
+      <kind>service interface</kind>
+      <signature>
+        OutputVATReportDTO generateVATReport(String period, UUID customerId, VatClass vatClass)
+        byte[] exportVATReport(String period, ExportFormat format, UUID customerId, VatClass vatClass)
+        Page&lt;ARVATReportHistoryDTO&gt; getReportHistory(String period, UUID customerId, Pageable pageable)
+      </signature>
+      <path>backend/src/main/java/com/accounting/service/ARVATReportService.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARVATController REST API</name>
+      <kind>REST endpoints</kind>
+      <signature>
+        GET /api/v1/ar-vat-report (generate VAT report data, query params: period, customerId, vatClass)
+        GET /api/v1/ar-vat-report/export (export VAT report to Excel, query params: period, format=EXCEL)
+        POST /api/v1/ar-vat-corrections (create VAT correction, requires Chief Accountant/CFO)
+        GET /api/v1/ar-vat-corrections (list corrections with filters: period, invoice, status)
+        POST /api/v1/ar-vat-corrections/:id/approve (approve correction, requires Chief Accountant/CFO)
+        POST /api/v1/ar-vat-corrections/:id/reject (reject correction with reason)
+      </signature>
+      <path>backend/src/main/java/com/accounting/controller/sales/ARVATController.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARVATCorrection Entity</name>
+      <kind>database entity</kind>
+      <signature>
+        Fields: id (UUID), company_id (UUID), invoice_id (UUID FK), line_item_id (UUID nullable), old_vat_amount (BigDecimal), new_vat_amount (BigDecimal), variance (BigDecimal), reason (String max 500), status (PENDING/APPROVED/REJECTED), corrected_by_id (UUID), corrected_at (Instant), approved_by_id (UUID nullable), approved_at (Instant nullable)
+        Extends: CompanyScopedEntity
+        Indexes: company_id, invoice_id, status, corrected_by_id
+      </signature>
+      <path>backend/src/main/java/com/accounting/entity/ARVATCorrection.java</path>
+    </interface>
+    
+    <interface>
+      <name>ARVATReportHistory Entity</name>
+      <kind>database entity</kind>
+      <signature>
+        Fields: id (UUID), company_id (UUID), period (String), customer_id (UUID nullable), vat_class (VatClass nullable), format (EXCEL/PDF), generated_by_id (UUID), generated_at (Instant), report_hash (String SHA256), download_count (Integer)
+        Extends: CompanyScopedEntity
+        Indexes: company_id, period, customer_id, generated_at
+      </signature>
+      <path>backend/src/main/java/com/accounting/entity/ARVATReportHistory.java</path>
+    </interface>
+    
+    <interface>
+      <name>Frontend arVAT API service</name>
+      <kind>typescript service</kind>
+      <signature>
+        generateVATReport(period: string, customerId?: string, vatClass?: string): Promise&lt;OutputVATReportDTO&gt;
+        exportVATReport(period: string, format: 'EXCEL' | 'PDF', customerId?: string): Promise&lt;Blob&gt;
+        createVATCorrection(correction: ARVATCorrectionCreateRequest): Promise&lt;ARVATCorrectionDTO&gt;
+        getVATCorrections(params: VATCorrectionFilterParams): Promise&lt;PaginatedResponse&lt;ARVATCorrectionDTO&gt;&gt;
+        approveVATCorrection(correctionId: string): Promise&lt;ARVATCorrectionDTO&gt;
+        rejectVATCorrection(correctionId: string, reason: string): Promise&lt;ARVATCorrectionDTO&gt;
+      </signature>
+      <path>frontend/src/services/arVAT.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Follow testing patterns established in Stories 5.1-5.5: Use TestContainers with PostgreSQL for integration tests. Test all service operations with company-scoped data isolation. Verify RBAC enforcement at service and API levels. Test VAT calculation and rounding logic with various scenarios (0%, 5%, 10%, EXEMPT, rounding to nearest 100 VND). Test GL split generation (Dr 131, Cr 5xx, Cr 3331) with balance validation. Test VAT sum validation with tolerance threshold (block if variance ≥ 1000 VND). Test credit note GL split inversion. Test output VAT report generation and ND123 Excel export. Test VAT correction workflow (creation, approval, application). Verify audit logging for all VAT operations. Use JUnit 5 for backend tests and Vitest + Testing Library for frontend component tests.
+    </standards>
+    
+    <locations>
+      backend/src/test/java/com/accounting/service/impl/sales/ARVATServiceImplTest.java
+      backend/src/test/java/com/accounting/service/impl/sales/ARVATCorrectionServiceImplTest.java
+      backend/src/test/java/com/accounting/service/impl/sales/ARVATReportServiceImplTest.java
+      backend/src/test/java/com/accounting/controller/sales/ARVATControllerTest.java
+      backend/src/test/java/com/accounting/integration/ARVATIntegrationTest.java
+      frontend/src/features/accounting/pages/VATReports/__tests__/OutputVATReportList.test.tsx
+      frontend/src/features/accounting/pages/VATReports/__tests__/ARVATCorrectionDialog.test.tsx
+      frontend/src/components/voucher/__tests__/InvoiceLineGrid.test.tsx
+    </locations>
+    
+    <ideas>
+      <test ac="1" idea="Test VAT rate validation: validate rates are 0, 5, 10, or EXEMPT. Test company default VAT rate (read from CompanySettings, default 10% if not configured). Test override warning: when user overrides default, system shows warning message with old/new rates and requires confirmation. Verify warning logged to audit trail."/>
+      <test ac="2" idea="Test GL split generation: for invoice with lineTotal=100, VAT=10, verify system creates: Dr 131 (100), Cr 511 (90), Cr 3331 (10). Verify all legs balance (debit = credit). Test multiple lines with different revenue accounts (511, 512, etc.). Verify revenue account codes are in 5xx range and are leaf accounts."/>
+      <test ac="3" idea="Test VAT rounding and sum validation: compute VAT to 2 decimal places, round line VAT to nearest 100 VND. Test header VAT equals sum of line VAT after rounding. Test tolerance: allow posting if variance &lt; 1000 VND (show warning), block if variance ≥ 1000 VND (show error). Verify rounding rules per Circular 200."/>
+      <test ac="4" idea="Test credit note creation: create negative invoice referencing original invoice (originalInvoiceID). Verify VAT computed as negative. Verify GL splits inverted: Cr 131, Dr 5xx, Dr 3331. Verify credit note AuditLog references original invoice ID. Test credit note can be posted and creates reversal voucher."/>
+      <test ac="5" idea="Test output VAT report generation: query POSTED invoices filtered by period, customer (optional), VAT class (optional). Aggregate by VAT rate: revenue0pct, revenue5pct, revenue10pct, revenueExempt, total_vat_collected. Test Excel export in ND123 format with proper headers, data rows, and summary totals. Verify report hash (SHA256) included."/>
+      <test ac="6" idea="Test VAT correction workflow: create correction for posted invoice with reason (required, max 500 chars). Display diff (old/new/difference). Test approval threshold: if variance &gt; 10M VND, require Chief Accountant/CFO approval. Test correction application: update invoice VAT amounts, regenerate voucher if needed. Verify all corrections logged to audit trail with before/after snapshots."/>
+      <test ac="7" idea="Test idempotent posting: POST /api/v1/sales-invoices/:id/post can be called multiple times without duplicate voucher creation. Verify unique constraint on (invoiceID, voucherID) pair prevents double-booking. Test invoice status check before posting (block if already POSTED). Verify voucher uniqueness validation."/>
+      <test ac="all" idea="Test RBAC enforcement: Admin and Chief Accountant can create/approve VAT corrections; all authenticated users can view VAT reports for their company. Test multi-tenancy: verify all queries filtered by company_id and no cross-company data access."/>
+      <test ac="all" idea="Test audit logging for all VAT operations: VAT rate override, VAT sum validation failure, VAT correction creation/approval, credit note creation. Verify action, user, timestamp, IP address, and change details captured in audit log. Test event hash integrity verification."/>
+      <test ac="performance" idea="Test VAT report generation performance: &lt;3s for 1000 invoices per period. Test VAT calculation performance: &lt;100ms for invoice with 100 lines. Test Excel export performance: &lt;5s for 1000-row report."/>
+    </ideas>
+  </tests>
+</story-context>
+

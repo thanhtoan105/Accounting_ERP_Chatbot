@@ -357,7 +357,7 @@ describe('ReceiptForm', () => {
         expect(mockCreateReceipt).toHaveBeenCalledWith(
           expect.objectContaining({
             isStandalone: true,
-          })
+          }),
         )
       })
     })

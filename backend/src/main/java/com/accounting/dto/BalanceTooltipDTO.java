@@ -1,28 +1,44 @@
 package com.accounting.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
- * DTO for balance tooltip data showing current and prior period balances.
+ * DTO for balance tooltip data showing current balance and key dates.
+ * Used in account picker tooltip per AC6.1-06.
  */
 public class BalanceTooltipDTO {
 
   private BigDecimal currentBalance;
-  private BigDecimal priorBalance;
-  private String currentPeriod;
-  private String priorPeriod;
+  private LocalDate lastTxDate;
+  private LocalDate lastReconciledDate;
 
-  public BalanceTooltipDTO() {}
+  public BalanceTooltipDTO() {
+  }
 
+  public BalanceTooltipDTO(
+      BigDecimal currentBalance,
+      LocalDate lastTxDate,
+      LocalDate lastReconciledDate) {
+    this.currentBalance = currentBalance;
+    this.lastTxDate = lastTxDate;
+    this.lastReconciledDate = lastReconciledDate;
+  }
+
+  /**
+   * Legacy constructor for backward compatibility.
+   * 
+   * @deprecated Use new constructor with LocalDate parameters
+   */
+  @Deprecated
   public BalanceTooltipDTO(
       BigDecimal currentBalance,
       BigDecimal priorBalance,
       String currentPeriod,
       String priorPeriod) {
     this.currentBalance = currentBalance;
-    this.priorBalance = priorBalance;
-    this.currentPeriod = currentPeriod;
-    this.priorPeriod = priorPeriod;
+    this.lastTxDate = null;
+    this.lastReconciledDate = null;
   }
 
   public BigDecimal getCurrentBalance() {
@@ -33,28 +49,19 @@ public class BalanceTooltipDTO {
     this.currentBalance = currentBalance;
   }
 
-  public BigDecimal getPriorBalance() {
-    return priorBalance;
+  public LocalDate getLastTxDate() {
+    return lastTxDate;
   }
 
-  public void setPriorBalance(BigDecimal priorBalance) {
-    this.priorBalance = priorBalance;
+  public void setLastTxDate(LocalDate lastTxDate) {
+    this.lastTxDate = lastTxDate;
   }
 
-  public String getCurrentPeriod() {
-    return currentPeriod;
+  public LocalDate getLastReconciledDate() {
+    return lastReconciledDate;
   }
 
-  public void setCurrentPeriod(String currentPeriod) {
-    this.currentPeriod = currentPeriod;
-  }
-
-  public String getPriorPeriod() {
-    return priorPeriod;
-  }
-
-  public void setPriorPeriod(String priorPeriod) {
-    this.priorPeriod = priorPeriod;
+  public void setLastReconciledDate(LocalDate lastReconciledDate) {
+    this.lastReconciledDate = lastReconciledDate;
   }
 }
-

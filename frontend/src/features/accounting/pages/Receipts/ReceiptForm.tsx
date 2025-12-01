@@ -15,6 +15,7 @@ import {
   Wallet,
   Building2,
   AlertTriangle,
+  Zap,
 } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
@@ -24,6 +25,7 @@ import {
   ReceiptAllocationGrid,
   type ReceiptAllocation,
 } from '@/components/receipt/ReceiptAllocationGrid'
+import { ReceiptAttachmentDropzone } from '@/components/receipt/ReceiptAttachmentDropzone'
 import { CustomerPicker } from '@/components/sales/CustomerPicker'
 import {
   AlertDialog,
@@ -359,6 +361,34 @@ export default function ReceiptForm() {
       maximumFractionDigits: 0,
     }).format(value)
   }
+
+  // Auto-allocate receipt amount to invoices (FIFO - oldest first by due date)
+  const autoAllocate = useCallback(() => {
+    if (isStandalone || allocations.length === 0 || receiptAmount <= 0) return
+
+    let remaining = receiptAmount
+    const newAllocations = allocations
+      .slice() // Clone array
+      .sort((a, b) => {
+        // Sort by due date (oldest first for FIFO)
+        const dateA = a.salesInvoiceDueDate ? new Date(a.salesInvoiceDueDate).getTime() : 0
+        const dateB = b.salesInvoiceDueDate ? new Date(b.salesInvoiceDueDate).getTime() : 0
+        return dateA - dateB
+      })
+      .map((alloc) => {
+        if (remaining <= 0) {
+          return { ...alloc, allocatedAmount: 0 }
+        }
+        const balance = alloc.salesInvoiceRemainingBalance || 0
+        const toAllocate = Math.min(remaining, balance)
+        remaining -= toAllocate
+        return { ...alloc, allocatedAmount: toAllocate }
+      })
+      // Restore original order by allocationOrder
+      .sort((a, b) => (a.allocationOrder || 0) - (b.allocationOrder || 0))
+
+    setAllocations(newAllocations)
+  }, [isStandalone, allocations, receiptAmount])
 
   const cashAccounts = useMemo(
     () => bankAccounts.filter((acc) => acc.type === 'CASH'),
@@ -857,8 +887,30 @@ export default function ReceiptForm() {
           {/* Allocations Card */}
           {!isStandalone && (
             <Card>
-              <CardHeader>
-                <CardTitle>Invoice Allocations</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Invoice Allocations</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Allocated: {formatCurrency(allocations.reduce((sum, a) => sum + a.allocatedAmount, 0))} / {formatCurrency(receiptAmount)}
+                    {allocations.reduce((sum, a) => sum + a.allocatedAmount, 0) < receiptAmount && (
+                      <span className="text-amber-600 ml-2">
+                        (Unallocated: {formatCurrency(receiptAmount - allocations.reduce((sum, a) => sum + a.allocatedAmount, 0))})
+                      </span>
+                    )}
+                  </p>
+                </div>
+                {canEdit && allocations.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={autoAllocate}
+                    disabled={receiptAmount <= 0}
+                  >
+                    <Zap className="mr-2 h-4 w-4" />
+                    Auto-Allocate (FIFO)
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {loadingOpenInvoices ? (
@@ -884,6 +936,22 @@ export default function ReceiptForm() {
               </CardContent>
             </Card>
           )}
+
+          {/* Attachments Card - AC6.2-08 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Attachments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ReceiptAttachmentDropzone
+                receiptId={receiptId || null}
+                disabled={!canEdit}
+                maxFiles={10}
+                maxTotalSize={20 * 1024 * 1024}
+                maxFileSize={10 * 1024 * 1024}
+              />
+            </CardContent>
+          </Card>
 
           {/* Autosave Indicator */}
           {isEditing && isDraft && (

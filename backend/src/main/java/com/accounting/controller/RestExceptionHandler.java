@@ -290,7 +290,13 @@ public class RestExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-    return build(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Unexpected error", new HashMap<>());
+    // Log the exception for debugging
+    org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RestExceptionHandler.class);
+    logger.error("Unhandled exception occurred", ex);
+    
+    // Include exception message in response for debugging (remove in production if needed)
+    String message = ex.getMessage() != null ? ex.getMessage() : "Unexpected error";
+    return build(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", message, new HashMap<>());
   }
 
   private ResponseEntity<Map<String, Object>> build(

@@ -83,9 +83,10 @@ public class PeriodManagementServiceImpl implements PeriodManagementService {
           HttpStatus.BAD_REQUEST, "Missing company context");
     }
     LocalDate currentDate = LocalDate.now();
+    // Pass enum as string name to native query (e.g., "OPEN" not ordinal 0)
     List<AccountingPeriod> periods = periodRepository.findOpenPeriodsAroundDate(
-        companyId, PeriodStatus.OPEN, currentDate);
-    
+        companyId, PeriodStatus.OPEN.name(), currentDate);
+
     // Auto-create periods if none exist for the company
     if (periods.isEmpty()) {
       List<AccountingPeriod> allPeriods = periodRepository.findByCompanyId(companyId);
@@ -94,7 +95,7 @@ public class PeriodManagementServiceImpl implements PeriodManagementService {
         createDefaultPeriodsForYear(companyId, currentDate.getYear());
         // Re-fetch after creation
         periods = periodRepository.findOpenPeriodsAroundDate(
-            companyId, PeriodStatus.OPEN, currentDate);
+            companyId, PeriodStatus.OPEN.name(), currentDate);
       }
     }
     

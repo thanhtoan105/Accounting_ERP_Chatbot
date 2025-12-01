@@ -1,0 +1,387 @@
+{
+    "name": "RAG Query Processing - Accounting Chatbot",
+    "description": "Process natural language questions about vouchers using RAG with Azure OpenAI and Pinecone. Features Vietnamese language support, conversation memory, and citation extraction.",
+    "n8n_workflow_id": "DQaYgnbZ2ryRSwM8",
+    "nodes": [
+        {
+            "id": "query-webhook",
+            "name": "Chat Query Webhook",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {
+                    "rawBody": false
+                },
+                "path": "chatbot-query",
+                "responseData": "firstEntryJson",
+                "responseMode": "lastNode"
+            },
+            "position": [
+                240,
+                300
+            ],
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "webhookId": "chatbot-query"
+        },
+        {
+            "id": "validate-query",
+            "name": "Validate Query",
+            "parameters": {
+                "conditions": {
+                    "combinator": "and",
+                    "conditions": [
+                        {
+                            "id": "query-check",
+                            "leftValue": "={{ $json.body.query }}",
+                            "operator": {
+                                "operation": "notEmpty",
+                                "type": "string"
+                            },
+                            "rightValue": ""
+                        },
+                        {
+                            "id": "company-check",
+                            "leftValue": "={{ $json.body.company_id }}",
+                            "operator": {
+                                "operation": "notEmpty",
+                                "type": "string"
+                            },
+                            "rightValue": ""
+                        }
+                    ],
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    }
+                }
+            },
+            "position": [
+                460,
+                300
+            ],
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2
+        },
+        {
+            "id": "extract-params",
+            "name": "Extract Query Parameters",
+            "parameters": {
+                "fields": {
+                    "values": [
+                        {
+                            "name": "query",
+                            "stringValue": "={{ $json.body.query }}"
+                        },
+                        {
+                            "name": "company_id",
+                            "stringValue": "={{ $json.body.company_id }}"
+                        },
+                        {
+                            "name": "user_id",
+                            "stringValue": "={{ $json.body.user_id }}"
+                        },
+                        {
+                            "name": "session_id",
+                            "stringValue": "={{ $json.body.session_id || $now.toMillis() }}"
+                        },
+                        {
+                            "name": "language",
+                            "stringValue": "={{ $json.body.language || 'vi' }}"
+                        },
+                        {
+                            "name": "namespace",
+                            "stringValue": "=company_{{ $json.body.company_id }}"
+                        },
+                        {
+                            "name": "start_time",
+                            "stringValue": "={{ Date.now() }}"
+                        }
+                    ]
+                },
+                "mode": "manual"
+            },
+            "position": [
+                680,
+                200
+            ],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4
+        },
+        {
+            "id": "ai-agent",
+            "name": "Accounting RAG Agent",
+            "parameters": {
+                "options": {
+                    "systemMessage": "Bạn là trợ lý kế toán AI chuyên nghiệp cho hệ thống kế toán Việt Nam. Nhiệm vụ của bạn là trả lời các câu hỏi về chứng từ kế toán, phiếu thu, phiếu chi, hóa đơn và các giao dịch tài chính.\n\n**Nguyên tắc:**\n1. LUÔN trả lời bằng tiếng Việt\n2. Chỉ sử dụng thông tin từ dữ liệu được cung cấp (context)\n3. Nếu không tìm thấy thông tin, trả lời: \"Không tìm thấy dữ liệu phù hợp. Vui lòng thử lại với câu hỏi cụ thể hơn.\"\n4. Luôn trích dẫn số phiếu kế toán khi có\n5. Định dạng số tiền theo chuẩn Việt Nam (dấu chấm ngăn cách hàng nghìn)\n\n**Thuật ngữ kế toán:**\n- Nợ = Debit, Có = Credit\n- Phiếu thu = Receipt voucher\n- Phiếu chi = Payment voucher\n- Công nợ phải trả = Accounts Payable (331)\n- Công nợ phải thu = Accounts Receivable (131)\n- Tiền mặt = Cash (111)\n- Tiền gửi ngân hàng = Bank deposit (112)\n\n**Format câu trả lời:**\n- Tóm tắt câu trả lời ngắn gọn\n- Liệt kê các phiếu kế toán liên quan\n- Nêu tổng số tiền nếu có"
+                },
+                "promptType": "define",
+                "text": "={{ $json.query }}"
+            },
+            "position": [
+                900,
+                200
+            ],
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 2
+        },
+        {
+            "credentials": {
+                "azureOpenAiApi": {
+                    "id": "azure-openai-creds",
+                    "name": "Azure OpenAI API"
+                }
+            },
+            "id": "azure-llm",
+            "name": "Azure OpenAI Chat",
+            "parameters": {
+                "model": "gpt-4",
+                "options": {
+                    "maxTokens": 2048,
+                    "temperature": 0.3,
+                    "timeout": 60000
+                }
+            },
+            "position": [
+                900,
+                480
+            ],
+            "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+            "typeVersion": 1
+        },
+        {
+            "credentials": {
+                "pineconeApi": {
+                    "id": "pinecone-creds",
+                    "name": "Pinecone API"
+                }
+            },
+            "id": "pinecone-retriever",
+            "name": "Pinecone Vector Store",
+            "parameters": {
+                "mode": "retrieve-as-tool",
+                "options": {
+                    "pineconeNamespace": "={{ $('Extract Query Parameters').item.json.namespace }}"
+                },
+                "pineconeIndex": {
+                    "__rl": true,
+                    "mode": "id",
+                    "value": "accounting-embeddings"
+                },
+                "toolDescription": "Tìm kiếm thông tin chứng từ kế toán, phiếu thu, phiếu chi, hóa đơn trong hệ thống. Sử dụng công cụ này khi cần tra cứu giao dịch, số dư tài khoản, hoặc thông tin kế toán cụ thể.",
+                "toolName": "voucher_search",
+                "topK": 10
+            },
+            "position": [
+                1100,
+                480
+            ],
+            "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+            "typeVersion": 1.3
+        },
+        {
+            "credentials": {
+                "azureOpenAiApi": {
+                    "id": "azure-openai-creds",
+                    "name": "Azure OpenAI API"
+                }
+            },
+            "id": "azure-embeddings-query",
+            "name": "Azure OpenAI Embeddings",
+            "parameters": {
+                "model": "text-embedding-ada-002",
+                "options": {
+                    "batchSize": 512,
+                    "dimensions": 1536
+                }
+            },
+            "position": [
+                1300,
+                480
+            ],
+            "type": "@n8n/n8n-nodes-langchain.embeddingsAzureOpenAi",
+            "typeVersion": 1
+        },
+        {
+            "id": "format-response",
+            "name": "Format Response",
+            "parameters": {
+                "jsCode": "const agentOutput = $input.first().json;\nconst params = $('Extract Query Parameters').first().json;\nconst startTime = parseInt(params.start_time);\nconst responseTimeMs = Date.now() - startTime;\n\nconst answer = agentOutput.output || agentOutput.text || 'Không thể xử lý câu hỏi. Vui lòng thử lại.';\n\nlet citations = [];\nlet confidenceScore = 0.5;\n\nif (agentOutput.intermediateSteps) {\n  for (const step of agentOutput.intermediateSteps) {\n    if (step.action?.tool === 'voucher_search' && step.observation) {\n      try {\n        const results = JSON.parse(step.observation);\n        if (Array.isArray(results)) {\n          citations = results.map((r, idx) => ({\n            entityType: 'VOUCHER',\n            entityId: r.metadata?.voucher_id || `unknown-${idx}`,\n            voucherNumber: r.metadata?.voucher_number || 'N/A',\n            excerpt: r.pageContent?.substring(0, 200) || '',\n            relevanceScore: r.score || 0.7,\n            link: `/vouchers/${r.metadata?.voucher_id}`\n          }));\n          if (citations.length > 0) {\n            const avgScore = citations.reduce((a, b) => a + b.relevanceScore, 0) / citations.length;\n            confidenceScore = Math.min(0.3 + (avgScore * 0.5) + (citations.length / 20), 1.0);\n          }\n        }\n      } catch (e) {}\n    }\n  }\n}\n\nlet confidenceBadge = 'LOW';\nif (confidenceScore >= 0.8) confidenceBadge = 'HIGH';\nelse if (confidenceScore >= 0.5) confidenceBadge = 'MEDIUM';\n\nconst response = {\n  answer: answer,\n  citations: citations.slice(0, 10),\n  confidenceScore: Math.round(confidenceScore * 100) / 100,\n  confidenceBadge: confidenceBadge,\n  queryId: `q_${params.session_id}_${Date.now()}`,\n  sessionId: params.session_id,\n  responseTimeMs: responseTimeMs,\n  language: params.language,\n  timestamp: new Date().toISOString()\n};\n\nif (confidenceScore < 0.5) {\n  response.suggestions = [\n    'Thử hỏi cụ thể hơn về số phiếu hoặc ngày tháng',\n    'Kiểm tra lại tên tài khoản hoặc đối tượng',\n    'Liên hệ bộ phận hỗ trợ nếu cần trợ giúp thêm'\n  ];\n}\n\nreturn { json: response };"
+            },
+            "position": [
+                1120,
+                200
+            ],
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2
+        },
+        {
+            "id": "validation-error",
+            "name": "Validation Error Response",
+            "parameters": {
+                "fields": {
+                    "values": [
+                        {
+                            "name": "error",
+                            "stringValue": "true"
+                        },
+                        {
+                            "name": "message",
+                            "stringValue": "Invalid request: query and company_id are required"
+                        },
+                        {
+                            "name": "statusCode",
+                            "type": "numberValue",
+                            "numberValue": 400
+                        }
+                    ]
+                },
+                "mode": "manual"
+            },
+            "position": [
+                680,
+                400
+            ],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4
+        },
+        {
+            "id": "memory-buffer",
+            "name": "Window Buffer Memory",
+            "parameters": {
+                "contextWindowLength": 5,
+                "sessionKey": "={{ $('Extract Query Parameters').item.json.session_id }}"
+            },
+            "position": [
+                700,
+                480
+            ],
+            "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+            "typeVersion": 1.3
+        }
+    ],
+    "connections": {
+        "Accounting RAG Agent": {
+            "main": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Format Response",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Azure OpenAI Chat": {
+            "ai_languageModel": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Accounting RAG Agent",
+                        "type": "ai_languageModel"
+                    }
+                ]
+            ]
+        },
+        "Azure OpenAI Embeddings": {
+            "ai_embedding": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Pinecone Vector Store",
+                        "type": "ai_embedding"
+                    }
+                ]
+            ]
+        },
+        "Chat Query Webhook": {
+            "main": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Validate Query",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Extract Query Parameters": {
+            "main": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Accounting RAG Agent",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Pinecone Vector Store": {
+            "ai_tool": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Accounting RAG Agent",
+                        "type": "ai_tool"
+                    }
+                ]
+            ]
+        },
+        "Validate Query": {
+            "main": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Extract Query Parameters",
+                        "type": "main"
+                    }
+                ],
+                [
+                    {
+                        "index": 0,
+                        "node": "Validation Error Response",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Window Buffer Memory": {
+            "ai_memory": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Accounting RAG Agent",
+                        "type": "ai_memory"
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1",
+        "timezone": "Asia/Ho_Chi_Minh",
+        "saveDataErrorExecution": "all",
+        "saveDataSuccessExecution": "all",
+        "saveExecutionProgress": true
+    },
+    "tags": [
+        {
+            "name": "chatbot"
+        },
+        {
+            "name": "rag"
+        },
+        {
+            "name": "query"
+        },
+        {
+            "name": "azure-openai"
+        },
+        {
+            "name": "pinecone"
+        },
+        {
+            "name": "vietnamese"
+        }
+    ]
+}

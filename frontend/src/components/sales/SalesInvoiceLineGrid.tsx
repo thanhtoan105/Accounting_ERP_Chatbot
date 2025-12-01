@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { ArrowUpDown, Copy, GripVertical, Plus, Trash2, AlertCircle } from 'lucide-react'
+import { ArrowUpDown, Copy, GripVertical, Plus, Trash2, AlertCircle, AlertTriangle } from 'lucide-react'
 
 import { AccountPicker, type AccountSummary } from '@/components/account/AccountPicker'
 import { MoneyInput } from '@/components/inputs/MoneyInput'
@@ -31,6 +31,14 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { DimensionPicker } from '@/components/voucher/DimensionPicker'
 import type { VoucherDimensionOption } from '@/types/voucher'
@@ -61,6 +69,7 @@ export interface SalesInvoiceLineGridProps {
   readOnly?: boolean
   loading?: boolean
   onCalculateVAT?: (amount: number, rate: VatRate) => number
+  defaultVatRate?: VatRate // Company default VAT rate (defaults to 'TEN' if not provided)
 }
 
 const VAT_RATE_OPTIONS: { value: VatRate; label: string }[] = [
@@ -82,6 +91,21 @@ function getVatRateValue(rate: VatRate): number {
       return 0
     default:
       return 0
+  }
+}
+
+function getVatRateDisplayName(rate: VatRate): string {
+  switch (rate) {
+    case 'ZERO':
+      return '0%'
+    case 'FIVE':
+      return '5%'
+    case 'TEN':
+      return '10%'
+    case 'EXEMPT':
+      return 'Exempt'
+    default:
+      return '0%'
   }
 }
 
@@ -123,9 +147,16 @@ export function SalesInvoiceLineGrid({
   readOnly,
   loading,
   onCalculateVAT,
+  defaultVatRate = 'TEN', // Default to 10% if not provided
 }: SalesInvoiceLineGridProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeRowIndex, setActiveRowIndex] = useState(0)
+  const [vatOverrideDialog, setVatOverrideDialog] = useState<{
+    open: boolean
+    lineIndex: number
+    oldRate: VatRate
+    newRate: VatRate
+  } | null>(null)
 
   const totals = useMemo(() => {
     return lines.reduce(
@@ -139,10 +170,28 @@ export function SalesInvoiceLineGrid({
   }, [lines])
 
   const updateLine = useCallback(
-    (index: number, patch: Partial<SalesInvoiceLine>) => {
+    (index: number, patch: Partial<SalesInvoiceLine>, skipVatOverrideCheck = false) => {
       if (!onLinesChange) return
       const line = lines[index]
       const updated = { ...line, ...patch, status: 'dirty' as const }
+
+      // Check for VAT rate override (AC-VAT-001)
+      if (
+        !skipVatOverrideCheck &&
+        patch.vatRate !== undefined &&
+        patch.vatRate !== line.vatRate &&
+        patch.vatRate !== defaultVatRate &&
+        line.vatRate === defaultVatRate
+      ) {
+        // User is overriding default VAT rate - show warning dialog
+        setVatOverrideDialog({
+          open: true,
+          lineIndex: index,
+          oldRate: defaultVatRate,
+          newRate: patch.vatRate,
+        })
+        return // Don't update yet - wait for confirmation
+      }
 
       // Auto-calculate amount from quantity × unitPrice
       if (patch.quantity !== undefined || patch.unitPrice !== undefined) {
@@ -165,8 +214,19 @@ export function SalesInvoiceLineGrid({
       const next = lines.map((l, idx) => (idx === index ? updated : l))
       onLinesChange(next)
     },
-    [lines, onLinesChange, onCalculateVAT],
+    [lines, onLinesChange, onCalculateVAT, defaultVatRate],
   )
+
+  const handleVatOverrideConfirm = useCallback(() => {
+    if (!vatOverrideDialog) return
+    const { lineIndex, newRate } = vatOverrideDialog
+    updateLine(lineIndex, { vatRate: newRate }, true) // Skip override check on confirmation
+    setVatOverrideDialog(null)
+  }, [vatOverrideDialog, updateLine])
+
+  const handleVatOverrideCancel = useCallback(() => {
+    setVatOverrideDialog(null)
+  }, [])
 
   const insertLine = useCallback(
     (index: number) => {
@@ -343,6 +403,7 @@ export function SalesInvoiceLineGrid({
                       />
                     </TableCell>
                     <TableCell>
+                      <div className="space-y-1">
                       <Select
                         value={line.vatRate}
                         onValueChange={(value: VatRate) => updateLine(index, { vatRate: value })}
@@ -359,11 +420,24 @@ export function SalesInvoiceLineGrid({
                           ))}
                         </SelectContent>
                       </Select>
-                      {line.vatRate === 'ZERO' && (
-                        <Badge variant="outline" className="mt-1 text-xs">
-                          0%
+                        {line.vatRate !== defaultVatRate && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className="mt-1 text-xs text-amber-600 border-amber-300">
+                                  <AlertTriangle className="h-3 w-3 mr-1" />
+                                  Override
                         </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  VAT rate overridden from default {getVatRateDisplayName(defaultVatRate)} to {getVatRateDisplayName(line.vatRate)}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                       )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <MoneyInput
@@ -439,6 +513,36 @@ export function SalesInvoiceLineGrid({
           </TableBody>
         </Table>
       </div>
+
+      {/* VAT Override Warning Dialog */}
+      <Dialog
+        open={vatOverrideDialog?.open ?? false}
+        onOpenChange={(open) => {
+          if (!open) {
+            setVatOverrideDialog(null)
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              VAT Rate Override Warning
+            </DialogTitle>
+            <DialogDescription>
+              You are overriding the default VAT rate from {vatOverrideDialog ? getVatRateDisplayName(vatOverrideDialog.oldRate) : ''} to {vatOverrideDialog ? getVatRateDisplayName(vatOverrideDialog.newRate) : ''}. Ensure this is correct per customer agreement.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleVatOverrideCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleVatOverrideConfirm}>
+              Confirm Override
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Totals */}
       <div className="flex justify-end gap-8 pr-4">

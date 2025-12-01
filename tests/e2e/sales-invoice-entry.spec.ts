@@ -52,7 +52,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
     test('AC1.2: should auto-generate invoice number per customer/period', async ({ page }) => {
       // GIVEN: User creates invoice for specific customer in specific period
       await page.goto('/invoices/new');
-      
+
       await page.click('[data-testid="customer-picker"]');
       await page.type('[data-testid="customer-search"]', 'Test Customer 1');
       await page.click('[data-testid="customer-option-0"]');
@@ -79,7 +79,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
 
       // WHEN: User attempts to create identical invoice
       await page.goto('/invoices/new');
-      
+
       await page.click('[data-testid="customer-picker"]');
       await page.type('[data-testid="customer-search"]', 'Test Customer 1');
       await page.click('[data-testid="customer-option-0"]');
@@ -106,7 +106,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
 
       // WHEN: User selects date in closed period (e.g., Dec 2024 if closed)
       await page.click('[data-testid="invoice-date"]');
-      
+
       // Calendar picker should show closed dates as disabled
       const closedDateButton = page.locator('[data-testid="date-2024-12-15"]');
       const isDisabled = await closedDateButton.evaluate(el => el.hasAttribute('disabled'));
@@ -155,7 +155,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
       // THEN: VAT rates are selectable and totals recalculate
       await expect(page.locator('[data-testid="line-vat-rate"]')).toHaveValue('0');
       await expect(page.locator('[data-testid="line-vat-rate-1"]')).toHaveValue('10');
-      
+
       // Verify total VAT = 10000 (0 + 10000)
       const totalVAT = await page.locator('[data-testid="total-vat"]').textContent();
       await expect(totalVAT).toContain('10,000');
@@ -174,7 +174,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
       // WHEN: User uploads attachment via drag/drop
       const attachment = await page.locator('[data-testid="attachment-drop-zone"]');
       await attachment.dragAndDrop('[data-testid="file-input"]', { sourcePosition: { x: 1, y: 1 }, targetPosition: { x: 1, y: 1 } });
-      
+
       // Alternative: use file input directly if drag/drop not supported
       await page.locator('[data-testid="file-input"]').setInputFiles('./tests/fixtures/sample-invoice.pdf');
 
@@ -198,14 +198,19 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
 
       // WHEN: User enters data and waits for autosave
       await page.fill('[data-testid="reference-text"]', 'First Reference');
-      await page.waitForTimeout(2000); // Wait for autosave
 
-      // THEN: Autosave indicator shows success
-      await expect(page.locator('[data-testid="autosave-status"]')).toContainText('Saved');
+      // THEN: Autosave indicator shows success (deterministic wait)
+      await expect(page.locator('[data-testid="autosave-status"]')).toContainText('Saved', {
+        timeout: 5000 // Autosave typically triggers within 2-3s
+      });
 
       // WHEN: User changes data and clicks undo
       await page.fill('[data-testid="reference-text"]', 'Changed Reference');
-      await page.waitForTimeout(2000);
+
+      // Wait for autosave before undo
+      await expect(page.locator('[data-testid="autosave-status"]')).toContainText('Saved', {
+        timeout: 5000
+      });
 
       await page.click('[data-testid="undo-button"]');
 
@@ -250,7 +255,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
     test('AC2.1: should restrict draft editing to creator/admin only', async ({ page, context }) => {
       // GIVEN: Accountant created a draft invoice
       await page.goto('/invoices/new');
-      
+
       await page.click('[data-testid="customer-picker"]');
       await page.type('[data-testid="customer-search"]', 'Test Customer 1');
       await page.click('[data-testid="customer-option-0"]');
@@ -262,7 +267,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
       await page.fill('[data-testid="line-unit-price"]', '100000');
 
       await page.click('[data-testid="save-draft-button"]');
-      
+
       const invoiceId = await page.locator('[data-testid="invoice-id"]').textContent();
 
       // WHEN: Different user (Chief Accountant) tries to edit draft
@@ -282,7 +287,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
     test('AC2.2: should support draft deletion with confirmation', async ({ page }) => {
       // GIVEN: Draft invoice exists
       await page.goto('/invoices/new');
-      
+
       await page.click('[data-testid="customer-picker"]');
       await page.type('[data-testid="customer-search"]', 'Test Customer 1');
       await page.click('[data-testid="customer-option-0"]');
@@ -313,7 +318,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
     test('AC2.3: should validate revenue account is leaf account only', async ({ page }) => {
       // GIVEN: User is adding line item
       await page.goto('/invoices/new');
-      
+
       await page.click('[data-testid="customer-picker"]');
       await page.type('[data-testid="customer-search"]', 'Test Customer 1');
       await page.click('[data-testid="customer-option-0"]');
@@ -328,9 +333,9 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
       // WHEN: User selects parent revenue account (511) instead of leaf
       await page.click('[data-testid="line-revenue-account"]');
       await page.type('[data-testid="account-search"]', '511');
-      
+
       const parentAccountOption = page.locator('[data-testid="account-option-parent"]');
-      
+
       // THEN: Parent account option shows as disabled or warning
       await expect(parentAccountOption).toBeDisabled();
       await expect(page.locator('[data-testid="account-warning"]')).toContainText('parent account');
@@ -339,7 +344,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
     test('AC2.4: should enforce mandatory dimension validation', async ({ page }) => {
       // GIVEN: Cost center is mandatory for expense accounts
       await page.goto('/invoices/new');
-      
+
       await page.click('[data-testid="customer-picker"]');
       await page.type('[data-testid="customer-search"]', 'Test Customer 1');
       await page.click('[data-testid="customer-option-0"]');
@@ -362,7 +367,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
     test('AC2.5: should auto-calculate totals and validate', async ({ page }) => {
       // GIVEN: User is entering invoice with line items
       await page.goto('/invoices/new');
-      
+
       await page.click('[data-testid="customer-picker"]');
       await page.type('[data-testid="customer-search"]', 'Test Customer 1');
       await page.click('[data-testid="customer-option-0"]');
@@ -374,13 +379,14 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
       await page.fill('[data-testid="line-unit-price"]', '100000');
       await page.selectOption('[data-testid="line-vat-rate"]', '10');
 
-      // WHEN: Form calculates totals
-      await page.waitForTimeout(500); // Wait for calculation
-
-      // THEN: Totals are calculated correctly
+      // THEN: Totals are calculated correctly (wait for calculation deterministically)
       // Subtotal = 2 * 100,000 = 200,000
       // VAT = 200,000 * 10% = 20,000
       // Total = 220,000
+      await expect(page.locator('[data-testid="subtotal"]')).toContainText('200,000', {
+        timeout: 3000 // Calculation happens reactively
+      });
+
       const subtotal = await page.locator('[data-testid="subtotal"]').textContent();
       const vat = await page.locator('[data-testid="total-vat"]').textContent();
       const total = await page.locator('[data-testid="grand-total"]').textContent();
@@ -397,7 +403,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
       // WHEN: User attempts to upload oversized file (>10MB)
       // Mock file with size property
       const largeFile = new File(['x'.repeat(11 * 1024 * 1024)], 'large-file.pdf', { type: 'application/pdf' });
-      
+
       await page.locator('[data-testid="file-input"]').setInputFiles([largeFile] as any);
 
       // THEN: File size validation error is shown
@@ -451,7 +457,7 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
       // THEN: Audit entries show create, edit, and other actions
       const auditEntries = await page.locator('[data-testid="audit-entry"]').count();
       await expect(auditEntries).toBeGreaterThan(0);
-      
+
       const firstEntry = await page.locator('[data-testid="audit-entry-0"]').textContent();
       await expect(firstEntry).toContainText('created');
     });

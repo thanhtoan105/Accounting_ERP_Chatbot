@@ -388,12 +388,14 @@ describe('ReceiptList', () => {
   describe('Loading States', () => {
     it('should display loading skeleton initially', () => {
       mockGetReceipts.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(mockReceiptsData as any), 1000))
+        () => new Promise((resolve) => setTimeout(() => resolve(mockReceiptsData as any), 1000)),
       )
 
       render(<ReceiptList />)
 
-      expect(screen.getByTestId('loading-skeleton') || screen.getByText(/loading/i)).toBeInTheDocument()
+      expect(
+        screen.getByTestId('loading-skeleton') || screen.getByText(/loading/i),
+      ).toBeInTheDocument()
     })
 
     it('should hide loading state after data loads', async () => {

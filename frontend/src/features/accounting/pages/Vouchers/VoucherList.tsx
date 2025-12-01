@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Calendar as CalendarIcon,
   RefreshCw,
@@ -140,6 +141,7 @@ function getStatusBadgeVariant(status: string) {
 }
 
 export default function VoucherList() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [vouchers, setVouchers] = useState<VoucherListDTO[]>([])
   const [loading, setLoading] = useState(true)
@@ -766,21 +768,21 @@ export default function VoucherList() {
                   <div className="flex flex-col items-center gap-4">
                     <FileText className="h-12 w-12 text-muted-foreground" />
                     <div>
-                      <p className="text-lg font-medium">No vouchers found</p>
+                      <p className="text-lg font-medium">{t('vouchers.noVouchersFound')}</p>
                       <p className="text-sm text-muted-foreground">
                         {search || status !== 'all' || dateFrom || dateTo || accountId
-                          ? 'Try adjusting your filters'
-                          : 'Get started by creating your first voucher'}
+                          ? t('vouchers.tryAdjustingFilters')
+                          : t('vouchers.getStartedVoucher')}
                       </p>
                     </div>
                     <div className="flex gap-2">
                       <Button onClick={() => navigate('/vouchers/new')}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Create First Voucher
+                        {t('vouchers.createFirstVoucher')}
                       </Button>
                       {(search || status !== 'all' || dateFrom || dateTo || accountId) && (
                         <Button variant="outline" onClick={handleResetFilters}>
-                          Reset Filters
+                          {t('vouchers.resetFilters')}
                         </Button>
                       )}
                     </div>
@@ -810,7 +812,7 @@ export default function VoucherList() {
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows per page</span>
+            <span className="text-sm text-muted-foreground">{t('vouchers.rowsPerPage')}</span>
             <Select
               value={pageSize.toString()}
               onValueChange={(value) => {

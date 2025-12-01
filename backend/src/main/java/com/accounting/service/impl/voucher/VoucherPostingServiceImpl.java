@@ -14,7 +14,9 @@ import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.exception.VoucherPostingException;
+import com.accounting.dto.VoucherEmbeddingPayload;
 import com.accounting.service.AuditService;
+import com.accounting.service.N8nWebhookService;
 import com.accounting.service.PeriodManagementService;
 import com.accounting.service.VoucherService;
 import com.accounting.service.VoucherValidationService;
@@ -22,6 +24,7 @@ import com.accounting.service.util.VoucherAuditHelper;
 import com.accounting.service.gl.JournalEntryService;
 import com.accounting.service.voucher.VoucherPostingService;
 import jakarta.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,6 +57,7 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
   private final AuditService auditService;
   private final VoucherAuditHelper voucherAuditHelper;
   private final PeriodManagementService periodManagementService;
+  private final N8nWebhookService n8nWebhookService;
 
   public VoucherPostingServiceImpl(
       VoucherRepository voucherRepository,
@@ -63,7 +67,8 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
       VoucherService voucherService,
       AuditService auditService,
       VoucherAuditHelper voucherAuditHelper,
-      PeriodManagementService periodManagementService) {
+      PeriodManagementService periodManagementService,
+      N8nWebhookService n8nWebhookService) {
     this.voucherRepository = voucherRepository;
     this.voucherLineRepository = voucherLineRepository;
     this.voucherValidationService = voucherValidationService;
@@ -72,6 +77,7 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
     this.auditService = auditService;
     this.voucherAuditHelper = voucherAuditHelper;
     this.periodManagementService = periodManagementService;
+    this.n8nWebhookService = n8nWebhookService;
   }
 
   @Override
@@ -158,6 +164,18 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
       } catch (Exception e) {
       // Non-blocking: log error but don't break main flow
         logger.error("Failed to log voucher posting to audit trail. Voucher ID: {}", voucherId, e);
+    }
+
+    // Trigger n8n webhook for voucher embedding (AC 9.0.1 - fire-and-forget, async)
+    try {
+      VoucherEmbeddingPayload embeddingPayload = buildEmbeddingPayload(voucher, voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(voucherId));
+      n8nWebhookService.triggerEmbedding(embeddingPayload);
+      logger.debug("Triggered n8n webhook for voucher embedding: voucherId={}, voucherNumber={}",
+          voucherId, voucher.getVoucherNumber());
+    } catch (Exception e) {
+      // Non-blocking: log error but don't break voucher posting flow
+      logger.error("Failed to trigger n8n webhook for voucher embedding. Voucher ID: {}, Voucher Number: {}",
+          voucherId, voucher.getVoucherNumber(), e);
     }
 
     return new PostVoucherResponse(voucherDTO, journalEntryDTOs);
@@ -303,6 +321,68 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
           "Failed to validate period for voucher posting"
       );
     }
+  }
+
+  /**
+   * Build VoucherEmbeddingPayload for n8n webhook trigger.
+   * Constructs payload with voucher header, line items, and balance summary
+   * for embedding generation and Pinecone upsert.
+   *
+   * @param voucher The posted voucher entity
+   * @param lines Voucher line items
+   * @return VoucherEmbeddingPayload for n8n webhook
+   */
+  private VoucherEmbeddingPayload buildEmbeddingPayload(Voucher voucher, List<VoucherLine> lines) {
+    // Build header
+    VoucherEmbeddingPayload.VoucherHeader header = new VoucherEmbeddingPayload.VoucherHeader(
+        voucher.getVoucherNumber(),
+        voucher.getVoucherDate(),
+        voucher.getDescription(),
+        voucher.getStatus()
+    );
+
+    // Build line items
+    List<VoucherEmbeddingPayload.VoucherLine> lineItems = lines.stream()
+        .map(line -> new VoucherEmbeddingPayload.VoucherLine(
+            getAccountCode(line.getAccountId()),
+            getAccountName(line.getAccountId()),
+            line.getDebit(),
+            line.getCredit(),
+            line.getDescription()
+        ))
+        .collect(Collectors.toList());
+
+    // Build balance summary
+    VoucherEmbeddingPayload.BalanceSummary summary = new VoucherEmbeddingPayload.BalanceSummary(
+        voucher.getTotalDebit(),
+        voucher.getTotalCredit()
+    );
+
+    return new VoucherEmbeddingPayload(
+        voucher.getCompanyId(),
+        voucher.getId().toString(),
+        header,
+        lineItems,
+        summary
+    );
+  }
+
+  /**
+   * Get account code by ID (placeholder - should be cached or injected service).
+   * For MVP, returns placeholder string. Production should use ChartOfAccountsRepository.
+   */
+  private String getAccountCode(Long accountId) {
+    // TODO: Inject ChartOfAccountsRepository and implement proper lookup with caching
+    return accountId != null ? "ACC-" + accountId : "UNKNOWN";
+  }
+
+  /**
+   * Get account name by ID (placeholder - should be cached or injected service).
+   * For MVP, returns placeholder string. Production should use ChartOfAccountsRepository.
+   */
+  private String getAccountName(Long accountId) {
+    // TODO: Inject ChartOfAccountsRepository and implement proper lookup with caching
+    return accountId != null ? "Account " + accountId : "Unknown Account";
   }
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -30,6 +31,7 @@ export type LoginFormProps = React.ComponentProps<'div'> & {
 }
 
 export function LoginForm({ className, accountCreated, onSuccess, ...props }: LoginFormProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { resolvedTheme, toggleTheme } = useTheme()
   const form = useForm<LoginFormValues>({
@@ -54,7 +56,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
 
   useEffect(() => {
     if (success) {
-      toast.success('Login successful! Redirecting...')
+      toast.success(t('auth.loginSuccess'))
     }
   }, [success])
 
@@ -102,10 +104,10 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
       const message = errorData?.error?.message || errorData?.message || 'Login failed'
       const errorCode = errorData?.error?.code
       if (errorCode === 'ACCOUNT_LOCKED')
-        setLockoutMessage('Account is locked. Please try again later.')
+        setLockoutMessage(t('auth.accountLockedMessage'))
       else if (errorCode === 'ACCOUNT_DEACTIVATED' || message.toLowerCase().includes('deactivated'))
-        setFormError('Account is deactivated')
-      else if (errorCode === 'UNAUTHORIZED') setFormError('Invalid email or password')
+        setFormError(t('auth.accountDeactivated'))
+      else if (errorCode === 'UNAUTHORIZED') setFormError(t('auth.invalidCredentials'))
       else setFormError(message)
     } finally {
       setSubmitting(false)
@@ -148,34 +150,34 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
                   </div>
                 )}
                 <div>
-                  <h1 className="text-2xl font-bold">Welcome back</h1>
-                  <p className="text-muted-foreground text-balance">Login to your account</p>
+                  <h1 className="text-2xl font-bold">{t('auth.welcomeBack')}</h1>
+                  <p className="text-muted-foreground text-balance">{t('auth.loginToAccount')}</p>
                 </div>
               </div>
 
               {accountCreated && (
                 <Alert variant="default" className="mb-4">
-                  <AlertTitle>Account Created</AlertTitle>
+                  <AlertTitle>{t('auth.accountCreated')}</AlertTitle>
                   <AlertDescription>
-                    Account created successfully! Please log in with your email and password.
+                    {t('auth.accountCreatedMessage')}
                   </AlertDescription>
                 </Alert>
               )}
               {lockoutMessage && (
                 <Alert variant="destructive" className="mb-4">
-                  <AlertTitle>Account Locked</AlertTitle>
+                  <AlertTitle>{t('auth.accountLocked')}</AlertTitle>
                   <AlertDescription>{lockoutMessage}</AlertDescription>
                 </Alert>
               )}
               {formError && (
                 <Alert variant="destructive" className="mb-4">
-                  <AlertTitle>Error</AlertTitle>
+                  <AlertTitle>{t('auth.error')}</AlertTitle>
                   <AlertDescription>{formError}</AlertDescription>
                 </Alert>
               )}
 
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="email">{t('auth.email')}</FieldLabel>
                 <Input
                   id="email"
                   data-testid="email-input"
@@ -193,7 +195,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
 
               <Field>
                 <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldLabel htmlFor="password">{t('auth.password')}</FieldLabel>
                 </div>
                 <div className="relative">
                   <Input
@@ -205,7 +207,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
                   />
                   <button
                     type="button"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/80 hover:text-foreground transition h-8 w-8 rounded-md inline-flex items-center justify-center"
                     onClick={() => setShowPassword((v) => !v)}
                   >
@@ -226,7 +228,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
                     onCheckedChange={(checked) => onRememberMeChange(checked === true)}
                   />
                   <FieldLabel htmlFor="rememberMe" className="cursor-pointer">
-                    Remember me
+                    {t('auth.rememberMe')}
                   </FieldLabel>
                 </div>
               </Field>
@@ -238,7 +240,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
                   disabled={submitting || isSubmitting}
                   className="w-full"
                 >
-                  {submitting || isSubmitting ? 'Logging in…' : 'Log in'}
+                  {submitting || isSubmitting ? t('auth.loggingIn') : t('auth.login')}
                 </Button>
               </Field>
 
@@ -247,7 +249,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
                   to="/forgot-password"
                   className="ml-auto text-sm underline-offset-2 hover:underline"
                 >
-                  Forgot your password?
+                  {t('auth.forgotPassword')}
                 </RouterLink>
               </div>
             </FieldGroup>
@@ -263,13 +265,13 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
       </Card>
       {/* Success toast is handled via useEffect; no inline alert here */}
       <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our{' '}
+        {t('auth.termsAgreement')}{' '}
         <a href="#" className="underline-offset-2 hover:underline">
-          Terms of Service
+          {t('auth.termsOfService')}
         </a>{' '}
-        and{' '}
+        {t('auth.and')}{' '}
         <a href="#" className="underline-offset-2 hover:underline">
-          Privacy Policy
+          {t('auth.privacyPolicy')}
         </a>
         .
       </FieldDescription>

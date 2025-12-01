@@ -1,0 +1,223 @@
+@startuml Vietnamese Accounting System - Use Case Overview
+!theme plain
+skinparam handwritten false
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<core>> LightBlue
+    BackgroundColor<<finance>> LightGreen
+    BackgroundColor<<admin>> LightGray
+    BackgroundColor<<ai>> LightYellow
+    BorderColor Black
+}
+
+title Vietnamese Accounting System (TT200 ERP) - Use Case Overview
+
+' ==================== ACTORS ====================
+actor "Admin" as ADMIN #LightCoral
+actor "Kế toán trưởng\n(Chief Accountant)" as CHIEF #LightGreen
+actor "CFO" as CFO #LightBlue
+actor "Kế toán viên\n(Accountant)" as ACC #LightYellow
+
+' ==================== SYSTEM BOUNDARY ====================
+rectangle "Vietnamese Accounting System - TT200 ERP" {
+
+    ' ========== EPIC 1: Authentication & Access Control ==========
+    package "1. Authentication & Access Control" <<Rectangle>> #DBEAFE {
+        usecase "Đăng nhập hệ thống" as UC_LOGIN <<core>>
+        usecase "Quản lý phiên đăng nhập" as UC_SESSION <<core>>
+        usecase "Đổi mật khẩu" as UC_CHANGEPW <<core>>
+        usecase "Quên mật khẩu" as UC_RESETPW <<core>>
+        usecase "Quản lý người dùng" as UC_USER_MGMT <<admin>>
+        usecase "Phân quyền RBAC" as UC_RBAC <<admin>>
+    }
+
+    ' ========== EPIC 2: Master Data Management ==========
+    package "2. Master Data Management" <<Rectangle>> #DCFCE7 {
+        usecase "Quản lý hệ thống tài khoản\n(Chart of Accounts)" as UC_COA <<core>>
+        usecase "Quản lý khách hàng" as UC_CUSTOMER <<core>>
+        usecase "Quản lý nhà cung cấp" as UC_SUPPLIER <<core>>
+        usecase "Quản lý tài khoản ngân hàng" as UC_BANK_ACC <<core>>
+        usecase "Cấu hình công ty" as UC_COMPANY <<admin>>
+    }
+
+    ' ========== EPIC 3: Voucher Engine & General Ledger ==========
+    package "3. General Ledger & Vouchers" <<Rectangle>> #F3E8FF {
+        usecase "Nhập chứng từ kế toán" as UC_VOUCHER_CREATE <<core>>
+        usecase "Ghi sổ chứng từ\n(Post Voucher)" as UC_VOUCHER_POST <<core>>
+        usecase "Hủy ghi sổ\n(Unpost Voucher)" as UC_VOUCHER_UNPOST <<core>>
+        usecase "Xem sổ nhật ký chung" as UC_JOURNAL <<core>>
+        usecase "Kiểm tra cân đối\n(Double-entry validation)" as UC_VALIDATE <<core>>
+    }
+
+    ' ========== EPIC 4: Accounts Payable ==========
+    package "4. Accounts Payable (AP)" <<Rectangle>> #FFEDD5 {
+        usecase "Nhập hóa đơn mua hàng\n(Purchase Bill)" as UC_AP_BILL <<finance>>
+        usecase "Quản lý công nợ NCC" as UC_AP_AGING <<finance>>
+        usecase "Chi tiền thanh toán NCC" as UC_AP_PAYMENT <<finance>>
+        usecase "Phê duyệt thanh toán" as UC_AP_APPROVE <<finance>>
+    }
+
+    ' ========== EPIC 5: Accounts Receivable ==========
+    package "5. Accounts Receivable (AR)" <<Rectangle>> #FFEDD5 {
+        usecase "Lập hóa đơn bán hàng\n(Sales Invoice)" as UC_AR_INVOICE <<finance>>
+        usecase "Quản lý công nợ KH" as UC_AR_AGING <<finance>>
+        usecase "Thu tiền khách hàng" as UC_AR_RECEIPT <<finance>>
+        usecase "Nhắc nợ khách hàng" as UC_AR_REMINDER <<finance>>
+    }
+
+    ' ========== EPIC 6: Cash & Bank Management ==========
+    package "6. Cash & Bank Management" <<Rectangle>> #CCFBF1 {
+        usecase "Phiếu thu tiền mặt" as UC_CASH_RECEIPT <<finance>>
+        usecase "Phiếu chi tiền mặt" as UC_CASH_PAYMENT <<finance>>
+        usecase "Quản lý sổ quỹ" as UC_CASH_BOOK <<finance>>
+        usecase "Upload sao kê ngân hàng" as UC_BANK_STMT <<finance>>
+        usecase "Đối chiếu ngân hàng" as UC_BANK_RECON <<finance>>
+    }
+
+    ' ========== EPIC 7: Reporting Engine ==========
+    package "7. Financial Reports (TT200)" <<Rectangle>> #E0E7FF {
+        usecase "Bảng cân đối phát sinh\n(Trial Balance)" as UC_RPT_TRIAL <<core>>
+        usecase "Bảng cân đối kế toán\n(B01-DN)" as UC_RPT_BS <<core>>
+        usecase "Báo cáo KQKD\n(B02-DN)" as UC_RPT_PL <<core>>
+        usecase "Báo cáo lưu chuyển tiền tệ\n(B03-DN)" as UC_RPT_CF <<core>>
+        usecase "Thuyết minh BCTC\n(B09-DN)" as UC_RPT_NOTES <<core>>
+        usecase "Xuất báo cáo\n(Excel/PDF)" as UC_RPT_EXPORT <<core>>
+    }
+
+    ' ========== EPIC 8: BI Dashboard ==========
+    package "8. BI Dashboard & Analytics" <<Rectangle>> #FCE7F3 {
+        usecase "Dashboard tổng quan" as UC_DASHBOARD <<core>>
+        usecase "Biểu đồ AP/AR trends" as UC_CHART_APAR <<core>>
+        usecase "Phân tích dòng tiền" as UC_CHART_CASH <<core>>
+        usecase "So sánh đa kỳ" as UC_COMPARE <<core>>
+    }
+
+    ' ========== EPIC 9: AI RAG Chatbot ==========
+    package "9. AI Assistant (RAG Chatbot)" <<Rectangle>> #FEF9C3 {
+        usecase "Hỏi đáp về chứng từ" as UC_AI_QUERY <<ai>>
+        usecase "Tra cứu TT200" as UC_AI_TT200 <<ai>>
+        usecase "Hỗ trợ nghiệp vụ kế toán" as UC_AI_HELP <<ai>>
+    }
+
+    ' ========== EPIC 10: Administration ==========
+    package "10. Administration & Utilities" <<Rectangle>> #F3F4F6 {
+        usecase "Quản lý kỳ kế toán\n(Mở/Khóa kỳ)" as UC_PERIOD <<admin>>
+        usecase "Import/Export dữ liệu" as UC_IMPORT <<admin>>
+        usecase "Xem Audit Log" as UC_AUDIT <<admin>>
+        usecase "Backup/Restore" as UC_BACKUP <<admin>>
+    }
+}
+
+' ==================== ACTOR RELATIONSHIPS ====================
+
+' --- ADMIN ---
+ADMIN --> UC_USER_MGMT
+ADMIN --> UC_RBAC
+ADMIN --> UC_COMPANY
+ADMIN --> UC_PERIOD
+ADMIN --> UC_BACKUP
+ADMIN --> UC_AUDIT
+
+' --- CHIEF ACCOUNTANT ---
+CHIEF --> UC_LOGIN
+CHIEF --> UC_COA
+CHIEF --> UC_VOUCHER_POST
+CHIEF --> UC_VOUCHER_UNPOST
+CHIEF --> UC_PERIOD
+CHIEF --> UC_RPT_TRIAL
+CHIEF --> UC_RPT_BS
+CHIEF --> UC_RPT_PL
+CHIEF --> UC_RPT_CF
+CHIEF --> UC_AP_APPROVE
+CHIEF --> UC_AUDIT
+CHIEF --> UC_IMPORT
+
+' --- CFO ---
+CFO --> UC_LOGIN
+CFO --> UC_DASHBOARD
+CFO --> UC_CHART_APAR
+CFO --> UC_CHART_CASH
+CFO --> UC_COMPARE
+CFO --> UC_RPT_BS
+CFO --> UC_RPT_PL
+CFO --> UC_RPT_CF
+CFO --> UC_RPT_NOTES
+CFO --> UC_AP_APPROVE
+
+' --- ACCOUNTANT ---
+ACC --> UC_LOGIN
+ACC --> UC_CHANGEPW
+ACC --> UC_CUSTOMER
+ACC --> UC_SUPPLIER
+ACC --> UC_BANK_ACC
+ACC --> UC_VOUCHER_CREATE
+ACC --> UC_JOURNAL
+ACC --> UC_AP_BILL
+ACC --> UC_AP_PAYMENT
+ACC --> UC_AP_AGING
+ACC --> UC_AR_INVOICE
+ACC --> UC_AR_RECEIPT
+ACC --> UC_AR_AGING
+ACC --> UC_AR_REMINDER
+ACC --> UC_CASH_RECEIPT
+ACC --> UC_CASH_PAYMENT
+ACC --> UC_CASH_BOOK
+ACC --> UC_BANK_STMT
+ACC --> UC_RPT_TRIAL
+ACC --> UC_RPT_EXPORT
+ACC --> UC_AI_QUERY
+ACC --> UC_AI_TT200
+ACC --> UC_AI_HELP
+
+' ==================== USE CASE RELATIONSHIPS ====================
+
+' Include relationships
+UC_VOUCHER_CREATE ..> UC_VALIDATE : <<include>>
+UC_VOUCHER_POST ..> UC_VALIDATE : <<include>>
+UC_AP_BILL ..> UC_VOUCHER_CREATE : <<include>>
+UC_AP_PAYMENT ..> UC_VOUCHER_CREATE : <<include>>
+UC_AR_INVOICE ..> UC_VOUCHER_CREATE : <<include>>
+UC_AR_RECEIPT ..> UC_VOUCHER_CREATE : <<include>>
+UC_CASH_RECEIPT ..> UC_VOUCHER_CREATE : <<include>>
+UC_CASH_PAYMENT ..> UC_VOUCHER_CREATE : <<include>>
+
+' Extend relationships
+UC_RESETPW ..> UC_LOGIN : <<extend>>
+UC_AP_APPROVE ..> UC_AP_PAYMENT : <<extend>>
+UC_BANK_RECON ..> UC_BANK_STMT : <<extend>>
+UC_RPT_EXPORT ..> UC_RPT_BS : <<extend>>
+UC_RPT_EXPORT ..> UC_RPT_PL : <<extend>>
+
+' Generalization
+UC_LOGIN <|-- UC_SESSION
+
+' ==================== NOTES ====================
+note right of ACC
+    **Accountant** là actor chính
+    thực hiện đa số nghiệp vụ
+    hàng ngày của hệ thống
+end note
+
+note left of CHIEF
+    **Chief Accountant** có quyền
+    phê duyệt và quản lý kỳ kế toán
+end note
+
+note top of CFO
+    **CFO** tập trung vào
+    báo cáo và phân tích
+end note
+
+' ==================== LEGEND ====================
+legend right
+    |= Màu |= Loại Use Case |
+    | <#LightBlue> | Core Operations |
+    | <#LightGreen> | Finance Operations |
+    | <#LightGray> | Administration |
+    | <#LightYellow> | AI Features |
+endlegend
+
+footer Vietnamese Accounting System - TT200 ERP | Generated: %date%
+
+@enduml

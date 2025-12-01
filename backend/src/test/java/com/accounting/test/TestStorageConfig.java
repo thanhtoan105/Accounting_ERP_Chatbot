@@ -48,8 +48,30 @@ public class TestStorageConfig {
       public String generateSignedUrl(String storagePath, int expiresInSeconds) {
         return "https://example.test/storage/signed/" + storagePath + "?expires=" + expiresInSeconds;
       }
+
+      @Override
+      public String uploadSalesInvoiceAttachment(java.util.UUID salesInvoiceId, MultipartFile file) {
+        String uuid = UUID.randomUUID().toString();
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+        return "sales-invoices/" + salesInvoiceId + "/" + uuid + "-" + filename;
+      }
+
+      @Override
+      public void deleteSalesInvoiceAttachment(String storagePath) {
+        // Mock implementation - no-op
+      }
+
+      @Override
+      public String uploadReceiptAttachment(java.util.UUID receiptId, MultipartFile file) {
+        String uuid = UUID.randomUUID().toString();
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+        return "receipts/" + receiptId + "/" + uuid + "-" + filename;
+      }
+
+      @Override
+      public void deleteReceiptAttachment(String storagePath) {
+        // Mock implementation - no-op
+      }
     };
   }
 }
-
-

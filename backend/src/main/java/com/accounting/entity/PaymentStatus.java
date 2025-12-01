@@ -22,7 +22,20 @@ public enum PaymentStatus {
   /**
    * Payment has been cancelled.
    */
-  CANCELLED("Cancelled");
+  CANCELLED("Cancelled"),
+
+  /**
+   * Payment has been rejected during approval process.
+   * AC6.3-08: Rejected payments require a reason.
+   */
+  REJECTED("Rejected"),
+
+  /**
+   * Payment has been reversed after posting.
+   * AC6.3-10: Reversed payments create a reversing voucher and restore bill
+   * statuses.
+   */
+  REVERSED("Reversed");
 
   private final String displayName;
 
@@ -34,4 +47,3 @@ public enum PaymentStatus {
     return displayName;
   }
 }
-

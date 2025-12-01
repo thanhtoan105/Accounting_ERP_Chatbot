@@ -388,7 +388,7 @@ export interface ApprovalWorkflowDTO {
   approvedById?: number
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'AUTO_APPROVED'
   thresholdAmount: number
-  invoiceAmount: number
+  billAmount: number
   isSensitive: boolean
   approvalReason?: string
   rejectionReason?: string
@@ -472,4 +472,29 @@ export async function getPendingApprovalsCount(): Promise<number> {
   })
   const payload = await handleJsonResponse<{ count: number }>(res)
   return payload.count
+}
+
+// ==================== Credit Note ====================
+
+/**
+ * Create a credit note (negative invoice) that references an original invoice.
+ * The credit note will have inverted amounts and GL splits.
+ */
+export async function createCreditNote(
+  originalInvoiceId: string,
+  request: SalesInvoiceCreateRequest,
+): Promise<SalesInvoiceDTO> {
+  const res = await fetchWithAuth(
+    `${API_BASE}/ar/sales-invoices/${originalInvoiceId}/credit-note`,
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    },
+  )
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Credit note creation failed' }))
+    throw error
+  }
+  const payload = await handleJsonResponse<{ data: SalesInvoiceDTO }>(res)
+  return payload.data
 }

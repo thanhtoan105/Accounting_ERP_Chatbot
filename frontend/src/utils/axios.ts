@@ -93,11 +93,9 @@ axiosInstance.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
 
-    // Handle both 401 (Unauthorized) and 403 (Forbidden) as they can both indicate expired token
-    if (
-      (error.response?.status === 401 || error.response?.status === 403) &&
-      !originalRequest._retry
-    ) {
+    // Only refresh token on 401 (Unauthorized) - indicates expired/invalid token
+    // 403 (Forbidden) indicates insufficient permissions, don't refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
       if (!refreshPromise) {
@@ -187,8 +185,9 @@ export async function fetchWithAuth(
     credentials: 'include',
   })
 
-  // Handle 401/403 errors with token refresh (only retry once)
-  if ((response.status === 401 || response.status === 403) && !options._retry) {
+  // Only refresh token on 401 (Unauthorized) - indicates expired/invalid token
+  // 403 (Forbidden) indicates insufficient permissions, don't refresh
+  if (response.status === 401 && !options._retry) {
     // Don't read the response body yet - we'll retry and only read if retry fails
     // This prevents exposing the 403 error to the caller if retry succeeds
 

@@ -2,13 +2,20 @@ package com.accounting.entity;
 
 /**
  * Enumeration representing the status of an AR receipt (customer payment).
- * AR receipts support reversal instead of cancellation for audit trail compliance.
+ * AR receipts support reversal instead of cancellation for audit trail
+ * compliance.
  */
 public enum ReceiptStatus {
   /**
    * Receipt is in draft state and can be edited/deleted by creator.
    */
   DRAFT("Draft"),
+
+  /**
+   * Receipt amount exceeds threshold and requires approval before posting.
+   * Implements maker-checker pattern: approver must be different from creator.
+   */
+  PENDING_APPROVAL("Pending Approval"),
 
   /**
    * Receipt has been posted to the general ledger.

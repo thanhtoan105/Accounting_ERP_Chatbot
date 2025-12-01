@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story_context>
+  <!-- Story Context Metadata -->
+  <metadata>
+    <story_id>5-4-ar-aging-report-and-overdue-alerts</story_id>
+    <epic_id>epic-5</epic_id>
+    <epic_name>Accounts Receivable (AR) Module</epic_name>
+    <story_name>AR Aging Report and Overdue Alerts</story_name>
+    <story_status>drafted</story_status>
+    <created_date>2025-11-22</created_date>
+    <generated_date>2025-11-22</generated_date>
+    <project_name>accounting</project_name>
+    <sprint_artifacts_path>/home/thanhtoan/code/accounting/docs/sprint-artifacts</sprint_artifacts_path>
+  </metadata>
+
+  <!-- Story Overview -->
+  <story_overview>
+    <description>
+      Implement AR aging reports and overdue alerts functionality to enable AR clerks and chief accountants to monitor accounts receivable aging, 
+      identify overdue invoices, and proactively manage collections. The system calculates aging buckets per customer, provides drill-down capabilities, 
+      supports exportable reports, displays dashboard badges for overdue receivables, and includes automated reminder capabilities.
+    </description>
+    <user_story>
+      As an AR clerk or chief accountant,
+      I want a clear aging report and automated reminders,
+      so that late collections are addressed promptly and cashflow risk is reduced.
+    </user_story>
+    <business_value>
+      - Improved cash flow management through proactive collections monitoring
+      - Reduced DSO (Days Sales Outstanding) through automated reminders
+      - Enhanced visibility into customer payment patterns
+      - Better credit risk assessment based on aging history
+      - Compliance with financial reporting requirements
+    </business_value>
+  </story_overview>
+
+  <!-- Technical Requirements from Tech Spec -->
+  <technical_requirements source="docs/sprint-artifacts/tech-spec-epic-5.md#FR25">
+    <requirement id="FR25">
+      <name>AR Aging Report &amp; Analysis</name>
+      <description>
+        Multi-bucket aging (Current, 1–30d, 31–60d, 61–90d, 91+d), drill-down to invoice lists, Excel/PDF export with snapshot metadata, 
+        overdue dashboard tiles, and automated reminders with configurable cadence.
+      </description>
+      <acceptance_criteria>
+        <criterion id="AC25-001">Aging buckets calculation: Current (dueDate >= asOfDate), 1-30d, 31-60d, 61-90d, 91+d overdue</criterion>
+        <criterion id="AC25-002">AR Aging by Customer grid with totals, excluding reversed/drafts/closed periods</criterion>
+        <criterion id="AC25-003">Cache performance: &lt;100ms (hit) or &lt;1s (miss) using Redis with 1-hour TTL</criterion>
+        <criterion id="AC25-004">Drill-down to invoice list by aging bucket</criterion>
+        <criterion id="AC25-005">Invoice detail view from aging report</criterion>
+        <criterion id="AC25-006">Export to Excel/PDF with metadata and snapshot consistency</criterion>
+        <criterion id="AC25-007">Dashboard tiles: Total Overdue, Count, Top 5 Customers</criterion>
+        <criterion id="AC25-008">Automated reminders configuration with pre-due/due/post-due cadence</criterion>
+        <criterion id="AC25-009">RBAC enforcement: CFO view-only all, Accountant filtered by company</criterion>
+        <criterion id="AC25-010">Aging snapshot consistency with asOfDate parameter</criterion>
+      </acceptance_criteria>
+    </requirement>
+  </technical_requirements>
+
+  <!-- Architecture Context -->
+  <architecture_context>
+    <patterns>
+      <pattern name="Multi-Tenancy">
+        Follow established CompanyScopedEntity pattern for aging report queries.
+        All aging calculations must be company-scoped using CompanyContext and CompanyScopeAspect.
+        Database queries filtered by company_id.
+      </pattern>
+      <pattern name="Caching Strategy">
+        Implement Redis caching for aging reports with cache key pattern: ar-aging:{customerId}:{periodId}:{asOfDate}
+        TTL: 1 hour (vs 5 minutes for AP aging)
+        Invalidate cache on invoice/receipt post or period close
+        Use Spring Cache abstraction with Redis backend
+      </pattern>
+      <pattern name="RBAC Enforcement">
+        Extend existing role patterns - CFO and Chief Accountant can see all aging data
+        AR clerk limited to assigned customers
+        Use @PreAuthorize annotations for method-level security
+        Filter aging report data by user role and customer assignments
+      </pattern>
+      <pattern name="Database Optimization">
+        Use indexes on sales_invoices.customer_id, invoice_date, due_date, status, company_id
+        Avoid N+1 queries using JPA @EntityGraph for customer and payment data
+      </pattern>
+    </patterns>
+    <api_patterns>
+      <endpoint>/api/v1/ar-aging</endpoint>
+      <endpoint>/api/v1/ar-aging/{customerId}/detail</endpoint>
+      <endpoint>/api/v1/ar-aging/invoice/{invoiceId}</endpoint>
+      <endpoint>/api/v1/ar-aging/export</endpoint>
+      <endpoint>/api/v1/ar-aging/refresh</endpoint>
+    </api_patterns>
+  </architecture_context>
+
+  <!-- Existing Code from Previous Stories -->
+  <existing_code_context>
+    <story_5_1 status="done">
+      <description>Sales Invoice Entry, Edit, and Draft Management</description>
+      <entities>
+        <entity>backend/src/main/java/com/accounting/entity/SalesInvoice.java</entity>
+        <entity>backend/src/main/java/com/accounting/entity/SalesInvoiceStatus.java</entity>
+        <entity>backend/src/main/java/com/accounting/entity/SalesInvoiceLine.java</entity>
+        <entity>backend/src/main/java/com/accounting/entity/SalesInvoiceAttachment.java</entity>
+      </entities>
+      <key_fields>
+        - SalesInvoice: id, customer_id, invoice_date, due_date, total_amount, amount_paid, remaining_balance, status
+        - Status values: DRAFT, PENDING_APPROVAL, POSTED, REJECTED, PAID, PARTIALLY_PAID
+      </key_fields>
+    </story_5_1>
+    
+    <story_5_2 status="done">
+      <description>Invoice Approval Workflow (Maker-Checker)</description>
+      <services>
+        <service>backend/src/main/java/com/accounting/service/impl/ApprovalWorkflowServiceImpl.java</service>
+      </services>
+      <notes>Aging only includes POSTED invoices (approval workflow complete)</notes>
+    </story_5_2>
+    
+    <story_5_3 status="done">
+      <description>Customer Payment Receipts (Linked Receivables, Standalone Entry)</description>
+      <entities>
+        <entity>backend/src/main/java/com/accounting/entity/ARPayment.java (370 lines)</entity>
+        <entity>backend/src/main/java/com/accounting/entity/ReceiptAllocation.java (145 lines)</entity>
+        <entity>backend/src/main/java/com/accounting/entity/ReceiptStatus.java</entity>
+      </entities>
+      <repositories>
+        <repository>backend/src/main/java/com/accounting/repository/ARPaymentRepository.java (115 lines)</repository>
+      </repositories>
+      <services>
+        <service>backend/src/main/java/com/accounting/service/impl/sales/ReceiptServiceImpl.java (~700 lines)</service>
+      </services>
+      <controllers>
+        <controller>backend/src/main/java/com/accounting/controller/sales/ReceiptController.java (320 lines)</controller>
+      </controllers>
+      <frontend>
+        <component>frontend/src/features/accounting/pages/Receipts/ReceiptForm.tsx</component>
+        <component>frontend/src/components/receipt/ReceiptAllocationGrid.tsx (~300 lines)</component>
+      </frontend>
+      <migrations>
+        <migration>backend/src/main/resources/db/migration/V20251221__create_ar_payments.sql (252 lines)</migration>
+      </migrations>
+      <key_updates>
+        - Added amount_paid and remaining_balance to sales_invoices table
+        - Receipt posting updates invoice statuses (PAID/PARTIALLY_PAID)
+        - Customer entity and CustomerService established
+      </key_updates>
+    </story_5_3>
+    
+    <epic_4_ap_aging status="done">
+      <description>AP Aging implementation to reuse patterns</description>
+      <controllers>
+        <controller>backend/src/main/java/com/accounting/controller/ap/APAgingController.java</controller>
+      </controllers>
+      <services>
+        <service>backend/src/main/java/com/accounting/service/APAgingService.java</service>
+        <service>backend/src/main/java/com/accounting/service/impl/ap/APAgingServiceImpl.java</service>
+        <service>backend/src/main/java/com/accounting/service/APAgingAlertService.java</service>
+        <service>backend/src/main/java/com/accounting/service/impl/ap/APAgingAlertServiceImpl.java</service>
+      </services>
+      <dtos>
+        <dto>backend/src/main/java/com/accounting/dto/APAgingReportDTO.java</dto>
+        <dto>backend/src/main/java/com/accounting/dto/APAgingBucketDTO.java</dto>
+      </dtos>
+      <patterns_to_reuse>
+        - Redis caching with 5-minute TTL for AP (use 1-hour for AR)
+        - Same bucket structure: Current, 1-30d, 31-60d, 61-90d, 91+d
+        - Dashboard tiles for overdue metrics
+        - Export functionality patterns
+        - Service layer structure and company scoping
+      </patterns_to_reuse>
+    </epic_4_ap_aging>
+    
+    <shared_infrastructure>
+      <services>
+        <service>backend/src/main/java/com/accounting/service/ValidationService.java</service>
+        <service>backend/src/main/java/com/accounting/service/AuditService.java</service>
+      </services>
+      <notes>
+        - Validation services for period checks and company scoping
+        - Audit logging for all export and reminder actions
+      </notes>
+    </shared_infrastructure>
+  </existing_code_context>
+
+  <!-- Implementation Guidance -->
+  <implementation_guidance>
+    <backend_implementation>
+      <entities>
+        <entity name="ARAgingCache">
+          - Similar to APAgingCache but for AR data
+          - Fields: id, company_id, customer_id, customer_name, current_amount, days_1_30, days_31_60, days_61_90, days_over_90, total_outstanding, invoice_count, last_refreshed_at, snapshot_date
+          - Implements CompanyScopedEntity interface
+        </entity>
+        <entity name="ARReminderConfiguration">
+          - Store reminder settings per company
+          - Fields: pre_due_days, due_date_enabled, post_due_cadence_days
+        </entity>
+      </entities>
+      
+      <services>
+        <service name="ARAgingCalculationService">
+          - Calculate aging buckets based on due_date vs as_of_date
+          - Query only POSTED invoices with (totalAmount - amountPaid) > 0
+          - Exclude REVERSED, PAID, and DRAFT status invoices
+        </service>
+        <service name="ARAgingService">
+          - Mirror APAgingService patterns
+          - Redis caching with 1-hour TTL (vs 5-minute for AP)
+          - Drill-down queries and export functionality
+          - RBAC filtering based on user roles
+        </service>
+        <service name="ARDashboardMetricsService">
+          - Calculate total overdue, overdue count, top customers
+          - Cache in Redis with 5-minute TTL
+        </service>
+        <service name="ARReminderService">
+          - Configure and trigger reminders
+          - Queue email jobs using Spring Async
+        </service>
+      </services>
+      
+      <key_differences_from_ap>
+        - AR uses customers instead of suppliers
+        - AR uses sales_invoices instead of purchase_bills  
+        - AR uses account 131 (AR) instead of 331 (AP)
+        - AR has revenue accounts (5xx) instead of expense accounts
+        - AR threshold is 100M VND vs AP's 20M VND
+        - AR aging cache TTL is 1 hour vs AP's 5 minutes
+      </key_differences_from_ap>
+    </backend_implementation>
+    
+    <frontend_implementation>
+      <components>
+        <component name="ARAgingReport.tsx">
+          - Use DataTablePro for the aging grid
+          - Display columns: Customer, Current, 1-30d, 31-60d, 61-90d, 91+d, Total
+          - Click handlers for drill-down navigation
+          - Search/filter by customer name
+        </component>
+        <component name="ARAgingDrillDown.tsx">
+          - Invoice list within aging bucket
+          - Display invoice details with outstanding amounts
+        </component>
+        <component name="AROverdueTiles.tsx">
+          - Dashboard tiles showing overdue metrics
+          - Auto-refresh every 5 seconds using React Query
+        </component>
+        <component name="ARReminderSettings.tsx">
+          - Admin configuration form for reminder settings
+        </component>
+      </components>
+      <reuse_patterns>
+        - Follow AP aging UI patterns from Epic 4
+        - Use existing DataTablePro components
+        - Leverage existing export functionality
+        - Reuse dashboard tile styling
+      </reuse_patterns>
+    </frontend_implementation>
+  </implementation_guidance>
+
+  <!-- Testing Requirements -->
+  <testing_requirements>
+    <unit_tests>
+      - Aging bucket calculation logic with various date scenarios
+      - Cache hit/miss performance (&lt;100ms hit, &lt;1s miss)
+      - RBAC filtering for different roles
+      - Export generation with large datasets
+      - Reminder configuration and triggering
+    </unit_tests>
+    <integration_tests>
+      - Full flow: invoice creation → payment → aging update
+      - Multi-user concurrent access to aging reports
+      - Export with various filter combinations
+      - Reminder email queue integration
+    </integration_tests>
+    <acceptance_tests>
+      - All 10 acceptance criteria from AC25-001 to AC25-010
+      - Performance requirements met
+      - RBAC properly enforced
+      - Dashboard updates working
+    </acceptance_tests>
+  </testing_requirements>
+
+  <!-- Dependencies -->
+  <dependencies>
+    <backend>
+      - Redis for caching (already configured in Epic 3)
+      - Apache POI for Excel export (check if needs to be added to pom.xml)
+      - iText or JasperReports for PDF generation
+      - Spring Cache abstraction with Redis backend
+    </backend>
+    <frontend>
+      - React Query for data fetching and auto-refresh
+      - Existing DataTablePro components
+      - shadcn/ui components
+      - TanStack Table
+    </frontend>
+  </dependencies>
+
+  <!-- Risk Mitigation -->
+  <risk_mitigation>
+    <risk name="Performance with large datasets">
+      Mitigation: Redis caching, database indexes, pagination
+    </risk>
+    <risk name="Cache invalidation complexity">
+      Mitigation: Clear invalidation points (invoice/receipt POST), event-driven updates
+    </risk>
+    <risk name="RBAC complexity">
+      Mitigation: Reuse existing patterns from AP module, thorough testing
+    </risk>
+    <risk name="Export memory issues">
+      Mitigation: Streaming exports for large datasets, batch processing
+    </risk>
+  </risk_mitigation>
+
+  <!-- Definition of Done -->
+  <definition_of_done>
+    - All acceptance criteria (AC25-001 to AC25-010) implemented and tested
+    - Unit tests written with >80% coverage
+    - Integration tests passing
+    - Code reviewed and approved
+    - Documentation updated
+    - Performance requirements met (&lt;100ms cache hit, &lt;1s cache miss)
+    - RBAC properly enforced with security tests
+    - Export functionality working for Excel and PDF
+    - Dashboard tiles updating correctly
+    - Reminder configuration and manual triggering working
+    - Cache invalidation working on invoice/receipt posts
+  </definition_of_done>
+</story_context>

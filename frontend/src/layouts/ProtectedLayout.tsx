@@ -21,6 +21,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
+import { ChatbotWidget, ChatbotErrorBoundary } from '@/features/chatbot'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { useTranslation } from 'react-i18next'
 
 interface NavItem {
   path: string
@@ -33,51 +36,85 @@ interface NavItem {
  */
 // Removed MUI avatar helpers; Shadcn version renders simple user info in sidebar footer
 
-const navItems: NavItem[] = [
-  { path: '/', label: 'Dashboard' },
+// Navigation items with translation keys (use t(item.labelKey) to get translated label)
+const navItems: (NavItem & { labelKey: string })[] = [
+  { path: '/', label: 'Dashboard', labelKey: 'nav.dashboard' },
   {
     path: '/company',
     label: 'Company Settings',
+    labelKey: 'nav.company',
     requiredRoles: ['admin', 'chief_accountant'],
   },
   {
     path: '/users',
     label: 'User Management',
+    labelKey: 'nav.users',
     requiredRoles: ['admin', 'chief_accountant'],
+  },
+  {
+    path: '/analytics',
+    label: 'Analytics',
+    labelKey: 'nav.analytics',
+    requiredRoles: ['admin', 'cfo', 'chief_accountant'],
   },
   {
     path: '/reports',
     label: 'Reports',
+    labelKey: 'nav.reports',
     requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
   },
   {
     path: '/vouchers',
     label: 'Vouchers',
+    labelKey: 'nav.vouchers',
     requiredRoles: ['admin', 'accountant', 'chief_accountant'],
   },
   {
     path: '/purchase-bills',
     label: 'Purchase Bills',
+    labelKey: 'nav.purchaseBills',
+    requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+  },
+  {
+    path: '/sales-invoices',
+    label: 'Sales Invoices',
+    labelKey: 'nav.salesInvoices',
+    requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+  },
+  {
+    path: '/accounting/receipts',
+    label: 'Receipts',
+    labelKey: 'nav.receipts',
+    requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+  },
+  {
+    path: '/payments',
+    label: 'Payments',
+    labelKey: 'nav.payments',
     requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
   },
   {
     path: '/customers',
     label: 'Customers',
+    labelKey: 'nav.customers',
     requiredRoles: ['admin', 'accountant', 'chief_accountant'],
   },
   {
     path: '/suppliers',
     label: 'Suppliers',
+    labelKey: 'nav.suppliers',
     requiredRoles: ['admin', 'accountant', 'chief_accountant'],
   },
   {
     path: '/bank-accounts',
-    label: 'Bank Accounts',
+    label: 'Cash/Bank Accounts',
+    labelKey: 'nav.cashBankAccounts',
     requiredRoles: ['admin', 'accountant', 'chief_accountant'],
   },
   {
     path: '/admin/audit-logs',
     label: 'Audit Logs',
+    labelKey: 'nav.auditLogs',
     requiredRoles: ['admin', 'chief_accountant'],
   },
 ]
@@ -91,6 +128,7 @@ interface ProtectedLayoutProps {
  * Enforces authentication and hides menu items based on user role.
  */
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated, loading, logout, user } = useAuth()
@@ -134,7 +172,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   if (loading) {
     const token = getAccessToken()
     if (!token) {
-      return <div className="min-h-[100dvh] grid place-items-center">Loading...</div>
+      return <div className="min-h-[100dvh] grid place-items-center">{t('app.loading')}</div>
     }
   }
 
@@ -154,28 +192,71 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   })
 
   // Move Company Settings from main nav to user submenu in the sidebar footer
-  // Category items for sidebar menu
+  // Category items for sidebar menu (with translation keys)
   const categoryItems: Array<{
-    title: string
+    titleKey: string
     url: string
     requiredRoles: Role[]
   }> = [
-    {
-      title: 'Chart of Accounts',
-      url: '/chart-of-accounts',
-      requiredRoles: ['admin', 'chief_accountant'],
-    },
-    {
-      title: 'Voucher Templates',
-      url: '/voucher-templates',
-      requiredRoles: ['admin', 'chief_accountant', 'cfo'],
-    },
-    {
-      title: 'Voucher Types',
-      url: '/voucher-types',
-      requiredRoles: ['admin', 'chief_accountant'],
-    },
-  ]
+      {
+        titleKey: 'nav.chartOfAccounts',
+        url: '/chart-of-accounts',
+        requiredRoles: ['admin', 'chief_accountant'],
+      },
+      {
+        titleKey: 'nav.voucherTemplates',
+        url: '/voucher-templates',
+        requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+      },
+      {
+        titleKey: 'nav.voucherTypes',
+        url: '/voucher-types',
+        requiredRoles: ['admin', 'chief_accountant'],
+      },
+    ]
+
+  // Reports items for sidebar menu (with translation keys)
+  const reportsItems: Array<{
+    titleKey: string
+    url: string
+    requiredRoles: Role[]
+  }> = [
+      {
+        titleKey: 'nav.apAging',
+        url: '/ap-aging',
+        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+      },
+      {
+        titleKey: 'nav.arAging',
+        url: '/accounting/ar-aging',
+        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+      },
+      {
+        titleKey: 'nav.inputVat',
+        url: '/vat/reports/input',
+        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+      },
+      {
+        titleKey: 'nav.outputVat',
+        url: '/vat/reports/output',
+        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+      },
+      {
+        titleKey: 'nav.trialBalance',
+        url: '/accounting/trial-balance',
+        requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+      },
+      {
+        titleKey: 'nav.cashBook',
+        url: '/accounting/cash-book',
+        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+      },
+      {
+        titleKey: 'nav.cashBookSummary',
+        url: '/accounting/cash-book/summary',
+        requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+      },
+    ]
 
   // Filter category items based on role
   const visibleCategoryItems = categoryItems.filter((item) => {
@@ -185,28 +266,68 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     return hasAnyRole(item.requiredRoles)
   })
 
-  // Build sidebar items with Purchase menu structure
+  // Filter reports items based on role
+  const visibleReportsItems = reportsItems.filter((item) => {
+    if (!item.requiredRoles || item.requiredRoles.length === 0) {
+      return true
+    }
+    return hasAnyRole(item.requiredRoles)
+  })
+
+  // Build sidebar items with Purchase and Sales menu structure (using translations)
   const sidebarItems = visibleNavItems
-    .filter((i) => i.path !== '/company')
+    .filter((i) => i.path !== '/company' && i.path !== '/reports' && i.path !== '/accounting/receipts' && i.path !== '/payments')
     .map((i) => {
-      // Check if this is Purchase Bills - create Purchase menu (without Category)
+      // Check if this is Purchase Bills - create Purchase menu with Payments
       if (i.path === '/purchase-bills') {
+        const purchaseMenuItems = [{ title: t('nav.purchaseBills'), url: '/purchase-bills' }]
+        // Add Payments to Purchase menu
+        const paymentsItem = visibleNavItems.find((item) => item.path === '/payments')
+        if (paymentsItem) {
+          purchaseMenuItems.push({ title: t('nav.payments'), url: '/payments' })
+        }
         return {
-          title: 'Purchase',
+          title: t('nav.purchase'),
           url: i.path,
-          items: [{ title: 'Purchase Bills', url: '/purchase-bills' }],
+          items: purchaseMenuItems,
         }
       }
-      return { title: i.label, url: i.path }
+      // Check if this is Sales Invoices - create Sales menu
+      if (i.path === '/sales-invoices') {
+        // Find receipts item to include in Sales menu
+        const receiptsItem = visibleNavItems.find((item) => item.path === '/accounting/receipts')
+        const salesMenuItems = [{ title: t('nav.salesInvoices'), url: '/sales-invoices' }]
+        if (receiptsItem) {
+          salesMenuItems.push({ title: t('nav.receipts'), url: '/accounting/receipts' })
+        }
+        return {
+          title: t('nav.sales'),
+          url: i.path,
+          items: salesMenuItems,
+        }
+      }
+      return { title: t(i.labelKey), url: i.path }
     })
+
+  // Add Reports as a menu with sub-items if there are visible reports items
+  if (visibleReportsItems.length > 0) {
+    sidebarItems.push({
+      title: t('nav.reports'),
+      url: '#', // Not a clickable link, just a submenu trigger
+      items: visibleReportsItems.map((report) => ({
+        title: t(report.titleKey),
+        url: report.url,
+      })),
+    })
+  }
 
   // Add Category as a separate menu item if there are visible category items
   if (visibleCategoryItems.length > 0) {
     sidebarItems.push({
-      title: 'Category',
+      title: t('nav.category'),
       url: '#', // Not a clickable link, just a submenu trigger
       items: visibleCategoryItems.map((cat) => ({
-        title: cat.title,
+        title: t(cat.titleKey),
         url: cat.url,
       })),
     })
@@ -226,12 +347,15 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           <Breadcrumb className="flex-1">
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="#">Accounting</BreadcrumbLink>
+                <BreadcrumbLink href="#">{t('app.name')}</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
                 <BreadcrumbPage>
-                  {visibleNavItems.find((i) => i.path === location.pathname)?.label || 'Dashboard'}
+                  {(() => {
+                    const currentNav = visibleNavItems.find((i) => i.path === location.pathname)
+                    return currentNav ? t(currentNav.labelKey) : t('nav.dashboard')
+                  })()}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -244,7 +368,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   <span className="font-medium text-foreground">{company.name}</span>
                 )}
                 {currentPeriod && (
-                  <span className="text-muted-foreground text-xs">Period: {currentPeriod}</span>
+                  <span className="text-muted-foreground text-xs">{t('common.period')}: {currentPeriod}</span>
                 )}
               </div>
             )}
@@ -254,6 +378,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 {getRoleDisplayName()}
               </Badge>
             )}
+            {/* Language switcher */}
+            <LanguageSwitcher />
             {/* Theme switcher */}
             <Button
               variant="ghost"
@@ -267,6 +393,16 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         </header>
         <div className="p-4">{children}</div>
       </SidebarInset>
+
+      {/* Chatbot Widget - Floating on all pages with error boundary */}
+      <ChatbotErrorBoundary
+        onError={(error, errorInfo) => {
+          console.error('Chatbot crashed:', error, errorInfo);
+          // TODO: Send to error tracking service (Sentry, etc.)
+        }}
+      >
+        <ChatbotWidget enabled={true} />
+      </ChatbotErrorBoundary>
     </SidebarProvider>
   )
 }

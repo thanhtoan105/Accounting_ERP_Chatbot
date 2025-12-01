@@ -9,6 +9,10 @@ export interface BankAccount {
   type: AccountType
   openingBalance: number
   active: boolean
+  glAccountCode?: string
+  openingBalanceLocked?: boolean
+  lastReconciledDate?: string
+  lastReconciledBalance?: number
   createdAt: string
   updatedAt: string
 }
@@ -20,6 +24,7 @@ export interface BankAccountCreateRequest {
   type: AccountType
   openingBalance: number
   active?: boolean
+  glAccountCode?: string
 }
 
 export interface BankAccountUpdateRequest {
@@ -27,14 +32,14 @@ export interface BankAccountUpdateRequest {
   branch?: string
   type?: AccountType
   openingBalance?: number
+  glAccountCode?: string
   reason?: string
 }
 
 export interface BalanceTooltip {
   currentBalance: number
-  priorBalance: number
-  currentPeriod: string
-  priorPeriod: string
+  lastTxDate?: string
+  lastReconciledDate?: string
 }
 
 export interface BankAccountQueryParams {

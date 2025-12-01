@@ -2,6 +2,8 @@ import { fetchWithAuth } from '@/utils/axios'
 import type {
   InputVATReportDTO,
   InputVATReportRequest,
+  OutputVATReportDTO,
+  OutputVATReportRequest,
   VATCorrectionCreateRequest,
   VATCorrectionDTO,
   VATExportFormat,
@@ -89,6 +91,7 @@ export const vatService = {
     size?: number
     reportType?: string
     supplierId?: number
+    customerId?: number
     vatClass?: string
     startDate?: string
     endDate?: string
@@ -98,6 +101,7 @@ export const vatService = {
     if (params.size !== undefined) query.set('size', String(params.size))
     if (params.reportType) query.set('reportType', params.reportType)
     if (params.supplierId !== undefined) query.set('supplierId', String(params.supplierId))
+    if (params.customerId !== undefined) query.set('customerId', String(params.customerId))
     if (params.vatClass) query.set('vatClass', params.vatClass)
     if (params.startDate) query.set('startDate', params.startDate)
     if (params.endDate) query.set('endDate', params.endDate)
@@ -109,5 +113,37 @@ export const vatService = {
     }
 
     return response.json()
+  },
+
+  // ==================== Output VAT Report (AR) ====================
+
+  async generateOutputReport(request: OutputVATReportRequest): Promise<OutputVATReportDTO> {
+    const query = new URLSearchParams()
+    if (request.periodId) query.set('periodId', request.periodId)
+    if (request.customerId !== undefined) query.set('customerId', String(request.customerId))
+    if (request.vatClass) query.set('vatClass', request.vatClass)
+    if (request.startDate) query.set('startDate', request.startDate)
+    if (request.endDate) query.set('endDate', request.endDate)
+
+    const response = await fetchWithAuth(`/api/v1/ar-vat/report?${query.toString()}`)
+
+    if (!response.ok) {
+      throw new Error(`Failed to generate output VAT report: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    return data
+  },
+
+  async exportOutputReport(reportId: string, format: VATExportFormat): Promise<Blob> {
+    const response = await fetchWithAuth(
+      `/api/v1/ar-vat/report/export?reportId=${reportId}&format=${format}`,
+    )
+
+    if (!response.ok) {
+      throw new Error(`Failed to export output VAT report: ${response.statusText}`)
+    }
+
+    return response.blob()
   },
 }

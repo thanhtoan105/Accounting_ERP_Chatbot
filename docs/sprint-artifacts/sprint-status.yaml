@@ -81,22 +81,24 @@ development_status:
   5-1-sales-invoice-entry-edit-and-draft-management: done
   5-2-invoice-approval-workflow-maker-checker: done
   5-3-customer-payment-receipts-linked-receivables-standalone-entry: done
-  5-4-ar-aging-report-and-overdue-alerts: backlog
-  5-5-customer-statement-reconciliation: backlog
-  5-6-revenue-vat-handling: backlog
-  5-7-audit-trail-and-compliance-for-all-ar-activities: backlog
+  5-4-ar-aging-report-and-overdue-alerts: done
+  5-5-customer-statement-reconciliation: done
+  5-6-revenue-vat-handling: deferred
+  5-7-audit-trail-and-compliance-for-all-ar-activities: deferred
   epic-5-retrospective: optional
 
-  epic-6: backlog
-  6-1-cash-bank-account-management-crud-security: backlog
-  6-2-cash-receipt-entry-posting: backlog
-  6-3-cash-payment-entry-posting: backlog
-  6-4-bank-book-cash-book-view-running-balances: backlog
+  epic-6: contexted
+  6-1-cash-bank-account-management-crud-security: done
+  6-2-cash-receipt-entry-posting: done
+  6-3-cash-payment-entry-posting: done
+  6-4-bank-book-cash-book-view-running-balances: done
   6-5-manual-bank-reconciliation: backlog
   6-6-cash-bank-audit-and-compliance: backlog
   epic-6-retrospective: optional
 
   epic-7: backlog
+  7-1-mvp-trial-balance-basic: backlog
+  7-2-mvp-balance-sheet-income-statement-basic: backlog
   7-1-trial-balance-s06-dn-generation-export: backlog
   7-2-statutory-reports-b01-dn-b02-dn-b03-dn-f01-with-tt200-mapping: backlog
   7-3-report-scheduling-export-distribution-and-access-control: backlog
@@ -106,15 +108,17 @@ development_status:
   epic-7-retrospective: optional
 
   epic-8: backlog
-  8-1-real-time-financial-dashboard-setup-data-pipeline: backlog
+  8-0-mvp-metabase-integration: done
+  8-1-real-time-financial-dashboard-setup-data-pipeline: ready-for-dev
   8-2-widget-configuration-user-personalization: backlog
   8-3-drill-down-filtering-and-interactive-exploration: backlog
   8-4-trends-forecasts-and-predictive-analytics: backlog
   8-5-data-quality-integrity-and-bi-security: backlog
   epic-8-retrospective: optional
 
-  epic-9: backlog
-  9-1-chatbot-widget-integration-and-security: backlog
+  epic-9: contexted
+  9-0-mvp-voucher-rag-chatbot-basic: done
+  9-1-chatbot-widget-integration-and-security:  backlog
   9-2-contextual-retrieval-augmented-generation-rag-for-q-a: backlog
   9-3-workflow-automation-and-guided-journeys: backlog
   9-4-feedback-training-data-capture-and-guardrail-monitoring: backlog

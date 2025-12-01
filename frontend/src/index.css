@@ -1,6 +1,7 @@
 /* Tailwind CSS v4 - CSS-first configuration */
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -165,5 +166,124 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* ===========================================
+   Chatbot Widget Styles
+   =========================================== */
+
+/* Typing indicator animation with staggered delays */
+@keyframes typing-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-6px);
+  }
+}
+
+.chatbot-typing-dot {
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+.chatbot-typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.chatbot-typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Chat message bubble animations */
+@keyframes message-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes message-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.chatbot-message-assistant {
+  animation: message-slide-in-left 0.3s ease-out;
+}
+
+.chatbot-message-user {
+  animation: message-slide-in-right 0.3s ease-out;
+}
+
+/* Widget expand/collapse animation */
+@keyframes widget-expand {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.chatbot-widget-enter {
+  animation: widget-expand 0.25s ease-out;
+}
+
+/* Pulse animation for send button during processing */
+@keyframes send-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.chatbot-send-loading {
+  animation: send-pulse 1.5s ease-in-out infinite;
+}
+
+/* Citation hover effect */
+.chatbot-citation:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Skeleton loading animation */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.chatbot-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 640px) {
+  .chatbot-widget-mobile {
+    width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    border-radius: 0 !important;
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -47,11 +48,11 @@ const createSupplierFormSchema = (isEditMode: boolean) =>
     code: isEditMode
       ? z.string().min(1, 'Supplier code is required')
       : z
-          .string()
-          .optional()
-          .refine((val) => !val || val.trim().length > 0, {
-            message: 'Supplier code cannot be empty if provided',
-          }),
+        .string()
+        .optional()
+        .refine((val) => !val || val.trim().length > 0, {
+          message: 'Supplier code cannot be empty if provided',
+        }),
     name: z.string().min(1, 'Supplier name is required'),
     taxCode: z
       .string()
@@ -81,6 +82,7 @@ export default function SupplierFormSheet({
   onSuccess,
   supplier,
 }: SupplierFormSheetProps) {
+  const { t } = useTranslation()
   const isEditMode = !!supplier
   const [formError, setFormError] = useState<string | null>(null)
   const [duplicateError, setDuplicateError] = useState<string | null>(null)
@@ -223,11 +225,11 @@ export default function SupplierFormSheet({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <DialogHeader>
-            <DialogTitle>{isEditMode ? 'Edit Supplier' : 'Create Supplier'}</DialogTitle>
+            <DialogTitle>{isEditMode ? t('suppliers.editSupplier') : t('suppliers.createSupplier')}</DialogTitle>
             <DialogDescription>
               {isEditMode
-                ? 'Update the supplier details below.'
-                : 'Create a new supplier. Supplier code will be auto-generated.'}
+                ? t('suppliers.updateDetails')
+                : t('suppliers.createDetails')}
             </DialogDescription>
           </DialogHeader>
 

@@ -72,6 +72,7 @@ export interface SalesInvoiceCreateRequest {
   description?: string | null
   status?: SalesInvoiceStatus
   lines: SalesInvoiceLineDTO[]
+  originalInvoiceId?: string // For credit notes - references the original invoice
 }
 
 export interface SalesInvoiceQueryParams {

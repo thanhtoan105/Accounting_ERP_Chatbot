@@ -1,10 +1,12 @@
 package com.accounting.service.impl.voucher;
 
+import com.accounting.dto.AttachmentDTO;
 import com.accounting.dto.VoucherAttachmentDTO;
+import com.accounting.entity.Attachment;
+import com.accounting.entity.AttachmentEntityType;
 import com.accounting.entity.Voucher;
-import com.accounting.entity.VoucherAttachment;
+import com.accounting.repository.AttachmentRepository;
 import com.accounting.repository.UserRepository;
-import com.accounting.repository.VoucherAttachmentRepository;
 import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
@@ -29,7 +31,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Implementation of VoucherAttachmentService.
- * Handles file upload, validation, storage, and deletion for voucher attachments.
+ * Handles file upload, validation, storage, and deletion for voucher
+ * attachments.
  */
 @Service
 public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
@@ -43,13 +46,11 @@ public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
       "image/jpg",
       "image/png",
       "image/gif",
-      "image/webp"
-  );
+      "image/webp");
 
   // Allowed file extensions (for additional validation)
   private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
-      "pdf", "jpg", "jpeg", "png", "gif", "webp"
-  );
+      "pdf", "jpg", "jpeg", "png", "gif", "webp");
 
   // Maximum file size: 10MB
   private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -57,14 +58,14 @@ public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
   // Signed URL expiry: 10 minutes (600 seconds)
   private static final int SIGNED_URL_EXPIRY_SECONDS = 600;
 
-  private final VoucherAttachmentRepository attachmentRepository;
+  private final AttachmentRepository attachmentRepository;
   private final VoucherRepository voucherRepository;
   private final UserRepository userRepository;
   private final StorageService storageService;
   private final VirusScanService virusScanService;
 
   public VoucherAttachmentServiceImpl(
-      VoucherAttachmentRepository attachmentRepository,
+      AttachmentRepository attachmentRepository,
       VoucherRepository voucherRepository,
       UserRepository userRepository,
       StorageService storageService,
@@ -109,8 +110,9 @@ public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
     Long userId = SecurityUtils.getCurrentUserId();
 
     // Create attachment entity
-    VoucherAttachment attachment = new VoucherAttachment();
-    attachment.setVoucher(voucher);
+    Attachment attachment = new Attachment();
+    attachment.setEntityType(AttachmentEntityType.VOUCHER);
+    attachment.setEntityId(voucherId);
     attachment.setCompanyId(companyId);
     attachment.setFileName(file.getOriginalFilename() != null ? file.getOriginalFilename() : "file");
     attachment.setStoragePath(storagePath);
@@ -143,7 +145,7 @@ public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
             HttpStatus.NOT_FOUND, "Voucher not found: " + voucherId));
 
     // Load attachments (company-scoped)
-    List<VoucherAttachment> attachments = attachmentRepository
+    List<Attachment> attachments = attachmentRepository
         .findByVoucherIdAndCompanyId(voucherId, companyId);
 
     return attachments.stream()
@@ -160,7 +162,7 @@ public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
     }
 
     // Load attachment (company-scoped)
-    VoucherAttachment attachment = attachmentRepository
+    Attachment attachment = attachmentRepository
         .findByVoucherIdAndIdAndCompanyId(voucherId, attachmentId, companyId)
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Attachment not found: " + attachmentId));
@@ -207,7 +209,7 @@ public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
       isAdmin = authentication.getAuthorities().stream()
           .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
-    
+
     if (!isCreator && !isAdmin) {
       throw new ResponseStatusException(
           HttpStatus.FORBIDDEN,
@@ -215,7 +217,7 @@ public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
     }
 
     // Load attachment (company-scoped)
-    VoucherAttachment attachment = attachmentRepository
+    Attachment attachment = attachmentRepository
         .findByVoucherIdAndIdAndCompanyId(voucherId, attachmentId, companyId)
         .orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND, "Attachment not found: " + attachmentId));
@@ -266,7 +268,8 @@ public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
     if (originalFilename != null) {
       String extension = getFileExtension(originalFilename).toLowerCase(Locale.ROOT);
       if (!ALLOWED_EXTENSIONS.contains(extension)) {
-        errors.add("File extension not supported: ." + extension + ". Allowed extensions: .pdf, .jpg, .jpeg, .png, .gif, .webp");
+        errors.add("File extension not supported: ." + extension
+            + ". Allowed extensions: .pdf, .jpg, .jpeg, .png, .gif, .webp");
       }
     }
 
@@ -276,17 +279,17 @@ public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
     }
   }
 
-  private VoucherAttachmentDTO toDTO(VoucherAttachment attachment) {
+  private VoucherAttachmentDTO toDTO(Attachment attachment) {
     VoucherAttachmentDTO dto = new VoucherAttachmentDTO();
     dto.setId(attachment.getId());
-    dto.setVoucherId(attachment.getVoucher().getId());
+    dto.setVoucherId(attachment.getEntityId());
     dto.setFileName(attachment.getFileName());
     dto.setMimeType(attachment.getMimeType());
     dto.setFileSize(attachment.getFileSize());
     dto.setUploadedAt(attachment.getUploadedAt());
-    
+
     dto.setUploadedBy(attachment.getUploadedBy());
-    
+
     // Load user name if available
     if (attachment.getUploadedByUser() != null) {
       dto.setUploadedByName(attachment.getUploadedByUser().getFullName());
@@ -306,4 +309,3 @@ public class VoucherAttachmentServiceImpl implements VoucherAttachmentService {
     return "";
   }
 }
-

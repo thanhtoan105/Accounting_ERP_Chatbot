@@ -118,4 +118,16 @@ public interface SalesInvoiceService {
      * @return true if duplicate exists, false otherwise
      */
     boolean checkDuplicate(Long customerId, String invoiceNumber, LocalDate invoiceDate);
+
+    /**
+     * Create a credit note (negative invoice) that references an original invoice.
+     * Credit notes have inverted GL splits and are linked to the original invoice.
+     *
+     * @param originalInvoiceId ID of the original invoice (must be POSTED)
+     * @param request           credit note create request with line items
+     * @return created credit note DTO
+     * @throws org.springframework.web.server.ResponseStatusException if validation
+     *                                                                fails or original invoice is not POSTED
+     */
+    SalesInvoiceDTO createCreditNote(UUID originalInvoiceId, SalesInvoiceCreateRequest request);
 }

@@ -17,6 +17,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 
 /**
  * BankAccount entity for managing cash and bank accounts.
@@ -59,6 +60,19 @@ public class BankAccount implements CompanyScopedEntity {
 
   @Column(name = "active", nullable = false)
   private Boolean active = true;
+
+  @Size(max = 20)
+  @Column(name = "gl_account_code", length = 20)
+  private String glAccountCode;
+
+  @Column(name = "opening_balance_locked", nullable = false)
+  private Boolean openingBalanceLocked = false;
+
+  @Column(name = "last_reconciled_date")
+  private LocalDate lastReconciledDate;
+
+  @Column(name = "last_reconciled_balance", precision = 19, scale = 2)
+  private BigDecimal lastReconciledBalance;
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
@@ -147,6 +161,38 @@ public class BankAccount implements CompanyScopedEntity {
     this.active = active;
   }
 
+  public String getGlAccountCode() {
+    return glAccountCode;
+  }
+
+  public void setGlAccountCode(String glAccountCode) {
+    this.glAccountCode = glAccountCode;
+  }
+
+  public Boolean getOpeningBalanceLocked() {
+    return openingBalanceLocked;
+  }
+
+  public void setOpeningBalanceLocked(Boolean openingBalanceLocked) {
+    this.openingBalanceLocked = openingBalanceLocked;
+  }
+
+  public LocalDate getLastReconciledDate() {
+    return lastReconciledDate;
+  }
+
+  public void setLastReconciledDate(LocalDate lastReconciledDate) {
+    this.lastReconciledDate = lastReconciledDate;
+  }
+
+  public BigDecimal getLastReconciledBalance() {
+    return lastReconciledBalance;
+  }
+
+  public void setLastReconciledBalance(BigDecimal lastReconciledBalance) {
+    this.lastReconciledBalance = lastReconciledBalance;
+  }
+
   public Instant getCreatedAt() {
     return createdAt;
   }
@@ -163,4 +209,3 @@ public class BankAccount implements CompanyScopedEntity {
     this.updatedAt = updatedAt;
   }
 }
-

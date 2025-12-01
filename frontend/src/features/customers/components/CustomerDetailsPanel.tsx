@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Loader2,
   Building2,
@@ -39,6 +40,7 @@ export default function CustomerDetailsPanel({
   onOpenChange,
   customer,
 }: CustomerDetailsPanelProps) {
+  const { t } = useTranslation()
   const [customerData, setCustomerData] = useState<Customer | null>(null)
   const [arSummary, setArSummary] = useState<CustomerARSummary | null>(null)
   const [loading, setLoading] = useState(false)
@@ -109,8 +111,8 @@ export default function CustomerDetailsPanel({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Customer Details</DialogTitle>
-          <DialogDescription>View customer information and AR summary</DialogDescription>
+          <DialogTitle>{t('customers.customerDetails')}</DialogTitle>
+          <DialogDescription>{t('customers.viewCustomerInfo')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -132,11 +134,11 @@ export default function CustomerDetailsPanel({
               <div className="space-y-4">
                 <div className="flex items-center gap-2 pb-2 border-b">
                   <Building2 className="h-5 w-5 text-primary" />
-                  <h3 className="text-base font-semibold">Primary Information</h3>
+                  <h3 className="text-base font-semibold">{t('customers.primaryInfo')}</h3>
                 </div>
                 <div className="space-y-4">
                   <Field className="gap-2">
-                    <FieldLabel className="text-sm font-medium">Customer Code</FieldLabel>
+                    <FieldLabel className="text-sm font-medium">{t('customers.customerCode')}</FieldLabel>
                     <FieldContent>
                       <div className="px-3 py-2 rounded-md border bg-muted/30">
                         <span className="text-sm font-medium">{customerData.code}</span>
@@ -145,7 +147,7 @@ export default function CustomerDetailsPanel({
                   </Field>
 
                   <Field className="gap-2">
-                    <FieldLabel className="text-sm font-medium">Customer Name</FieldLabel>
+                    <FieldLabel className="text-sm font-medium">{t('customers.customerName')}</FieldLabel>
                     <FieldContent>
                       <div className="px-3 py-2 rounded-md border bg-muted/30">
                         <span className="text-sm font-medium">{customerData.name}</span>
@@ -155,7 +157,7 @@ export default function CustomerDetailsPanel({
 
                   {customerData.taxCode && (
                     <Field className="gap-2">
-                      <FieldLabel className="text-sm font-medium">Tax Code</FieldLabel>
+                      <FieldLabel className="text-sm font-medium">{t('customers.taxCode')}</FieldLabel>
                       <FieldContent>
                         <div className="px-3 py-2 rounded-md border bg-muted/30">
                           <span className="text-sm font-medium">{customerData.taxCode}</span>
@@ -165,7 +167,7 @@ export default function CustomerDetailsPanel({
                   )}
 
                   <Field className="gap-2">
-                    <FieldLabel className="text-sm font-medium">Status</FieldLabel>
+                    <FieldLabel className="text-sm font-medium">{t('customers.status')}</FieldLabel>
                     <FieldContent>
                       <Badge
                         className={
@@ -187,7 +189,7 @@ export default function CustomerDetailsPanel({
               <div className="space-y-4">
                 <div className="flex items-center gap-2 pb-2 border-b">
                   <Mail className="h-5 w-5 text-primary" />
-                  <h3 className="text-base font-semibold">Contact Details</h3>
+                  <h3 className="text-base font-semibold">{t('customers.contactDetails')}</h3>
                 </div>
                 <div className="space-y-4">
                   {customerData.email && (

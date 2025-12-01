@@ -41,12 +41,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class BankAccountImportHandler implements ImportHandler {
 
     private static final List<String> EXPECTED_HEADERS = List.of(
-            "account_code",
             "account_number",
             "bank_name",
             "branch",
             "account_type",
             "opening_balance",
+            "gl_account_code",
             "active");
     private static final Set<String> SUPPORTED_FORMATS = Set.of("csv", "xlsx", "xls");
     private static final DataFormatter DATA_FORMATTER = new DataFormatter();
@@ -270,22 +270,31 @@ public class BankAccountImportHandler implements ImportHandler {
         BankAccountCreateRequest request = new BankAccountCreateRequest();
         int initialErrorSize = errors.size();
 
-        // account_code is currently informational; ignore for mapping but validate
-        // presence if needed
-        String accountNumber = value(tokens, 1);
+        // Column 0: account_number (required)
+        String accountNumber = value(tokens, 0);
         if (StringUtils.isBlank(accountNumber)) {
             errors.add(new ImportRowError(rowNumber, "account_number", "Account number is required"));
         }
         request.setAccountNumber(accountNumber);
-        request.setBankName(value(tokens, 2));
-        request.setBranch(value(tokens, 3));
 
-        BankAccount.AccountType type = parseAccountType(value(tokens, 4), rowNumber, errors);
+        // Column 1: bank_name (required)
+        request.setBankName(value(tokens, 1));
+
+        // Column 2: branch (optional)
+        request.setBranch(value(tokens, 2));
+
+        // Column 3: account_type (required)
+        BankAccount.AccountType type = parseAccountType(value(tokens, 3), rowNumber, errors);
         request.setType(type);
 
-        BigDecimal openingBalance = parseDecimal(value(tokens, 5), rowNumber, errors);
+        // Column 4: opening_balance (required)
+        BigDecimal openingBalance = parseDecimal(value(tokens, 4), rowNumber, errors);
         request.setOpeningBalance(openingBalance);
 
+        // Column 5: gl_account_code (optional - for linking to Chart of Accounts)
+        request.setGlAccountCode(value(tokens, 5));
+
+        // Column 6: active (optional, defaults to TRUE)
         Boolean active = parseBoolean(value(tokens, 6), rowNumber, errors);
         request.setActive(active != null ? active : Boolean.TRUE);
 

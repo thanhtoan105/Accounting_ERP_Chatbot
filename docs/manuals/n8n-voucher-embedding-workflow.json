@@ -1,0 +1,179 @@
+{
+  "name": "Voucher Embedding Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voucher-embedding",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "voucher-embedding"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"webhookSecret\"]}}",
+              "operation": "equals",
+              "value2": "={{$env.WEBHOOK_SECRET}}"
+            }
+          ]
+        }
+      },
+      "name": "Validate Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = $input.item.json.body;\n\n// Extract voucher data\nconst companyId = body.companyId;\nconst voucherId = body.voucherId;\nconst header = body.header;\nconst lines = body.lines || [];\nconst summary = body.summary || {};\n\n// Build text for embedding\nconst textParts = [\n  `Phiếu số: ${header.voucherNumber}`,\n  `Ngày: ${header.date}`,\n  `Diễn giải: ${header.description || 'Không có'}`,\n  ``,\n  `Chi tiết:`,\n];\n\n// Add line items\nlines.forEach((line, index) => {\n  textParts.push(\n    `${index + 1}. Tài khoản ${line.accountCode} - ${line.accountName}: ` +\n    `Nợ ${line.debit.toLocaleString('vi-VN')} - Có ${line.credit.toLocaleString('vi-VN')}`\n  );\n  if (line.description) {\n    textParts.push(`   Diễn giải: ${line.description}`);\n  }\n});\n\n// Add summary\ntextParts.push(\n  ``,\n  `Tổng cộng:`,\n  `Tổng nợ: ${summary.totalDebit.toLocaleString('vi-VN')} VND`,\n  `Tổng có: ${summary.totalCredit.toLocaleString('vi-VN')} VND`\n);\n\nconst embeddingText = textParts.join('\\n');\n\n// Prepare metadata\nconst metadata = {\n  company_id: companyId.toString(),\n  voucher_id: voucherId,\n  voucher_number: header.voucherNumber,\n  date: header.date,\n  description: header.description || '',\n  total_debit: summary.totalDebit,\n  total_credit: summary.totalCredit,\n  line_count: lines.length\n};\n\nreturn {\n  json: {\n    text: embeddingText,\n    metadata: metadata,\n    vectorId: `voucher_${voucherId}`,\n    namespace: `company-${companyId}`\n  }\n};"
+      },
+      "name": "Prepare Embedding Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "embed",
+        "text": "={{$json[\"text\"]}}",
+        "options": {
+          "model": "text-embedding-ada-002"
+        }
+      },
+      "name": "Generate Embedding (OpenAI)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [850, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "indexName": "={{$env.PINECONE_INDEX_NAME}}",
+        "vectorId": "={{$json[\"vectorId\"]}}",
+        "vector": "={{$json[\"data\"]}}",
+        "namespace": "={{$json[\"namespace\"]}}",
+        "metadata": "={{$json[\"metadata\"]}}"
+      },
+      "name": "Upsert to Pinecone",
+      "type": "n8n-nodes-base.pinecone",
+      "typeVersion": 1,
+      "position": [1050, 200],
+      "credentials": {
+        "pineconeApi": {
+          "id": "2",
+          "name": "Pinecone API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "return [\n  {\n    json: {\n      success: true,\n      vectorId: $input.item.json.vectorId,\n      namespace: $input.item.json.namespace,\n      message: 'Voucher embedded successfully'\n    }\n  }\n];"
+      },
+      "name": "Success Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [\n  {\n    json: {\n      success: false,\n      error: 'Invalid webhook secret',\n      message: 'Authentication failed'\n    }\n  }\n];"
+      },
+      "name": "Unauthorized Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [650, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "const error = $input.item.json.error || $input.item.json.message || 'Unknown error';\n\nreturn [\n  {\n    json: {\n      success: false,\n      error: error,\n      message: 'Failed to process embedding',\n      timestamp: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "name": "Error Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1250, 400]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Secret",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Secret": {
+      "main": [
+        [
+          {
+            "node": "Prepare Embedding Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Embedding Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Embedding (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Embedding (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Upsert to Pinecone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert to Pinecone": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "Error Response",
+    "executionOrder": "v1"
+  }
+}

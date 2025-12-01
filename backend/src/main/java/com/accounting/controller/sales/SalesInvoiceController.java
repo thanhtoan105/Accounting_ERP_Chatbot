@@ -1,8 +1,6 @@
 package com.accounting.controller.sales;
 
 import com.accounting.dto.ApprovalWorkflowDTO;
-import com.accounting.dto.ImportResultDTO;
-import com.accounting.dto.SalesInvoiceAttachmentDTO;
 import com.accounting.dto.SalesInvoiceCreateRequest;
 import com.accounting.dto.SalesInvoiceDTO;
 import com.accounting.dto.SalesInvoiceListDTO;
@@ -380,6 +378,36 @@ public class SalesInvoiceController {
    * return ResponseEntity.ok().headers(headers).body(template);
    * }
    */
+
+  /**
+   * Create a credit note (negative invoice) that references an original invoice.
+   * Credit notes have inverted GL splits and are automatically posted.
+   * Requires authenticated user with Accountant+ role.
+   *
+   * @param originalInvoiceId ID of the original invoice (must be POSTED)
+   * @param request          credit note create request with line items
+   * @return created credit note DTO
+   */
+  @PostMapping("/{id}/credit-note")
+  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
+  public ResponseEntity<Map<String, Object>> createCreditNote(
+      @PathVariable("id") UUID originalInvoiceId,
+      @Valid @RequestBody SalesInvoiceCreateRequest request) {
+    try {
+      SalesInvoiceDTO creditNote = salesInvoiceService.createCreditNote(originalInvoiceId, request);
+      Map<String, Object> body = new HashMap<>();
+      body.put("data", creditNote);
+      return ResponseEntity.status(HttpStatus.CREATED).body(body);
+    } catch (ResponseStatusException e) {
+      if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+        Map<String, Object> errorBody = new HashMap<>();
+        errorBody.put("error", e.getReason());
+        errorBody.put("code", "VALIDATION_ERROR");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody);
+      }
+      throw e;
+    }
+  }
 
   // TODO: Implement attachment endpoints when SalesInvoiceAttachmentService is
   // ready

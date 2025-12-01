@@ -1,0 +1,278 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import { History, RefreshCw, Download, Eye } from 'lucide-react'
+import { format } from 'date-fns'
+import { toast } from 'sonner'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { arStatementService } from '@/services/arStatement'
+import { getCustomers } from '@/features/customers/services/customer'
+import type { ARStatementHistory, ExportFormat } from '@/types/arStatement'
+import type { Customer } from '@/types/customer'
+
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]
+
+export function StatementHistory() {
+  const [loading, setLoading] = useState(false)
+  const [history, setHistory] = useState<ARStatementHistory[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
+  const [totalElements, setTotalElements] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(20)
+
+  useEffect(() => {
+    loadCustomers()
+  }, [])
+
+  const loadCustomers = async () => {
+    try {
+      const response = await getCustomers({ page: 1, size: 1000 })
+      setCustomers(response.data || [])
+    } catch (err: any) {
+      toast.error('Failed to load customers')
+    }
+  }
+
+  const loadHistory = useCallback(async () => {
+    if (!selectedCustomerId) {
+      setHistory([])
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await arStatementService.getStatementHistory({
+        customerId: selectedCustomerId,
+        page,
+        size: pageSize,
+      })
+      setHistory(response.history)
+      setTotalElements(response.totalItems)
+      setTotalPages(response.totalPages)
+    } catch (err: any) {
+      toast.error('Failed to load statement history', {
+        description: err?.message || 'Unknown error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [selectedCustomerId, page, pageSize])
+
+  useEffect(() => {
+    loadHistory()
+  }, [loadHistory])
+
+  const handleRefresh = () => {
+    loadHistory()
+    toast.success('History refreshed')
+  }
+
+  const handleExport = async (statementId: string, format: ExportFormat) => {
+    try {
+      // Note: This would need the customerId - for now, we'll use the selected customer
+      if (!selectedCustomerId) {
+        toast.error('Please select a customer')
+        return
+      }
+      // TODO: Implement export from history - may need to regenerate statement first
+      toast.info('Export functionality coming soon')
+    } catch (err: any) {
+      toast.error('Failed to export statement', {
+        description: err?.message || 'Unknown error',
+      })
+    }
+  }
+
+  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId)
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <History className="h-6 w-6 text-primary" />
+            Statement History
+          </h1>
+          <p className="text-muted-foreground">
+            View historical customer statements and regenerate previous versions
+          </p>
+        </div>
+        <Button variant="outline" onClick={handleRefresh} disabled={loading || !selectedCustomerId}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Customer Filter */}
+      <div className="flex items-center gap-4">
+        <Select
+          value={selectedCustomerId?.toString() || ''}
+          onValueChange={(value) => setSelectedCustomerId(value ? Number(value) : null)}
+        >
+          <SelectTrigger className="w-[300px]">
+            <SelectValue placeholder="Select customer to view history..." />
+          </SelectTrigger>
+          <SelectContent>
+            {customers.map((customer) => (
+              <SelectItem key={customer.id} value={customer.id.toString()}>
+                {customer.name} ({customer.code})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Table */}
+      {selectedCustomerId ? (
+        <div className="rounded-md border" data-testid="statement-history-table">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Generated Date</TableHead>
+                <TableHead>Format</TableHead>
+                <TableHead>As of Date</TableHead>
+                <TableHead>Generated By</TableHead>
+                <TableHead className="text-center">Exports</TableHead>
+                <TableHead className="text-center">Sent</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-[80px]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-[100px]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-[120px]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-[60px]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-[60px]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-[100px]" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : history.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                    No statement history found for {selectedCustomer?.name}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                history.map((item) => (
+                  <TableRow key={item.id} data-testid="history-row">
+                    <TableCell>
+                      {format(new Date(item.generatedAt), 'dd/MM/yyyy HH:mm')}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{item.format}</Badge>
+                    </TableCell>
+                    <TableCell>{format(new Date(item.asOfDate), 'dd/MM/yyyy')}</TableCell>
+                    <TableCell>{item.generatedByName || '-'}</TableCell>
+                    <TableCell className="text-center" data-testid="history-export-count">{item.exportCount}</TableCell>
+                    <TableCell className="text-center" data-testid="history-sent-count">{item.sentCount}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleExport(item.id, 'PDF')}
+                          title="Export PDF"
+                          data-testid="regenerate-statement-button"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="rounded-md border p-10 text-center text-muted-foreground">
+          <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>Select a customer to view their statement history</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {selectedCustomerId && !loading && history.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, totalElements)} of{' '}
+            {totalElements} statements
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size} per page
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0}
+            >
+              Previous
+            </Button>
+            <span className="text-sm">
+              Page {page + 1} of {totalPages || 1}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+              disabled={page >= totalPages - 1}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+

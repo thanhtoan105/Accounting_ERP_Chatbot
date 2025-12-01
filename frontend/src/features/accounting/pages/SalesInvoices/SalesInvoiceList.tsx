@@ -13,6 +13,7 @@ import {
   Trash2,
   MoreVertical,
   Plus,
+  RotateCcw,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import type { ColumnDef, SortingState } from '@tanstack/react-table'
@@ -399,6 +400,14 @@ export default function SalesInvoiceList() {
                   <FileText className="mr-2 h-4 w-4" />
                   View
                 </DropdownMenuItem>
+                {invoice.status === 'POSTED' && (
+                  <DropdownMenuItem
+                    onClick={() => navigate(`/sales-invoices/${invoice.id}/credit-note`)}
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Create Credit Note
+                  </DropdownMenuItem>
+                )}
                 {canDelete && (
                   <DropdownMenuItem
                     onClick={() => {

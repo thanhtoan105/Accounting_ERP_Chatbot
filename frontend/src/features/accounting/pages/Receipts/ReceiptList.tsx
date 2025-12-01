@@ -62,7 +62,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ReceiptReversalDialog } from '@/components/receipt'
+import { ReceiptReversalDialog, ReceiptFormSheet } from '@/components/receipt'
 import { getReceipts, deleteReceipt, postReceipt } from '@/services/receipt'
 import type {
   ARPaymentListDTO,
@@ -185,6 +185,10 @@ export default function ReceiptList() {
   // Reversal dialog
   const [reversalDialogOpen, setReversalDialogOpen] = useState(false)
   const [receiptToReverse, setReceiptToReverse] = useState<ARPaymentDTO | null>(null)
+
+  // Receipt form sheet
+  const [formSheetOpen, setFormSheetOpen] = useState(false)
+  const [editingReceiptId, setEditingReceiptId] = useState<string | undefined>(undefined)
 
   // Save filters to localStorage
   useEffect(() => {
@@ -409,7 +413,10 @@ export default function ReceiptList() {
                 </DropdownMenuItem>
                 {canEdit(receipt) && (
                   <DropdownMenuItem
-                    onClick={() => navigate(`/accounting/receipts/${receipt.id}/edit`)}
+                    onClick={() => {
+                      setEditingReceiptId(receipt.id)
+                      setFormSheetOpen(true)
+                    }}
                   >
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
@@ -467,11 +474,12 @@ export default function ReceiptList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Customer Receipts</h1>
-          <p className="text-muted-foreground">
-            Manage customer payment receipts and allocations
-          </p>
+          <p className="text-muted-foreground">Manage customer payment receipts and allocations</p>
         </div>
-        <Button onClick={() => navigate('/accounting/receipts/new')}>
+        <Button onClick={() => {
+          setEditingReceiptId(undefined)
+          setFormSheetOpen(true)
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           New Receipt
         </Button>
@@ -616,12 +624,7 @@ export default function ReceiptList() {
             </SelectContent>
           </Select>
           <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setPage(0)}
-              disabled={page === 0}
-            >
+            <Button variant="outline" size="icon" onClick={() => setPage(0)} disabled={page === 0}>
               <ChevronsLeft className="h-4 w-4" />
             </Button>
             <Button
@@ -662,11 +665,15 @@ export default function ReceiptList() {
             <DialogTitle>Delete Receipt</DialogTitle>
           </DialogHeader>
           <p>
-            Are you sure you want to delete receipt <strong>{receiptToDelete?.receiptNumber}</strong>?
-            This action cannot be undone.
+            Are you sure you want to delete receipt{' '}
+            <strong>{receiptToDelete?.receiptNumber}</strong>? This action cannot be undone.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleting}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
@@ -683,6 +690,18 @@ export default function ReceiptList() {
         onOpenChange={setReversalDialogOpen}
         onSuccess={() => {
           setReceiptToReverse(null)
+          fetchReceipts()
+        }}
+      />
+
+      {/* Receipt Form Sheet */}
+      <ReceiptFormSheet
+        open={formSheetOpen}
+        onOpenChange={setFormSheetOpen}
+        receiptId={editingReceiptId}
+        onSuccess={() => {
+          setFormSheetOpen(false)
+          setEditingReceiptId(undefined)
           fetchReceipts()
         }}
       />
