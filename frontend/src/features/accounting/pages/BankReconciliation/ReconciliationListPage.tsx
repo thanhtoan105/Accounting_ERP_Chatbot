@@ -301,7 +301,9 @@ export function ReconciliationListPage() {
                   <SelectItem value="IN_PROGRESS">
                     {t('bankReconciliation.status.inProgress')}
                   </SelectItem>
-                  <SelectItem value="COMPLETED">{t('bankReconciliation.status.completed')}</SelectItem>
+                  <SelectItem value="COMPLETED">
+                    {t('bankReconciliation.status.completed')}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -368,7 +370,8 @@ export function ReconciliationListPage() {
                         {t('bankReconciliation.difference')}
                       </TableHead>
                       <TableHead className="text-center">
-                        {t('bankReconciliation.matchedTotal')} / {t('bankReconciliation.unmatchedTotal')}
+                        {t('bankReconciliation.matchedTotal')} /{' '}
+                        {t('bankReconciliation.unmatchedTotal')}
                       </TableHead>
                       <TableHead>{t('bankReconciliation.lastUpdated')}</TableHead>
                       <TableHead className="w-[100px]">{t('common.actions')}</TableHead>
@@ -405,7 +408,9 @@ export function ReconciliationListPage() {
                             </TableCell>
                             <TableCell>
                               <Badge variant={getStatusBadgeVariant(rec.status)}>
-                                {t(`bankReconciliation.status.${rec.status === 'NOT_STARTED' ? 'notStarted' : rec.status === 'IN_PROGRESS' ? 'inProgress' : 'completed'}`)}
+                                {t(
+                                  `bankReconciliation.status.${rec.status === 'NOT_STARTED' ? 'notStarted' : rec.status === 'IN_PROGRESS' ? 'inProgress' : 'completed'}`,
+                                )}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
@@ -576,7 +581,9 @@ export function ReconciliationListPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="statement-balance">{t('bankReconciliation.statementBalance')} *</Label>
+              <Label htmlFor="statement-balance">
+                {t('bankReconciliation.statementBalance')} *
+              </Label>
               <Input
                 id="statement-balance"
                 type="number"
@@ -601,7 +608,11 @@ export function ReconciliationListPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)} disabled={creating}>
+            <Button
+              variant="outline"
+              onClick={() => setCreateDialogOpen(false)}
+              disabled={creating}
+            >
               {t('common.cancel')}
             </Button>
             <Button onClick={handleCreate} disabled={creating}>
@@ -619,7 +630,9 @@ export function ReconciliationListPage() {
             <AlertDialogDescription>
               {t('bankReconciliation.deleteConfirm.message')}
               <br />
-              <span className="text-destructive">{t('bankReconciliation.deleteConfirm.warning')}</span>
+              <span className="text-destructive">
+                {t('bankReconciliation.deleteConfirm.warning')}
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

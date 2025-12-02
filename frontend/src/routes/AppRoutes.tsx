@@ -37,6 +37,8 @@ import {
   TrialBalance,
   CashBookPage,
   CashBookSummaryPage,
+  ReconciliationListPage,
+  ReconciliationDetailPage,
 } from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
@@ -390,6 +392,26 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
               <CashBookSummaryPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/bank-reconciliation"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <ReconciliationListPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/bank-reconciliation/:id"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <ReconciliationDetailPage />
             </RoleGuard>
           </ProtectedLayout>
         }

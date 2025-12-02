@@ -447,7 +447,9 @@ export function ReconciliationDetailPage() {
               {reconciliation.completedAt && (
                 <>
                   {' • '}
-                  <span data-testid="completed-at">{formatDateTime(reconciliation.completedAt)}</span>
+                  <span data-testid="completed-at">
+                    {formatDateTime(reconciliation.completedAt)}
+                  </span>
                 </>
               )}
             </div>

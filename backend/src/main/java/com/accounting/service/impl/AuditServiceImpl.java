@@ -2747,4 +2747,42 @@ public class AuditServiceImpl implements AuditService {
             logger.error("Failed to log cash book operation: {}", e.getMessage(), e);
         }
     }
+
+    @Override
+    public void logReconciliationOperation(
+            String action,
+            java.util.UUID reconciliationId,
+            String details,
+            String clientIp) {
+        try {
+            Long companyId = com.accounting.security.CompanyContext.getCompanyId();
+            Long userId = com.accounting.security.SecurityUtils.getCurrentUserId();
+
+            AuditLog log = new AuditLog();
+            log.setEventType("BANK_RECONCILIATION");
+            log.setAction(action);
+            log.setCompanyId(companyId);
+            log.setUserId(userId);
+            log.setIpAddress(clientIp);
+            log.setCreatedAt(Instant.now());
+
+            if (reconciliationId != null) {
+                log.setEntityType("BANK_RECONCILIATION");
+                log.setEntityId(reconciliationId.toString());
+            }
+
+            ObjectNode metadata = buildMetadata();
+            if (details != null) {
+                metadata.put("details", details);
+            }
+            if (reconciliationId != null) {
+                metadata.put("reconciliationId", reconciliationId.toString());
+            }
+            log.setMetadata(metadata);
+            log.setSuccess(Boolean.TRUE);
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log reconciliation operation: {}", e.getMessage(), e);
+        }
+    }
 }

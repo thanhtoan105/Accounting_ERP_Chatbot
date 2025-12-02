@@ -37,25 +37,10 @@ BMAD rules have been installed to: `.cursor/rules/bmad/`
 **Tools:**
 - @bmad/core/tools/shard-doc - shard-doc
 
-**Workflows:**
-- @bmad/core/workflows/brainstorming - brainstorming
-- @bmad/core/workflows/party-mode - party-mode
-
 ### BMB
 
 **Agents:**
 - @bmad/bmb/agents/bmad-builder - bmad-builder
-
-**Workflows:**
-- @bmad/bmb/workflows/audit-workflow - audit-workflow
-- @bmad/bmb/workflows/convert-legacy - convert-legacy
-- @bmad/bmb/workflows/create-agent - create-agent
-- @bmad/bmb/workflows/create-module - create-module
-- @bmad/bmb/workflows/create-workflow - create-workflow
-- @bmad/bmb/workflows/edit-agent - edit-agent
-- @bmad/bmb/workflows/edit-module - edit-module
-- @bmad/bmb/workflows/edit-workflow - edit-workflow
-- @bmad/bmb/workflows/module-brief - module-brief
 
 ### BMM
 
@@ -64,32 +49,23 @@ BMAD rules have been installed to: `.cursor/rules/bmad/`
 - @bmad/bmm/agents/architect - architect
 - @bmad/bmm/agents/dev - dev
 - @bmad/bmm/agents/pm - pm
+- @bmad/bmm/agents/quick-flow-solo-dev - quick-flow-solo-dev
 - @bmad/bmm/agents/sm - sm
 - @bmad/bmm/agents/tea - tea
 - @bmad/bmm/agents/tech-writer - tech-writer
 - @bmad/bmm/agents/ux-designer - ux-designer
 
 **Workflows:**
-- @bmad/bmm/workflows/brainstorm-project - brainstorm-project
-- @bmad/bmm/workflows/domain-research - domain-research
-- @bmad/bmm/workflows/product-brief - product-brief
-- @bmad/bmm/workflows/research - research
-- @bmad/bmm/workflows/create-ux-design - create-ux-design
-- @bmad/bmm/workflows/prd - prd
-- @bmad/bmm/workflows/tech-spec - tech-spec
-- @bmad/bmm/workflows/architecture - architecture
 - @bmad/bmm/workflows/create-epics-and-stories - create-epics-and-stories
 - @bmad/bmm/workflows/implementation-readiness - implementation-readiness
 - @bmad/bmm/workflows/code-review - code-review
 - @bmad/bmm/workflows/correct-course - correct-course
 - @bmad/bmm/workflows/create-story - create-story
 - @bmad/bmm/workflows/dev-story - dev-story
-- @bmad/bmm/workflows/epic-tech-context - epic-tech-context
 - @bmad/bmm/workflows/retrospective - retrospective
 - @bmad/bmm/workflows/sprint-planning - sprint-planning
-- @bmad/bmm/workflows/story-context - story-context
-- @bmad/bmm/workflows/story-done - story-done
-- @bmad/bmm/workflows/story-ready - story-ready
+- @bmad/bmm/workflows/create-tech-spec - create-tech-spec
+- @bmad/bmm/workflows/quick-dev - quick-dev
 - @bmad/bmm/workflows/create-excalidraw-dataflow - create-excalidraw-dataflow
 - @bmad/bmm/workflows/create-excalidraw-diagram - create-excalidraw-diagram
 - @bmad/bmm/workflows/create-excalidraw-flowchart - create-excalidraw-flowchart
@@ -97,23 +73,6 @@ BMAD rules have been installed to: `.cursor/rules/bmad/`
 - @bmad/bmm/workflows/document-project - document-project
 - @bmad/bmm/workflows/workflow-init - workflow-init
 - @bmad/bmm/workflows/workflow-status - workflow-status
-
-### CIS
-
-**Agents:**
-- @bmad/cis/agents/README - README
-- @bmad/cis/agents/brainstorming-coach - brainstorming-coach
-- @bmad/cis/agents/creative-problem-solver - creative-problem-solver
-- @bmad/cis/agents/design-thinking-coach - design-thinking-coach
-- @bmad/cis/agents/innovation-strategist - innovation-strategist
-- @bmad/cis/agents/presentation-master - presentation-master
-- @bmad/cis/agents/storyteller - storyteller
-
-**Workflows:**
-- @bmad/cis/workflows/design-thinking - design-thinking
-- @bmad/cis/workflows/innovation-strategy - innovation-strategy
-- @bmad/cis/workflows/problem-solving - problem-solving
-- @bmad/cis/workflows/storytelling - storytelling
 
 
 ## Quick Reference
