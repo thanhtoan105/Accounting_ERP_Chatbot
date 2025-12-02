@@ -1,6 +1,9 @@
-# CLAUDE.md
+Note: This project uses bd (beads) for issue tracking. Use `bd` commands instead of markdown TODOs. See AGENTS.md for workflow details.
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+# CLAUDE. md
+
+This file provides guidance to Claude Code (claude. ai/code) when working with this repository.
 
 ## Development Commands
 
@@ -17,7 +20,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Build: `cd backend && mvn clean package`
 - Compile: `cd backend && mvn clean compile`
 - Format code: `cd backend && mvn spotless:apply`
-- Run specific test: `cd backend && mvn test -Dtest=ClassName`
 
 ### Frontend (React + TypeScript + Vite)
 
@@ -25,177 +27,277 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run development server: `cd frontend && pnpm dev`
 - Build for production: `cd frontend && pnpm build`
 - Run tests: `cd frontend && pnpm test`
-- Run tests in watch mode: `cd frontend && pnpm test:watch`
 - Format code: `cd frontend && pnpm format:fix`
-- Lint code: `cd frontend && pnpm lint`
 - Shadcn UI: `cd frontend && pnpm dlx shadcn@latest add [component]`
 
 ## Architecture Overview
 
-This is a multi-tenant accounting system built as a monorepo with clear separation between backend and frontend.
+This is a multi-tenant accounting system built as a monorepo.
 
-### Backend Architecture (Spring Boot)
+### Backend (Spring Boot)
+- **Multi-tenancy**: `CompanyScopedEntity` + `CompanyContext` (ThreadLocal) + `CompanyScopeAspect`.
+- **Security**: JWT, RBAC, Spring Security.
+- **Data**: PostgreSQL (Flyway), JPA/Hibernate.
 
-**Multi-tenancy Pattern**: The system uses row-level security through a company-scoped architecture:
+### Frontend (React)
+- **UI**: shadcn/ui, Tailwind.
+- **Structure**: Feature-based (`src/features/`).
+- **State**: React Query + Context API.
 
-- Every business entity extends `CompanyScopedEntity` interface (gets `companyId` field)
-- `CompanyContext` manages the current company ID in ThreadLocal storage
-- `CompanyContextFilter` extracts company from JWT and sets context
-- `CompanyScopeAspect` and `CompanyScopeEnforcer` automatically apply company filtering
+## MCP Tool Usage Guidelines
 
-**Security Stack**:
+### 1. Codebase Intelligence (Nia AI)
+**Tool**: `search_codebase` / `nia_package_search_hybrid`
 
-- JWT-based authentication with access/refresh tokens
-- Spring Security with custom filter chain
-- Password encoding with BCrypt
-- Role-based access control (RBAC) foundation
+- **Goal**: Understand architectural patterns or find implementation details across the entire monorepo.
+- **When to use**:
+  - Before starting a new feature to understand existing patterns (e.g., "How is `CompanyContext` propagated in async tasks?").
+  - When debugging complex cross-module issues.
+- **Example Prompt**: "Use Nia to search the codebase for all usages of `CompanyScopedEntity` to understand the multi-tenancy implementation."
 
-**Database Layer**:
+### 2. Deep Research & Documentation (Nia AI)
+**Tool**: `nia_deep_research_agent` / `index_documentation`
 
-- PostgreSQL with Flyway migrations
-- JPA/Hibernate with validation
-- Automatic audit trails via `AuditLog` entity
+- **Goal**: Research external libraries or index new documentation sources.
+- **When to use**:
+  - When proposing a new library comparison (e.g., "Compare Zod vs Yup for this project").
+  - When the project uses a specific library version (e.g., Spring Boot 3.5.7) and you need up-to-date specs.
+- **Example Prompt**: "Use Nia to research the breaking changes in Spring Boot 3.5.7 regarding Security filter chains."
 
-**Key Packages**:
+### 3. Agent Context Sharing (Nia AI)
+**Tool**: `save_context` / `retrieve_context` (or `nia_context` with actions)
 
-- `entity/`: JPA entities (Company, User, Customer, AuditLog)
-- `repository/`: JPA repositories with company-scoped specifications
-- `security/`: JWT, password encoding, company context management
-- `service/`: Business logic layer
-- `controller/`: REST API endpoints with OpenAPI documentation
+- **Goal**: Preserve conversation history, plans, and decisions when switching tasks or sessions.
+- **Actions**:
+  - **Save**: Captures conversation history, edited files, and decisions.
+  - **Retrieve**: Restores a previous working state.
+- **Workflow Strategy**:
+  1.   **Checkpointing**: After completing a "Plan Phase" (see below), explicitly save the context.
+      * *Command*: "Save this context as 'Completed Phase 1 - Auth Setup'."
+  2.   **Handoff**: If you need to switch to a different agent or come back later, use retrieve.
+      * *Command*: "Retrieve context for 'Auth Setup'."
 
-**Configuration**:
+## Table UI Standards (shadcn)
+- **Search**: Input field for filtering.
+- **Refresh**: Button to reload data.
+- **Pagination**: Page size selector (10, 20, 50) + navigation.
 
-- Main config: `application.yml`
-- Security: `SecurityConfig` class
-- Database migrations in `src/main/resources/db/migration/`
+## Development Rules
 
-### Frontend Architecture (React + TypeScript)
+- **Do not create markdown files** unless explicitly requested.
+- **Always Use Nia MCP** for deep understanding, search codebase, find relevance, context management and some task relevance.
 
-**UI Framework**: shadcn/ui (Tailwind + Radix)
-**Routing**: React Router với protected layout
-**State Management**: React hooks and context
-**API Communication**: Axios + typed services
-**Build Tool**: Vite (proxy `/api` → backend)
+---
 
-**Cấu trúc thư mục (feature-first)**:
+# BMAD Method + Beads Integration
 
-- `src/features/`
+This project uses **BMAD Method** for structured AI-driven development and **Beads** (`bd`) for issue tracking and agent memory.
 
-  - `auth/`
-    - `pages/` → `Login.tsx`, `ForgotPassword.tsx`, `ResetPassword.tsx`
-    - `components/` → `LoginForm.tsx` (re-export from `@/components/auth/LoginForm`)
-    - `services/` → `auth.ts`
-    - `index.ts` → barrel exports (re-exports pages, services, and components)
-  - `dashboard/`
-    - `pages/Dashboard.tsx`
-    - `index.ts` → barrel exports
-  - `company/`
-    - `pages/CompanySettings.tsx`
-    - `index.ts` → barrel exports
-  - `users/`
-    - `pages/UserManagement.tsx`
-    - `components/` → tables, columns, etc.
-    - `index.ts` → barrel exports (re-exports pages and components)
-  - `accounting/`
-    - `pages/ChartOfAccounts.tsx`
-    - `pages/Vouchers/` → `VoucherList.tsx`, `VoucherForm.tsx`, `index.ts`
-    - `index.ts` → barrel exports
+## 🎯 Quick Reference: Which Tool When?
 
-- `src/components/`
+| Situation | Tool | Command |
+|-----------|------|---------|
+| Starting a new feature/epic | BMAD | `*workflow-init` → Choose track |
+| Creating requirements | BMAD PM Agent | `*prd` or `*tech-spec` |
+| Designing architecture | BMAD Architect | `*create-architecture` |
+| Finding next task to work on | Beads | `bd ready --json` |
+| Tracking work in progress | Beads | `bd update <id> --status in_progress` |
+| Discovered new bug/TODO | Beads | `bd create "Title" -t bug -p 1` |
+| Completing a task | Beads | `bd close <id> --reason "Done"` |
+| Viewing dependencies | Beads | `bd dep tree <id>` |
+| Ending session | Both | See "Landing the Plane" below |
 
-  - `app/` → `index.ts`, `app-sidebar.tsx`, `nav-main.tsx`
-  - `guards/` → `RoleGuard.tsx`, `CompanyGuard.tsx` (barrel: `index.ts`)
-  - `voucher/` → `DeleteVoucherDialog.tsx`, `VoucherLineItemGrid.tsx`, `index.ts`
-  - `ui/` → shadcn primitives (button, card, input, sidebar, breadcrumb, avatar, ...)
-  - `index.ts` → barrel (re-exports from `guards` and other shared components)
+---
 
-- `src/layouts/` → `ProtectedLayout.tsx` (shadcn sidebar-06)
-- `src/routes/` → `AppRoutes.tsx` (toàn bộ route map)
-- `src/hooks/` → hooks dùng chung (vd. `useAuth`, `useRole`, `use-mobile`)
-- `src/services/` → services dùng chung khác (voucher, chartOfAccounts, ...)
-- `src/utils/` → helpers (axios token, date, cn, ...)
+## 🔗 Beads Issue Tracking
 
-> Note:
->
-> - The `index.ts` (barrel) files provide easy import aliases such as `@/features/auth`, `@/features/users`, `@/features/accounting`, `@/components`, `@/components/app`, `@/components/voucher`.
-> - Pages within a feature should import components via the feature’s barrel file (for example: `import { LoginForm } from '@/features/auth'`) to maintain clear feature boundaries and make refactoring easier.
+### Session Start (MANDATORY)
 
-**Layout Pattern**:
+```bash
+# ALWAYS run first to see unblocked work
+bd ready --json
 
-- `ProtectedLayout`: tích hợp `SidebarProvider` + `AppSidebar` (block sidebar-06) + `SidebarInset` + breadcrumb header.
-
-### Development Services
-
-- **PostgreSQL**: Primary database (localhost:5432)
-- **pgAdmin**: Database management UI (localhost:5050)
-- **Redis**: Caching and session storage (localhost:6379)
-- **Maildev**: Email testing UI (localhost:1080)
-
-### Project Structure & Workflows
-
-**BMAD Framework**: The project uses a structured development workflow with epic-based planning:
-
-- Epic definitions in `docs/stories/`
-- Sprint status tracking in `docs/sprint-status.yaml`
-- Context XML files for technical specifications
-
-**API Documentation**: Available at `http://localhost:8080/api/docs` (Swagger UI)
-
-**Testing Strategy**:
-
-- Backend: JUnit 5 + TestContainers for integration tests
-- Frontend: Vitest + Testing Library + jsdom
-- Coverage reporting configured for both
-
-**Code Quality**:
-
-- Backend: Spotless for code formatting
-- Frontend: ESLint + Prettier
-- Husky for pre-commit hooks
-- TypeScript for type safety
-
-## Key Development Patterns
-
-**Company Scoping**: When working with repositories, always use the company context:
-
-```java
-// Automatic filtering through CompanyScopedEntity
-List<Customer> customers = customerRepository.findAll(); // Automatically filtered by current company
+# Check overall project status
+bd stats
 ```
 
-**API Endpoints**: Follow the pattern `/api/v1/[resource]` with proper authentication:
+### During Work
 
-```java
-@GetMapping("/api/v1/customers")
-public ResponseEntity<List<Customer>> getCustomers() // Requires JWT
+```bash
+# Start working on a task
+bd update <id> --status in_progress --json
+
+# Create issues for discovered work
+bd create "Found: Need input validation" -t bug -p 1 --json
+
+# Link discovered work to parent
+bd dep add <new-id> <parent-id> --type discovered-from
+
+# View dependency tree
+bd dep tree <id>
+
+# Check what's blocked
+bd blocked
 ```
 
-**Frontend Routes**: Tất cả routes được khai báo tại `src/routes/AppRoutes.tsx`:
+### Issue Types & Priorities
 
-```tsx
-import { BrowserRouter } from "react-router-dom";
-import AppRoutes from "@/routes/AppRoutes";
+```bash
+# Types: bug | feature | task | epic | chore
+# Priority: 0 (critical) → 4 (low), default=2
 
-// App.tsx
-<BrowserRouter>
-  <AppRoutes />
-</BrowserRouter>;
+bd create "Epic: Auth System" -t epic -p 1
+bd create "Login UI design" -t task -p 2
+bd create "Critical security bug" -t bug -p 0
 ```
 
-**Database Migrations**: Use Flyway with numbered versions (V1**, V2**, etc.) and descriptive names.
+### Dependencies
 
-Do not create markdown files unless explicitly requested by the user
-Using gkg mcp to find codebase structure and code, relevant files, functions, classes, variables, and code snippets.
+```bash
+# Types: blocks (default) | related | parent-child | discovered-from
 
-When designing user interfaces with tables using shadcn components, always ensure the following key features are included:
+# Task B is blocked by Task A
+bd dep add <task-b> <task-a> --type blocks
 
-- **Search Functionality**: Add a search input above or within the table to allow users to quickly filter records based on keywords or relevant fields.
-- **Refresh Button**: Include a refresh button near the search bar or table header to enable users to reload the table data with a single click, ensuring access to the most up-to-date records.
-- **Record Count and Page Size Selector**: At the bottom of the table, display the total number of records currently shown as well as the overall record count. Provide a dropdown for users to select how many records to display per page, with the following default options: 10, 20, 30, 50, and 100 records per page.
-- **Pagination**: Implement pagination controls at the bottom of the table to allow users to navigate between pages of data efficiently.
+# Related issues (soft link)
+bd dep add <id1> <id2> --type related
 
-Including these standard features improves usability, performance, and consistency across the application’s data tables.
-Always use gkg mcp to find codebase structure and code, relevant files, functions, classes, variables, and code snippets.
-Always read serena instruction before do task.
-Always using the frontend skills to design UI for frontend
+# Child issue
+bd dep add <child-id> <parent-id> --type parent-child
+```
+
+---
+
+## 🛬 Landing the Plane (Session End Protocol)
+
+**When ending a session, complete ALL steps.  The plane has NOT landed until `git push` succeeds.**
+
+### Step-by-Step Checklist
+
+```bash
+# 1. FILE ISSUES for remaining work
+bd create "TODO: Add integration tests" -t task -p 2 --json
+
+# 2. RUN QUALITY GATES (if code changes were made)
+cd backend && mvn test
+cd frontend && pnpm test
+cd backend && mvn spotless:apply
+cd frontend && pnpm format:fix
+
+# 3. UPDATE BEADS - close finished, update status
+bd close <id1> <id2> --reason "Implemented" --json
+bd update <id3> --status blocked --json
+
+# 4.  SYNC AND PUSH (MANDATORY - DO NOT SKIP)
+git pull --rebase
+# If conflicts in . beads/beads.jsonl:
+#   git checkout --theirs .beads/beads.jsonl
+#   bd import -i .beads/beads.jsonl
+bd sync
+git add .
+git commit -m "feat: <summary of work>"
+git push  # ← MUST complete successfully
+
+# 5.  VERIFY clean state
+git status  # Must show "up to date with origin"
+
+# 6.  PROVIDE NEXT SESSION PROMPT
+bd ready --json  # Show next work item
+```
+
+### Summary Template
+
+After landing, provide:
+- ✅ **Completed**: What was done this session
+- 📋 **Issues Filed**: New issues created for follow-up
+- 🧪 **Quality Gates**: All passing / issues filed
+- 🔄 **Git Status**: Confirmed pushed to remote
+- ➡️ **Next Session**: `"Continue work on bd-XXX: [title].  [context]"`
+
+---
+
+## 🔄 Integrating BMAD Stories with Beads
+
+### Converting PRD to Beads Issues
+
+After BMAD creates epics and stories, convert them to Beads:
+
+```bash
+# Create Epic
+bd create "Epic: User Authentication" -t epic -p 1
+# Returns: bd-a1b2
+
+# Create child tasks (auto-hierarchical IDs)
+bd create "Design login UI" -t task -p 2
+# Returns: bd-a1b2. 1
+
+bd create "Implement JWT backend" -t task -p 1
+# Returns: bd-a1b2.2
+
+bd create "Write unit tests" -t task -p 2
+# Returns: bd-a1b2. 3
+
+# Set dependencies
+bd dep add bd-a1b2. 3 bd-a1b2.2  # Tests depend on backend
+```
+
+### Workflow: BMAD Story → Beads → Implementation
+
+```
+1. SM agent creates story file (*create-story)
+2. Convert to Beads: bd create "Story title" -t task
+3. DEV agent implements (*dev-story)
+4. Update status: bd update <id> --status in_progress
+5.  Complete: bd close <id> --reason "Implemented"
+6.  Sync: bd sync && git push
+```
+
+---
+
+## ⚡ Quick Commands Reference
+
+```bash
+# === BEADS ESSENTIALS ===
+bd ready                    # Find unblocked work
+bd ready --json             # JSON for programmatic use
+bd list --status open       # All open issues
+bd show <id>                # Issue details
+bd stats                    # Project overview
+
+# === ISSUE MANAGEMENT ===
+bd create "Title" -t task -p 2 --json
+bd update <id> --status in_progress
+bd close <id> --reason "Done"
+bd dep add <blocked> <blocker>
+bd dep tree <id>
+
+# === SYNC & GIT ===
+bd sync                     # Force immediate sync
+bd hooks install            # Install git hooks (recommended)
+
+# === BMAD WORKFLOWS ===
+*workflow-init              # Start new project
+*workflow-status            # Check current phase
+*prd                        # Create PRD (PM agent)
+*tech-spec                  # Create tech spec (PM agent)
+*create-architecture        # Design system (Architect)
+*sprint-planning            # Initialize sprint (SM)
+*create-story               # Draft story (SM)
+*dev-story                  # Implement (DEV)
+*code-review                # Review code (DEV)
+```
+
+---
+
+## 🚨 Critical Rules
+
+1. **NEVER skip `bd sync` and `git push`** at session end
+2. **Use FRESH CHATS** for each BMAD workflow
+3. **Query `bd ready`** at session start - don't rely on context memory
+4. **File issues for ALL discovered work** - bugs, TODOs, ideas
+5. **Use Nia MCP** for codebase search and context preservation
+6. **Test before committing** if code was changed
+
+---
+
+From now on, please do not add 'Co-authored-by' or any attribution footer to the git commit messages.
