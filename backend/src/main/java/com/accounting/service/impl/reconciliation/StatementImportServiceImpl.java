@@ -75,7 +75,22 @@ public class StatementImportServiceImpl implements StatementImportService {
     private static final List<String> BALANCE_PATTERNS = Arrays.asList(
             "balance", "running balance", "closing balance", "số dư");
 
-    // In-memory error report storage (would use Redis/DB in production)
+    /**
+     * FIXME: Replace in-memory error report storage with Redis or database for production.
+     *
+     * Current limitations:
+     * 1. Data loss on server restart - all error reports are lost
+     * 2. No TTL - reports never expire, potential memory leak over time
+     * 3. No multi-instance support - user may get "report not found" if routed to different instance
+     * 4. No persistence - cannot audit what errors occurred in past imports
+     *
+     * Recommended production implementation:
+     * - Use Redis with 1-hour TTL for error reports
+     * - Or persist to database with scheduled cleanup job
+     * - Consider storing in S3/MinIO for large error files
+     *
+     * @see accounting-p1l for future enhancement tracking
+     */
     private final Map<String, List<ImportErrorDTO>> errorReportStore = new ConcurrentHashMap<>();
 
     private final BankReconciliationRepository reconciliationRepository;
@@ -304,6 +319,11 @@ public class StatementImportServiceImpl implements StatementImportService {
                     .append(escapeCsv(error.getValue())).append(",")
                     .append(escapeCsv(error.getErrorMessage())).append("\n");
         }
+
+        // Clean up after download to free memory (single-use report)
+        errorReportStore.remove(errorReportId);
+        log.debug("Error report {} downloaded and removed from memory", errorReportId);
+
         return csv.toString().getBytes(StandardCharsets.UTF_8);
     }
 
