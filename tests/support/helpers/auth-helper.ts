@@ -2,10 +2,99 @@ import { Page, expect } from '@playwright/test';
 
 /**
  * Authentication Helper
- * 
+ *
  * Provides helper functions for test authentication setup.
  * Uses network-first pattern: intercept auth API before navigation.
  */
+
+/**
+ * Setup mock authentication state for fully mocked E2E tests.
+ *
+ * This function bypasses the login page entirely by:
+ * 1. Setting up route intercepts for all auth-related APIs
+ * 2. Directly injecting authentication tokens into localStorage
+ * 3. Mocking the /me endpoint for user info
+ *
+ * Use this for tests that mock ALL API calls and don't require a real backend.
+ */
+export async function setupMockAuth(
+  page: Page,
+  email: string = 'accountant@example.com',
+  role: string = 'accountant',
+  companyId: number = 1,
+) {
+  const userId = role === 'chief_accountant' ? 2 : 1;
+  const fullName = role === 'chief_accountant' ? 'Chief Accountant' : 'Test User';
+
+  // Mock all auth-related API routes
+  await page.route('**/api/v1/auth/**', async (route) => {
+    const url = route.request().url();
+
+    if (url.includes('/login')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            accessToken: 'mock-access-token-' + Date.now(),
+            refreshToken: 'mock-refresh-token-' + Date.now(),
+            user: { id: userId, email, fullName, role, companyId },
+          },
+        }),
+      });
+    } else if (url.includes('/refresh')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            accessToken: 'mock-access-token-refreshed-' + Date.now(),
+            refreshToken: 'mock-refresh-token-refreshed-' + Date.now(),
+          },
+        }),
+      });
+    } else if (url.includes('/me')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: { id: userId, email, fullName, role, companyId },
+        }),
+      });
+    } else {
+      await route.fulfill({ status: 200, body: '{}' });
+    }
+  });
+
+  // Mock company context API
+  await page.route('**/api/v1/companies/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: { id: companyId, name: 'Test Company', code: 'TEST' },
+      }),
+    });
+  });
+
+  // Navigate to a blank page first to set localStorage
+  await page.goto('about:blank');
+
+  // Inject auth tokens directly into localStorage
+  await page.evaluate(({ email, role, userId, fullName, companyId }) => {
+    localStorage.setItem('accessToken', 'mock-access-token-' + Date.now());
+    localStorage.setItem('refreshToken', 'mock-refresh-token-' + Date.now());
+    localStorage.setItem('activeCompanyId', String(companyId));
+    localStorage.setItem('user', JSON.stringify({
+      id: userId,
+      email,
+      fullName,
+      role,
+      companyId,
+    }));
+  }, { email, role, userId, fullName, companyId });
+}
+
 export async function loginAsUser(
   page: Page,
   email: string = 'admin@example.com',

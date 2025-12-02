@@ -1537,4 +1537,19 @@ public interface AuditService {
                         Long bankAccountId,
                         String details,
                         String clientIp);
+
+        /**
+         * Log bank reconciliation operation for audit trail.
+         *
+         * @param action           operation action (e.g., RECONCILIATION_CREATE,
+         *                         STATEMENT_IMPORT, AUTO_MATCH, MANUAL_MATCH, etc.)
+         * @param reconciliationId reconciliation ID
+         * @param details          operation details
+         * @param clientIp         client IP address
+         */
+        void logReconciliationOperation(
+                        String action,
+                        java.util.UUID reconciliationId,
+                        String details,
+                        String clientIp);
 }

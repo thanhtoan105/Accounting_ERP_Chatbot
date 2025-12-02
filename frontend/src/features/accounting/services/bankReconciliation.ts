@@ -630,10 +630,9 @@ export async function deleteAdjustment(
   reconciliationId: string,
   adjustmentId: string,
 ): Promise<void> {
-  const res = await fetchWithAuth(
-    `${BASE_URL}/${reconciliationId}/adjustments/${adjustmentId}`,
-    { method: 'DELETE' },
-  )
+  const res = await fetchWithAuth(`${BASE_URL}/${reconciliationId}/adjustments/${adjustmentId}`, {
+    method: 'DELETE',
+  })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: res.statusText }))
     throw { status: res.status, error }

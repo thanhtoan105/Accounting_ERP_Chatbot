@@ -256,6 +256,11 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       url: '/accounting/cash-book/summary',
       requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
     },
+    {
+      titleKey: 'nav.bankReconciliation',
+      url: '/accounting/bank-reconciliation',
+      requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
   ]
 
   // Filter category items based on role

@@ -328,7 +328,9 @@ export function CreateAdjustmentDialog({
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <span className="text-sm font-medium">Status:</span>
               <Badge className={STATUS_COLORS[existingAdjustment.status]}>
-                {t(`bankReconciliation.adjustmentStatus.${existingAdjustment.status.toLowerCase()}`)}
+                {t(
+                  `bankReconciliation.adjustmentStatus.${existingAdjustment.status.toLowerCase()}`,
+                )}
               </Badge>
             </div>
           )}
@@ -403,7 +405,8 @@ export function CreateAdjustmentDialog({
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">
-              {t('bankReconciliation.adjustment.description')} <span className="text-red-500">*</span>
+              {t('bankReconciliation.adjustment.description')}{' '}
+              <span className="text-red-500">*</span>
             </Label>
             <Textarea
               id="description"
@@ -487,7 +490,11 @@ export function CreateAdjustmentDialog({
 
           {/* Create Mode Actions */}
           {!isEditMode && (
-            <Button onClick={handleCreate} disabled={creating} data-testid="create-adjustment-button">
+            <Button
+              onClick={handleCreate}
+              disabled={creating}
+              data-testid="create-adjustment-button"
+            >
               {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('common.create')}
             </Button>

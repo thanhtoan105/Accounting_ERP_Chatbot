@@ -234,7 +234,8 @@ export function StatementImportDialog({
     (selectedFile: File): boolean => {
       // Check file type
       const validExtensions = ['.csv', '.xlsx', '.xls']
-      const fileExtension = selectedFile.name.substring(selectedFile.name.lastIndexOf('.'))
+      const fileExtension = selectedFile.name
+        .substring(selectedFile.name.lastIndexOf('.'))
         .toLowerCase()
       if (!validExtensions.includes(fileExtension)) {
         toast.error(t('bankReconciliation.import.supportedFormats'))
@@ -510,8 +511,8 @@ export function StatementImportDialog({
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Map the columns from your file to the system fields. Required fields are marked
-                with *.
+                Map the columns from your file to the system fields. Required fields are marked with
+                *.
               </AlertDescription>
             </Alert>
 
@@ -519,7 +520,8 @@ export function StatementImportDialog({
               {/* Date Column (Required) */}
               <div className="space-y-2">
                 <Label>
-                  {t('bankReconciliation.import.dateColumn')} <span className="text-red-500">*</span>
+                  {t('bankReconciliation.import.dateColumn')}{' '}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Select value={dateColumn} onValueChange={setDateColumn}>
                   <SelectTrigger data-testid="date-column-select">
