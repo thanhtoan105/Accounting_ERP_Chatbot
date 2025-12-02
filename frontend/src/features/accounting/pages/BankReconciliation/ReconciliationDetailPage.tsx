@@ -174,12 +174,16 @@ export function ReconciliationDetailPage() {
   // Completion confirmation dialog
   const [showCompleteDialog, setShowCompleteDialog] = useState(false)
 
+  // Reopen confirmation dialog
+  const [showReopenDialog, setShowReopenDialog] = useState(false)
+
   // Import dialog placeholder (will be a separate component)
   const [showImportDialog, setShowImportDialog] = useState(false)
 
   // Adjustment dialog state
   const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false)
-  const [adjustmentStatementLine, setAdjustmentStatementLine] = useState<BankStatementLineDTO | null>(null)
+  const [adjustmentStatementLine, setAdjustmentStatementLine] =
+    useState<BankStatementLineDTO | null>(null)
 
   // Load reconciliation detail
   const loadReconciliation = useCallback(async () => {
@@ -393,7 +397,11 @@ export function ReconciliationDetailPage() {
     return (
       <div className="p-6 text-center">
         <p className="text-muted-foreground">{t('errors.notFound')}</p>
-        <Button variant="outline" onClick={() => navigate('/accounting/bank-reconciliation')} className="mt-4">
+        <Button
+          variant="outline"
+          onClick={() => navigate('/accounting/bank-reconciliation')}
+          className="mt-4"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           {t('common.back')}
         </Button>
@@ -425,9 +433,25 @@ export function ReconciliationDetailPage() {
               {formatDate(reconciliation.statementPeriodEnd)}
             </p>
           </div>
-          <Badge variant={getStatusBadgeVariant(reconciliation.status)}>
-            {t(`bankReconciliation.status.${reconciliation.status === 'NOT_STARTED' ? 'notStarted' : reconciliation.status === 'IN_PROGRESS' ? 'inProgress' : 'completed'}`)}
+          <Badge
+            variant={getStatusBadgeVariant(reconciliation.status)}
+            data-testid="reconciliation-status-badge"
+          >
+            {t(
+              `bankReconciliation.status.${reconciliation.status === 'NOT_STARTED' ? 'notStarted' : reconciliation.status === 'IN_PROGRESS' ? 'inProgress' : 'completed'}`,
+            )}
           </Badge>
+          {isCompleted && reconciliation.completedByName && (
+            <div className="text-sm text-muted-foreground ml-4">
+              <span data-testid="completed-by-name">{reconciliation.completedByName}</span>
+              {reconciliation.completedAt && (
+                <>
+                  {' • '}
+                  <span data-testid="completed-at">{formatDateTime(reconciliation.completedAt)}</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           {!isCompleted && (
@@ -440,36 +464,61 @@ export function ReconciliationDetailPage() {
                 <Wand2 className={`h-4 w-4 mr-2 ${autoMatching ? 'animate-spin' : ''}`} />
                 {t('bankReconciliation.autoMatch')}
               </Button>
-              <Button onClick={() => setShowCompleteDialog(true)} disabled={completing}>
+              <Button
+                onClick={() => setShowCompleteDialog(true)}
+                disabled={completing}
+                data-testid="complete-reconciliation-button"
+              >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 {t('bankReconciliation.complete')}
               </Button>
             </>
           )}
           {isCompleted && (
-            <Button variant="outline" onClick={handleReopen} disabled={completing}>
+            <Button
+              variant="outline"
+              onClick={() => setShowReopenDialog(true)}
+              disabled={completing}
+              data-testid="reopen-reconciliation-button"
+            >
               <RotateCcw className="h-4 w-4 mr-2" />
               {t('bankReconciliation.reopen')}
             </Button>
           )}
-          <Button variant="outline" onClick={() => handleExport('excel')} disabled={exporting}>
+          <Button
+            variant="outline"
+            onClick={() => handleExport('excel')}
+            disabled={exporting}
+            data-testid="export-excel-button"
+          >
             <Download className="h-4 w-4 mr-2" />
             {t('bankReconciliation.exportExcel')}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => handleExport('pdf')}
+            disabled={exporting}
+            data-testid="export-pdf-button"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {t('bankReconciliation.exportPdf')}
           </Button>
         </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card>
+        <Card data-testid="statement-balance-card">
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground">
               {t('bankReconciliation.statementBalance')}
             </div>
-            <div className="text-2xl font-bold">{formatCurrency(reconciliation.statementBalance)}</div>
+            <div className="text-2xl font-bold">
+              {formatCurrency(reconciliation.statementBalance)}
+            </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-testid="ledger-balance-card">
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground">
               {t('bankReconciliation.ledgerBalance')}
@@ -477,39 +526,38 @@ export function ReconciliationDetailPage() {
             <div className="text-2xl font-bold">{formatCurrency(reconciliation.ledgerBalance)}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-testid="difference-card">
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground">
               {t('bankReconciliation.difference')}
             </div>
             <div
               className={`text-2xl font-bold ${
-                Math.abs(reconciliation.difference || 0) < 0.01
-                  ? 'text-green-600'
-                  : 'text-red-600'
+                Math.abs(reconciliation.difference || 0) < 0.01 ? 'text-green-600' : 'text-red-600'
               }`}
+              data-testid="balance-difference"
             >
               {formatCurrency(reconciliation.difference)}
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-testid="matched-total-card">
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground">
               {t('bankReconciliation.matchedTotal')}
             </div>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600" data-testid="matched-lines-count">
               {reconciliation.matchedLines || 0} / {reconciliation.totalLines || 0}
             </div>
             <Progress value={matchProgress} className="mt-2" />
           </CardContent>
         </Card>
-        <Card>
+        <Card data-testid="unmatched-total-card">
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground">
               {t('bankReconciliation.unmatchedTotal')}
             </div>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-red-600" data-testid="unmatched-lines-count">
               {reconciliation.unmatchedLines || 0}
             </div>
           </CardContent>
@@ -594,17 +642,23 @@ export function ReconciliationDetailPage() {
                                 {line.description}
                               </div>
                               {line.reference && (
-                                <div className="text-xs text-muted-foreground">{line.reference}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {line.reference}
+                                </div>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              <span className={amount && amount > 0 ? 'text-green-600' : 'text-red-600'}>
+                              <span
+                                className={amount && amount > 0 ? 'text-green-600' : 'text-red-600'}
+                              >
                                 {formatCurrency(amount)}
                               </span>
                             </TableCell>
                             <TableCell>
                               <Badge variant={getMatchStatusBadgeVariant(line.matchStatus)}>
-                                {t(`bankReconciliation.matchStatus.${line.matchStatus === 'ADJUSTMENT_REQUIRED' ? 'adjustmentRequired' : line.matchStatus.toLowerCase()}`)}
+                                {t(
+                                  `bankReconciliation.matchStatus.${line.matchStatus === 'ADJUSTMENT_REQUIRED' ? 'adjustmentRequired' : line.matchStatus.toLowerCase()}`,
+                                )}
                               </Badge>
                               {line.matchConfidence && (
                                 <div className="text-xs text-muted-foreground">
@@ -751,13 +805,17 @@ export function ReconciliationDetailPage() {
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              <span className={amount && amount > 0 ? 'text-green-600' : 'text-red-600'}>
+                              <span
+                                className={amount && amount > 0 ? 'text-green-600' : 'text-red-600'}
+                              >
                                 {formatCurrency(amount)}
                               </span>
                             </TableCell>
                             <TableCell>
                               {txn.alreadyMatched && (
-                                <Badge variant="outline">{t('bankReconciliation.alreadyMatched')}</Badge>
+                                <Badge variant="outline">
+                                  {t('bankReconciliation.alreadyMatched')}
+                                </Badge>
                               )}
                             </TableCell>
                           </TableRow>
@@ -851,7 +909,8 @@ export function ReconciliationDetailPage() {
             <AlertDialogDescription asChild>
               <div className="space-y-2">
                 <div>
-                  {t('bankReconciliation.match.linesProcessed')}: {autoMatchResult?.totalLinesProcessed}
+                  {t('bankReconciliation.match.linesProcessed')}:{' '}
+                  {autoMatchResult?.totalLinesProcessed}
                 </div>
                 <div>
                   {t('bankReconciliation.match.matchesFound')}: {autoMatchResult?.matchesFound}
@@ -892,8 +951,37 @@ export function ReconciliationDetailPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={completing}>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleComplete} disabled={completing}>
+            <AlertDialogAction
+              onClick={handleComplete}
+              disabled={completing}
+              data-testid="confirm-complete-button"
+            >
               {completing ? t('common.saving') : t('bankReconciliation.complete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reopen Reconciliation Confirmation */}
+      <AlertDialog open={showReopenDialog} onOpenChange={setShowReopenDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('bankReconciliation.reopen')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('bankReconciliation.completion.reopenMessage')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={completing}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleReopen()
+                setShowReopenDialog(false)
+              }}
+              disabled={completing}
+              data-testid="confirm-reopen-button"
+            >
+              {completing ? t('common.saving') : t('bankReconciliation.reopen')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
