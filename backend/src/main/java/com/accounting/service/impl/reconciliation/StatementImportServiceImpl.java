@@ -478,8 +478,144 @@ public class StatementImportServiceImpl implements StatementImportService {
     }
 
     private String detectDateFormat(InputStream inputStream, String fileName, String dateColumn) {
-        // Default format
-        return "yyyy-MM-dd";
+        if (dateColumn == null) {
+            return "yyyy-MM-dd";
+        }
+
+        // Common date formats in order of likelihood for Vietnamese banks
+        List<String> candidateFormats = Arrays.asList(
+                "dd/MM/yyyy",   // Vietcombank, BIDV, most Vietnamese banks
+                "dd-MM-yyyy",   // Techcombank
+                "yyyy-MM-dd",   // ISO format (some international banks)
+                "MM/dd/yyyy",   // US format (some international banks)
+                "dd.MM.yyyy",   // European format
+                "yyyy/MM/dd"    // Alternative ISO format
+        );
+
+        try {
+            // Extract sample date values from the file
+            List<String> sampleDates = extractSampleDateValues(inputStream, fileName, dateColumn, 10);
+
+            if (sampleDates.isEmpty()) {
+                log.debug("No date samples found for column '{}', using default format", dateColumn);
+                return "yyyy-MM-dd";
+            }
+
+            // Try each format and return the first one that parses all samples
+            for (String format : candidateFormats) {
+                if (tryParseAllDates(sampleDates, format)) {
+                    log.debug("Detected date format '{}' for column '{}'", format, dateColumn);
+                    return format;
+                }
+            }
+
+            log.debug("No matching date format found for column '{}', using default", dateColumn);
+            return "yyyy-MM-dd";
+        } catch (IOException e) {
+            log.warn("Error detecting date format, using default: {}", e.getMessage());
+            return "yyyy-MM-dd";
+        }
+    }
+
+    private List<String> extractSampleDateValues(InputStream inputStream, String fileName, String dateColumn,
+            int maxSamples) throws IOException {
+        List<String> samples = new ArrayList<>();
+
+        if (isExcelFile(fileName)) {
+            samples = extractExcelDateSamples(inputStream, dateColumn, maxSamples);
+        } else {
+            samples = extractCsvDateSamples(inputStream, dateColumn, maxSamples);
+        }
+
+        return samples;
+    }
+
+    private List<String> extractCsvDateSamples(InputStream inputStream, String dateColumn, int maxSamples)
+            throws IOException {
+        List<String> samples = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+                CSVParser parser = CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build()
+                        .parse(reader)) {
+
+            for (CSVRecord record : parser) {
+                if (samples.size() >= maxSamples) {
+                    break;
+                }
+                try {
+                    String value = record.get(dateColumn);
+                    if (value != null && !value.isBlank()) {
+                        samples.add(value.trim());
+                    }
+                } catch (IllegalArgumentException e) {
+                    // Column not found, skip
+                    break;
+                }
+            }
+        }
+        return samples;
+    }
+
+    private List<String> extractExcelDateSamples(InputStream inputStream, String dateColumn, int maxSamples)
+            throws IOException {
+        List<String> samples = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) {
+                return samples;
+            }
+
+            // Find the column index for the date column
+            int dateColumnIndex = -1;
+            DataFormatter formatter = new DataFormatter();
+            for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                Cell cell = headerRow.getCell(i);
+                if (cell != null && dateColumn.equals(formatter.formatCellValue(cell))) {
+                    dateColumnIndex = i;
+                    break;
+                }
+            }
+
+            if (dateColumnIndex == -1) {
+                return samples;
+            }
+
+            // Extract sample values from data rows
+            for (int i = 1; i <= sheet.getLastRowNum() && samples.size() < maxSamples; i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                Cell cell = row.getCell(dateColumnIndex);
+                if (cell != null) {
+                    String value;
+                    // Handle Excel date cells specially
+                    if (cell.getCellType() == CellType.NUMERIC
+                            && org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)) {
+                        // Excel stores dates as numbers, format as ISO date
+                        java.util.Date date = cell.getDateCellValue();
+                        value = new java.text.SimpleDateFormat("yyyy-MM-dd").format(date);
+                    } else {
+                        value = formatter.formatCellValue(cell);
+                    }
+                    if (value != null && !value.isBlank()) {
+                        samples.add(value.trim());
+                    }
+                }
+            }
+        }
+        return samples;
+    }
+
+    private boolean tryParseAllDates(List<String> dateStrings, String format) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+        for (String dateStr : dateStrings) {
+            try {
+                LocalDate.parse(dateStr, formatter);
+            } catch (DateTimeParseException e) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isExcelFile(String fileName) {
