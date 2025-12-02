@@ -18,7 +18,7 @@ Status: in-progress
 6. **accounting-byh** - ✅ RESOLVED: Scope clarified - one-to-many matching deferred to future enhancement (see accounting-p1l)
 
 ### Moderate Issues
-7. **accounting-ekd** - Replace in-memory error report storage
+7. **accounting-ekd** - ✅ RESOLVED: Added FIXME documentation and cleanup-after-download; created accounting-aoa for production implementation
 8. **accounting-74w** - Verify Progress component follows shadcn/ui
 
 **Action Required:** Fix critical issues, re-run tests, commit code, then request re-review.
