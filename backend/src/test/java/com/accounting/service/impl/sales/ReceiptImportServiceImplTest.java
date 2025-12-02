@@ -38,6 +38,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReceiptImportServiceImpl Unit Tests")
@@ -57,11 +59,15 @@ class ReceiptImportServiceImplTest {
   @BeforeEach
   void setUp() {
     CompanyContext.setCompanyId(COMPANY_ID);
+    // Set up security context for SecurityUtils.getCurrentUserId()
+    TestingAuthenticationToken auth = new TestingAuthenticationToken(USER_ID, null);
+    SecurityContextHolder.getContext().setAuthentication(auth);
   }
 
   @AfterEach
   void tearDown() {
     CompanyContext.clear();
+    SecurityContextHolder.clearContext();
   }
 
   @Nested
@@ -89,15 +95,15 @@ class ReceiptImportServiceImplTest {
         Row headerRow = sheet.getRow(0);
         assertThat(headerRow).isNotNull();
         assertThat(headerRow.getCell(0).getStringCellValue()).isEqualTo("Customer Code");
-        assertThat(headerRow.getCell(1).getStringCellValue()).isEqualTo("Receipt Date");
-        assertThat(headerRow.getCell(2).getStringCellValue()).isEqualTo("Account Code");
+        assertThat(headerRow.getCell(1).getStringCellValue()).isEqualTo("Receipt Date (YYYY-MM-DD)");
+        assertThat(headerRow.getCell(2).getStringCellValue()).isEqualTo("Account Code (Cash/Bank)");
         assertThat(headerRow.getCell(3).getStringCellValue()).isEqualTo("Amount");
         assertThat(headerRow.getCell(4).getStringCellValue()).isEqualTo("Reference");
-        assertThat(headerRow.getCell(5).getStringCellValue()).isEqualTo("Payment Method");
+        assertThat(headerRow.getCell(5).getStringCellValue()).isEqualTo("Payment Method (CASH/BANK_TRANSFER/CHECK/OTHER)");
         assertThat(headerRow.getCell(6).getStringCellValue()).isEqualTo("Payee");
         assertThat(headerRow.getCell(7).getStringCellValue()).isEqualTo("Receipt Proof URL");
-        assertThat(headerRow.getCell(8).getStringCellValue()).isEqualTo("Is Standalone");
-        assertThat(headerRow.getCell(9).getStringCellValue()).isEqualTo("Invoice Numbers");
+        assertThat(headerRow.getCell(8).getStringCellValue()).isEqualTo("Is Standalone (Y/N)");
+        assertThat(headerRow.getCell(9).getStringCellValue()).isEqualTo("Invoice Numbers (comma-separated, optional - FIFO if empty)");
 
         // Verify example row exists
         Row exampleRow = sheet.getRow(1);
@@ -445,15 +451,15 @@ class ReceiptImportServiceImplTest {
       Row headerRow = sheet.createRow(0);
       String[] headers = {
         "Customer Code",
-        "Receipt Date",
-        "Account Code",
+        "Receipt Date (YYYY-MM-DD)",
+        "Account Code (Cash/Bank)",
         "Amount",
         "Reference",
-        "Payment Method",
+        "Payment Method (CASH/BANK_TRANSFER/CHECK/OTHER)",
         "Payee",
         "Receipt Proof URL",
-        "Is Standalone",
-        "Invoice Numbers"
+        "Is Standalone (Y/N)",
+        "Invoice Numbers (comma-separated, optional - FIFO if empty)"
       };
       for (int i = 0; i < headers.length; i++) {
         headerRow.createCell(i).setCellValue(headers[i]);
