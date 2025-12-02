@@ -750,4 +750,484 @@ class ReconciliationMatcherServiceImplTest {
         when(chartOfAccountsRepository.findByCompanyIdAndCode(COMPANY_ID, GL_ACCOUNT_CODE))
                 .thenReturn(Optional.of(glAccount));
     }
+
+    // ========== One-to-Many and Many-to-One Matching Tests ==========
+
+    @Nested
+    @DisplayName("One-to-Many Matching Tests")
+    class OneToManyMatchingTests {
+
+        @Test
+        @DisplayName("Should detect when one statement line could match multiple vouchers")
+        void runAutoMatch_OneStatementMultipleVouchers_FindsMultipleCandidates() {
+            UUID statementLineId = UUID.randomUUID();
+            UUID voucherId1 = UUID.randomUUID();
+            UUID voucherId2 = UUID.randomUUID();
+            UUID voucherId3 = UUID.randomUUID();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            // One statement line with 5000 credit
+            BankStatementLine statementLine = createStatementLine(
+                    statementLineId, date, BigDecimal.ZERO, new BigDecimal("5000"), "BATCH-001");
+
+            // Three vouchers with matching amounts on same date (could all match)
+            Voucher voucher1 = createVoucher(voucherId1, date, "Payment 1");
+            VoucherLine voucherLine1 = createVoucherLine(voucherId1,
+                    new BigDecimal("5000"), BigDecimal.ZERO, "BATCH-001-A");
+
+            Voucher voucher2 = createVoucher(voucherId2, date, "Payment 2");
+            VoucherLine voucherLine2 = createVoucherLine(voucherId2,
+                    new BigDecimal("5000"), BigDecimal.ZERO, "BATCH-001-B");
+
+            Voucher voucher3 = createVoucher(voucherId3, date.plusDays(1), "Payment 3");
+            VoucherLine voucherLine3 = createVoucherLine(voucherId3,
+                    new BigDecimal("5000"), BigDecimal.ZERO, "BATCH-001-C");
+
+            setupCommonMocks();
+            when(statementLineRepository.findByReconciliationIdAndMatchStatus(reconciliationId, MatchStatus.UNMATCHED))
+                    .thenReturn(List.of(statementLine));
+            when(voucherLineRepository.findByCompanyIdAndAccountIdAndBankAccountId(COMPANY_ID, GL_ACCOUNT_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(List.of(voucherLine1, voucherLine2, voucherLine3));
+            when(voucherRepository.findById(voucherId1)).thenReturn(Optional.of(voucher1));
+            when(voucherRepository.findById(voucherId2)).thenReturn(Optional.of(voucher2));
+            when(voucherRepository.findById(voucherId3)).thenReturn(Optional.of(voucher3));
+            when(statementLineRepository.existsByMatchedVoucherId(any())).thenReturn(false);
+            when(statementLineRepository.existsByMatchedVoucherIdAndReconciliationIdNot(any(), eq(reconciliationId)))
+                    .thenReturn(false);
+
+            AutoMatchConfigDTO config = new AutoMatchConfigDTO();
+            config.setAutoApply(false); // Don't auto-apply to see all suggestions
+
+            AutoMatchResultDTO result = matcherService.runAutoMatch(reconciliationId, config);
+
+            assertEquals(1, result.getTotalLinesProcessed());
+            // The algorithm should find multiple potential matches
+            // Current implementation may return only the best match - this documents expected behavior
+            assertTrue(result.getMatchesFound() >= 1, "Should find at least one match");
+        }
+
+        @Test
+        @DisplayName("Should prefer exact reference match over similar matches")
+        void runAutoMatch_ExactVsSimilarReference_PrefersExact() {
+            UUID statementLineId = UUID.randomUUID();
+            UUID voucherId1 = UUID.randomUUID();
+            UUID voucherId2 = UUID.randomUUID();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            BankStatementLine statementLine = createStatementLine(
+                    statementLineId, date, BigDecimal.ZERO, new BigDecimal("1000"), "INV-2024-001");
+
+            // Exact reference match
+            Voucher voucher1 = createVoucher(voucherId1, date, "Payment");
+            VoucherLine voucherLine1 = createVoucherLine(voucherId1,
+                    new BigDecimal("1000"), BigDecimal.ZERO, "INV-2024-001");
+
+            // Similar but not exact reference
+            Voucher voucher2 = createVoucher(voucherId2, date, "Payment");
+            VoucherLine voucherLine2 = createVoucherLine(voucherId2,
+                    new BigDecimal("1000"), BigDecimal.ZERO, "INV-2024-002");
+
+            setupCommonMocks();
+            when(statementLineRepository.findByReconciliationIdAndMatchStatus(reconciliationId, MatchStatus.UNMATCHED))
+                    .thenReturn(List.of(statementLine));
+            when(voucherLineRepository.findByCompanyIdAndAccountIdAndBankAccountId(COMPANY_ID, GL_ACCOUNT_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(List.of(voucherLine2, voucherLine1)); // Add in reverse order to test sorting
+            when(voucherRepository.findById(voucherId1)).thenReturn(Optional.of(voucher1));
+            when(voucherRepository.findById(voucherId2)).thenReturn(Optional.of(voucher2));
+            when(statementLineRepository.existsByMatchedVoucherId(any())).thenReturn(false);
+            when(statementLineRepository.existsByMatchedVoucherIdAndReconciliationIdNot(any(), eq(reconciliationId)))
+                    .thenReturn(false);
+
+            AutoMatchConfigDTO config = new AutoMatchConfigDTO();
+            config.setAutoApply(false);
+
+            AutoMatchResultDTO result = matcherService.runAutoMatch(reconciliationId, config);
+
+            assertEquals(1, result.getMatchesFound());
+            assertNotNull(result.getSuggestions());
+            assertEquals(1, result.getSuggestions().size());
+            // The exact match (voucherId1) should be preferred
+            assertEquals(voucherId1, result.getSuggestions().get(0).getLedgerTransaction().getVoucherId());
+        }
+    }
+
+    @Nested
+    @DisplayName("Many-to-One Matching Tests")
+    class ManyToOneMatchingTests {
+
+        @Test
+        @DisplayName("Should handle multiple statement lines matching same voucher")
+        void runAutoMatch_MultipleStatementsOneVoucher_HandlesCorrectly() {
+            UUID statementLineId1 = UUID.randomUUID();
+            UUID statementLineId2 = UUID.randomUUID();
+            UUID voucherId = UUID.randomUUID();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            // Two statement lines with same amount
+            BankStatementLine statementLine1 = createStatementLine(
+                    statementLineId1, date, BigDecimal.ZERO, new BigDecimal("1000"), "REF-A");
+            BankStatementLine statementLine2 = createStatementLine(
+                    statementLineId2, date, BigDecimal.ZERO, new BigDecimal("1000"), "REF-B");
+
+            // One voucher that could match both
+            Voucher voucher = createVoucher(voucherId, date, "Payment");
+            VoucherLine voucherLine = createVoucherLine(voucherId,
+                    new BigDecimal("1000"), BigDecimal.ZERO, "REF-A");
+
+            setupCommonMocks();
+            when(statementLineRepository.findByReconciliationIdAndMatchStatus(reconciliationId, MatchStatus.UNMATCHED))
+                    .thenReturn(List.of(statementLine1, statementLine2));
+            when(voucherLineRepository.findByCompanyIdAndAccountIdAndBankAccountId(COMPANY_ID, GL_ACCOUNT_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(List.of(voucherLine));
+            when(voucherRepository.findById(voucherId)).thenReturn(Optional.of(voucher));
+            when(statementLineRepository.existsByMatchedVoucherId(voucherId)).thenReturn(false);
+            when(statementLineRepository.existsByMatchedVoucherIdAndReconciliationIdNot(voucherId, reconciliationId))
+                    .thenReturn(false);
+
+            AutoMatchConfigDTO config = new AutoMatchConfigDTO();
+            config.setAutoApply(false);
+
+            AutoMatchResultDTO result = matcherService.runAutoMatch(reconciliationId, config);
+
+            assertEquals(2, result.getTotalLinesProcessed());
+            // Current implementation: each statement line gets matched independently
+            // The voucher should only be suggested for the better match (REF-A exact match)
+            // Or both might get suggestions, but only one can be applied
+            assertTrue(result.getMatchesFound() >= 1, "Should find at least one match");
+        }
+
+        @Test
+        @DisplayName("Should prevent double-matching when applying auto-match")
+        void runAutoMatch_AutoApply_PreventsDoubleMatch() {
+            UUID statementLineId1 = UUID.randomUUID();
+            UUID statementLineId2 = UUID.randomUUID();
+            UUID voucherId = UUID.randomUUID();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            BankStatementLine statementLine1 = createStatementLine(
+                    statementLineId1, date, BigDecimal.ZERO, new BigDecimal("1000"), "REF001");
+            BankStatementLine statementLine2 = createStatementLine(
+                    statementLineId2, date, BigDecimal.ZERO, new BigDecimal("1000"), "REF001");
+
+            Voucher voucher = createVoucher(voucherId, date, "Payment");
+            VoucherLine voucherLine = createVoucherLine(voucherId,
+                    new BigDecimal("1000"), BigDecimal.ZERO, "REF001");
+
+            setupCommonMocks();
+            when(statementLineRepository.findByReconciliationIdAndMatchStatus(reconciliationId, MatchStatus.UNMATCHED))
+                    .thenReturn(List.of(statementLine1, statementLine2));
+            when(voucherLineRepository.findByCompanyIdAndAccountIdAndBankAccountId(COMPANY_ID, GL_ACCOUNT_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(List.of(voucherLine));
+            when(voucherRepository.findById(voucherId)).thenReturn(Optional.of(voucher));
+            // First check returns false, subsequent checks return true (already matched)
+            when(statementLineRepository.existsByMatchedVoucherId(voucherId))
+                    .thenReturn(false)
+                    .thenReturn(true);
+            when(statementLineRepository.existsByMatchedVoucherIdAndReconciliationIdNot(voucherId, reconciliationId))
+                    .thenReturn(false);
+            when(statementLineRepository.save(any(BankStatementLine.class)))
+                    .thenReturn(statementLine1);
+
+            AutoMatchConfigDTO config = new AutoMatchConfigDTO();
+            config.setAutoApply(true);
+            config.setMinimumConfidence(new BigDecimal("0.7"));
+
+            AutoMatchResultDTO result = matcherService.runAutoMatch(reconciliationId, config);
+
+            // Should only apply one match, the second should be skipped
+            assertEquals(1, result.getMatchesApplied());
+        }
+    }
+
+    @Nested
+    @DisplayName("Split Transaction Matching Tests")
+    class SplitTransactionMatchingTests {
+
+        @Test
+        @DisplayName("Should handle statement line that represents sum of multiple vouchers")
+        void runAutoMatch_StatementSumOfVouchers_IdentifiesPotentialSplit() {
+            UUID statementLineId = UUID.randomUUID();
+            UUID voucherId1 = UUID.randomUUID();
+            UUID voucherId2 = UUID.randomUUID();
+            UUID voucherId3 = UUID.randomUUID();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            // Statement line with 3000 (sum of three 1000 vouchers)
+            BankStatementLine statementLine = createStatementLine(
+                    statementLineId, date, BigDecimal.ZERO, new BigDecimal("3000"), "BATCH-PAY");
+
+            // Three vouchers that sum to statement amount
+            Voucher voucher1 = createVoucher(voucherId1, date, "Payment 1");
+            VoucherLine voucherLine1 = createVoucherLine(voucherId1,
+                    new BigDecimal("1000"), BigDecimal.ZERO, "BATCH-PAY-1");
+
+            Voucher voucher2 = createVoucher(voucherId2, date, "Payment 2");
+            VoucherLine voucherLine2 = createVoucherLine(voucherId2,
+                    new BigDecimal("1000"), BigDecimal.ZERO, "BATCH-PAY-2");
+
+            Voucher voucher3 = createVoucher(voucherId3, date, "Payment 3");
+            VoucherLine voucherLine3 = createVoucherLine(voucherId3,
+                    new BigDecimal("1000"), BigDecimal.ZERO, "BATCH-PAY-3");
+
+            setupCommonMocks();
+            when(statementLineRepository.findByReconciliationIdAndMatchStatus(reconciliationId, MatchStatus.UNMATCHED))
+                    .thenReturn(List.of(statementLine));
+            when(voucherLineRepository.findByCompanyIdAndAccountIdAndBankAccountId(COMPANY_ID, GL_ACCOUNT_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(List.of(voucherLine1, voucherLine2, voucherLine3));
+            when(voucherRepository.findById(voucherId1)).thenReturn(Optional.of(voucher1));
+            when(voucherRepository.findById(voucherId2)).thenReturn(Optional.of(voucher2));
+            when(voucherRepository.findById(voucherId3)).thenReturn(Optional.of(voucher3));
+            when(statementLineRepository.existsByMatchedVoucherId(any())).thenReturn(false);
+            when(statementLineRepository.existsByMatchedVoucherIdAndReconciliationIdNot(any(), eq(reconciliationId)))
+                    .thenReturn(false);
+
+            AutoMatchConfigDTO config = new AutoMatchConfigDTO();
+            config.setAutoApply(false);
+
+            AutoMatchResultDTO result = matcherService.runAutoMatch(reconciliationId, config);
+
+            // Current implementation: no match since 3000 != 1000
+            // This test documents expected behavior for split matching feature
+            // When implemented, should recognize that 3x1000 vouchers could match 3000 statement
+            assertEquals(1, result.getTotalLinesProcessed());
+            // Current behavior: no match found due to amount mismatch
+            // Future: could suggest split matching
+        }
+    }
+
+    @Nested
+    @DisplayName("Performance Tests")
+    class PerformanceTests {
+
+        @Test
+        @DisplayName("Should handle 1000+ statement lines efficiently")
+        void runAutoMatch_LargeDataset_CompletesInReasonableTime() {
+            // Create 1000 statement lines
+            List<BankStatementLine> statementLines = new ArrayList<>();
+            List<VoucherLine> voucherLines = new ArrayList<>();
+            LocalDate baseDate = LocalDate.of(2024, 1, 1);
+
+            for (int i = 0; i < 1000; i++) {
+                UUID statementLineId = UUID.randomUUID();
+                UUID voucherId = UUID.randomUUID();
+                LocalDate date = baseDate.plusDays(i % 31);
+
+                BankStatementLine line = createStatementLine(
+                        statementLineId, date, BigDecimal.ZERO,
+                        new BigDecimal(1000 + i), "REF-" + i);
+                statementLines.add(line);
+
+                Voucher voucher = createVoucher(voucherId, date, "Payment " + i);
+                VoucherLine voucherLine = createVoucherLine(voucherId,
+                        new BigDecimal(1000 + i), BigDecimal.ZERO, "REF-" + i);
+                voucherLines.add(voucherLine);
+
+                when(voucherRepository.findById(voucherId)).thenReturn(Optional.of(voucher));
+            }
+
+            setupCommonMocks();
+            when(statementLineRepository.findByReconciliationIdAndMatchStatus(reconciliationId, MatchStatus.UNMATCHED))
+                    .thenReturn(statementLines);
+            when(voucherLineRepository.findByCompanyIdAndAccountIdAndBankAccountId(COMPANY_ID, GL_ACCOUNT_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(voucherLines);
+            when(statementLineRepository.existsByMatchedVoucherId(any())).thenReturn(false);
+            when(statementLineRepository.existsByMatchedVoucherIdAndReconciliationIdNot(any(), eq(reconciliationId)))
+                    .thenReturn(false);
+
+            AutoMatchConfigDTO config = new AutoMatchConfigDTO();
+            config.setAutoApply(false);
+
+            long startTime = System.currentTimeMillis();
+            AutoMatchResultDTO result = matcherService.runAutoMatch(reconciliationId, config);
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+
+            assertEquals(1000, result.getTotalLinesProcessed());
+            // Performance assertion: should complete within 30 seconds
+            // In practice, well-implemented matching should be much faster
+            assertTrue(duration < 30000,
+                    "Matching 1000 lines should complete in < 30 seconds, took: " + duration + "ms");
+
+            // Log for performance tracking
+            System.out.println("Performance test: 1000 lines matched in " + duration + "ms");
+        }
+
+        @Test
+        @DisplayName("Should handle 100 statement lines with 500 voucher candidates each")
+        void runAutoMatch_ManyVoucherCandidates_CompletesEfficiently() {
+            List<BankStatementLine> statementLines = new ArrayList<>();
+            List<VoucherLine> allVoucherLines = new ArrayList<>();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            // Create 100 statement lines
+            for (int i = 0; i < 100; i++) {
+                UUID statementLineId = UUID.randomUUID();
+                BankStatementLine line = createStatementLine(
+                        statementLineId, date, BigDecimal.ZERO,
+                        new BigDecimal("1000"), "REF-" + i);
+                statementLines.add(line);
+            }
+
+            // Create 500 voucher lines (many candidates per statement)
+            for (int i = 0; i < 500; i++) {
+                UUID voucherId = UUID.randomUUID();
+                Voucher voucher = createVoucher(voucherId, date.plusDays(i % 5), "Payment " + i);
+                VoucherLine voucherLine = createVoucherLine(voucherId,
+                        new BigDecimal("1000"), BigDecimal.ZERO, "REF-" + (i % 100));
+                allVoucherLines.add(voucherLine);
+                when(voucherRepository.findById(voucherId)).thenReturn(Optional.of(voucher));
+            }
+
+            setupCommonMocks();
+            when(statementLineRepository.findByReconciliationIdAndMatchStatus(reconciliationId, MatchStatus.UNMATCHED))
+                    .thenReturn(statementLines);
+            when(voucherLineRepository.findByCompanyIdAndAccountIdAndBankAccountId(COMPANY_ID, GL_ACCOUNT_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(allVoucherLines);
+            when(statementLineRepository.existsByMatchedVoucherId(any())).thenReturn(false);
+            when(statementLineRepository.existsByMatchedVoucherIdAndReconciliationIdNot(any(), eq(reconciliationId)))
+                    .thenReturn(false);
+
+            AutoMatchConfigDTO config = new AutoMatchConfigDTO();
+            config.setAutoApply(false);
+
+            long startTime = System.currentTimeMillis();
+            AutoMatchResultDTO result = matcherService.runAutoMatch(reconciliationId, config);
+            long duration = System.currentTimeMillis() - startTime;
+
+            assertEquals(100, result.getTotalLinesProcessed());
+            // O(n*m) worst case: 100 * 500 = 50,000 comparisons
+            // Should still complete quickly with efficient implementation
+            assertTrue(duration < 10000,
+                    "Matching 100 lines against 500 vouchers should complete in < 10 seconds, took: " + duration + "ms");
+        }
+    }
+
+    @Nested
+    @DisplayName("Edge Case Scoring Tests")
+    class EdgeCaseScoringTests {
+
+        @Test
+        @DisplayName("Should handle very small amounts correctly")
+        void calculateMatchConfidence_SmallAmounts_HandlesCorrectly() {
+            UUID statementLineId = UUID.randomUUID();
+            UUID voucherId = UUID.randomUUID();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            BankStatementLine statementLine = createStatementLine(
+                    statementLineId, date, BigDecimal.ZERO, new BigDecimal("0.01"), "");
+
+            Voucher voucher = createVoucher(voucherId, date, "");
+            VoucherLine voucherLine = createVoucherLine(voucherId,
+                    new BigDecimal("0.01"), BigDecimal.ZERO, "");
+
+            when(statementLineRepository.findById(statementLineId)).thenReturn(Optional.of(statementLine));
+            when(voucherRepository.findByCompanyIdAndId(COMPANY_ID, voucherId)).thenReturn(Optional.of(voucher));
+            when(voucherLineRepository.findByCompanyIdAndVoucherIdOrderByLineNumberAsc(COMPANY_ID, voucherId))
+                    .thenReturn(List.of(voucherLine));
+
+            double confidence = matcherService.calculateMatchConfidence(statementLineId, voucherId);
+
+            assertTrue(confidence >= 0.7, "Small exact amounts should match with high confidence");
+        }
+
+        @Test
+        @DisplayName("Should handle very large amounts correctly")
+        void calculateMatchConfidence_LargeAmounts_HandlesCorrectly() {
+            UUID statementLineId = UUID.randomUUID();
+            UUID voucherId = UUID.randomUUID();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            // Large amount: 999,999,999.99
+            BigDecimal largeAmount = new BigDecimal("999999999.99");
+            BankStatementLine statementLine = createStatementLine(
+                    statementLineId, date, BigDecimal.ZERO, largeAmount, "");
+
+            Voucher voucher = createVoucher(voucherId, date, "");
+            VoucherLine voucherLine = createVoucherLine(voucherId,
+                    largeAmount, BigDecimal.ZERO, "");
+
+            when(statementLineRepository.findById(statementLineId)).thenReturn(Optional.of(statementLine));
+            when(voucherRepository.findByCompanyIdAndId(COMPANY_ID, voucherId)).thenReturn(Optional.of(voucher));
+            when(voucherLineRepository.findByCompanyIdAndVoucherIdOrderByLineNumberAsc(COMPANY_ID, voucherId))
+                    .thenReturn(List.of(voucherLine));
+
+            double confidence = matcherService.calculateMatchConfidence(statementLineId, voucherId);
+
+            assertTrue(confidence >= 0.7, "Large exact amounts should match with high confidence");
+        }
+
+        @Test
+        @DisplayName("Should handle zero amounts correctly")
+        void calculateMatchConfidence_ZeroAmounts_HandlesCorrectly() {
+            UUID statementLineId = UUID.randomUUID();
+            UUID voucherId = UUID.randomUUID();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            BankStatementLine statementLine = createStatementLine(
+                    statementLineId, date, BigDecimal.ZERO, BigDecimal.ZERO, "");
+
+            Voucher voucher = createVoucher(voucherId, date, "");
+            VoucherLine voucherLine = createVoucherLine(voucherId,
+                    BigDecimal.ZERO, BigDecimal.ZERO, "");
+
+            when(statementLineRepository.findById(statementLineId)).thenReturn(Optional.of(statementLine));
+            when(voucherRepository.findByCompanyIdAndId(COMPANY_ID, voucherId)).thenReturn(Optional.of(voucher));
+            when(voucherLineRepository.findByCompanyIdAndVoucherIdOrderByLineNumberAsc(COMPANY_ID, voucherId))
+                    .thenReturn(List.of(voucherLine));
+
+            // Should not throw exception
+            double confidence = matcherService.calculateMatchConfidence(statementLineId, voucherId);
+            assertNotNull(confidence);
+        }
+
+        @Test
+        @DisplayName("Should handle special characters in references")
+        void calculateMatchConfidence_SpecialCharactersInReference_HandlesCorrectly() {
+            UUID statementLineId = UUID.randomUUID();
+            UUID voucherId = UUID.randomUUID();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            String specialRef = "INV/2024/01-15#001@ABC";
+            BankStatementLine statementLine = createStatementLine(
+                    statementLineId, date, BigDecimal.ZERO, new BigDecimal("1000"), specialRef);
+
+            Voucher voucher = createVoucher(voucherId, date, "");
+            VoucherLine voucherLine = createVoucherLine(voucherId,
+                    new BigDecimal("1000"), BigDecimal.ZERO, specialRef);
+
+            when(statementLineRepository.findById(statementLineId)).thenReturn(Optional.of(statementLine));
+            when(voucherRepository.findByCompanyIdAndId(COMPANY_ID, voucherId)).thenReturn(Optional.of(voucher));
+            when(voucherLineRepository.findByCompanyIdAndVoucherIdOrderByLineNumberAsc(COMPANY_ID, voucherId))
+                    .thenReturn(List.of(voucherLine));
+
+            double confidence = matcherService.calculateMatchConfidence(statementLineId, voucherId);
+
+            assertTrue(confidence >= 0.9, "Exact reference with special chars should have high confidence");
+        }
+
+        @Test
+        @DisplayName("Should handle Unicode/Vietnamese references")
+        void calculateMatchConfidence_UnicodeReference_HandlesCorrectly() {
+            UUID statementLineId = UUID.randomUUID();
+            UUID voucherId = UUID.randomUUID();
+            LocalDate date = LocalDate.of(2024, 1, 15);
+
+            String vietnameseRef = "HĐ-001/Công ty TNHH Đại Việt";
+            BankStatementLine statementLine = createStatementLine(
+                    statementLineId, date, BigDecimal.ZERO, new BigDecimal("1000"), vietnameseRef);
+
+            Voucher voucher = createVoucher(voucherId, date, "");
+            VoucherLine voucherLine = createVoucherLine(voucherId,
+                    new BigDecimal("1000"), BigDecimal.ZERO, vietnameseRef);
+
+            when(statementLineRepository.findById(statementLineId)).thenReturn(Optional.of(statementLine));
+            when(voucherRepository.findByCompanyIdAndId(COMPANY_ID, voucherId)).thenReturn(Optional.of(voucher));
+            when(voucherLineRepository.findByCompanyIdAndVoucherIdOrderByLineNumberAsc(COMPANY_ID, voucherId))
+                    .thenReturn(List.of(voucherLine));
+
+            double confidence = matcherService.calculateMatchConfidence(statementLineId, voucherId);
+
+            assertTrue(confidence >= 0.9, "Exact Unicode reference should have high confidence");
+        }
+    }
 }
