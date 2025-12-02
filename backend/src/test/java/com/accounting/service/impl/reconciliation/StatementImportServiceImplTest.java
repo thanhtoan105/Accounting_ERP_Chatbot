@@ -855,11 +855,12 @@ class StatementImportServiceImplTest {
     class DateFormatDetectionTests {
 
         @Test
-        @DisplayName("Should suggest correct date format for dd/MM/yyyy")
-        void analyzeFileHeaders_DetectsSlashFormat() throws Exception {
+        @DisplayName("Should detect Vietnamese date format dd/MM/yyyy (Vietcombank, BIDV)")
+        void analyzeFileHeaders_DetectsVietnameseSlashFormat() throws Exception {
             String csvContent = "Date,Description,Amount\n" +
                     "15/01/2024,Payment,1000\n" +
-                    "16/01/2024,Deposit,2000\n";
+                    "16/01/2024,Deposit,2000\n" +
+                    "25/12/2024,Year end bonus,5000\n";
             InputStream stream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
 
             when(reconciliationRepository.findByCompanyIdAndId(COMPANY_ID, reconciliationId))
@@ -870,9 +871,27 @@ class StatementImportServiceImplTest {
             ColumnMappingSuggestionDTO suggestion = importService.analyzeFileHeaders(
                     reconciliationId, stream, "statement.csv");
 
-            // Date format detection is currently a stub returning yyyy-MM-dd
-            // This test documents expected behavior for when it's implemented
-            assertNotNull(suggestion.getSuggestedDateFormat());
+            assertEquals("dd/MM/yyyy", suggestion.getSuggestedDateFormat());
+        }
+
+        @Test
+        @DisplayName("Should detect Techcombank date format dd-MM-yyyy")
+        void analyzeFileHeaders_DetectsTechcombankFormat() throws Exception {
+            String csvContent = "Date,Description,Amount\n" +
+                    "15-01-2024,Payment,1000\n" +
+                    "16-01-2024,Deposit,2000\n" +
+                    "25-12-2024,Year end bonus,5000\n";
+            InputStream stream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
+
+            when(reconciliationRepository.findByCompanyIdAndId(COMPANY_ID, reconciliationId))
+                    .thenReturn(Optional.of(reconciliation));
+            when(formatRepository.findByCompanyIdAndBankAccountId(COMPANY_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(Optional.empty());
+
+            ColumnMappingSuggestionDTO suggestion = importService.analyzeFileHeaders(
+                    reconciliationId, stream, "statement.csv");
+
+            assertEquals("dd-MM-yyyy", suggestion.getSuggestedDateFormat());
         }
 
         @Test
@@ -880,7 +899,8 @@ class StatementImportServiceImplTest {
         void analyzeFileHeaders_DetectsIsoFormat() throws Exception {
             String csvContent = "Date,Description,Amount\n" +
                     "2024-01-15,Payment,1000\n" +
-                    "2024-01-16,Deposit,2000\n";
+                    "2024-01-16,Deposit,2000\n" +
+                    "2024-12-25,Year end bonus,5000\n";
             InputStream stream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
 
             when(reconciliationRepository.findByCompanyIdAndId(COMPANY_ID, reconciliationId))
@@ -892,6 +912,149 @@ class StatementImportServiceImplTest {
                     reconciliationId, stream, "statement.csv");
 
             assertEquals("yyyy-MM-dd", suggestion.getSuggestedDateFormat());
+        }
+
+        @Test
+        @DisplayName("Should detect US date format MM/dd/yyyy")
+        void analyzeFileHeaders_DetectsUsFormat() throws Exception {
+            // Use unambiguous dates where month > 12 for later values to distinguish from dd/MM/yyyy
+            String csvContent = "Date,Description,Amount\n" +
+                    "01/15/2024,Payment,1000\n" +
+                    "01/20/2024,Deposit,2000\n" +
+                    "12/25/2024,Year end bonus,5000\n";
+            InputStream stream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
+
+            when(reconciliationRepository.findByCompanyIdAndId(COMPANY_ID, reconciliationId))
+                    .thenReturn(Optional.of(reconciliation));
+            when(formatRepository.findByCompanyIdAndBankAccountId(COMPANY_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(Optional.empty());
+
+            ColumnMappingSuggestionDTO suggestion = importService.analyzeFileHeaders(
+                    reconciliationId, stream, "statement.csv");
+
+            // dd/MM/yyyy is tried first and will fail on "01/20/2024" (no month 20)
+            // so it should fall back to MM/dd/yyyy
+            assertEquals("MM/dd/yyyy", suggestion.getSuggestedDateFormat());
+        }
+
+        @Test
+        @DisplayName("Should detect European dot format dd.MM.yyyy")
+        void analyzeFileHeaders_DetectsEuropeanDotFormat() throws Exception {
+            String csvContent = "Date,Description,Amount\n" +
+                    "15.01.2024,Payment,1000\n" +
+                    "16.01.2024,Deposit,2000\n" +
+                    "25.12.2024,Year end bonus,5000\n";
+            InputStream stream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
+
+            when(reconciliationRepository.findByCompanyIdAndId(COMPANY_ID, reconciliationId))
+                    .thenReturn(Optional.of(reconciliation));
+            when(formatRepository.findByCompanyIdAndBankAccountId(COMPANY_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(Optional.empty());
+
+            ColumnMappingSuggestionDTO suggestion = importService.analyzeFileHeaders(
+                    reconciliationId, stream, "statement.csv");
+
+            assertEquals("dd.MM.yyyy", suggestion.getSuggestedDateFormat());
+        }
+
+        @Test
+        @DisplayName("Should detect alternative ISO format yyyy/MM/dd")
+        void analyzeFileHeaders_DetectsAlternativeIsoFormat() throws Exception {
+            String csvContent = "Date,Description,Amount\n" +
+                    "2024/01/15,Payment,1000\n" +
+                    "2024/01/16,Deposit,2000\n" +
+                    "2024/12/25,Year end bonus,5000\n";
+            InputStream stream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
+
+            when(reconciliationRepository.findByCompanyIdAndId(COMPANY_ID, reconciliationId))
+                    .thenReturn(Optional.of(reconciliation));
+            when(formatRepository.findByCompanyIdAndBankAccountId(COMPANY_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(Optional.empty());
+
+            ColumnMappingSuggestionDTO suggestion = importService.analyzeFileHeaders(
+                    reconciliationId, stream, "statement.csv");
+
+            assertEquals("yyyy/MM/dd", suggestion.getSuggestedDateFormat());
+        }
+
+        @Test
+        @DisplayName("Should return default format when no date column detected")
+        void analyzeFileHeaders_NoDateColumn_ReturnsDefault() throws Exception {
+            String csvContent = "Column1,Column2,Column3\n" +
+                    "Value1,Value2,1000\n";
+            InputStream stream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
+
+            when(reconciliationRepository.findByCompanyIdAndId(COMPANY_ID, reconciliationId))
+                    .thenReturn(Optional.of(reconciliation));
+            when(formatRepository.findByCompanyIdAndBankAccountId(COMPANY_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(Optional.empty());
+
+            ColumnMappingSuggestionDTO suggestion = importService.analyzeFileHeaders(
+                    reconciliationId, stream, "statement.csv");
+
+            // No date column detected, should return default
+            assertEquals("yyyy-MM-dd", suggestion.getSuggestedDateFormat());
+        }
+
+        @Test
+        @DisplayName("Should return default format when date values cannot be parsed")
+        void analyzeFileHeaders_UnparseableDates_ReturnsDefault() throws Exception {
+            String csvContent = "Date,Description,Amount\n" +
+                    "not-a-date,Payment,1000\n" +
+                    "also-not-a-date,Deposit,2000\n";
+            InputStream stream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
+
+            when(reconciliationRepository.findByCompanyIdAndId(COMPANY_ID, reconciliationId))
+                    .thenReturn(Optional.of(reconciliation));
+            when(formatRepository.findByCompanyIdAndBankAccountId(COMPANY_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(Optional.empty());
+
+            ColumnMappingSuggestionDTO suggestion = importService.analyzeFileHeaders(
+                    reconciliationId, stream, "statement.csv");
+
+            // Cannot parse dates, should return default
+            assertEquals("yyyy-MM-dd", suggestion.getSuggestedDateFormat());
+        }
+
+        @Test
+        @DisplayName("Should handle empty date column values gracefully")
+        void analyzeFileHeaders_EmptyDateValues_ReturnsDefault() throws Exception {
+            String csvContent = "Date,Description,Amount\n" +
+                    ",Payment,1000\n" +
+                    ",Deposit,2000\n";
+            InputStream stream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
+
+            when(reconciliationRepository.findByCompanyIdAndId(COMPANY_ID, reconciliationId))
+                    .thenReturn(Optional.of(reconciliation));
+            when(formatRepository.findByCompanyIdAndBankAccountId(COMPANY_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(Optional.empty());
+
+            ColumnMappingSuggestionDTO suggestion = importService.analyzeFileHeaders(
+                    reconciliationId, stream, "statement.csv");
+
+            // Empty date values, should return default
+            assertEquals("yyyy-MM-dd", suggestion.getSuggestedDateFormat());
+        }
+
+        @Test
+        @DisplayName("Should use Vietnamese headers for date detection")
+        void analyzeFileHeaders_VietnameseHeadersWithDates() throws Exception {
+            String csvContent = "Ngày giao dịch,Nội dung,Số tiền\n" +
+                    "15/01/2024,Thanh toán,1000000\n" +
+                    "16/01/2024,Nhận tiền,2000000\n" +
+                    "25/12/2024,Thưởng cuối năm,5000000\n";
+            InputStream stream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
+
+            when(reconciliationRepository.findByCompanyIdAndId(COMPANY_ID, reconciliationId))
+                    .thenReturn(Optional.of(reconciliation));
+            when(formatRepository.findByCompanyIdAndBankAccountId(COMPANY_ID, BANK_ACCOUNT_ID))
+                    .thenReturn(Optional.empty());
+
+            ColumnMappingSuggestionDTO suggestion = importService.analyzeFileHeaders(
+                    reconciliationId, stream, "statement.csv");
+
+            assertEquals("Ngày giao dịch", suggestion.getSuggestedDateColumn());
+            assertEquals("dd/MM/yyyy", suggestion.getSuggestedDateFormat());
         }
     }
 }
