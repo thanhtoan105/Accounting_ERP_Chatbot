@@ -775,6 +775,59 @@
       "warning": "Thao tác này sẽ xóa tất cả dòng sao kê và điều chỉnh đã nhập."
     }
   },
+  "trialBalance": {
+    "title": "Bảng Cân đối Phát sinh (S06-DN)",
+    "subtitle": "Xem số dư tài khoản theo kỳ kế toán",
+    "filters": {
+      "period": "Kỳ kế toán",
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tìm theo mã hoặc tên tài khoản..."
+    },
+    "table": {
+      "accountCode": "Mã TK",
+      "accountName": "Tên tài khoản",
+      "openingDebit": "Nợ đầu kỳ",
+      "openingCredit": "Có đầu kỳ",
+      "periodDebit": "Phát sinh Nợ",
+      "periodCredit": "Phát sinh Có",
+      "closingDebit": "Nợ cuối kỳ",
+      "closingCredit": "Có cuối kỳ",
+      "total": "TỔNG CỘNG",
+      "noAccounts": "Không tìm thấy tài khoản",
+      "accountBalances": "Số dư tài khoản"
+    },
+    "actions": {
+      "refresh": "Làm mới",
+      "export": "Xuất Excel",
+      "exporting": "Đang xuất..."
+    },
+    "pagination": {
+      "showing": "Hiển thị",
+      "to": "đến",
+      "of": "trong",
+      "accounts": "tài khoản",
+      "perPage": "Số dòng",
+      "first": "Đầu",
+      "previous": "Trước",
+      "next": "Sau",
+      "last": "Cuối",
+      "page": "Trang"
+    },
+    "validation": {
+      "imbalanceWarning": "Cảnh báo: Bảng cân đối không cân. Tổng Nợ ({{debit}}) không bằng Tổng Có ({{credit}}).",
+      "selectPeriod": "Chọn kỳ kế toán để xem bảng cân đối"
+    },
+    "errors": {
+      "loadFailed": "Không thể tải bảng cân đối",
+      "exportFailed": "Không thể xuất bảng cân đối",
+      "periodLoadFailed": "Không thể tải danh sách kỳ"
+    },
+    "success": {
+      "exported": "Xuất bảng cân đối thành công"
+    },
+    "reportFilters": "Bộ lọc báo cáo",
+    "periodInfo": "Kỳ: {{periodName}} | Khoảng thời gian: {{dateRange}}"
+  },
   "cashAudit": {
     "title": "Kiểm toán Tiền mặt & Ngân hàng",
     "subtitle": "Nhật ký kiểm toán, báo cáo tuân thủ và kiểm tra tính toàn vẹn",

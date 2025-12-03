@@ -32,6 +32,7 @@ export interface TrialBalanceResponseDTO {
   totalPeriodCredit: number
   totalClosingDebit: number
   totalClosingCredit: number
+  isBalanced?: boolean
 }
 
 export async function getTrialBalance(periodId: string): Promise<TrialBalanceResponseDTO> {

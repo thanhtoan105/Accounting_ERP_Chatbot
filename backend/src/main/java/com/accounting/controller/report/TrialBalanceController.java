@@ -6,6 +6,8 @@ import com.accounting.service.AuditService;
 import com.accounting.service.TrialBalanceService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/reports/trial-balance")
 public class TrialBalanceController {
+
+  private static final Logger logger = LoggerFactory.getLogger(TrialBalanceController.class);
 
   private final TrialBalanceService trialBalanceService;
   private final AuditService auditService;
@@ -73,8 +77,8 @@ public class TrialBalanceController {
           ? Long.parseLong(auth.getPrincipal().toString())
           : null;
       auditService.logReportExport(companyId, userId, "XLSX", request);
-    } catch (Exception ignored) {
-      // Best-effort audit logging
+    } catch (Exception e) {
+      logger.warn("Failed to log report export audit: {}", e.getMessage());
     }
 
     HttpHeaders headers = new HttpHeaders();

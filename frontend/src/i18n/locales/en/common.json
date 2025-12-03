@@ -775,6 +775,59 @@
       "warning": "This will delete all imported statement lines and adjustments."
     }
   },
+  "trialBalance": {
+    "title": "Trial Balance (S06-DN)",
+    "subtitle": "View account balances for selected period",
+    "filters": {
+      "period": "Period",
+      "search": "Search",
+      "searchPlaceholder": "Search by account code or name..."
+    },
+    "table": {
+      "accountCode": "Account Code",
+      "accountName": "Account Name",
+      "openingDebit": "Opening Dr",
+      "openingCredit": "Opening Cr",
+      "periodDebit": "Period Dr",
+      "periodCredit": "Period Cr",
+      "closingDebit": "Closing Dr",
+      "closingCredit": "Closing Cr",
+      "total": "TOTAL",
+      "noAccounts": "No accounts found",
+      "accountBalances": "Account Balances"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "export": "Export Excel",
+      "exporting": "Exporting..."
+    },
+    "pagination": {
+      "showing": "Showing",
+      "to": "to",
+      "of": "of",
+      "accounts": "accounts",
+      "perPage": "Per page",
+      "first": "First",
+      "previous": "Previous",
+      "next": "Next",
+      "last": "Last",
+      "page": "Page"
+    },
+    "validation": {
+      "imbalanceWarning": "Warning: Trial Balance is out of balance. Total Debit ({{debit}}) does not equal Total Credit ({{credit}}).",
+      "selectPeriod": "Select a period to view trial balance"
+    },
+    "errors": {
+      "loadFailed": "Failed to load trial balance",
+      "exportFailed": "Failed to export trial balance",
+      "periodLoadFailed": "Failed to load periods"
+    },
+    "success": {
+      "exported": "Trial balance exported successfully"
+    },
+    "reportFilters": "Report Filters",
+    "periodInfo": "Period: {{periodName}} | Date Range: {{dateRange}}"
+  },
   "cashAudit": {
     "title": "Cash & Bank Audit",
     "subtitle": "Audit logs, compliance reports, and integrity checks",

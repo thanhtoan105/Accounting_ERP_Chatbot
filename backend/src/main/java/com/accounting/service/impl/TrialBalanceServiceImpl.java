@@ -189,7 +189,8 @@ public class TrialBalanceServiceImpl implements TrialBalanceService {
     });
 
     // Basic validation: sum(Dr) = sum(Cr) at closing balance level
-    if (totalClosingDebit.compareTo(totalClosingCredit) != 0) {
+    boolean balanced = totalClosingDebit.compareTo(totalClosingCredit) == 0;
+    if (!balanced) {
       logger.warn("Trial balance validation failed: Closing Dr ({}) != Closing Cr ({})",
           totalClosingDebit, totalClosingCredit);
       // Note: For MVP, we log a warning but don't throw an exception
@@ -208,6 +209,7 @@ public class TrialBalanceServiceImpl implements TrialBalanceService {
     response.setTotalPeriodCredit(totalPeriodCredit);
     response.setTotalClosingDebit(totalClosingDebit);
     response.setTotalClosingCredit(totalClosingCredit);
+    response.setBalanced(balanced);
 
     return response;
   }
