@@ -92,8 +92,8 @@ development_status:
   6-2-cash-receipt-entry-posting: done
   6-3-cash-payment-entry-posting: done
   6-4-bank-book-cash-book-view-running-balances: done
-  6-5-manual-bank-reconciliation: review
-  6-6-cash-bank-audit-and-compliance: backlog
+  6-5-manual-bank-reconciliation: done
+  6-6-cash-bank-audit-and-compliance: done
   epic-6-retrospective: optional
 
   epic-7: backlog

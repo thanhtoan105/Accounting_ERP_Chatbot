@@ -71,7 +71,9 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50]
 const MAX_DATE_RANGE_MONTHS = 12
 
 // Map action types to badge variants
-function getActionBadgeVariant(action: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+function getActionBadgeVariant(
+  action: string,
+): 'default' | 'secondary' | 'destructive' | 'outline' {
   const color = ACTION_TYPE_COLORS[action]
   if (color === 'red') return 'destructive'
   if (color === 'green') return 'secondary'
@@ -153,7 +155,17 @@ export function AuditExplorerPage() {
     } finally {
       setLoading(false)
     }
-  }, [dateFrom, dateTo, selectedActions, userIdFilter, entityTypeFilter, page, pageSize, dateRangeError, t])
+  }, [
+    dateFrom,
+    dateTo,
+    selectedActions,
+    userIdFilter,
+    entityTypeFilter,
+    page,
+    pageSize,
+    dateRangeError,
+    t,
+  ])
 
   useEffect(() => {
     loadData()
@@ -168,7 +180,7 @@ export function AuditExplorerPage() {
     try {
       setExporting(true)
       const filter: CashAuditQueryDTO = {
-        dateFrom: format === 'JSON' ? dateFrom.toISOString().split('T')[0] : format === 'CSV' ? dateFrom.toISOString().split('T')[0] : dateFrom.toISOString().split('T')[0],
+        dateFrom: dateFrom.toISOString().split('T')[0],
         dateTo: dateTo.toISOString().split('T')[0],
         actionType: selectedActions.length > 0 ? selectedActions : undefined,
         userId: userIdFilter ? Number(userIdFilter) : undefined,
@@ -225,7 +237,10 @@ export function AuditExplorerPage() {
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             {getActionIcon(row.original.action)}
-            <Badge variant={getActionBadgeVariant(row.original.action)} className="font-mono text-xs">
+            <Badge
+              variant={getActionBadgeVariant(row.original.action)}
+              className="font-mono text-xs"
+            >
               {row.original.action}
             </Badge>
           </div>
@@ -344,7 +359,9 @@ export function AuditExplorerPage() {
                     className={`w-[140px] justify-start text-left font-normal ${dateRangeError ? 'border-red-500' : ''}`}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : t('cashAudit.explorer.filters.dateFrom')}
+                    {dateFrom
+                      ? format(dateFrom, 'dd/MM/yyyy')
+                      : t('cashAudit.explorer.filters.dateFrom')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -438,9 +455,7 @@ export function AuditExplorerPage() {
           </div>
 
           {/* Date range error */}
-          {dateRangeError && (
-            <p className="text-sm text-red-500 mt-2">{dateRangeError}</p>
-          )}
+          {dateRangeError && <p className="text-sm text-red-500 mt-2">{dateRangeError}</p>}
 
           {/* Action Type Multi-select */}
           <div className="mt-4 space-y-2">
@@ -453,10 +468,7 @@ export function AuditExplorerPage() {
                     checked={selectedActions.includes(action)}
                     onCheckedChange={() => handleActionToggle(action)}
                   />
-                  <Label
-                    htmlFor={`action-${action}`}
-                    className="text-xs cursor-pointer"
-                  >
+                  <Label htmlFor={`action-${action}`} className="text-xs cursor-pointer">
                     {action.replace(/_/g, ' ')}
                   </Label>
                 </div>
@@ -498,9 +510,9 @@ export function AuditExplorerPage() {
                       row.original.action === 'PERIOD_BLOCK_ATTEMPT'
                         ? 'bg-orange-50 dark:bg-orange-950/20'
                         : row.original.action === 'INTEGRITY_CHECK_FAIL' ||
-                          row.original.action === 'ANOMALY_DETECTED'
-                        ? 'bg-red-50 dark:bg-red-950/20'
-                        : ''
+                            row.original.action === 'ANOMALY_DETECTED'
+                          ? 'bg-red-50 dark:bg-red-950/20'
+                          : ''
                     }
                   >
                     {row.getVisibleCells().map((cell) => (
@@ -513,7 +525,9 @@ export function AuditExplorerPage() {
                     <TableRow>
                       <TableCell colSpan={columns.length} className="bg-muted/50">
                         <div className="p-4">
-                          <h4 className="font-semibold mb-2">{t('cashAudit.explorer.columns.details')}</h4>
+                          <h4 className="font-semibold mb-2">
+                            {t('cashAudit.explorer.columns.details')}
+                          </h4>
                           <pre className="text-xs bg-background p-3 rounded border overflow-auto max-h-48">
                             {JSON.stringify(row.original.details || {}, null, 2)}
                           </pre>
