@@ -17,3 +17,4 @@ export { StatementView, DisputeManagement, StatementHistory } from './pages/ARSt
 export { TrialBalance } from './pages/TrialBalance'
 export { CashBookPage, CashBookSummaryPage } from './pages/CashBook'
 export { ReconciliationListPage, ReconciliationDetailPage } from './pages/BankReconciliation'
+export { AuditExplorerPage, IntegrityDashboardPage } from './pages/Audit'

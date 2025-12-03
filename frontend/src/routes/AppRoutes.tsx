@@ -39,6 +39,8 @@ import {
   CashBookSummaryPage,
   ReconciliationListPage,
   ReconciliationDetailPage,
+  AuditExplorerPage,
+  IntegrityDashboardPage,
 } from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
@@ -442,6 +444,26 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
               <APAuditBackupList />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/audit"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <AuditExplorerPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/audit/integrity"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <IntegrityDashboardPage />
             </RoleGuard>
           </ProtectedLayout>
         }
