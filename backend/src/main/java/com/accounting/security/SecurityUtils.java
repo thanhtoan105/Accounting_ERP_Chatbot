@@ -61,4 +61,37 @@ public class SecurityUtils {
     return authentication.getAuthorities().stream()
         .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
   }
+
+  /**
+   * Get current user email from security context.
+   *
+   * @return current user email, or null if not available
+   */
+  public static String getCurrentUserEmail() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null) {
+      return null;
+    }
+    // The email is typically stored in the authentication name or credentials
+    String name = authentication.getName();
+    if (name != null && name.contains("@")) {
+      return name;
+    }
+    return null;
+  }
+
+  /**
+   * Get current IP address from request context.
+   *
+   * @return current IP address, or null if not available
+   */
+  public static String getCurrentIpAddress() {
+    // FIXME(story-6-6): Implement IP address extraction for audit logging (AC6.6-01)
+    // Options:
+    // 1. Use RequestContextHolder.currentRequestAttributes() to get HttpServletRequest
+    // 2. Create IpAddressContext ThreadLocal similar to CompanyContext
+    // 3. Store in SecurityContext custom attributes
+    // Currently returns null, which means PERIOD_BLOCK_ATTEMPT logs have no IP address
+    return null;
+  }
 }

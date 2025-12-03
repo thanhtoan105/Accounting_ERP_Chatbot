@@ -273,8 +273,7 @@ public class CashAuditController {
 
     IntegrityCheckResultDTO result = integrityCheckService.runDailyIntegrityCheck(companyId);
 
-    HttpStatus status = result.isPassed() ? HttpStatus.OK : HttpStatus.OK;
-    return ResponseEntity.status(status).body(result);
+    return ResponseEntity.ok(result);
   }
 
   // === Helper Methods ===
