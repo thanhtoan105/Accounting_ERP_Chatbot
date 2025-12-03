@@ -94,7 +94,7 @@ development_status:
   6-4-bank-book-cash-book-view-running-balances: done
   6-5-manual-bank-reconciliation: done
   6-6-cash-bank-audit-and-compliance: done
-  epic-6-retrospective: optional
+  epic-6-retrospective: completed
 
   epic-7: backlog
   7-1-mvp-trial-balance-basic: backlog
