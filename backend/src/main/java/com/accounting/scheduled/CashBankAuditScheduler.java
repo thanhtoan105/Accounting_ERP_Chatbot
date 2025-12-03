@@ -74,7 +74,7 @@ public class CashBankAuditScheduler {
           failureCount++;
           logger.warn("Daily integrity check FAILED for company {} - {} issues found",
               company.getId(), result.getIssueCount());
-          // TODO: Trigger alerts via AuditAlertService when implemented
+          // FIXME(story-6-6): Integrate with AuditAlertService for failed integrity checks (AC6.6-06)
         }
       } catch (Exception e) {
         failureCount++;
@@ -111,7 +111,7 @@ public class CashBankAuditScheduler {
           alertCount += issues.size();
           logger.warn("Company {} has {} users with repeated blocked attempts",
               company.getId(), issues.size());
-          // TODO: Trigger alerts via AuditAlertService when implemented
+          // FIXME(story-6-6): Integrate with AuditAlertService for repeated blocked attempts (AC6.6-06)
           for (IntegrityIssueDTO issue : issues) {
             logger.warn("User {} has {} blocked attempts in the last hour",
                 issue.getEntityId(), issue.getDetails());
@@ -152,7 +152,8 @@ public class CashBankAuditScheduler {
         logger.info("Processing weekly backup for company: {} ({})",
             company.getName(), company.getId());
 
-        // TODO: Invoke ComplianceExportService.createWeeklyBackup() when implemented
+        // FIXME(story-6-6): Implement ComplianceExportService.createWeeklyBackup() (AC6.6-02)
+        // Should export: bank accounts, cash book entries, reconciliation sessions, audit logs
         logger.info("Weekly backup export placeholder for company {}", company.getId());
 
       } catch (Exception e) {
