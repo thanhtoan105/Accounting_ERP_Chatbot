@@ -231,9 +231,12 @@ export async function approvePurge(requestId: string): Promise<PurgeResponseDTO>
  * Reject purge request
  */
 export async function rejectPurge(requestId: string, reason: string): Promise<PurgeResponseDTO> {
-  const res = await fetchWithAuth(`${BASE_URL}/purge/${requestId}/reject?reason=${encodeURIComponent(reason)}`, {
-    method: 'POST',
-  })
+  const res = await fetchWithAuth(
+    `${BASE_URL}/purge/${requestId}/reject?reason=${encodeURIComponent(reason)}`,
+    {
+      method: 'POST',
+    },
+  )
   return handleJsonResponse<PurgeResponseDTO>(res)
 }
 
