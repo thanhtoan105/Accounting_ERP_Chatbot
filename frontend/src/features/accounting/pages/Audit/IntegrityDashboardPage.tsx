@@ -32,8 +32,6 @@ import {
   listIntegrityChecks,
   getLastIntegrityCheck,
   runIntegrityCheck,
-  CHECK_STATUS_COLORS,
-  SEVERITY_COLORS,
   type IntegrityCheckResultDTO,
   type IntegrityCheckStatus,
   type IssueSeverity,
@@ -60,7 +58,8 @@ function StatusBadge({ status }: { status?: IntegrityCheckStatus }) {
 }
 
 function SeverityBadge({ severity }: { severity: IssueSeverity }) {
-  const variant = severity === 'HIGH' ? 'destructive' : severity === 'MEDIUM' ? 'default' : 'outline'
+  const variant =
+    severity === 'HIGH' ? 'destructive' : severity === 'MEDIUM' ? 'default' : 'outline'
   return <Badge variant={variant}>{severity}</Badge>
 }
 
@@ -157,7 +156,9 @@ export function IntegrityDashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('cashAudit.integrity.lastCheck')}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t('cashAudit.integrity.lastCheck')}
+            </CardTitle>
             {loading ? <Skeleton className="h-5 w-5" /> : <StatusIcon status={lastCheck?.status} />}
           </CardHeader>
           <CardContent>
@@ -180,7 +181,9 @@ export function IntegrityDashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('cashAudit.integrity.issuesFound')}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t('cashAudit.integrity.issuesFound')}
+            </CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -190,7 +193,8 @@ export function IntegrityDashboardPage() {
               <>
                 <div className="text-2xl font-bold">{lastCheck?.issueCount ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  {lastCheck?.issues?.filter((i) => i.severity === 'HIGH').length || 0} high severity
+                  {lastCheck?.issues?.filter((i) => i.severity === 'HIGH').length || 0} high
+                  severity
                 </p>
               </>
             )}
@@ -199,7 +203,9 @@ export function IntegrityDashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('cashAudit.integrity.recordsChecked')}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t('cashAudit.integrity.recordsChecked')}
+            </CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -218,7 +224,9 @@ export function IntegrityDashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('cashAudit.integrity.duration')}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t('cashAudit.integrity.duration')}
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -229,7 +237,9 @@ export function IntegrityDashboardPage() {
                 <div className="text-2xl font-bold">
                   {lastCheck ? formatDuration(lastCheck.duration) : '-'}
                 </div>
-                <p className="text-xs text-muted-foreground">{t('cashAudit.integrity.executionTime')}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t('cashAudit.integrity.executionTime')}
+                </p>
               </>
             )}
           </CardContent>
@@ -281,8 +291,8 @@ export function IntegrityDashboardPage() {
                       issue.severity === 'HIGH'
                         ? 'bg-red-50 dark:bg-red-950/20'
                         : issue.severity === 'MEDIUM'
-                        ? 'bg-yellow-50 dark:bg-yellow-950/20'
-                        : ''
+                          ? 'bg-yellow-50 dark:bg-yellow-950/20'
+                          : ''
                     }
                   >
                     <TableCell>
@@ -374,7 +384,9 @@ export function IntegrityDashboardPage() {
               </TableBody>
             </Table>
           ) : (
-            <p className="text-center text-muted-foreground py-8">{t('cashAudit.integrity.noChecks')}</p>
+            <p className="text-center text-muted-foreground py-8">
+              {t('cashAudit.integrity.noChecks')}
+            </p>
           )}
         </CardContent>
       </Card>
