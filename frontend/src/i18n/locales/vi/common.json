@@ -113,7 +113,12 @@
     "language": "Ngôn ngữ",
     "settings": "Cài đặt",
     "profile": "Hồ sơ",
-    "period": "Kỳ kế toán"
+    "period": "Kỳ kế toán",
+    "noResults": "Không có kết quả",
+    "showing": "Đang hiển thị",
+    "of": "của",
+    "items": "mục",
+    "rowsPerPage": "Dòng mỗi trang"
   },
   "table": {
     "noResults": "Không có kết quả",
@@ -767,6 +772,135 @@
       "title": "Xóa bản đối chiếu",
       "message": "Bạn có chắc muốn xóa bản đối chiếu này?",
       "warning": "Thao tác này sẽ xóa tất cả dòng sao kê và điều chỉnh đã nhập."
+    }
+  },
+  "cashAudit": {
+    "title": "Kiểm toán Tiền mặt & Ngân hàng",
+    "subtitle": "Nhật ký kiểm toán, báo cáo tuân thủ và kiểm tra tính toàn vẹn",
+    "explorer": {
+      "title": "Trình duyệt Kiểm toán",
+      "filterDescription": "Lọc nhật ký kiểm toán theo khoảng thời gian, loại thao tác, người dùng và đối tượng",
+      "filters": {
+        "dateFrom": "Từ ngày",
+        "dateTo": "Đến ngày",
+        "bankAccount": "Tài khoản ngân hàng",
+        "actionType": "Loại thao tác",
+        "user": "Người dùng",
+        "entityType": "Loại đối tượng"
+      },
+      "columns": {
+        "timestamp": "Thời gian",
+        "action": "Thao tác",
+        "user": "Người dùng",
+        "entity": "Đối tượng",
+        "details": "Chi tiết",
+        "ipAddress": "Địa chỉ IP"
+      }
+    },
+    "integrity": {
+      "title": "Kiểm tra tính toàn vẹn",
+      "subtitle": "Xác minh tính toàn vẹn hàng ngày và cuối kỳ",
+      "status": {
+        "title": "Trạng thái",
+        "passed": "Đạt",
+        "failed": "Không đạt",
+        "error": "Lỗi"
+      },
+      "checkTypes": {
+        "daily": "Kiểm tra hàng ngày",
+        "periodClose": "Kiểm tra đóng kỳ",
+        "manual": "Kiểm tra thủ công",
+        "hourlyAnomaly": "Quét bất thường hàng giờ"
+      },
+      "lastCheck": "Kiểm tra gần nhất",
+      "runCheck": "Chạy kiểm tra ngay",
+      "history": "Lịch sử kiểm tra",
+      "historyDescription": "Các lần thực hiện kiểm tra tính toàn vẹn gần đây",
+      "issuesFound": "Vấn đề phát hiện",
+      "issuesFromLastCheck": "vấn đề từ lần kiểm tra gần nhất",
+      "detectedIssues": "Vấn đề phát hiện được",
+      "duration": "Thời gian",
+      "executionTime": "thời gian thực thi",
+      "recordsChecked": "Bản ghi đã kiểm tra",
+      "records": "bản ghi",
+      "checkType": "Loại kiểm tra",
+      "executedAt": "Thực hiện lúc",
+      "noChecks": "Chưa có kiểm tra tính toàn vẹn nào được chạy",
+      "running": "Đang chạy kiểm tra tính toàn vẹn...",
+      "loadFailed": "Không thể tải dữ liệu kiểm tra tính toàn vẹn",
+      "runFailed": "Không thể chạy kiểm tra tính toàn vẹn",
+      "checkPassed": "Tất cả kiểm tra tính toàn vẹn đều đạt!",
+      "checkFailed": "Kiểm tra tính toàn vẹn phát hiện vấn đề",
+      "severity": "Mức độ nghiêm trọng",
+      "issueType": "Loại vấn đề",
+      "description": "Mô tả",
+      "entity": "Đối tượng"
+    },
+    "actions": {
+      "periodBlockAttempt": "Nỗ lực chỉnh sửa kỳ đóng",
+      "integrityCheckPass": "Kiểm tra toàn vẹn đạt",
+      "integrityCheckFail": "Kiểm tra toàn vẹn không đạt",
+      "backupExport": "Xuất sao lưu",
+      "auditExplorerQuery": "Truy vấn kiểm toán",
+      "anomalyDetected": "Phát hiện bất thường",
+      "purgeRequest": "Yêu cầu xóa",
+      "purgeApprove": "Xóa đã duyệt",
+      "purgeReject": "Xóa bị từ chối",
+      "alertSent": "Cảnh báo đã gửi",
+      "complianceExport": "Xuất tuân thủ"
+    },
+    "export": {
+      "json": "Xuất JSON",
+      "csv": "Xuất CSV",
+      "pdf": "Xuất PDF",
+      "downloading": "Đang tải...",
+      "hashVerified": "Đã xác minh mã băm tài liệu",
+      "success": "Xuất hoàn tất ({{format}})",
+      "failed": "Xuất thất bại"
+    },
+    "purge": {
+      "request": "Yêu cầu xóa",
+      "approve": "Duyệt xóa",
+      "reject": "Từ chối xóa",
+      "reason": "Lý do",
+      "dateRange": "Khoảng thời gian xóa",
+      "recordsPurged": "Bản ghi đã xóa",
+      "pendingApproval": "Chờ duyệt",
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối",
+      "selfApprovalForbidden": "Bạn không thể duyệt yêu cầu xóa của chính mình",
+      "confirmTitle": "Xác nhận yêu cầu xóa",
+      "confirmMessage": "Bạn có chắc muốn yêu cầu xóa nhật ký kiểm toán? Thao tác này cần được quản trị viên phê duyệt và không thể hoàn tác.",
+      "warningRetention": "Cảnh báo: Nhật ký kiểm toán có yêu cầu lưu trữ 10 năm. Đảm bảo việc xóa tuân thủ quy định."
+    },
+    "issues": {
+      "drCrImbalance": "Mất cân đối Nợ/Có",
+      "duplicateReference": "Tham chiếu trùng lặp",
+      "sequenceGap": "Khoảng trống số thứ tự",
+      "unusualAmount": "Số tiền bất thường",
+      "repeatedBlockedAttempts": "Nỗ lực bị chặn lặp lại"
+    },
+    "severity": {
+      "high": "Cao",
+      "medium": "Trung bình",
+      "low": "Thấp"
+    },
+    "errors": {
+      "dateRangeExceeded": "Khoảng thời gian không được vượt quá {{max}} tháng",
+      "exportLimitExceeded": "Xuất giới hạn 10.000 bản ghi. Hãy áp dụng bộ lọc.",
+      "missingCompanyContext": "Yêu cầu ngữ cảnh công ty",
+      "accessDenied": "Yêu cầu vai trò QUẢN TRỊ VIÊN hoặc KẾ TOÁN TRƯỞNG",
+      "loadFailed": "Không thể tải nhật ký kiểm toán"
+    },
+    "messages": {
+      "querySuccess": "Đã tải nhật ký kiểm toán",
+      "exportSuccess": "Xuất hoàn tất",
+      "purgeRequested": "Đã gửi yêu cầu xóa",
+      "purgeApproved": "Xóa đã duyệt và thực hiện",
+      "purgeRejected": "Yêu cầu xóa bị từ chối",
+      "checkCompleted": "Kiểm tra toàn vẹn hoàn tất",
+      "checkPassed": "Tất cả kiểm tra đạt",
+      "checkFailed": "Phát hiện vấn đề"
     }
   }
 }
