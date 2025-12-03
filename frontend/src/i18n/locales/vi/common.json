@@ -29,6 +29,7 @@
     "inputVat": "Báo cáo Thuế GTGT Đầu vào",
     "outputVat": "Báo cáo Thuế GTGT Đầu ra",
     "trialBalance": "Bảng Cân đối Phát sinh",
+    "bankReconciliation": "Đối chiếu Ngân hàng",
     "cashBook": "Sổ quỹ tiền mặt/ngân hàng",
     "cashBookSummary": "Tổng hợp Sổ quỹ tiền mặt/ngân hàng"
   },

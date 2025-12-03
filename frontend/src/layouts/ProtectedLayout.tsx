@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import { useCompany } from '../hooks/useCompany'
@@ -128,13 +128,27 @@ interface ProtectedLayoutProps {
  * Enforces authentication and hides menu items based on user role.
  */
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const [, setLanguageKey] = useState(i18n.language)
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated, loading, logout, user } = useAuth()
   const { hasAnyRole, getRoleDisplayName } = useRole()
   const { company, currentPeriod } = useCompany()
   const { resolvedTheme, toggleTheme } = useTheme()
+
+  // Listen for language changes and trigger re-render
+  useEffect(() => {
+    const handleLanguageChange = (lng: string) => {
+      setLanguageKey(lng)
+    }
+
+    i18n.on('languageChanged', handleLanguageChange)
+
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange)
+    }
+  }, [i18n])
 
   const handleLogout = async () => {
     try {
