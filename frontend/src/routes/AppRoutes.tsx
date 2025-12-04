@@ -41,6 +41,8 @@ import {
   ReconciliationDetailPage,
   AuditExplorerPage,
   IntegrityDashboardPage,
+  StatutoryReportsPage,
+  ReportMappingsPage,
 } from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
@@ -464,6 +466,26 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
               <IntegrityDashboardPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/statutory-reports"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
+              <StatutoryReportsPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/report-mappings"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin']}>
+              <ReportMappingsPage />
             </RoleGuard>
           </ProtectedLayout>
         }

@@ -227,6 +227,11 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       url: '/voucher-types',
       requiredRoles: ['admin', 'chief_accountant'],
     },
+    {
+      titleKey: 'nav.reportMappings',
+      url: '/accounting/report-mappings',
+      requiredRoles: ['admin'],
+    },
   ]
 
   // Reports items for sidebar menu (with translation keys)
@@ -258,6 +263,11 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     {
       titleKey: 'nav.trialBalance',
       url: '/accounting/trial-balance',
+      requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.statutoryReports',
+      url: '/accounting/statutory-reports',
       requiredRoles: ['admin', 'chief_accountant', 'cfo'],
     },
     {

@@ -31,7 +31,9 @@
     "trialBalance": "Bảng Cân đối Phát sinh",
     "bankReconciliation": "Đối chiếu Ngân hàng",
     "cashBook": "Sổ quỹ tiền mặt/ngân hàng",
-    "cashBookSummary": "Tổng hợp Sổ quỹ tiền mặt/ngân hàng"
+    "cashBookSummary": "Tổng hợp Sổ quỹ tiền mặt/ngân hàng",
+    "statutoryReports": "Báo cáo Tài chính",
+    "reportMappings": "Cấu hình Ánh xạ"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -955,6 +957,133 @@
       "checkCompleted": "Kiểm tra toàn vẹn hoàn tất",
       "checkPassed": "Tất cả kiểm tra đạt",
       "checkFailed": "Phát hiện vấn đề"
+    }
+  },
+  "statutoryReports": {
+    "title": "Báo cáo tài chính",
+    "subtitle": "Báo cáo tài chính theo TT200 (B01, B02, B03)",
+    "tabs": {
+      "balanceSheet": "Bảng cân đối",
+      "incomeStatement": "Kết quả HĐKD",
+      "cashFlow": "Lưu chuyển tiền tệ",
+      "detailedLedger": "Sổ chi tiết"
+    },
+    "reportTitles": {
+      "balanceSheet": "Bảng cân đối kế toán (B01-DN)",
+      "incomeStatement": "Báo cáo kết quả hoạt động kinh doanh (B02-DN)",
+      "cashFlow": "Báo cáo lưu chuyển tiền tệ (B03-DN)",
+      "detailedLedger": "Sổ chi tiết (F01)"
+    },
+    "filters": {
+      "title": "Bộ lọc báo cáo",
+      "period": "Kỳ kế toán",
+      "selectPeriod": "Chọn kỳ",
+      "comparisonPeriod": "Kỳ so sánh",
+      "noComparison": "Không so sánh",
+      "dateRange": "Khoảng thời gian"
+    },
+    "table": {
+      "code": "Mã",
+      "description": "Chỉ tiêu",
+      "currentPeriod": "Kỳ này",
+      "priorPeriod": "Kỳ trước",
+      "variance": "Chênh lệch",
+      "variancePercent": "%"
+    },
+    "taxCode": "Mã số thuế",
+    "periodLabel": "Kỳ",
+    "comparedTo": "So với",
+    "mappingVersion": "Phiên bản ánh xạ",
+    "generatedAt": "Tạo lúc",
+    "hash": "Mã băm",
+    "mapping": "Ánh xạ",
+    "selectPeriodToView": "Chọn kỳ để xem báo cáo",
+    "noDataAvailable": "Không có dữ liệu cho kỳ này",
+    "exportExcel": "Xuất Excel",
+    "exportPdf": "Xuất PDF",
+    "draftWarning": {
+      "title": "Báo cáo nháp",
+      "description": "Báo cáo này cho kỳ chưa khóa sổ và có thể thay đổi. Số liệu chính thức sẽ có sau khi khóa sổ."
+    },
+    "validation": {
+      "selectPeriod": "Vui lòng chọn kỳ kế toán",
+      "hasErrors": "Phát hiện lỗi xác thực",
+      "cannotExportWithErrors": "Không thể xuất báo cáo có lỗi xác thực. Vui lòng sửa lỗi trước."
+    },
+    "drillDown": {
+      "noAccounts": "Không tìm thấy tài khoản đóng góp",
+      "noVouchers": "Không tìm thấy chứng từ cho tài khoản này",
+      "voucherDetail": "Chi tiết chứng từ",
+      "lines": "Bút toán",
+      "attachments": "Đính kèm",
+      "openVoucher": "Mở chứng từ"
+    },
+    "errors": {
+      "loadPeriodsFailed": "Không thể tải danh sách kỳ kế toán",
+      "loadReportFailed": "Không thể tải báo cáo",
+      "exportFailed": "Xuất báo cáo thất bại"
+    },
+    "success": {
+      "exported": "Xuất báo cáo thành công"
+    }
+  },
+  "reportMappings": {
+    "title": "Cấu hình ánh xạ báo cáo",
+    "subtitle": "Cấu hình ánh xạ tài khoản-chỉ tiêu theo TT200 cho báo cáo tài chính",
+    "warning": "Thay đổi ánh xạ ảnh hưởng đến tất cả báo cáo tương lai. Mỗi thay đổi tạo phiên bản mới và được ghi nhật ký kiểm toán.",
+    "reportTypes": {
+      "balanceSheet": "Bảng cân đối",
+      "incomeStatement": "Kết quả HĐKD",
+      "cashFlow": "Lưu chuyển tiền tệ",
+      "detailedLedger": "Sổ chi tiết"
+    },
+    "table": {
+      "code": "Mã",
+      "lineName": "Tên chỉ tiêu",
+      "accountPattern": "Mẫu tài khoản",
+      "operator": "Phép tính",
+      "version": "Phiên bản"
+    },
+    "calculated": "Tính toán",
+    "viewHistory": "Xem lịch sử",
+    "operators": {
+      "sum": "Tổng các tài khoản",
+      "diff": "Hiệu",
+      "abs": "Giá trị tuyệt đối"
+    },
+    "editDialog": {
+      "title": "Sửa ánh xạ",
+      "description": "Đang sửa ánh xạ cho chỉ tiêu {{lineCode}}: {{lineName}}",
+      "accountPattern": "Mẫu tài khoản",
+      "accountPatternHelp": "Dùng ký tự đại diện (111*), khoảng (111-119), hoặc mã phân cách (111,112,113)",
+      "operator": "Phép tính",
+      "reason": "Lý do thay đổi",
+      "reasonPlaceholder": "Giải thích lý do thay đổi ánh xạ này...",
+      "reasonHelp": "Bắt buộc cho nhật ký kiểm toán. Hãy cụ thể về lý do."
+    },
+    "historyDialog": {
+      "title": "Lịch sử phiên bản ánh xạ",
+      "noHistory": "Không có lịch sử phiên bản",
+      "current": "Hiện tại",
+      "rollback": "Hoàn tác"
+    },
+    "rollbackDialog": {
+      "title": "Xác nhận hoàn tác",
+      "description": "Bạn có chắc muốn hoàn tác về phiên bản {{version}}? Thao tác này sẽ tạo phiên bản mới với cấu hình ánh xạ trước đó.",
+      "confirm": "Xác nhận hoàn tác"
+    },
+    "validation": {
+      "reasonRequired": "Bắt buộc nhập lý do thay đổi"
+    },
+    "errors": {
+      "loadFailed": "Không thể tải ánh xạ",
+      "updateFailed": "Cập nhật ánh xạ thất bại",
+      "historyFailed": "Không thể tải lịch sử ánh xạ",
+      "rollbackFailed": "Hoàn tác ánh xạ thất bại"
+    },
+    "success": {
+      "updated": "Cập nhật ánh xạ thành công (đã tạo phiên bản mới)",
+      "rolledBack": "Hoàn tác ánh xạ thành công"
     }
   }
 }
