@@ -31,7 +31,9 @@
     "trialBalance": "Trial Balance",
     "bankReconciliation": "Bank Reconciliation",
     "cashBook": "Cash Book",
-    "cashBookSummary": "Cash Book Summary"
+    "cashBookSummary": "Cash Book Summary",
+    "statutoryReports": "Statutory Reports",
+    "reportMappings": "Report Mappings"
   },
   "auth": {
     "login": "Log in",
@@ -955,6 +957,133 @@
       "checkCompleted": "Integrity check completed",
       "checkPassed": "All checks passed",
       "checkFailed": "Issues detected"
+    }
+  },
+  "statutoryReports": {
+    "title": "Statutory Reports",
+    "subtitle": "TT200-compliant financial statements (B01, B02, B03)",
+    "tabs": {
+      "balanceSheet": "Balance Sheet",
+      "incomeStatement": "Income Statement",
+      "cashFlow": "Cash Flow",
+      "detailedLedger": "Detailed Ledger"
+    },
+    "reportTitles": {
+      "balanceSheet": "Balance Sheet (B01-DN)",
+      "incomeStatement": "Income Statement (B02-DN)",
+      "cashFlow": "Cash Flow Statement (B03-DN)",
+      "detailedLedger": "Detailed Ledger (F01)"
+    },
+    "filters": {
+      "title": "Report Filters",
+      "period": "Accounting Period",
+      "selectPeriod": "Select period",
+      "comparisonPeriod": "Comparison Period",
+      "noComparison": "No comparison",
+      "dateRange": "Date range"
+    },
+    "table": {
+      "code": "Code",
+      "description": "Description",
+      "currentPeriod": "Current Period",
+      "priorPeriod": "Prior Period",
+      "variance": "Variance",
+      "variancePercent": "%"
+    },
+    "taxCode": "Tax Code",
+    "periodLabel": "Period",
+    "comparedTo": "Compared to",
+    "mappingVersion": "Mapping version",
+    "generatedAt": "Generated at",
+    "hash": "Hash",
+    "mapping": "Mapping",
+    "selectPeriodToView": "Select a period to view the report",
+    "noDataAvailable": "No data available for this period",
+    "exportExcel": "Export to Excel",
+    "exportPdf": "Export to PDF",
+    "draftWarning": {
+      "title": "Draft Report",
+      "description": "This report is for an open period and may change. Final values will be available after period close."
+    },
+    "validation": {
+      "selectPeriod": "Please select a period",
+      "hasErrors": "Validation Errors Detected",
+      "cannotExportWithErrors": "Cannot export report with validation errors. Please fix the issues first."
+    },
+    "drillDown": {
+      "noAccounts": "No contributing accounts found",
+      "noVouchers": "No vouchers found for this account",
+      "voucherDetail": "Voucher Detail",
+      "lines": "Entry Lines",
+      "attachments": "Attachments",
+      "openVoucher": "Open Voucher"
+    },
+    "errors": {
+      "loadPeriodsFailed": "Failed to load accounting periods",
+      "loadReportFailed": "Failed to load report",
+      "exportFailed": "Failed to export report"
+    },
+    "success": {
+      "exported": "Report exported successfully"
+    }
+  },
+  "reportMappings": {
+    "title": "Report Mappings Configuration",
+    "subtitle": "Configure TT200 account-to-line mappings for statutory reports",
+    "warning": "Changes to mappings affect all future report generations. Each change creates a new version and is logged for audit purposes.",
+    "reportTypes": {
+      "balanceSheet": "Balance Sheet",
+      "incomeStatement": "Income Statement",
+      "cashFlow": "Cash Flow",
+      "detailedLedger": "Detailed Ledger"
+    },
+    "table": {
+      "code": "Code",
+      "lineName": "Line Name",
+      "accountPattern": "Account Pattern",
+      "operator": "Operator",
+      "version": "Version"
+    },
+    "calculated": "Calculated",
+    "viewHistory": "View History",
+    "operators": {
+      "sum": "Sum of accounts",
+      "diff": "Difference",
+      "abs": "Absolute value"
+    },
+    "editDialog": {
+      "title": "Edit Mapping",
+      "description": "Editing mapping for line {{lineCode}}: {{lineName}}",
+      "accountPattern": "Account Pattern",
+      "accountPatternHelp": "Use wildcards (111*), ranges (111-119), or comma-separated codes (111,112,113)",
+      "operator": "Operator",
+      "reason": "Reason for Change",
+      "reasonPlaceholder": "Explain why this mapping is being changed...",
+      "reasonHelp": "Required for audit trail. Be specific about the reason."
+    },
+    "historyDialog": {
+      "title": "Mapping Version History",
+      "noHistory": "No version history available",
+      "current": "Current",
+      "rollback": "Rollback"
+    },
+    "rollbackDialog": {
+      "title": "Confirm Rollback",
+      "description": "Are you sure you want to rollback to version {{version}}? This will create a new version with the previous mapping configuration.",
+      "confirm": "Confirm Rollback"
+    },
+    "validation": {
+      "reasonRequired": "Reason for change is required"
+    },
+    "errors": {
+      "loadFailed": "Failed to load mappings",
+      "updateFailed": "Failed to update mapping",
+      "historyFailed": "Failed to load mapping history",
+      "rollbackFailed": "Failed to rollback mapping"
+    },
+    "success": {
+      "updated": "Mapping updated successfully (new version created)",
+      "rolledBack": "Mapping rolled back successfully"
     }
   }
 }
