@@ -543,10 +543,10 @@ POST /api/v1/reports/mappings/{reportType}/rollback/{versionId}
 - [x] **14.1** Add routes in `AppRoutes.tsx`
 - [x] **14.2** Add sidebar navigation under "Reports" section
 
-### Task 15: Backend Tests (AC: all)
-- [ ] **15.1** `StatutoryReportServiceImplTest.java`
-- [ ] **15.2** `ReportMappingServiceImplTest.java`
-- [ ] **15.3** `DrillDownServiceImplTest.java`
+### Task 15: Backend Tests (AC: all) ✅
+- [x] **15.1** `StatutoryReportServiceImplTest.java`
+- [x] **15.2** `ReportMappingServiceImplTest.java`
+- [x] **15.3** `DrillDownServiceImplTest.java`
 - [ ] **15.4** Integration tests for all controllers
 
 ### Task 16: E2E Tests (AC: all)
