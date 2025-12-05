@@ -110,4 +110,26 @@ public interface VoucherLineRepository
     List<Object[]> calculateOpeningBalances(
             @Param("companyId") Long companyId,
             @Param("periodStartDate") LocalDate periodStartDate);
+
+    /**
+     * Count transactions (voucher lines) per account for a period.
+     * Used in drill-down to show transaction count per account.
+     *
+     * @param companyId company ID
+     * @param startDate period start date
+     * @param endDate period end date
+     * @return list of Object arrays: [accountId (Long), transactionCount (Long)]
+     */
+    @Query("SELECT vl.accountId, COUNT(vl) " +
+            "FROM VoucherLine vl " +
+            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "WHERE vl.companyId = :companyId " +
+            "AND v.status = 'posted' " +
+            "AND v.voucherDate >= :startDate " +
+            "AND v.voucherDate <= :endDate " +
+            "GROUP BY vl.accountId")
+    List<Object[]> countTransactionsPerAccountForPeriod(
+            @Param("companyId") Long companyId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }
