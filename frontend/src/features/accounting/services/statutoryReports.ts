@@ -32,12 +32,12 @@ export interface ReportLine {
   lineNameEnglish?: string
   level: number
   isCalculated: boolean
-  currentValue: number
-  priorValue?: number
+  currentAmount: number      // Matches backend StatutoryReportLineDTO.currentAmount
+  priorAmount?: number       // Matches backend StatutoryReportLineDTO.priorAmount
   variance?: number
   variancePercent?: number
   accountPattern?: string
-  hasChildren: boolean
+  hasDrillDown: boolean      // Matches backend StatutoryReportLineDTO.hasDrillDown
 }
 
 export interface StatutoryReportDTO {
@@ -51,28 +51,65 @@ export interface StatutoryReportDTO {
   snapshotHash?: string
   isDraft: boolean
   generatedAt: string
-  companyHeader: CompanyHeader
+  // Company info (flat structure from backend)
+  companyId?: number
+  companyName?: string
+  companyTaxCode?: string
+  companyAddress?: string
 }
 
 export interface AccountContribution {
+  accountId?: number
   accountCode: string
   accountName: string
   debitAmount: number
   creditAmount: number
-  balance: number
-  contributionPercent: number
+  netAmount: number           // Matches backend AccountContributionDTO.netAmount
+  contributionAmount: number  // Matches backend AccountContributionDTO.contributionAmount
+  normalBalance?: string      // 'DEBIT' or 'CREDIT'
+  transactionCount?: number
 }
 
-export interface DrillDownAccountsResponse {
-  reportType: ReportType
-  lineCode: string
-  lineName: string
-  periodId: string
-  accounts: AccountContribution[]
-  totalPages: number
-  totalElements: number
-  currentPage: number
+// Spring Page response structure for paginated drill-down
+// Supports both DIRECT mode (legacy) and VIA_DTO mode (new stable format)
+export interface SpringPage<T> {
+  content: T[]
+  // VIA_DTO mode wraps pagination in 'page' object
+  page?: {
+    size: number
+    number: number
+    totalElements: number
+    totalPages: number
+  }
+  // DIRECT mode has flat structure (deprecated, for backwards compatibility)
+  totalPages?: number
+  totalElements?: number
+  number?: number   // Current page number (0-indexed)
+  size?: number     // Page size
+  first?: boolean
+  last?: boolean
+  empty?: boolean
 }
+
+// Helper to normalize Spring Page response (handles both DIRECT and VIA_DTO modes)
+function normalizePageResponse<T>(response: SpringPage<T>): { content: T[]; totalPages: number; totalElements: number } {
+  // VIA_DTO mode: pagination data is in 'page' object
+  if (response.page) {
+    return {
+      content: response.content,
+      totalPages: response.page.totalPages,
+      totalElements: response.page.totalElements,
+    }
+  }
+  // DIRECT mode (legacy): flat structure
+  return {
+    content: response.content,
+    totalPages: response.totalPages ?? 0,
+    totalElements: response.totalElements ?? 0,
+  }
+}
+
+export type DrillDownAccountsResponse = SpringPage<AccountContribution>
 
 export interface VoucherSummary {
   voucherId: string
@@ -84,15 +121,7 @@ export interface VoucherSummary {
   status: 'DRAFT' | 'POSTED' | 'UNPOSTED'
 }
 
-export interface DrillDownVouchersResponse {
-  accountCode: string
-  accountName: string
-  periodId: string
-  vouchers: VoucherSummary[]
-  totalPages: number
-  totalElements: number
-  currentPage: number
-}
+export type DrillDownVouchersResponse = SpringPage<VoucherSummary>
 
 export interface VoucherLine {
   lineId: string
@@ -164,7 +193,7 @@ export interface ValidationResult {
  */
 export async function getBalanceSheet(
   periodId: string,
-  comparisonPeriodId?: string
+  comparisonPeriodId?: string,
 ): Promise<StatutoryReportDTO> {
   const params = new URLSearchParams({ periodId })
   if (comparisonPeriodId) {
@@ -188,7 +217,7 @@ export async function getBalanceSheet(
  */
 export async function getIncomeStatement(
   periodId: string,
-  comparisonPeriodId?: string
+  comparisonPeriodId?: string,
 ): Promise<StatutoryReportDTO> {
   const params = new URLSearchParams({ periodId })
   if (comparisonPeriodId) {
@@ -232,7 +261,7 @@ export async function getDetailedLedger(
   accountCodes: string[],
   periodId: string,
   subsidiaryType?: 'CUSTOMER' | 'SUPPLIER',
-  subsidiaryId?: string
+  subsidiaryId?: string,
 ): Promise<DetailedLedgerDTO[]> {
   const params = new URLSearchParams({ periodId })
   accountCodes.forEach((code) => params.append('accountCodes', code))
@@ -267,8 +296,8 @@ export async function getDrillDownAccounts(
   lineCode: string,
   periodId: string,
   page = 0,
-  size = 20
-): Promise<DrillDownAccountsResponse> {
+  size = 20,
+): Promise<{ content: AccountContribution[]; totalPages: number; totalElements: number }> {
   const params = new URLSearchParams({
     periodId,
     page: String(page),
@@ -277,7 +306,7 @@ export async function getDrillDownAccounts(
 
   const res = await fetchWithAuth(
     `${API_BASE}/drill-down/line/${reportType}/${lineCode}?${params.toString()}`,
-    { method: 'GET' }
+    { method: 'GET' },
   )
 
   if (!res.ok) {
@@ -285,7 +314,8 @@ export async function getDrillDownAccounts(
     throw new Error(error.message || 'Failed to get drill-down accounts')
   }
 
-  return await res.json()
+  const response: SpringPage<AccountContribution> = await res.json()
+  return normalizePageResponse(response)
 }
 
 /**
@@ -295,8 +325,8 @@ export async function getDrillDownVouchers(
   accountCode: string,
   periodId: string,
   page = 0,
-  size = 20
-): Promise<DrillDownVouchersResponse> {
+  size = 20,
+): Promise<{ content: VoucherSummary[]; totalPages: number; totalElements: number }> {
   const params = new URLSearchParams({
     periodId,
     page: String(page),
@@ -305,7 +335,7 @@ export async function getDrillDownVouchers(
 
   const res = await fetchWithAuth(
     `${API_BASE}/drill-down/account/${accountCode}?${params.toString()}`,
-    { method: 'GET' }
+    { method: 'GET' },
   )
 
   if (!res.ok) {
@@ -313,7 +343,8 @@ export async function getDrillDownVouchers(
     throw new Error(error.message || 'Failed to get drill-down vouchers')
   }
 
-  return await res.json()
+  const response: SpringPage<VoucherSummary> = await res.json()
+  return normalizePageResponse(response)
 }
 
 /**
@@ -341,7 +372,7 @@ export async function getVoucherDetail(voucherId: string): Promise<VoucherDetail
  */
 export async function validateReport(
   reportType: ReportType,
-  periodId: string
+  periodId: string,
 ): Promise<ValidationResult> {
   const res = await fetchWithAuth(`${API_BASE}/validate/${reportType}?periodId=${periodId}`, {
     method: 'GET',
@@ -361,7 +392,7 @@ export async function validateReport(
 export async function exportToExcel(
   reportType: ReportType,
   periodId: string,
-  comparisonPeriodId?: string
+  comparisonPeriodId?: string,
 ): Promise<void> {
   const params = new URLSearchParams({ periodId })
   if (comparisonPeriodId) {
@@ -370,7 +401,7 @@ export async function exportToExcel(
 
   const res = await fetchWithAuth(
     `${API_BASE}/${reportType.toLowerCase()}/export/excel?${params.toString()}`,
-    { method: 'GET' }
+    { method: 'GET' },
   )
 
   if (!res.ok) {
@@ -395,7 +426,7 @@ export async function exportToExcel(
 export async function exportToPdf(
   reportType: ReportType,
   periodId: string,
-  comparisonPeriodId?: string
+  comparisonPeriodId?: string,
 ): Promise<void> {
   const params = new URLSearchParams({ periodId })
   if (comparisonPeriodId) {
@@ -404,7 +435,7 @@ export async function exportToPdf(
 
   const res = await fetchWithAuth(
     `${API_BASE}/${reportType.toLowerCase()}/export/pdf?${params.toString()}`,
-    { method: 'GET' }
+    { method: 'GET' },
   )
 
   if (!res.ok) {

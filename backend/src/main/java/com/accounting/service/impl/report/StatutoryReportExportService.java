@@ -1,15 +1,27 @@
 package com.accounting.service.impl.report;
 
+import static net.sf.dynamicreports.report.builder.DynamicReports.*;
+
 import com.accounting.dto.report.StatutoryReportDTO;
 import com.accounting.dto.report.StatutoryReportLineDTO;
+import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.Map;
+import net.sf.dynamicreports.jasper.builder.JasperReportBuilder;
+import net.sf.dynamicreports.report.builder.column.TextColumnBuilder;
+import net.sf.dynamicreports.report.builder.component.ComponentBuilder;
+import net.sf.dynamicreports.report.builder.style.StyleBuilder;
+import net.sf.dynamicreports.report.constant.HorizontalTextAlignment;
+import net.sf.dynamicreports.report.constant.PageOrientation;
+import net.sf.dynamicreports.report.constant.PageType;
+import net.sf.dynamicreports.report.constant.VerticalTextAlignment;
+import net.sf.dynamicreports.report.datasource.DRDataSource;
+import net.sf.jasperreports.engine.JRDataSource;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -94,19 +106,14 @@ public class StatutoryReportExportService {
 
   /**
    * Export a statutory report to PDF format.
-   * Uses JasperReports for professional PDF generation.
+   * Uses DynamicReports for professional PDF generation with proper formatting.
    *
    * @param report the report to export
    * @return PDF file as byte array
    */
   public byte[] exportToPdf(StatutoryReportDTO report) {
-    // For MVP, generate a simple PDF using JasperReports
-    // Full implementation would use a .jrxml template
-
     try {
-      // Build PDF content using a simple approach
-      // In production, this would use JasperReports with a template
-      return generateSimplePdf(report);
+      return generatePdfWithDynamicReports(report);
     } catch (Exception e) {
       logger.error("Failed to export report to PDF: {}", e.getMessage(), e);
       throw new IllegalStateException("Failed to export report to PDF", e);
@@ -303,69 +310,158 @@ public class StatutoryReportExportService {
   // ==================== PDF Helper Methods ====================
 
   /**
-   * Generate a simple PDF without JasperReports template.
-   * For production, use a proper .jrxml template.
+   * Generate a professional PDF using DynamicReports library.
+   * Creates a properly formatted statutory financial report.
    */
-  private byte[] generateSimplePdf(StatutoryReportDTO report) {
-    // Use JasperReports to generate PDF from data
-    // This is a simplified implementation - full version would use templates
+  private byte[] generatePdfWithDynamicReports(StatutoryReportDTO report) throws Exception {
+    // Define styles
+    StyleBuilder boldStyle = stl.style().bold();
+    StyleBuilder boldCenteredStyle = stl.style(boldStyle)
+        .setHorizontalTextAlignment(HorizontalTextAlignment.CENTER);
+    StyleBuilder titleStyle = stl.style(boldCenteredStyle)
+        .setFontSize(16)
+        .setVerticalTextAlignment(VerticalTextAlignment.MIDDLE);
+    StyleBuilder subtitleStyle = stl.style()
+        .setFontSize(10)
+        .setHorizontalTextAlignment(HorizontalTextAlignment.CENTER);
+    StyleBuilder columnTitleStyle = stl.style(boldStyle)
+        .setHorizontalTextAlignment(HorizontalTextAlignment.CENTER)
+        .setBackgroundColor(new Color(240, 240, 240))
+        .setBorder(stl.pen1Point())
+        .setPadding(5);
+    StyleBuilder columnStyle = stl.style()
+        .setBorder(stl.pen1Point())
+        .setPadding(3);
+    StyleBuilder numberStyle = stl.style(columnStyle)
+        .setHorizontalTextAlignment(HorizontalTextAlignment.RIGHT)
+        .setPattern("#,##0");
+    StyleBuilder level1Style = stl.style(columnStyle).bold();
+    StyleBuilder level1NumberStyle = stl.style(numberStyle).bold();
 
-    try {
-      // Build parameters
-      Map<String, Object> parameters = new HashMap<>();
-      parameters.put("REPORT_TITLE", report.getReportName());
-      parameters.put("COMPANY_NAME", report.getCompanyName());
-      parameters.put("TAX_CODE", report.getCompanyTaxCode());
-      parameters.put("PERIOD_NAME", report.getPeriodName());
-      parameters.put("IS_DRAFT", report.isDraft());
+    // Define columns
+    TextColumnBuilder<String> lineCodeColumn = col.column("Mã số", "lineCode", type.stringType())
+        .setStyle(columnStyle)
+        .setTitleStyle(columnTitleStyle)
+        .setWidth(40);
 
-      // For MVP, fall back to Excel and convert
-      // In production, implement proper JasperReports template
-      logger.info("PDF export using simplified implementation for report type: {}", report.getReportType());
+    TextColumnBuilder<String> lineNameColumn = col.column("Chỉ tiêu", "lineName", type.stringType())
+        .setStyle(columnStyle)
+        .setTitleStyle(columnTitleStyle)
+        .setWidth(200);
 
-      // Create a simple text-based PDF
-      return createTextBasedPdf(report);
+    TextColumnBuilder<BigDecimal> currentAmountColumn = col.column("Số cuối kỳ", "currentAmount", type.bigDecimalType())
+        .setStyle(numberStyle)
+        .setTitleStyle(columnTitleStyle)
+        .setWidth(80);
 
-    } catch (Exception e) {
-      logger.error("Error generating PDF: {}", e.getMessage(), e);
-      throw new IllegalStateException("Failed to generate PDF report", e);
+    // Build report
+    JasperReportBuilder reportBuilder = report()
+        .setPageFormat(PageType.A4, PageOrientation.PORTRAIT)
+        .setPageMargin(margin(20))
+        .title(createTitleComponent(report, titleStyle, subtitleStyle))
+        .pageFooter(
+            cmp.horizontalList(
+                cmp.text("Ngày lập: " + (report.getGeneratedAt() != null
+                    ? TIMESTAMP_FORMATTER.format(report.getGeneratedAt().atZone(DEFAULT_ZONE))
+                    : "-")),
+                cmp.pageXofY().setHorizontalTextAlignment(HorizontalTextAlignment.RIGHT)
+            )
+        );
+
+    // Add columns based on comparison mode
+    if (report.hasComparison()) {
+      TextColumnBuilder<BigDecimal> priorAmountColumn = col.column("Số đầu năm", "priorAmount", type.bigDecimalType())
+          .setStyle(numberStyle)
+          .setTitleStyle(columnTitleStyle)
+          .setWidth(80);
+
+      TextColumnBuilder<BigDecimal> varianceColumn = col.column("Chênh lệch", "variance", type.bigDecimalType())
+          .setStyle(numberStyle)
+          .setTitleStyle(columnTitleStyle)
+          .setWidth(80);
+
+      reportBuilder.columns(lineCodeColumn, lineNameColumn, currentAmountColumn, priorAmountColumn, varianceColumn);
+    } else {
+      reportBuilder.columns(lineCodeColumn, lineNameColumn, currentAmountColumn);
     }
+
+    // Set data source
+    reportBuilder.setDataSource(createDataSource(report));
+
+    // Export to PDF
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    reportBuilder.toPdf(outputStream);
+    return outputStream.toByteArray();
   }
 
   /**
-   * Create a simple text-based PDF as fallback.
-   * Replace with proper JasperReports template in production.
+   * Create the title component for the PDF report header.
    */
-  private byte[] createTextBasedPdf(StatutoryReportDTO report) {
-    StringBuilder content = new StringBuilder();
-    content.append(report.getReportName().toUpperCase()).append("\n");
-    content.append(report.getReportNameEnglish()).append("\n\n");
-    content.append("Doanh nghiệp: ").append(report.getCompanyName()).append("\n");
-    content.append("Mã số thuế: ").append(report.getCompanyTaxCode()).append("\n");
-    content.append("Kỳ báo cáo: ").append(report.getPeriodName()).append("\n");
-    if (report.isDraft()) {
-      content.append("Trạng thái: DỰ THẢO\n");
+  private ComponentBuilder<?, ?> createTitleComponent(StatutoryReportDTO report,
+      StyleBuilder titleStyle, StyleBuilder subtitleStyle) {
+
+    String reportTitle = report.getReportName() != null ? report.getReportName().toUpperCase() : "";
+    String reportSubtitle = report.getReportNameEnglish() != null ? report.getReportNameEnglish() : "";
+
+    return cmp.verticalList(
+        // Company header
+        cmp.text(report.getCompanyName())
+            .setStyle(stl.style().bold().setFontSize(12).setHorizontalTextAlignment(HorizontalTextAlignment.CENTER)),
+        cmp.text("MST: " + (report.getCompanyTaxCode() != null ? report.getCompanyTaxCode() : ""))
+            .setStyle(stl.style().setFontSize(10).setHorizontalTextAlignment(HorizontalTextAlignment.CENTER)),
+        cmp.text(report.getCompanyAddress() != null ? report.getCompanyAddress() : "")
+            .setStyle(stl.style().setFontSize(10).setHorizontalTextAlignment(HorizontalTextAlignment.CENTER)),
+        cmp.verticalGap(10),
+        // Report title
+        cmp.text(reportTitle).setStyle(titleStyle),
+        cmp.text(reportSubtitle).setStyle(subtitleStyle),
+        cmp.verticalGap(5),
+        // Period info
+        cmp.text("Kỳ báo cáo: " + report.getPeriodName()
+            + " (Từ " + formatDate(report.getPeriodStartDate())
+            + " đến " + formatDate(report.getPeriodEndDate()) + ")")
+            .setStyle(stl.style().setFontSize(10).setHorizontalTextAlignment(HorizontalTextAlignment.CENTER)),
+        // Draft warning if applicable
+        report.isDraft()
+            ? cmp.text("*** DỰ THẢO - Kỳ chưa đóng ***")
+                .setStyle(stl.style().bold().setForegroundColor(Color.RED)
+                    .setHorizontalTextAlignment(HorizontalTextAlignment.CENTER))
+            : cmp.verticalGap(0),
+        cmp.verticalGap(15)
+    );
+  }
+
+  /**
+   * Create DynamicReports data source from report lines.
+   */
+  private JRDataSource createDataSource(StatutoryReportDTO report) {
+    DRDataSource dataSource;
+
+    if (report.hasComparison()) {
+      dataSource = new DRDataSource("lineCode", "lineName", "currentAmount", "priorAmount", "variance");
+      for (StatutoryReportLineDTO line : report.getLines()) {
+        String indent = "  ".repeat(Math.max(0, (line.getLevel() != null ? line.getLevel() : 1) - 1));
+        dataSource.add(
+            line.getLineCode(),
+            indent + line.getLineName(),
+            line.getCurrentAmount(),
+            line.getPriorAmount(),
+            line.getVariance()
+        );
+      }
+    } else {
+      dataSource = new DRDataSource("lineCode", "lineName", "currentAmount");
+      for (StatutoryReportLineDTO line : report.getLines()) {
+        String indent = "  ".repeat(Math.max(0, (line.getLevel() != null ? line.getLevel() : 1) - 1));
+        dataSource.add(
+            line.getLineCode(),
+            indent + line.getLineName(),
+            line.getCurrentAmount()
+        );
+      }
     }
-    content.append("\n");
 
-    // Add lines
-    content.append(String.format("%-10s %-50s %20s\n", "Mã số", "Chỉ tiêu", "Số tiền"));
-    content.append("-".repeat(80)).append("\n");
-
-    for (StatutoryReportLineDTO line : report.getLines()) {
-      String indent = "  ".repeat(Math.max(0, (line.getLevel() != null ? line.getLevel() : 1) - 1));
-      String amount = line.getCurrentAmount() != null
-          ? String.format("%,d", line.getCurrentAmount().longValue())
-          : "";
-      content.append(String.format("%-10s %-50s %20s\n",
-          line.getLineCode(),
-          indent + truncate(line.getLineName(), 48 - indent.length()),
-          amount));
-    }
-
-    // For MVP, return as text bytes
-    // Production would use proper PDF library
-    return content.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    return dataSource;
   }
 
   private String truncate(String text, int maxLength) {

@@ -104,6 +104,16 @@ public class DrillDownServiceImpl implements DrillDownService {
       balanceMap.put(accountId, new BigDecimal[]{debit, credit});
     }
 
+    // Get transaction counts per account for this period
+    List<Object[]> transactionCounts = voucherLineRepository.countTransactionsPerAccountForPeriod(
+        companyId, period.getStartDate(), period.getEndDate());
+    Map<Long, Integer> countMap = new HashMap<>();
+    for (Object[] row : transactionCounts) {
+      Long accountId = (Long) row[0];
+      Long count = (Long) row[1];
+      countMap.put(accountId, count != null ? count.intValue() : 0);
+    }
+
     // Build contribution DTOs
     List<AccountContributionDTO> contributions = new ArrayList<>();
     for (ChartOfAccount account : matchingAccounts) {
@@ -125,8 +135,8 @@ public class DrillDownServiceImpl implements DrillDownService {
         }
         dto.setContributionAmount(contribution);
 
-        // Count transactions (simplified - would need proper query)
-        dto.setTransactionCount(0); // TODO: Add transaction count query
+        // Set transaction count from the query
+        dto.setTransactionCount(countMap.getOrDefault(account.getId(), 0));
 
         contributions.add(dto);
       }
