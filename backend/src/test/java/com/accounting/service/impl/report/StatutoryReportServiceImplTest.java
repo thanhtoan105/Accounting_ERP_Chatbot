@@ -346,7 +346,7 @@ class StatutoryReportServiceImplTest {
           createAccount(2L, "6321", "Cost of Goods Sold", "DEBIT"));
 
       // Revenue: 500,000 (credit), COGS: 300,000 (debit)
-      List<Object[]> balances = List.of(
+      List<Object[]> periodActivity = List.of(
           new Object[]{1L, BigDecimal.ZERO, new BigDecimal("500000")},
           new Object[]{2L, new BigDecimal("300000"), BigDecimal.ZERO});
 
@@ -355,8 +355,9 @@ class StatutoryReportServiceImplTest {
       when(reportMappingRepository.findCurrentByCompanyAndReportType(COMPANY_ID, "B02"))
           .thenReturn(mappings);
       when(chartOfAccountsRepository.findByCompanyId(COMPANY_ID)).thenReturn(accounts);
-      when(voucherLineRepository.calculateOpeningBalances(eq(COMPANY_ID), any(LocalDate.class)))
-          .thenReturn(balances);
+      // B02 should use calculatePeriodActivity, NOT calculateOpeningBalances
+      when(voucherLineRepository.calculatePeriodActivity(eq(COMPANY_ID), any(LocalDate.class), any(LocalDate.class)))
+          .thenReturn(periodActivity);
 
       // When
       StatutoryReportDTO result = service.generateIncomeStatement(PERIOD_ID, null);
@@ -364,6 +365,51 @@ class StatutoryReportServiceImplTest {
       // Then
       assertNotNull(result);
       assertEquals("B02", result.getReportType());
+
+      // Verify the correct repository method was called (period activity, not cumulative)
+      verify(voucherLineRepository).calculatePeriodActivity(eq(COMPANY_ID), any(LocalDate.class), any(LocalDate.class));
+      verify(voucherLineRepository, never()).calculateOpeningBalances(any(), any());
+    }
+
+    @Test
+    @DisplayName("B02 should use period activity, not cumulative balances")
+    void shouldUsePerodActivityForB02() {
+      // Given
+      AccountingPeriodDTO period = createPeriod(PERIOD_ID, "2024", PeriodStatus.CLOSED);
+      Company company = createCompany();
+
+      List<ReportMapping> mappings = List.of(
+          createMapping("01", "Revenue", "511*", false, null, 1, 1));
+      mappings.get(0).setReportType("B02");
+
+      List<ChartOfAccount> accounts = List.of(
+          createAccount(1L, "5111", "Sales Revenue", "CREDIT"));
+
+      // Period activity: 100,000 in revenue for this period only
+      List<Object[]> periodActivity = new ArrayList<>();
+      periodActivity.add(new Object[]{1L, BigDecimal.ZERO, new BigDecimal("100000")});
+
+      when(periodManagementService.getPeriodById(PERIOD_ID)).thenReturn(Optional.of(period));
+      when(companyService.getCurrentCompanySettings()).thenReturn(company);
+      when(reportMappingRepository.findCurrentByCompanyAndReportType(COMPANY_ID, "B02"))
+          .thenReturn(mappings);
+      when(chartOfAccountsRepository.findByCompanyId(COMPANY_ID)).thenReturn(accounts);
+      when(voucherLineRepository.calculatePeriodActivity(eq(COMPANY_ID),
+          eq(LocalDate.of(2024, 1, 1)), eq(LocalDate.of(2024, 12, 31))))
+          .thenReturn(periodActivity);
+
+      // When
+      StatutoryReportDTO result = service.generateIncomeStatement(PERIOD_ID, null);
+
+      // Then
+      assertNotNull(result);
+      assertEquals(new BigDecimal("100000"), result.getLines().get(0).getCurrentAmount());
+
+      // Verify calculatePeriodActivity was called with correct date range
+      verify(voucherLineRepository).calculatePeriodActivity(
+          eq(COMPANY_ID),
+          eq(LocalDate.of(2024, 1, 1)),
+          eq(LocalDate.of(2024, 12, 31)));
     }
   }
 
@@ -387,7 +433,8 @@ class StatutoryReportServiceImplTest {
       when(reportMappingRepository.findCurrentByCompanyAndReportType(COMPANY_ID, "B03"))
           .thenReturn(mappings);
       when(chartOfAccountsRepository.findByCompanyId(COMPANY_ID)).thenReturn(List.of());
-      when(voucherLineRepository.calculateOpeningBalances(eq(COMPANY_ID), any(LocalDate.class)))
+      // B03 should use calculatePeriodActivity for flow lines
+      when(voucherLineRepository.calculatePeriodActivity(eq(COMPANY_ID), any(LocalDate.class), any(LocalDate.class)))
           .thenReturn(List.of());
 
       // When
@@ -397,6 +444,51 @@ class StatutoryReportServiceImplTest {
       assertNotNull(result);
       assertEquals("B03", result.getReportType());
       assertNull(result.getComparisonPeriodId());
+
+      // Verify period activity method was called
+      verify(voucherLineRepository).calculatePeriodActivity(eq(COMPANY_ID), any(LocalDate.class), any(LocalDate.class));
+    }
+
+    @Test
+    @DisplayName("B03 should use period activity for cash flow calculations")
+    void shouldUsePeriodActivityForB03() {
+      // Given
+      AccountingPeriodDTO period = createPeriod(PERIOD_ID, "2024", PeriodStatus.CLOSED);
+      Company company = createCompany();
+
+      List<ReportMapping> mappings = List.of(
+          createMapping("01", "Cash from sales", "511*", false, null, 1, 1));
+      mappings.get(0).setReportType("B03");
+
+      List<ChartOfAccount> accounts = List.of(
+          createAccount(1L, "5111", "Sales Revenue", "CREDIT"));
+
+      // Period activity: 200,000 in cash from sales this period
+      List<Object[]> periodActivity = new ArrayList<>();
+      periodActivity.add(new Object[]{1L, BigDecimal.ZERO, new BigDecimal("200000")});
+
+      when(periodManagementService.getPeriodById(PERIOD_ID)).thenReturn(Optional.of(period));
+      when(companyService.getCurrentCompanySettings()).thenReturn(company);
+      when(reportMappingRepository.findCurrentByCompanyAndReportType(COMPANY_ID, "B03"))
+          .thenReturn(mappings);
+      when(chartOfAccountsRepository.findByCompanyId(COMPANY_ID)).thenReturn(accounts);
+      when(voucherLineRepository.calculatePeriodActivity(eq(COMPANY_ID),
+          eq(LocalDate.of(2024, 1, 1)), eq(LocalDate.of(2024, 12, 31))))
+          .thenReturn(periodActivity);
+
+      // When
+      StatutoryReportDTO result = service.generateCashFlowStatement(PERIOD_ID);
+
+      // Then
+      assertNotNull(result);
+      assertEquals(new BigDecimal("200000"), result.getLines().get(0).getCurrentAmount());
+
+      // Verify calculatePeriodActivity was used instead of calculateOpeningBalances
+      verify(voucherLineRepository).calculatePeriodActivity(
+          eq(COMPANY_ID),
+          eq(LocalDate.of(2024, 1, 1)),
+          eq(LocalDate.of(2024, 12, 31)));
+      verify(voucherLineRepository, never()).calculateOpeningBalances(any(), any());
     }
   }
 
@@ -548,7 +640,7 @@ class StatutoryReportServiceImplTest {
           createAccount(2L, "6321", "COGS", "DEBIT"));
 
       // Revenue: 500,000 (credit side), COGS: 300,000 (debit side)
-      List<Object[]> balances = List.of(
+      List<Object[]> periodActivity = List.of(
           new Object[]{1L, BigDecimal.ZERO, new BigDecimal("500000")}, // Credit balance
           new Object[]{2L, new BigDecimal("300000"), BigDecimal.ZERO}); // Debit balance
 
@@ -557,8 +649,9 @@ class StatutoryReportServiceImplTest {
       when(reportMappingRepository.findCurrentByCompanyAndReportType(COMPANY_ID, "B02"))
           .thenReturn(mappings);
       when(chartOfAccountsRepository.findByCompanyId(COMPANY_ID)).thenReturn(accounts);
-      when(voucherLineRepository.calculateOpeningBalances(eq(COMPANY_ID), any(LocalDate.class)))
-          .thenReturn(balances);
+      // B02 uses period activity
+      when(voucherLineRepository.calculatePeriodActivity(eq(COMPANY_ID), any(LocalDate.class), any(LocalDate.class)))
+          .thenReturn(periodActivity);
 
       // When
       StatutoryReportDTO result = service.generateIncomeStatement(PERIOD_ID, null);

@@ -130,13 +130,13 @@ public class StatutoryReportServiceImpl implements StatutoryReportService {
 
     // Calculate account balances for current period
     Map<String, BigDecimal> currentBalances = calculateAccountBalances(
-        companyId, period.getEndDate(), reportType);
+        companyId, period.getStartDate(), period.getEndDate(), reportType);
 
     // Calculate account balances for comparison period if provided
     Map<String, BigDecimal> priorBalances = new HashMap<>();
     if (comparisonPeriod != null) {
       priorBalances = calculateAccountBalances(
-          companyId, comparisonPeriod.getEndDate(), reportType);
+          companyId, comparisonPeriod.getStartDate(), comparisonPeriod.getEndDate(), reportType);
     }
 
     // Build report lines
@@ -256,12 +256,18 @@ public class StatutoryReportServiceImpl implements StatutoryReportService {
   }
 
   /**
-   * Calculate account balances up to the specified date.
+   * Calculate account balances for reporting.
    * For B01 (Balance Sheet): cumulative balances up to end date
-   * For B02/B03 (P&L/Cash Flow): period activity only
+   * For B02 (Income Statement) and B03 (Cash Flow): period activity only
+   *
+   * @param companyId  company ID
+   * @param startDate  period start date
+   * @param endDate    period end date
+   * @param reportType report type (B01, B02, B03)
+   * @return map of account code to net balance
    */
   private Map<String, BigDecimal> calculateAccountBalances(
-      Long companyId, LocalDate endDate, String reportType) {
+      Long companyId, LocalDate startDate, LocalDate endDate, String reportType) {
 
     Map<String, BigDecimal> balances = new HashMap<>();
 
@@ -270,17 +276,17 @@ public class StatutoryReportServiceImpl implements StatutoryReportService {
     Map<Long, ChartOfAccount> accountMap = accounts.stream()
         .collect(Collectors.toMap(ChartOfAccount::getId, a -> a));
 
-    // For Balance Sheet (B01): cumulative balance up to end date
-    // For Income Statement (B02) and Cash Flow (B03): typically period activity
     List<Object[]> accountBalances;
 
     if (REPORT_B01.equals(reportType)) {
-      // Balance Sheet: cumulative balances
+      // Balance Sheet: cumulative balances up to end date (point-in-time position)
+      // Uses all transactions from inception through end of period
       accountBalances = voucherLineRepository.calculateOpeningBalances(companyId, endDate.plusDays(1));
     } else {
-      // P&L/Cash Flow: we need period-specific, but for simplicity using same logic
-      // A more accurate implementation would filter by period dates
-      accountBalances = voucherLineRepository.calculateOpeningBalances(companyId, endDate.plusDays(1));
+      // Income Statement (B02) and Cash Flow (B03): period activity only
+      // Uses only transactions within the specified date range
+      // This is the key fix - B02/B03 should NOT use cumulative balances
+      accountBalances = voucherLineRepository.calculatePeriodActivity(companyId, startDate, endDate);
     }
 
     for (Object[] row : accountBalances) {
