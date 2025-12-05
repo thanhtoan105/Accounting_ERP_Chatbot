@@ -132,4 +132,30 @@ public interface VoucherLineRepository
             @Param("companyId") Long companyId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    /**
+     * Calculate period activity (debit/credit movement) for all accounts within a date range.
+     * Used for Income Statement (B02) and Cash Flow Statement (B03) which need period-specific
+     * activity rather than cumulative balances.
+     *
+     * Unlike calculateOpeningBalances which returns cumulative totals from inception,
+     * this method returns only the activity within the specified date range.
+     *
+     * @param companyId company ID
+     * @param startDate period start date (inclusive)
+     * @param endDate period end date (inclusive)
+     * @return list of Object arrays: [accountId (Long), totalDebit (BigDecimal), totalCredit (BigDecimal)]
+     */
+    @Query("SELECT vl.accountId, SUM(vl.debit), SUM(vl.credit) " +
+            "FROM VoucherLine vl " +
+            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "WHERE vl.companyId = :companyId " +
+            "AND v.status = 'posted' " +
+            "AND v.voucherDate >= :startDate " +
+            "AND v.voucherDate <= :endDate " +
+            "GROUP BY vl.accountId")
+    List<Object[]> calculatePeriodActivity(
+            @Param("companyId") Long companyId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }
