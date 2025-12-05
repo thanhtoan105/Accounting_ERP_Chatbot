@@ -2,6 +2,7 @@ package com.accounting.service;
 
 import com.accounting.dto.report.DetailedLedgerDTO;
 import com.accounting.dto.report.StatutoryReportDTO;
+import com.accounting.dto.report.ValidationResultDTO;
 import java.util.UUID;
 
 /**
@@ -56,18 +57,7 @@ public interface StatutoryReportService {
    *
    * @param periodId the accounting period ID
    * @param reportType the report type ('B01', 'B02', 'B03')
-   * @return validation result with any errors/warnings
+   * @return validation result with structured errors/warnings
    */
-  ReportValidationResult validateForExport(UUID periodId, String reportType);
-
-  /**
-   * Validation result containing any errors or warnings.
-   */
-  record ReportValidationResult(
-      boolean valid,
-      java.util.List<String> errors,
-      java.util.List<String> warnings,
-      boolean isBalanced,
-      boolean isDraft
-  ) {}
+  ValidationResultDTO validateForExport(UUID periodId, String reportType);
 }

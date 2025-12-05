@@ -4,6 +4,8 @@ import com.accounting.dto.AccountingPeriodDTO;
 import com.accounting.dto.report.DetailedLedgerDTO;
 import com.accounting.dto.report.StatutoryReportDTO;
 import com.accounting.dto.report.StatutoryReportLineDTO;
+import com.accounting.dto.report.ValidationErrorDTO;
+import com.accounting.dto.report.ValidationResultDTO;
 import com.accounting.entity.ChartOfAccount;
 import com.accounting.entity.Company;
 import com.accounting.entity.report.ReportMapping;
@@ -493,13 +495,13 @@ public class StatutoryReportServiceImpl implements StatutoryReportService {
   }
 
   @Override
-  public ReportValidationResult validateForExport(UUID periodId, String reportType) {
+  public ValidationResultDTO validateForExport(UUID periodId, String reportType) {
     Long companyId = CompanyContext.getCompanyId();
     if (companyId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing company context");
     }
 
-    List<String> errors = new ArrayList<>();
+    List<ValidationErrorDTO> errors = new ArrayList<>();
     List<String> warnings = new ArrayList<>();
 
     // Get period status
@@ -509,6 +511,7 @@ public class StatutoryReportServiceImpl implements StatutoryReportService {
             HttpStatus.NOT_FOUND, "Period not found: " + periodId));
 
     boolean isDraft = PeriodStatus.OPEN.equals(period.getStatus());
+    String periodStatus = isDraft ? "OPEN" : "CLOSED";
     if (isDraft) {
       warnings.add("Period is still open. Report will be marked as DRAFT.");
     }
@@ -524,14 +527,14 @@ public class StatutoryReportServiceImpl implements StatutoryReportService {
             "Unknown report type: " + reportType);
       };
     } catch (Exception e) {
-      errors.add("Failed to generate report: " + e.getMessage());
-      return new ReportValidationResult(false, errors, warnings, false, isDraft);
+      errors.add(ValidationErrorDTO.generationFailed(e.getMessage()));
+      return new ValidationResultDTO(false, errors, warnings, periodStatus, false);
     }
 
     // Check for NULL values in required lines
     for (StatutoryReportLineDTO line : report.getLines()) {
       if (line.getCurrentAmount() == null) {
-        errors.add("Line " + line.getLineCode() + " has NULL value");
+        errors.add(ValidationErrorDTO.nullValue(line.getLineCode(), line.getLineName()));
       }
     }
 
@@ -540,10 +543,15 @@ public class StatutoryReportServiceImpl implements StatutoryReportService {
 
     boolean isBalanced = report.isBalanced();
     if (!isBalanced && REPORT_B01.equals(reportType)) {
-      errors.add("Balance Sheet is not balanced");
+      // Get the actual values for the imbalance error message
+      BigDecimal assets = report.getTotalAssets() != null ? report.getTotalAssets() : BigDecimal.ZERO;
+      BigDecimal liabilitiesEquity = report.getTotalLiabilities() != null && report.getTotalEquity() != null
+          ? report.getTotalLiabilities().add(report.getTotalEquity())
+          : BigDecimal.ZERO;
+      errors.add(ValidationErrorDTO.imbalance(assets.toString(), liabilitiesEquity.toString()));
     }
 
     boolean valid = errors.isEmpty();
-    return new ReportValidationResult(valid, errors, warnings, isBalanced, isDraft);
+    return new ValidationResultDTO(valid, errors, warnings, periodStatus, isBalanced);
   }
 }

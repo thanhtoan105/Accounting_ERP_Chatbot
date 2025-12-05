@@ -10,11 +10,12 @@ import com.accounting.dto.report.AccountContributionDTO;
 import com.accounting.dto.report.DetailedLedgerDTO;
 import com.accounting.dto.report.StatutoryReportDTO;
 import com.accounting.dto.report.StatutoryReportLineDTO;
+import com.accounting.dto.report.ValidationErrorDTO;
+import com.accounting.dto.report.ValidationResultDTO;
 import com.accounting.service.DrillDownService;
 import com.accounting.service.DrillDownService.VoucherDetailDTO;
 import com.accounting.service.DrillDownService.VoucherSummaryDTO;
 import com.accounting.service.StatutoryReportService;
-import com.accounting.service.StatutoryReportService.ReportValidationResult;
 import com.accounting.service.impl.report.StatutoryReportExportService;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -42,7 +43,7 @@ import org.springframework.http.ResponseEntity;
  * Tests all endpoints for B01, B02, B03, F01 reports, drill-down, and validation.
  */
 @ExtendWith(MockitoExtension.class)
-class StatutoryReportControllerIntegrationTest {
+class StatutoryReportControllerTest {
 
   @Mock
   private StatutoryReportService statutoryReportService;
@@ -391,57 +392,58 @@ class StatutoryReportControllerIntegrationTest {
     @Test
     @DisplayName("GET /validate/{reportType} - should return valid result with OK status")
     void validateReport_valid_returnsOk() {
-      ReportValidationResult validResult = new ReportValidationResult(
-          true, List.of(), List.of(), true, false);
+      ValidationResultDTO validResult = new ValidationResultDTO(
+          true, List.of(), List.of(), "CLOSED", true);
 
       when(statutoryReportService.validateForExport(periodId, "B01"))
           .thenReturn(validResult);
 
-      ResponseEntity<ReportValidationResult> response = controller.validateReport("B01", periodId);
+      ResponseEntity<ValidationResultDTO> response = controller.validateReport("B01", periodId);
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-      assertThat(response.getBody().valid()).isTrue();
-      assertThat(response.getBody().errors()).isEmpty();
+      assertThat(response.getBody().isValid()).isTrue();
+      assertThat(response.getBody().getErrors()).isEmpty();
     }
 
     @Test
     @DisplayName("GET /validate/{reportType} - should return 422 for invalid report")
     void validateReport_invalid_returnsUnprocessableEntity() {
-      ReportValidationResult invalidResult = new ReportValidationResult(
+      ValidationErrorDTO error = ValidationErrorDTO.nullValue("100", "Tài sản ngắn hạn");
+      ValidationResultDTO invalidResult = new ValidationResultDTO(
           false,
-          List.of("Line 100: Missing mapping for account 1111"),
+          List.of(error),
           List.of(),
-          false,
+          "CLOSED",
           false);
 
       when(statutoryReportService.validateForExport(periodId, "B01"))
           .thenReturn(invalidResult);
 
-      ResponseEntity<ReportValidationResult> response = controller.validateReport("B01", periodId);
+      ResponseEntity<ValidationResultDTO> response = controller.validateReport("B01", periodId);
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-      assertThat(response.getBody().valid()).isFalse();
-      assertThat(response.getBody().errors()).isNotEmpty();
+      assertThat(response.getBody().isValid()).isFalse();
+      assertThat(response.getBody().getErrors()).isNotEmpty();
     }
 
     @Test
     @DisplayName("GET /validate/{reportType} - should include draft warning")
     void validateReport_draft_includesWarning() {
-      ReportValidationResult draftResult = new ReportValidationResult(
+      ValidationResultDTO draftResult = new ValidationResultDTO(
           true,
           List.of(),
           List.of("Report is DRAFT - period not closed"),
-          true,
+          "OPEN",
           true);
 
       when(statutoryReportService.validateForExport(periodId, "B01"))
           .thenReturn(draftResult);
 
-      ResponseEntity<ReportValidationResult> response = controller.validateReport("B01", periodId);
+      ResponseEntity<ValidationResultDTO> response = controller.validateReport("B01", periodId);
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-      assertThat(response.getBody().isDraft()).isTrue();
-      assertThat(response.getBody().warnings()).isNotEmpty();
+      assertThat(response.getBody().getPeriodStatus()).isEqualTo("OPEN");
+      assertThat(response.getBody().getWarnings()).isNotEmpty();
     }
   }
 
