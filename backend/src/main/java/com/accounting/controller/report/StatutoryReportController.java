@@ -3,11 +3,11 @@ package com.accounting.controller.report;
 import com.accounting.dto.report.AccountContributionDTO;
 import com.accounting.dto.report.DetailedLedgerDTO;
 import com.accounting.dto.report.StatutoryReportDTO;
+import com.accounting.dto.report.ValidationResultDTO;
 import com.accounting.service.DrillDownService;
 import com.accounting.service.DrillDownService.VoucherDetailDTO;
 import com.accounting.service.DrillDownService.VoucherSummaryDTO;
 import com.accounting.service.StatutoryReportService;
-import com.accounting.service.StatutoryReportService.ReportValidationResult;
 import com.accounting.service.impl.report.StatutoryReportExportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -51,7 +51,7 @@ public class StatutoryReportController {
   // ==================== B01 Balance Sheet ====================
 
   @GetMapping("/b01")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'VIEWER')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Generate B01-DN Balance Sheet",
       description = "Generate Balance Sheet for a period with optional comparison period")
   public ResponseEntity<StatutoryReportDTO> generateBalanceSheet(
@@ -65,7 +65,7 @@ public class StatutoryReportController {
   }
 
   @GetMapping("/b01/export/excel")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Export B01 to Excel")
   public ResponseEntity<byte[]> exportBalanceSheetToExcel(
       @RequestParam UUID periodId,
@@ -81,7 +81,7 @@ public class StatutoryReportController {
   }
 
   @GetMapping("/b01/export/pdf")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Export B01 to PDF")
   public ResponseEntity<byte[]> exportBalanceSheetToPdf(
       @RequestParam UUID periodId,
@@ -99,7 +99,7 @@ public class StatutoryReportController {
   // ==================== B02 Income Statement ====================
 
   @GetMapping("/b02")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'VIEWER')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Generate B02-DN Income Statement",
       description = "Generate Income Statement for a period with optional comparison period")
   public ResponseEntity<StatutoryReportDTO> generateIncomeStatement(
@@ -111,7 +111,7 @@ public class StatutoryReportController {
   }
 
   @GetMapping("/b02/export/excel")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Export B02 to Excel")
   public ResponseEntity<byte[]> exportIncomeStatementToExcel(
       @RequestParam UUID periodId,
@@ -127,7 +127,7 @@ public class StatutoryReportController {
   }
 
   @GetMapping("/b02/export/pdf")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Export B02 to PDF")
   public ResponseEntity<byte[]> exportIncomeStatementToPdf(
       @RequestParam UUID periodId,
@@ -145,7 +145,7 @@ public class StatutoryReportController {
   // ==================== B03 Cash Flow Statement ====================
 
   @GetMapping("/b03")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'VIEWER')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Generate B03-DN Cash Flow Statement",
       description = "Generate Cash Flow Statement using direct method")
   public ResponseEntity<StatutoryReportDTO> generateCashFlowStatement(
@@ -156,7 +156,7 @@ public class StatutoryReportController {
   }
 
   @GetMapping("/b03/export/excel")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Export B03 to Excel")
   public ResponseEntity<byte[]> exportCashFlowStatementToExcel(@RequestParam UUID periodId) {
 
@@ -172,7 +172,7 @@ public class StatutoryReportController {
   // ==================== F01 Detailed Ledger ====================
 
   @GetMapping("/f01")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'VIEWER')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Generate F01 Detailed Ledger",
       description = "Generate detailed ledger for specific accounts")
   public ResponseEntity<DetailedLedgerDTO> generateDetailedLedger(
@@ -191,7 +191,7 @@ public class StatutoryReportController {
   // ==================== Drill-Down ====================
 
   @GetMapping("/drill-down/line/{reportType}/{lineCode}")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'VIEWER')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Get accounts contributing to a report line",
       description = "Drill down from report line to contributing GL accounts")
   public ResponseEntity<Page<AccountContributionDTO>> drillDownToAccounts(
@@ -206,7 +206,7 @@ public class StatutoryReportController {
   }
 
   @GetMapping("/drill-down/account/{accountCode}")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'VIEWER')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Get vouchers for an account",
       description = "Drill down from account to vouchers")
   public ResponseEntity<Page<VoucherSummaryDTO>> drillDownToVouchers(
@@ -220,7 +220,7 @@ public class StatutoryReportController {
   }
 
   @GetMapping("/drill-down/voucher/{voucherId}")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'VIEWER')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Get voucher detail",
       description = "Get full voucher detail including lines and attachments")
   public ResponseEntity<VoucherDetailDTO> getVoucherDetail(@PathVariable UUID voucherId) {
@@ -231,15 +231,15 @@ public class StatutoryReportController {
   // ==================== Validation ====================
 
   @GetMapping("/validate/{reportType}")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Validate report before export",
       description = "Check for NULL values and balance validation")
-  public ResponseEntity<ReportValidationResult> validateReport(
+  public ResponseEntity<ValidationResultDTO> validateReport(
       @PathVariable String reportType,
       @RequestParam UUID periodId) {
 
-    ReportValidationResult result = statutoryReportService.validateForExport(periodId, reportType);
-    HttpStatus status = result.valid() ? HttpStatus.OK : HttpStatus.UNPROCESSABLE_ENTITY;
+    ValidationResultDTO result = statutoryReportService.validateForExport(periodId, reportType);
+    HttpStatus status = result.isValid() ? HttpStatus.OK : HttpStatus.UNPROCESSABLE_ENTITY;
     return ResponseEntity.status(status).body(result);
   }
 }

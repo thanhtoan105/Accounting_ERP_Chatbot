@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.accounting.dto.AccountingPeriodDTO;
 import com.accounting.dto.report.StatutoryReportDTO;
+import com.accounting.dto.report.ValidationResultDTO;
 import com.accounting.entity.ChartOfAccount;
 import com.accounting.entity.Company;
 import com.accounting.entity.PeriodStatus;
@@ -16,7 +17,6 @@ import com.accounting.repository.report.ReportMappingRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.CompanyService;
 import com.accounting.service.PeriodManagementService;
-import com.accounting.service.StatutoryReportService.ReportValidationResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -515,7 +515,7 @@ class StatutoryReportServiceImplTest {
           .thenReturn(List.of());
 
       // When
-      ReportValidationResult result = service.validateForExport(PERIOD_ID, "B01");
+      ValidationResultDTO result = service.validateForExport(PERIOD_ID, "B01");
 
       // Then
       assertNotNull(result);
@@ -540,12 +540,12 @@ class StatutoryReportServiceImplTest {
           .thenReturn(List.of());
 
       // When
-      ReportValidationResult result = service.validateForExport(PERIOD_ID, "B01");
+      ValidationResultDTO result = service.validateForExport(PERIOD_ID, "B01");
 
       // Then
-      assertTrue(result.isDraft());
-      assertFalse(result.warnings().isEmpty());
-      assertTrue(result.warnings().stream().anyMatch(w -> w.contains("DRAFT")));
+      assertEquals("OPEN", result.getPeriodStatus());
+      assertFalse(result.getWarnings().isEmpty());
+      assertTrue(result.getWarnings().stream().anyMatch(w -> w.contains("DRAFT")));
     }
 
     @Test
@@ -561,11 +561,11 @@ class StatutoryReportServiceImplTest {
           .thenReturn(List.of());
 
       // When
-      ReportValidationResult result = service.validateForExport(PERIOD_ID, "UNKNOWN");
+      ValidationResultDTO result = service.validateForExport(PERIOD_ID, "UNKNOWN");
 
       // Then
-      assertFalse(result.valid());
-      assertFalse(result.errors().isEmpty());
+      assertFalse(result.isValid());
+      assertFalse(result.getErrors().isEmpty());
     }
   }
 
