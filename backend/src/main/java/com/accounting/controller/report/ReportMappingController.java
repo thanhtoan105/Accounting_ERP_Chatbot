@@ -32,7 +32,7 @@ public class ReportMappingController {
   }
 
   @GetMapping("/{reportType}")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Get all current mappings for a report type",
       description = "Returns all active (current version) mappings ordered by display order")
   public ResponseEntity<List<ReportMappingDTO>> getMappings(@PathVariable String reportType) {
@@ -41,7 +41,7 @@ public class ReportMappingController {
   }
 
   @GetMapping("/{reportType}/{lineCode}")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Get a specific mapping by line code",
       description = "Returns the current version of a specific line mapping")
   public ResponseEntity<ReportMappingDTO> getMapping(
@@ -69,7 +69,7 @@ public class ReportMappingController {
   }
 
   @GetMapping("/{reportType}/{lineCode}/history")
-  @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'ACCOUNTANT')")
   @Operation(summary = "Get version history for a mapping",
       description = "Returns all versions of a mapping, newest first")
   public ResponseEntity<List<MappingVersionDTO>> getMappingHistory(

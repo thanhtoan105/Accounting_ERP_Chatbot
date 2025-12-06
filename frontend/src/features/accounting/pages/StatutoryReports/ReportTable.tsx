@@ -23,12 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { StatutoryReportDTO, ReportLine } from '../../services/statutoryReports'
 
@@ -58,12 +53,12 @@ export function ReportTable({ data, loading, showComparison, onDrillDown }: Repo
 
   const handleRowClick = useCallback(
     (line: ReportLine) => {
-      // Only allow drill-down on non-calculated lines
-      if (!line.isCalculated && line.accountPattern) {
+      // Only allow drill-down on non-calculated lines with hasDrillDown flag
+      if (!line.isCalculated && line.hasDrillDown) {
         onDrillDown(line.lineCode, line.lineName)
       }
     },
-    [onDrillDown]
+    [onDrillDown],
   )
 
   // Loading skeleton
@@ -126,7 +121,7 @@ export function ReportTable({ data, loading, showComparison, onDrillDown }: Repo
           </TableHeader>
           <TableBody className="voucher-stagger">
             {data.lines.map((line, index) => {
-              const isClickable = !line.isCalculated && line.accountPattern
+              const isClickable = !line.isCalculated && line.hasDrillDown
               const isHeader = line.level === 1
               const isSubtotal = line.isCalculated
 
@@ -137,7 +132,7 @@ export function ReportTable({ data, loading, showComparison, onDrillDown }: Repo
                     'voucher-row-animate',
                     isClickable && 'cursor-pointer hover:bg-muted/50 transition-colors',
                     isHeader && 'bg-muted/30 font-semibold',
-                    isSubtotal && 'font-medium bg-muted/20'
+                    isSubtotal && 'font-medium bg-muted/20',
                   )}
                   onClick={() => isClickable && handleRowClick(line)}
                 >
@@ -155,7 +150,7 @@ export function ReportTable({ data, loading, showComparison, onDrillDown }: Repo
                       <span
                         className={cn(
                           isHeader && 'uppercase',
-                          line.level === 3 && 'text-muted-foreground'
+                          line.level === 3 && 'text-muted-foreground',
                         )}
                       >
                         {line.lineName}
@@ -179,7 +174,7 @@ export function ReportTable({ data, loading, showComparison, onDrillDown }: Repo
 
                   {/* Current Period Value */}
                   <TableCell className="text-right voucher-tabular-nums font-medium">
-                    {line.currentValue !== 0 ? formatCurrency(line.currentValue) : '-'}
+                    {line.currentAmount !== 0 ? formatCurrency(line.currentAmount) : '-'}
                   </TableCell>
 
                   {/* Comparison columns */}
@@ -187,8 +182,8 @@ export function ReportTable({ data, loading, showComparison, onDrillDown }: Repo
                     <>
                       {/* Prior Period Value */}
                       <TableCell className="text-right voucher-tabular-nums text-muted-foreground">
-                        {line.priorValue !== undefined && line.priorValue !== 0
-                          ? formatCurrency(line.priorValue)
+                        {line.priorAmount !== undefined && line.priorAmount !== 0
+                          ? formatCurrency(line.priorAmount)
                           : '-'}
                       </TableCell>
 
@@ -197,7 +192,7 @@ export function ReportTable({ data, loading, showComparison, onDrillDown }: Repo
                         className={cn(
                           'text-right voucher-tabular-nums',
                           line.variance && line.variance > 0 && 'text-green-600',
-                          line.variance && line.variance < 0 && 'text-red-600'
+                          line.variance && line.variance < 0 && 'text-red-600',
                         )}
                       >
                         {line.variance !== undefined && line.variance !== 0
@@ -210,7 +205,7 @@ export function ReportTable({ data, loading, showComparison, onDrillDown }: Repo
                         className={cn(
                           'text-right voucher-tabular-nums text-sm',
                           line.variancePercent && line.variancePercent > 0 && 'text-green-600',
-                          line.variancePercent && line.variancePercent < 0 && 'text-red-600'
+                          line.variancePercent && line.variancePercent < 0 && 'text-red-600',
                         )}
                       >
                         {formatPercent(line.variancePercent)}
@@ -220,9 +215,7 @@ export function ReportTable({ data, loading, showComparison, onDrillDown }: Repo
 
                   {/* Drill-down indicator */}
                   <TableCell>
-                    {isClickable && (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
-                    )}
+                    {isClickable && <ChevronRight className="h-4 w-4 text-muted-foreground/50" />}
                   </TableCell>
                 </TableRow>
               )
@@ -234,8 +227,7 @@ export function ReportTable({ data, loading, showComparison, onDrillDown }: Repo
       {/* Report footer */}
       <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
         <div>
-          {t('statutoryReports.generatedAt')}:{' '}
-          {new Date(data.generatedAt).toLocaleString('vi-VN')}
+          {t('statutoryReports.generatedAt')}: {new Date(data.generatedAt).toLocaleString('vi-VN')}
         </div>
         {data.snapshotHash && (
           <div className="font-mono text-xs">

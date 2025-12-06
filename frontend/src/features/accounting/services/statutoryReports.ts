@@ -32,12 +32,12 @@ export interface ReportLine {
   lineNameEnglish?: string
   level: number
   isCalculated: boolean
-  currentAmount: number      // Matches backend StatutoryReportLineDTO.currentAmount
-  priorAmount?: number       // Matches backend StatutoryReportLineDTO.priorAmount
+  currentAmount: number // Matches backend StatutoryReportLineDTO.currentAmount
+  priorAmount?: number // Matches backend StatutoryReportLineDTO.priorAmount
   variance?: number
   variancePercent?: number
   accountPattern?: string
-  hasDrillDown: boolean      // Matches backend StatutoryReportLineDTO.hasDrillDown
+  hasDrillDown: boolean // Matches backend StatutoryReportLineDTO.hasDrillDown
 }
 
 export interface StatutoryReportDTO {
@@ -64,9 +64,9 @@ export interface AccountContribution {
   accountName: string
   debitAmount: number
   creditAmount: number
-  netAmount: number           // Matches backend AccountContributionDTO.netAmount
-  contributionAmount: number  // Matches backend AccountContributionDTO.contributionAmount
-  normalBalance?: string      // 'DEBIT' or 'CREDIT'
+  netAmount: number // Matches backend AccountContributionDTO.netAmount
+  contributionAmount: number // Matches backend AccountContributionDTO.contributionAmount
+  normalBalance?: string // 'DEBIT' or 'CREDIT'
   transactionCount?: number
 }
 
@@ -84,15 +84,19 @@ export interface SpringPage<T> {
   // DIRECT mode has flat structure (deprecated, for backwards compatibility)
   totalPages?: number
   totalElements?: number
-  number?: number   // Current page number (0-indexed)
-  size?: number     // Page size
+  number?: number // Current page number (0-indexed)
+  size?: number // Page size
   first?: boolean
   last?: boolean
   empty?: boolean
 }
 
 // Helper to normalize Spring Page response (handles both DIRECT and VIA_DTO modes)
-function normalizePageResponse<T>(response: SpringPage<T>): { content: T[]; totalPages: number; totalElements: number } {
+function normalizePageResponse<T>(response: SpringPage<T>): {
+  content: T[]
+  totalPages: number
+  totalElements: number
+} {
   // VIA_DTO mode: pagination data is in 'page' object
   if (response.page) {
     return {

@@ -108,9 +108,7 @@ export function ReportMappingsPage() {
       const data = await getMappings(activeTab)
       setMappings(data)
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t('reportMappings.errors.loadFailed')
-      )
+      toast.error(error instanceof Error ? error.message : t('reportMappings.errors.loadFailed'))
     } finally {
       setLoading(false)
     }
@@ -147,9 +145,7 @@ export function ReportMappingsPage() {
       setEditDialogOpen(false)
       void loadMappings()
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t('reportMappings.errors.updateFailed')
-      )
+      toast.error(error instanceof Error ? error.message : t('reportMappings.errors.updateFailed'))
     } finally {
       setSaving(false)
     }
@@ -171,7 +167,7 @@ export function ReportMappingsPage() {
         setHistoryLoading(false)
       }
     },
-    [activeTab, t]
+    [activeTab, t],
   )
 
   // Initiate rollback
@@ -193,7 +189,7 @@ export function ReportMappingsPage() {
       void loadMappings()
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : t('reportMappings.errors.rollbackFailed')
+        error instanceof Error ? error.message : t('reportMappings.errors.rollbackFailed'),
       )
     } finally {
       setRollbackLoading(false)
@@ -222,17 +218,12 @@ export function ReportMappingsPage() {
       {/* Warning Alert */}
       <Alert>
         <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          {t('reportMappings.warning')}
-        </AlertDescription>
+        <AlertDescription>{t('reportMappings.warning')}</AlertDescription>
       </Alert>
 
       {/* Report Type Tabs */}
       <Card>
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as ReportType)}
-        >
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ReportType)}>
           <CardHeader className="pb-3">
             <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
               <TabsTrigger value="B01">B01 - {reportNames.B01}</TabsTrigger>
@@ -255,9 +246,15 @@ export function ReportMappingsPage() {
                     <TableRow>
                       <TableHead className="w-[80px]">{t('reportMappings.table.code')}</TableHead>
                       <TableHead>{t('reportMappings.table.lineName')}</TableHead>
-                      <TableHead className="w-[200px]">{t('reportMappings.table.accountPattern')}</TableHead>
-                      <TableHead className="w-[80px]">{t('reportMappings.table.operator')}</TableHead>
-                      <TableHead className="w-[80px]">{t('reportMappings.table.version')}</TableHead>
+                      <TableHead className="w-[200px]">
+                        {t('reportMappings.table.accountPattern')}
+                      </TableHead>
+                      <TableHead className="w-[80px]">
+                        {t('reportMappings.table.operator')}
+                      </TableHead>
+                      <TableHead className="w-[80px]">
+                        {t('reportMappings.table.version')}
+                      </TableHead>
                       <TableHead className="w-[120px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -267,12 +264,10 @@ export function ReportMappingsPage() {
                         key={mapping.lineCode}
                         className={cn(
                           mapping.level === 1 && 'bg-muted/30 font-medium',
-                          mapping.isCalculated && 'text-muted-foreground italic'
+                          mapping.isCalculated && 'text-muted-foreground italic',
                         )}
                       >
-                        <TableCell className="font-mono text-sm">
-                          {mapping.lineCode}
-                        </TableCell>
+                        <TableCell className="font-mono text-sm">{mapping.lineCode}</TableCell>
                         <TableCell style={{ paddingLeft: `${(mapping.level - 1) * 1.5 + 1}rem` }}>
                           {mapping.lineName}
                           {mapping.isCalculated && (
@@ -337,7 +332,9 @@ export function ReportMappingsPage() {
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="accountPattern">{t('reportMappings.editDialog.accountPattern')}</Label>
+              <Label htmlFor="accountPattern">
+                {t('reportMappings.editDialog.accountPattern')}
+              </Label>
               <Textarea
                 id="accountPattern"
                 value={editForm.accountPattern}
@@ -429,7 +426,7 @@ export function ReportMappingsPage() {
                     key={version.version}
                     className={cn(
                       'p-4 rounded-lg border',
-                      version.isCurrent && 'border-primary bg-primary/5'
+                      version.isCurrent && 'border-primary bg-primary/5',
                     )}
                   >
                     <div className="flex items-start justify-between">
@@ -439,15 +436,16 @@ export function ReportMappingsPage() {
                             v{version.version}
                           </Badge>
                           {version.isCurrent && (
-                            <Badge variant="secondary">{t('reportMappings.historyDialog.current')}</Badge>
+                            <Badge variant="secondary">
+                              {t('reportMappings.historyDialog.current')}
+                            </Badge>
                           )}
                         </div>
                         <div className="font-mono text-sm">{version.accountPattern}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {version.changeReason}
-                        </div>
+                        <div className="text-sm text-muted-foreground">{version.changeReason}</div>
                         <div className="text-xs text-muted-foreground">
-                          {version.changedBy} - {new Date(version.changedAt).toLocaleString('vi-VN')}
+                          {version.changedBy} -{' '}
+                          {new Date(version.changedAt).toLocaleString('vi-VN')}
                         </div>
                       </div>
                       {!version.isCurrent && (

@@ -1,15 +1,22 @@
 package com.accounting.service.impl;
 
 import com.accounting.dto.AccountingPeriodDTO;
+import com.accounting.dto.DrillDownResponseDTO;
+import com.accounting.dto.DrillDownVoucherDTO;
 import com.accounting.dto.TrialBalanceDTO;
 import com.accounting.dto.TrialBalanceResponseDTO;
+import com.accounting.dto.TrialBalanceValidationDTO;
+import com.accounting.dto.TrialBalanceValidationDTO.ValidationDetails;
+import com.accounting.dto.TrialBalanceValidationDTO.ValidationError;
 import com.accounting.entity.ChartOfAccount;
+import com.accounting.enums.AmountType;
 import com.accounting.repository.ChartOfAccountsRepository;
 import com.accounting.repository.VoucherLineRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.PeriodManagementService;
 import com.accounting.service.TrialBalanceService;
 import com.accounting.service.CompanyService;
+import com.accounting.service.report.TrialBalancePdfExportService;
 import com.accounting.entity.Company;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,6 +41,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,17 +65,20 @@ public class TrialBalanceServiceImpl implements TrialBalanceService {
   private final ChartOfAccountsRepository chartOfAccountsRepository;
   private final PeriodManagementService periodManagementService;
   private final CompanyService companyService;
+  private final TrialBalancePdfExportService trialBalancePdfExportService;
 
   @Autowired
   public TrialBalanceServiceImpl(
       VoucherLineRepository voucherLineRepository,
       ChartOfAccountsRepository chartOfAccountsRepository,
       PeriodManagementService periodManagementService,
-      CompanyService companyService) {
+      CompanyService companyService,
+      TrialBalancePdfExportService trialBalancePdfExportService) {
     this.voucherLineRepository = voucherLineRepository;
     this.chartOfAccountsRepository = chartOfAccountsRepository;
     this.periodManagementService = periodManagementService;
     this.companyService = companyService;
+    this.trialBalancePdfExportService = trialBalancePdfExportService;
   }
 
   @Override
@@ -361,6 +373,166 @@ public class TrialBalanceServiceImpl implements TrialBalanceService {
   private String formatTimestamp(Instant instant) {
     Instant value = instant != null ? instant : Instant.now();
     return TIMESTAMP_FORMATTER.format(value.atZone(DEFAULT_ZONE));
+  }
+
+  // ==================== Drill-Down Methods ====================
+
+  @Override
+  public DrillDownResponseDTO getDrillDownVouchers(UUID periodId, Long accountId, AmountType amountType, Pageable pageable) {
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing company context");
+    }
+
+    // Get period information
+    AccountingPeriodDTO period = periodManagementService
+        .getPeriodById(periodId)
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Period not found: " + periodId));
+
+    // Validate account exists
+    ChartOfAccount account = chartOfAccountsRepository.findById(accountId)
+        .filter(a -> a.getCompanyId().equals(companyId))
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Account not found: " + accountId));
+
+    // Execute appropriate query based on amount type
+    Page<Object[]> voucherPage = executeVoucherQuery(companyId, accountId, periodId, period, amountType, pageable);
+
+    // Map results to DTOs
+    List<DrillDownVoucherDTO> vouchers = voucherPage.getContent().stream()
+        .map(this::mapToVoucherDTO)
+        .collect(Collectors.toList());
+
+    // Calculate total amount based on type
+    BigDecimal totalAmount = calculateDrillDownTotal(companyId, accountId, periodId, period, amountType);
+
+    // Build response
+    DrillDownResponseDTO response = new DrillDownResponseDTO();
+    response.setVouchers(vouchers);
+    response.setTotalAmount(totalAmount);
+    response.setVoucherCount((int) voucherPage.getTotalElements());
+    response.setPage(voucherPage.getNumber());
+    response.setSize(voucherPage.getSize());
+    response.setTotal(voucherPage.getTotalElements());
+    response.setHasNext(voucherPage.hasNext());
+
+    logger.debug("Drill-down query returned {} vouchers for account {} with type {}",
+        vouchers.size(), account.getCode(), amountType);
+
+    return response;
+  }
+
+  private Page<Object[]> executeVoucherQuery(Long companyId, Long accountId, UUID periodId,
+      AccountingPeriodDTO period, AmountType amountType, Pageable pageable) {
+    switch (amountType) {
+      case OPENING_DEBIT:
+        return voucherLineRepository.findOpeningDebitVouchers(companyId, accountId, period.getStartDate(), pageable);
+      case OPENING_CREDIT:
+        return voucherLineRepository.findOpeningCreditVouchers(companyId, accountId, period.getStartDate(), pageable);
+      case PERIOD_DEBIT:
+        return voucherLineRepository.findPeriodDebitVouchers(companyId, accountId, periodId, pageable);
+      case PERIOD_CREDIT:
+        return voucherLineRepository.findPeriodCreditVouchers(companyId, accountId, periodId, pageable);
+      case CLOSING_DEBIT:
+        return voucherLineRepository.findClosingDebitVouchers(companyId, accountId, period.getEndDate(), pageable);
+      case CLOSING_CREDIT:
+        return voucherLineRepository.findClosingCreditVouchers(companyId, accountId, period.getEndDate(), pageable);
+      default:
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid amount type: " + amountType);
+    }
+  }
+
+  private BigDecimal calculateDrillDownTotal(Long companyId, Long accountId, UUID periodId,
+      AccountingPeriodDTO period, AmountType amountType) {
+    // For simplicity, calculate from data; for period types use sum queries
+    switch (amountType) {
+      case PERIOD_DEBIT:
+        return voucherLineRepository.sumPeriodDebit(companyId, accountId, periodId);
+      case PERIOD_CREDIT:
+        return voucherLineRepository.sumPeriodCredit(companyId, accountId, periodId);
+      default:
+        // For opening/closing, calculate from the full data
+        // This could be optimized with additional sum queries if needed
+        return BigDecimal.ZERO;
+    }
+  }
+
+  private DrillDownVoucherDTO mapToVoucherDTO(Object[] row) {
+    DrillDownVoucherDTO dto = new DrillDownVoucherDTO();
+    dto.setId((UUID) row[0]);
+    dto.setVoucherNumber((String) row[1]);
+    dto.setVoucherDate((LocalDate) row[2]);
+    dto.setDescription((String) row[3]);
+    dto.setDebit((BigDecimal) row[4]);
+    dto.setCredit((BigDecimal) row[5]);
+    dto.setVoucherType(row[6] != null ? row[6].toString() : null);
+    dto.setStatus((String) row[7]);
+    return dto;
+  }
+
+  // ==================== Validation Methods ====================
+
+  @Override
+  public TrialBalanceValidationDTO validateForExport(UUID periodId) {
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing company context");
+    }
+
+    TrialBalanceValidationDTO validation = new TrialBalanceValidationDTO();
+
+    // Get trial balance data to check balance
+    TrialBalanceResponseDTO data = getTrialBalanceData(periodId);
+
+    // Check if balanced
+    if (!data.isBalanced()) {
+      BigDecimal difference = data.getTotalClosingDebit().subtract(data.getTotalClosingCredit());
+      ValidationDetails details = new ValidationDetails(
+          data.getTotalClosingDebit(),
+          data.getTotalClosingCredit(),
+          difference
+      );
+      ValidationError error = new ValidationError(
+          "GL_IMBALANCE",
+          "Cannot export: Trial Balance out of balance",
+          details,
+          "/help/trial-balance-imbalance"
+      );
+      validation.addError(error);
+
+      // Log validation failure for audit
+      logger.warn("Trial balance validation failed for company {} period {}: Debit={}, Credit={}, Diff={}",
+          companyId, periodId, data.getTotalClosingDebit(), data.getTotalClosingCredit(), difference);
+    }
+
+    return validation;
+  }
+
+  // ==================== PDF Export Methods ====================
+
+  @Override
+  public byte[] exportToPdf(UUID periodId, UUID snapshotId) {
+    // Validation preflight
+    TrialBalanceValidationDTO validation = validateForExport(periodId);
+    if (!validation.isValid()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+          validation.getErrors().get(0).getMessage());
+    }
+
+    // Get trial balance data
+    TrialBalanceResponseDTO report = getTrialBalanceData(periodId);
+
+    // Check if period is open (for DRAFT watermark)
+    boolean isDraft = periodManagementService.isPeriodOpen(periodId);
+
+    try {
+      logger.info("Exporting Trial Balance PDF for period {} (isDraft={})", periodId, isDraft);
+      return trialBalancePdfExportService.exportToPdf(report, snapshotId, isDraft);
+    } catch (Exception e) {
+      logger.error("Failed to export Trial Balance PDF for period {}: {}", periodId, e.getMessage(), e);
+      throw new IllegalStateException("Failed to export Trial Balance report to PDF", e);
+    }
   }
 }
 

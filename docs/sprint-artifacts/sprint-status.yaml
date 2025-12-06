@@ -98,9 +98,8 @@ development_status:
 
   epic-7: in-progress
   7-1-mvp-trial-balance-basic: done
-  7-2-mvp-balance-sheet-income-statement-basic: backlog
-  7-1-trial-balance-s06-dn-generation-export: backlog
-  7-2-statutory-reports-b01-dn-b02-dn-b03-dn-f01-with-tt200-mapping: backlog
+  7-1-trial-balance-s06-dn-generation-export: in-progress
+  7-2-statutory-reports-b01-b02-b03-f01-tt200: review # Code review: changes requested
   7-3-report-scheduling-export-distribution-and-access-control: backlog
   7-4-multi-period-comparison-variance-analysis: backlog
   7-5-reporting-audit-compliance-and-integrity: backlog
@@ -118,7 +117,7 @@ development_status:
 
   epic-9: contexted
   9-0-mvp-voucher-rag-chatbot-basic: done
-  9-1-chatbot-widget-integration-and-security:  backlog
+  9-1-chatbot-widget-integration-and-security: backlog
   9-2-contextual-retrieval-augmented-generation-rag-for-q-a: backlog
   9-3-workflow-automation-and-guided-journeys: backlog
   9-4-feedback-training-data-capture-and-guardrail-monitoring: backlog

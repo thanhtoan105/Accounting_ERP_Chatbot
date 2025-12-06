@@ -91,6 +91,7 @@
     "search": "Search...",
     "filter": "Filter",
     "export": "Export",
+    "exporting": "Exporting...",
     "import": "Import",
     "refresh": "Refresh",
     "close": "Close",
@@ -121,7 +122,15 @@
     "showing": "Showing",
     "of": "of",
     "items": "items",
-    "rowsPerPage": "Rows per page"
+    "rowsPerPage": "Rows per page",
+    "open": "Open",
+    "closed": "Closed",
+    "page": "Page",
+    "account": "Account",
+    "debit": "Debit",
+    "credit": "Credit",
+    "type": "Type",
+    "createdBy": "Created by"
   },
   "table": {
     "noResults": "No results found",
@@ -800,8 +809,10 @@
     },
     "actions": {
       "refresh": "Refresh",
-      "export": "Export Excel",
-      "exporting": "Exporting..."
+      "export": "Export",
+      "exporting": "Exporting...",
+      "exportExcel": "Export to Excel",
+      "exportPdf": "Export to PDF"
     },
     "pagination": {
       "showing": "Showing",
@@ -822,13 +833,32 @@
     "errors": {
       "loadFailed": "Failed to load trial balance",
       "exportFailed": "Failed to export trial balance",
-      "periodLoadFailed": "Failed to load periods"
+      "periodLoadFailed": "Failed to load periods",
+      "validationFailed": "Validation failed"
     },
     "success": {
-      "exported": "Trial balance exported successfully"
+      "exported": "Trial balance exported successfully",
+      "exportedPdf": "PDF exported successfully"
     },
     "reportFilters": "Report Filters",
-    "periodInfo": "Period: {{periodName}} | Date Range: {{dateRange}}"
+    "periodInfo": "Period: {{periodName}} | Date Range: {{dateRange}}",
+    "drillDown": {
+      "title": "Drill-Down Vouchers",
+      "openingDebit": "Opening Debit",
+      "openingCredit": "Opening Credit",
+      "periodDebit": "Period Debit",
+      "periodCredit": "Period Credit",
+      "closingDebit": "Closing Debit",
+      "closingCredit": "Closing Credit",
+      "voucherCount": "{{count}} vouchers",
+      "totalAmount": "Total",
+      "noVouchers": "No vouchers found for this selection",
+      "date": "Date",
+      "voucherNumber": "Voucher #",
+      "description": "Description",
+      "debit": "Debit",
+      "credit": "Credit"
+    }
   },
   "cashAudit": {
     "title": "Cash & Bank Audit",
@@ -1014,6 +1044,7 @@
       "noAccounts": "No contributing accounts found",
       "noVouchers": "No vouchers found for this account",
       "voucherDetail": "Voucher Detail",
+      "voucherDetailDescription": "Voucher details and transaction lines",
       "lines": "Entry Lines",
       "attachments": "Attachments",
       "openVoucher": "Open Voucher"
