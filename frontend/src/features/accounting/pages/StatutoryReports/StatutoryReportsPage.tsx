@@ -21,8 +21,6 @@ import { useTranslation } from 'react-i18next'
 import {
   FileSpreadsheet,
   Download,
-  RefreshCw,
-  ChevronRight,
   AlertTriangle,
   FileText,
   TrendingUp,
@@ -147,7 +145,7 @@ export function StatutoryReportsPage() {
       setValidation(validationResult)
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : t('statutoryReports.errors.loadReportFailed')
+        error instanceof Error ? error.message : t('statutoryReports.errors.loadReportFailed'),
       )
     } finally {
       setLoading(false)
@@ -185,13 +183,13 @@ export function StatutoryReportsPage() {
         toast.success(t('statutoryReports.success.exported'))
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : t('statutoryReports.errors.exportFailed')
+          error instanceof Error ? error.message : t('statutoryReports.errors.exportFailed'),
         )
       } finally {
         setExporting(false)
       }
     },
-    [selectedPeriodId, comparisonPeriodId, activeTab, validation, t]
+    [selectedPeriodId, comparisonPeriodId, activeTab, validation, t],
   )
 
   // Handle drill-down
@@ -404,11 +402,11 @@ export function StatutoryReportsPage() {
             {reportData && (
               <div className="mb-6 p-4 bg-muted/30 rounded-lg border">
                 <div className="text-center space-y-1">
-                  <h2 className="text-lg font-semibold">{reportData.companyHeader.companyName}</h2>
+                  <h2 className="text-lg font-semibold">{reportData.companyName}</h2>
                   <p className="text-sm text-muted-foreground">
-                    {t('statutoryReports.taxCode')}: {reportData.companyHeader.taxCode}
+                    {t('statutoryReports.taxCode')}: {reportData.companyTaxCode}
                   </p>
-                  <p className="text-sm text-muted-foreground">{reportData.companyHeader.address}</p>
+                  <p className="text-sm text-muted-foreground">{reportData.companyAddress}</p>
                 </div>
                 <div className="text-center mt-4">
                   <h3 className="text-xl font-bold uppercase">

@@ -16,15 +16,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  ChevronLeft,
-  ChevronRight,
-  X,
-  FileText,
-  Wallet,
-  ArrowRight,
-  ExternalLink,
-} from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, ExternalLink } from 'lucide-react'
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -41,6 +33,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -102,7 +95,7 @@ export function DrillDownPanel({
   const [accounts, setAccounts] = useState<AccountContribution[]>([])
   const [vouchers, setVouchers] = useState<VoucherSummary[]>([])
   const [selectedAccount, setSelectedAccount] = useState<{ code: string; name: string } | null>(
-    null
+    null,
   )
 
   // Pagination
@@ -114,6 +107,23 @@ export function DrillDownPanel({
   const [voucherDetail, setVoucherDetail] = useState<VoucherDetail | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
 
+  // Load accounts for the line
+  const loadAccounts = useCallback(async () => {
+    if (!periodId || !lineCode) return
+
+    setLoading(true)
+    try {
+      const response = await getDrillDownAccounts(reportType, lineCode, periodId, page, 20)
+      setAccounts(response.content || [])
+      setTotalPages(response.totalPages)
+    } catch (error) {
+      console.error('Failed to load accounts:', error)
+      setAccounts([])
+    } finally {
+      setLoading(false)
+    }
+  }, [reportType, lineCode, periodId, page])
+
   // Reset state when panel opens with new line
   useEffect(() => {
     if (open && lineCode) {
@@ -123,23 +133,7 @@ export function DrillDownPanel({
       setSelectedAccount(null)
       loadAccounts()
     }
-  }, [open, lineCode, lineName])
-
-  // Load accounts for the line
-  const loadAccounts = useCallback(async () => {
-    if (!periodId || !lineCode) return
-
-    setLoading(true)
-    try {
-      const response = await getDrillDownAccounts(reportType, lineCode, periodId, page, 20)
-      setAccounts(response.accounts)
-      setTotalPages(response.totalPages)
-    } catch (error) {
-      console.error('Failed to load accounts:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [reportType, lineCode, periodId, page])
+  }, [open, lineCode, lineName, loadAccounts])
 
   // Load vouchers for an account
   const loadVouchers = useCallback(
@@ -149,16 +143,17 @@ export function DrillDownPanel({
       setLoading(true)
       try {
         const response = await getDrillDownVouchers(accountCode, periodId, 0, 20)
-        setVouchers(response.vouchers)
+        setVouchers(response.content || [])
         setTotalPages(response.totalPages)
         setPage(0)
       } catch (error) {
         console.error('Failed to load vouchers:', error)
+        setVouchers([])
       } finally {
         setLoading(false)
       }
     },
-    [periodId]
+    [periodId],
   )
 
   // Handle account click
@@ -172,7 +167,7 @@ export function DrillDownPanel({
       ])
       loadVouchers(account.accountCode)
     },
-    [loadVouchers]
+    [loadVouchers],
   )
 
   // Handle voucher click
@@ -221,7 +216,11 @@ export function DrillDownPanel({
       case 'DRAFT':
         return <Badge variant="secondary">Draft</Badge>
       case 'UNPOSTED':
-        return <Badge variant="outline" className="text-orange-600 border-orange-300">Unposted</Badge>
+        return (
+          <Badge variant="outline" className="text-orange-600 border-orange-300">
+            Unposted
+          </Badge>
+        )
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -241,7 +240,7 @@ export function DrillDownPanel({
                     onClick={() => idx === 0 && navigateBack()}
                     className={cn(
                       'hover:text-foreground transition-colors',
-                      idx === breadcrumbs.length - 1 && 'text-foreground font-medium'
+                      idx === breadcrumbs.length - 1 && 'text-foreground font-medium',
                     )}
                     disabled={idx === breadcrumbs.length - 1}
                   >
@@ -290,15 +289,17 @@ export function DrillDownPanel({
                             <span className="font-mono text-sm text-muted-foreground">
                               {account.accountCode}
                             </span>
-                            <span className="text-xs text-muted-foreground">
-                              ({account.contributionPercent.toFixed(1)}%)
-                            </span>
+                            {account.transactionCount != null && (
+                              <span className="text-xs text-muted-foreground">
+                                ({account.transactionCount} txns)
+                              </span>
+                            )}
                           </div>
                           <div className="font-medium truncate">{account.accountName}</div>
                         </div>
                         <div className="text-right shrink-0">
                           <div className="voucher-tabular-nums font-medium">
-                            {formatCurrency(account.balance)}
+                            {formatCurrency(account.netAmount)}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             Dr: {formatCurrency(account.debitAmount)} | Cr:{' '}
@@ -401,6 +402,9 @@ export function DrillDownPanel({
               <FileText className="h-5 w-5" />
               {voucherDetail?.voucherNumber || t('statutoryReports.drillDown.voucherDetail')}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              {t('statutoryReports.drillDown.voucherDetailDescription')}
+            </DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="flex-1">
@@ -463,7 +467,7 @@ export function DrillDownPanel({
                         </TableRow>
                       ))}
                       {/* Totals Row */}
-                      <TableRow className="font-medium bg-muted/50">
+                      <TableRow key="totals-row" className="font-medium bg-muted/50">
                         <TableCell colSpan={2}>{t('common.total')}</TableCell>
                         <TableCell className="text-right voucher-tabular-nums">
                           {formatCurrency(voucherDetail.totalDebit)}

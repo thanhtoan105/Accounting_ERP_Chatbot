@@ -1,129 +1,103 @@
 'use client'
 
 import * as React from 'react'
-import { useCallback, useEffect, useState } from 'react'
-import { CalendarIcon, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
+import {
+  CalendarIcon,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Clock,
+  ChevronDown,
+  Sparkles,
+} from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { periodService } from '@/services/period'
 import type { AccountingPeriod, PeriodSummary, PeriodSelectorProps } from '@/types/accountingPeriod'
 
-const PeriodStatusBadge: React.FC<{ status: string; statusDisplay: string }> = ({
-  status,
-  statusDisplay,
-}) => {
-  const variants = {
-    OPEN: 'bg-green-100 text-green-800 border-green-200',
-    CLOSED: 'bg-red-100 text-red-800 border-red-200',
-  }
+// ═══════════════════════════════════════════════════════════════════════════════
+// PERIOD SELECTOR - Premium Banking Design
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// Design System:
+// - Uses voucher design tokens for consistency
+// - Compact inline layout with all elements visible
+// - Status badge integrated into trigger button
+// - Current period indicator as subtle accent
+// - Hover tooltips for detailed information
+//
+// ═══════════════════════════════════════════════════════════════════════════════
 
-  const icons = {
-    OPEN: <CheckCircle className="w-3 h-3 mr-1" />,
-    CLOSED: <XCircle className="w-3 h-3 mr-1" />,
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// Period Item Component (for dropdown list)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface PeriodItemProps {
+  period: AccountingPeriod
+  isSelected: boolean
+  isCurrent: boolean
+  onClick: () => void
+}
+
+const PeriodItem: React.FC<PeriodItemProps> = ({ period, isSelected, isCurrent, onClick }) => {
+  const isOpen = period.status === 'OPEN'
 
   return (
-    <Badge
-      variant="outline"
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        'text-xs font-medium flex items-center gap-1',
-        variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800 border-gray-200',
+        'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-left',
+        'transition-all duration-[var(--voucher-duration-fast)]',
+        'hover:bg-[var(--voucher-surface-1)]',
+        isSelected && 'bg-[var(--voucher-primary-subtle)] ring-1 ring-[var(--voucher-primary)]',
       )}
     >
-      {icons[status as keyof typeof icons]}
-      {statusDisplay}
-    </Badge>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className={cn('font-medium truncate', isSelected && 'text-[var(--voucher-primary)]')}>
+          {period.periodName}
+        </span>
+        {isCurrent && (
+          <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--voucher-primary)] text-[var(--voucher-primary-foreground)]">
+            <Sparkles className="w-2.5 h-2.5" />
+            Now
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Date Range */}
+        <span className="text-[11px] text-muted-foreground font-mono tabular-nums hidden sm:inline">
+          {period.startDate} – {period.endDate}
+        </span>
+
+        {/* Status Badge */}
+        <span
+          className={cn(
+            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium',
+            isOpen
+              ? 'bg-[var(--voucher-status-posted-bg)] text-[var(--voucher-status-posted)]'
+              : 'bg-[var(--voucher-status-unposted-bg)] text-[var(--voucher-status-unposted)]',
+          )}
+        >
+          {isOpen ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+          {period.statusDisplay}
+        </span>
+
+        {/* Selection Check */}
+        {isSelected && <CheckCircle2 className="w-4 h-4 text-[var(--voucher-primary)]" />}
+      </div>
+    </button>
   )
 }
 
-const PeriodSummaryBadge: React.FC<{ summary: PeriodSummary | null }> = ({ summary }) => {
-  if (!summary) {
-    return <Skeleton className="h-6 w-24" />
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Ready':
-        return 'text-green-600'
-      case 'Has Drafts':
-        return 'text-yellow-600'
-      case 'Closed':
-        return 'text-red-600'
-      default:
-        return 'text-gray-600'
-    }
-  }
-
-  const getIcon = (status: string) => {
-    switch (status) {
-      case 'Ready':
-        return <CheckCircle className="w-4 h-4" />
-      case 'Has Drafts':
-        return <AlertCircle className="w-4 h-4" />
-      case 'Closed':
-        return <XCircle className="w-4 h-4" />
-      default:
-        return <Clock className="w-4 h-4" />
-    }
-  }
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded-md text-xs">
-            <div
-              className={cn('flex items-center gap-1', getStatusColor(summary.postingFlowStatus))}
-            >
-              {getIcon(summary.postingFlowStatus)}
-              <span>{summary.postingFlowStatus}</span>
-            </div>
-            {summary.hasDraftVouchers && (
-              <Badge variant="secondary" className="text-xs">
-                {summary.draftVouchersCount} drafts
-              </Badge>
-            )}
-            {summary.isCurrentPeriod && (
-              <Badge variant="default" className="text-xs">
-                Current
-              </Badge>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <div className="text-xs space-y-1">
-            <div>
-              <strong>Period:</strong> {summary.periodName}
-            </div>
-            <div>
-              <strong>Status:</strong> {summary.statusDisplay}
-            </div>
-            <div>
-              <strong>Draft Vouchers:</strong> {summary.draftVouchersCount}
-            </div>
-            <div>
-              <strong>Posted Vouchers:</strong> {summary.postedVouchersCount}
-            </div>
-            <div>
-              <strong>Posting Flow:</strong> {summary.postingFlowStatus}
-            </div>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  )
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Period Selector Component
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   selectedPeriod,
@@ -138,6 +112,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   const [selectedSummary, setSelectedSummary] = useState<PeriodSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
 
   // Load periods on mount
   useEffect(() => {
@@ -168,7 +143,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 
     loadPeriods()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Intentionally empty: only run on mount. onPeriodChange and selectedPeriod are stable or handled separately.
+  }, [])
 
   // Load period summary when selected period changes
   useEffect(() => {
@@ -189,14 +164,12 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
     loadSummary()
   }, [selectedPeriod, showSummary])
 
-  const handlePeriodChange = useCallback(
-    (periodId: string) => {
-      const period = periods.find((p) => p.id === periodId)
-      if (period) {
-        onPeriodChange(period)
-      }
+  const handlePeriodSelect = useCallback(
+    (period: AccountingPeriod) => {
+      onPeriodChange(period)
+      setOpen(false)
     },
-    [periods, onPeriodChange],
+    [onPeriodChange],
   )
 
   // Period persistence in localStorage per company
@@ -234,70 +207,179 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
     }
   }, [periods, selectedPeriod, onPeriodChange])
 
+  // Computed values
+  const isCurrent = useMemo(() => {
+    return selectedSummary?.isCurrentPeriod || currentPeriod?.id === selectedPeriod?.id
+  }, [selectedSummary, currentPeriod, selectedPeriod])
+
+  const isOpen = selectedPeriod?.status === 'OPEN'
+
+  // ─── Loading State ─────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className={cn('flex items-center gap-2', className)}>
-        <Skeleton className="h-10 w-[200px]" />
-        {showSummary && <Skeleton className="h-6 w-24" />}
+      <div className={cn('period-selector flex items-center gap-3', className)}>
+        <div className="voucher-skeleton h-9 w-[280px] rounded-lg" />
       </div>
     )
   }
 
+  // ─── Error State ───────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className={cn('flex items-center gap-2 text-sm text-red-600', className)}>
+      <div
+        className={cn(
+          'period-selector flex items-center gap-2 text-sm text-destructive',
+          className,
+        )}
+      >
         <AlertCircle className="w-4 h-4" />
         <span>{error}</span>
       </div>
     )
   }
 
+  // ─── Empty State ───────────────────────────────────────────────────────────
   if (periods.length === 0) {
     return (
-      <div className={cn('flex items-center gap-2 text-sm text-gray-500', className)}>
+      <div
+        className={cn(
+          'period-selector flex items-center gap-2 text-sm text-muted-foreground',
+          className,
+        )}
+      >
         <CalendarIcon className="w-4 h-4" />
         <span>No periods available</span>
       </div>
     )
   }
 
+  // ─── Main Render ───────────────────────────────────────────────────────────
   return (
-    <div className={cn('flex items-center gap-3', className)}>
-      <div className="flex items-center gap-2 flex-1">
-        <Select
-          value={selectedPeriod?.id || ''}
-          onValueChange={handlePeriodChange}
-          disabled={disabled}
-        >
-          <SelectTrigger className="w-full">
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="w-4 h-4 text-gray-500" />
-              <SelectValue placeholder={placeholder} />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            {periods.map((period) => (
-              <SelectItem key={period.id} value={period.id}>
-                <div className="flex items-center justify-between w-full">
-                  <span className="flex-1">{period.periodName}</span>
-                  <PeriodStatusBadge status={period.status} statusDisplay={period.statusDisplay} />
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <TooltipProvider delayDuration={300}>
+      <div className={cn('period-selector flex items-center gap-3', className)}>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              disabled={disabled}
+              className={cn(
+                'h-9 px-3 justify-between gap-2 rounded-lg border',
+                'bg-card hover:bg-[var(--voucher-surface-1)]',
+                'transition-all duration-[var(--voucher-duration-fast)]',
+                'focus:ring-2 focus:ring-[var(--voucher-primary-subtle)] focus:border-[var(--voucher-primary)]',
+                'min-w-[280px]',
+              )}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <CalendarIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
 
+                {selectedPeriod ? (
+                  <>
+                    <span className="font-medium truncate">{selectedPeriod.periodName}</span>
+
+                    {/* Inline Status Badge */}
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0',
+                        isOpen
+                          ? 'bg-[var(--voucher-status-posted-bg)] text-[var(--voucher-status-posted)]'
+                          : 'bg-[var(--voucher-status-unposted-bg)] text-[var(--voucher-status-unposted)]',
+                      )}
+                    >
+                      {isOpen ? (
+                        <CheckCircle2 className="w-2.5 h-2.5" />
+                      ) : (
+                        <XCircle className="w-2.5 h-2.5" />
+                      )}
+                      {selectedPeriod.statusDisplay}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">{placeholder}</span>
+                )}
+              </div>
+
+              <ChevronDown
+                className={cn(
+                  'w-4 h-4 text-muted-foreground transition-transform duration-200',
+                  open && 'rotate-180',
+                )}
+              />
+            </Button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            className="w-[400px] p-2 rounded-xl border shadow-lg"
+            align="start"
+            sideOffset={4}
+          >
+            <div className="space-y-1 max-h-[320px] overflow-y-auto">
+              {periods.map((period) => (
+                <PeriodItem
+                  key={period.id}
+                  period={period}
+                  isSelected={selectedPeriod?.id === period.id}
+                  isCurrent={currentPeriod?.id === period.id}
+                  onClick={() => handlePeriodSelect(period)}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Date Range Display */}
         {selectedPeriod && (
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <span>{selectedPeriod.startDate}</span>
-            <span>-</span>
-            <span>{selectedPeriod.endDate}</span>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono tabular-nums">
+            <span className="px-1.5 py-0.5 rounded bg-[var(--voucher-surface-1)]">
+              {selectedPeriod.startDate}
+            </span>
+            <span>–</span>
+            <span className="px-1.5 py-0.5 rounded bg-[var(--voucher-surface-1)]">
+              {selectedPeriod.endDate}
+            </span>
           </div>
         )}
-      </div>
 
-      {showSummary && <PeriodSummaryBadge summary={selectedSummary} />}
-    </div>
+        {/* Current Period Badge with Tooltip */}
+        {showSummary && isCurrent && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-[var(--voucher-primary)] text-[var(--voucher-primary-foreground)] cursor-default">
+                <Clock className="w-3 h-3" />
+                Current
+              </span>
+            </TooltipTrigger>
+            {selectedSummary && (
+              <TooltipContent side="bottom" className="p-3 rounded-lg max-w-xs">
+                <div className="space-y-2">
+                  <div className="font-semibold text-sm">{selectedSummary.periodName}</div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    <span className="text-muted-foreground">Draft vouchers:</span>
+                    <span className="font-medium">{selectedSummary.draftVouchersCount}</span>
+                    <span className="text-muted-foreground">Posted vouchers:</span>
+                    <span className="font-medium">{selectedSummary.postedVouchersCount}</span>
+                    <span className="text-muted-foreground">Status:</span>
+                    <span
+                      className={cn(
+                        'font-medium',
+                        selectedSummary.postingFlowStatus === 'Ready' &&
+                          'text-[var(--voucher-status-posted)]',
+                        selectedSummary.postingFlowStatus === 'Has Drafts' &&
+                          'text-[var(--voucher-status-unposted)]',
+                      )}
+                    >
+                      {selectedSummary.postingFlowStatus}
+                    </span>
+                  </div>
+                </div>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        )}
+      </div>
+    </TooltipProvider>
   )
 }
 

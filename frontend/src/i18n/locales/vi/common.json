@@ -91,6 +91,7 @@
     "search": "Tìm kiếm...",
     "filter": "Lọc",
     "export": "Xuất",
+    "exporting": "Đang xuất...",
     "import": "Nhập",
     "refresh": "Làm mới",
     "close": "Đóng",
@@ -121,7 +122,15 @@
     "showing": "Đang hiển thị",
     "of": "của",
     "items": "mục",
-    "rowsPerPage": "Dòng mỗi trang"
+    "rowsPerPage": "Dòng mỗi trang",
+    "open": "Mở",
+    "closed": "Đã khóa",
+    "page": "Trang",
+    "account": "Tài khoản",
+    "debit": "Nợ",
+    "credit": "Có",
+    "type": "Loại",
+    "createdBy": "Người tạo"
   },
   "table": {
     "noResults": "Không có kết quả",
@@ -800,8 +809,10 @@
     },
     "actions": {
       "refresh": "Làm mới",
-      "export": "Xuất Excel",
-      "exporting": "Đang xuất..."
+      "export": "Xuất báo cáo",
+      "exporting": "Đang xuất...",
+      "exportExcel": "Xuất Excel",
+      "exportPdf": "Xuất PDF"
     },
     "pagination": {
       "showing": "Hiển thị",
@@ -822,13 +833,32 @@
     "errors": {
       "loadFailed": "Không thể tải bảng cân đối",
       "exportFailed": "Không thể xuất bảng cân đối",
-      "periodLoadFailed": "Không thể tải danh sách kỳ"
+      "periodLoadFailed": "Không thể tải danh sách kỳ",
+      "validationFailed": "Kiểm tra thất bại"
     },
     "success": {
-      "exported": "Xuất bảng cân đối thành công"
+      "exported": "Xuất bảng cân đối thành công",
+      "exportedPdf": "Xuất PDF thành công"
     },
     "reportFilters": "Bộ lọc báo cáo",
-    "periodInfo": "Kỳ: {{periodName}} | Khoảng thời gian: {{dateRange}}"
+    "periodInfo": "Kỳ: {{periodName}} | Khoảng thời gian: {{dateRange}}",
+    "drillDown": {
+      "title": "Chi tiết Chứng từ",
+      "openingDebit": "Nợ đầu kỳ",
+      "openingCredit": "Có đầu kỳ",
+      "periodDebit": "Phát sinh Nợ",
+      "periodCredit": "Phát sinh Có",
+      "closingDebit": "Nợ cuối kỳ",
+      "closingCredit": "Có cuối kỳ",
+      "voucherCount": "{{count}} chứng từ",
+      "totalAmount": "Tổng cộng",
+      "noVouchers": "Không tìm thấy chứng từ cho lựa chọn này",
+      "date": "Ngày",
+      "voucherNumber": "Số CT",
+      "description": "Diễn giải",
+      "debit": "Nợ",
+      "credit": "Có"
+    }
   },
   "cashAudit": {
     "title": "Kiểm toán Tiền mặt & Ngân hàng",
@@ -1014,6 +1044,7 @@
       "noAccounts": "Không tìm thấy tài khoản đóng góp",
       "noVouchers": "Không tìm thấy chứng từ cho tài khoản này",
       "voucherDetail": "Chi tiết chứng từ",
+      "voucherDetailDescription": "Chi tiết chứng từ và các bút toán",
       "lines": "Bút toán",
       "attachments": "Đính kèm",
       "openVoucher": "Mở chứng từ"

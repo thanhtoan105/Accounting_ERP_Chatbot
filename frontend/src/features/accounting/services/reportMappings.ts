@@ -112,7 +112,7 @@ export async function getMapping(reportType: ReportType, lineCode: string): Prom
 export async function updateMapping(
   reportType: ReportType,
   lineCode: string,
-  data: UpdateMappingRequest
+  data: UpdateMappingRequest,
 ): Promise<ReportMapping> {
   const res = await fetchWithAuth(`${API_BASE}/${reportType}/${lineCode}`, {
     method: 'PUT',
@@ -135,7 +135,7 @@ export async function updateMapping(
  */
 export async function getMappingHistory(
   reportType: ReportType,
-  lineCode: string
+  lineCode: string,
 ): Promise<MappingVersion[]> {
   const res = await fetchWithAuth(`${API_BASE}/${reportType}/${lineCode}/history`, {
     method: 'GET',
@@ -155,7 +155,7 @@ export async function getMappingHistory(
 export async function rollbackMapping(
   reportType: ReportType,
   lineCode: string,
-  version: number
+  version: number,
 ): Promise<ReportMapping> {
   const res = await fetchWithAuth(`${API_BASE}/${reportType}/${lineCode}/rollback`, {
     method: 'POST',
@@ -179,7 +179,7 @@ export async function rollbackMapping(
 export async function getMappingAuditHistory(
   reportType: ReportType,
   page = 0,
-  size = 20
+  size = 20,
 ): Promise<{
   entries: MappingAuditEntry[]
   totalPages: number
