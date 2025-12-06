@@ -123,9 +123,7 @@ export function DrillDownPanel({
       <SheetContent side="right" className="w-[600px] sm:w-[700px] overflow-y-auto">
         <SheetHeader className="pb-4 border-b">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg">
-              {t('trialBalance.drillDown.title')}
-            </SheetTitle>
+            <SheetTitle className="text-lg">{t('trialBalance.drillDown.title')}</SheetTitle>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
@@ -169,8 +167,12 @@ export function DrillDownPanel({
                       <TableHead>{t('trialBalance.drillDown.date')}</TableHead>
                       <TableHead>{t('trialBalance.drillDown.voucherNumber')}</TableHead>
                       <TableHead>{t('trialBalance.drillDown.description')}</TableHead>
-                      <TableHead className="text-right">{t('trialBalance.drillDown.debit')}</TableHead>
-                      <TableHead className="text-right">{t('trialBalance.drillDown.credit')}</TableHead>
+                      <TableHead className="text-right">
+                        {t('trialBalance.drillDown.debit')}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t('trialBalance.drillDown.credit')}
+                      </TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -211,7 +213,8 @@ export function DrillDownPanel({
               {totalPages > 1 && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    {t('trialBalance.pagination.page')} {page + 1} {t('trialBalance.pagination.of')} {totalPages}
+                    {t('trialBalance.pagination.page')} {page + 1} {t('trialBalance.pagination.of')}{' '}
+                    {totalPages}
                   </span>
                   <div className="flex items-center gap-2">
                     <Button

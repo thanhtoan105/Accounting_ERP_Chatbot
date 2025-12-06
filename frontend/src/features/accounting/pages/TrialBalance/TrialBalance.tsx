@@ -84,7 +84,13 @@ export function TrialBalance() {
 
   // Handle amount cell click for drill-down
   const handleAmountClick = useCallback(
-    (accountId: number, accountCode: string, accountName: string, amountType: AmountType, value: number) => {
+    (
+      accountId: number,
+      accountCode: string,
+      accountName: string,
+      amountType: AmountType,
+      value: number,
+    ) => {
       // Only allow drill-down if there's a non-zero value
       if (value === 0) return
 
@@ -321,7 +327,9 @@ export function TrialBalance() {
                 <DropdownMenuTrigger asChild>
                   <Button disabled={exporting || !selectedPeriodId}>
                     <Download className="h-4 w-4 mr-2" />
-                    {exporting ? t('trialBalance.actions.exporting') : t('trialBalance.actions.export')}
+                    {exporting
+                      ? t('trialBalance.actions.exporting')
+                      : t('trialBalance.actions.export')}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -406,7 +414,13 @@ export function TrialBalance() {
                             <TableCell
                               className={`text-right ${account.openingDebit !== 0 ? 'cursor-pointer hover:bg-muted/50 hover:text-blue-600' : ''}`}
                               onClick={() =>
-                                handleAmountClick(account.accountId, account.accountCode, account.accountName, 'OPENING_DEBIT', account.openingDebit)
+                                handleAmountClick(
+                                  account.accountId,
+                                  account.accountCode,
+                                  account.accountName,
+                                  'OPENING_DEBIT',
+                                  account.openingDebit,
+                                )
                               }
                             >
                               {account.openingDebit !== 0
@@ -416,7 +430,13 @@ export function TrialBalance() {
                             <TableCell
                               className={`text-right ${account.openingCredit !== 0 ? 'cursor-pointer hover:bg-muted/50 hover:text-blue-600' : ''}`}
                               onClick={() =>
-                                handleAmountClick(account.accountId, account.accountCode, account.accountName, 'OPENING_CREDIT', account.openingCredit)
+                                handleAmountClick(
+                                  account.accountId,
+                                  account.accountCode,
+                                  account.accountName,
+                                  'OPENING_CREDIT',
+                                  account.openingCredit,
+                                )
                               }
                             >
                               {account.openingCredit !== 0
@@ -426,7 +446,13 @@ export function TrialBalance() {
                             <TableCell
                               className={`text-right ${account.periodDebit !== 0 ? 'cursor-pointer hover:bg-muted/50 hover:text-blue-600' : ''}`}
                               onClick={() =>
-                                handleAmountClick(account.accountId, account.accountCode, account.accountName, 'PERIOD_DEBIT', account.periodDebit)
+                                handleAmountClick(
+                                  account.accountId,
+                                  account.accountCode,
+                                  account.accountName,
+                                  'PERIOD_DEBIT',
+                                  account.periodDebit,
+                                )
                               }
                             >
                               {account.periodDebit !== 0
@@ -436,7 +462,13 @@ export function TrialBalance() {
                             <TableCell
                               className={`text-right ${account.periodCredit !== 0 ? 'cursor-pointer hover:bg-muted/50 hover:text-blue-600' : ''}`}
                               onClick={() =>
-                                handleAmountClick(account.accountId, account.accountCode, account.accountName, 'PERIOD_CREDIT', account.periodCredit)
+                                handleAmountClick(
+                                  account.accountId,
+                                  account.accountCode,
+                                  account.accountName,
+                                  'PERIOD_CREDIT',
+                                  account.periodCredit,
+                                )
                               }
                             >
                               {account.periodCredit !== 0
@@ -446,7 +478,13 @@ export function TrialBalance() {
                             <TableCell
                               className={`text-right ${account.closingDebit !== 0 ? 'cursor-pointer hover:bg-muted/50 hover:text-blue-600' : ''}`}
                               onClick={() =>
-                                handleAmountClick(account.accountId, account.accountCode, account.accountName, 'CLOSING_DEBIT', account.closingDebit)
+                                handleAmountClick(
+                                  account.accountId,
+                                  account.accountCode,
+                                  account.accountName,
+                                  'CLOSING_DEBIT',
+                                  account.closingDebit,
+                                )
                               }
                             >
                               {account.closingDebit !== 0
@@ -456,7 +494,13 @@ export function TrialBalance() {
                             <TableCell
                               className={`text-right ${account.closingCredit !== 0 ? 'cursor-pointer hover:bg-muted/50 hover:text-blue-600' : ''}`}
                               onClick={() =>
-                                handleAmountClick(account.accountId, account.accountCode, account.accountName, 'CLOSING_CREDIT', account.closingCredit)
+                                handleAmountClick(
+                                  account.accountId,
+                                  account.accountCode,
+                                  account.accountName,
+                                  'CLOSING_CREDIT',
+                                  account.closingCredit,
+                                )
                               }
                             >
                               {account.closingCredit !== 0
@@ -593,11 +637,15 @@ export function TrialBalance() {
         open={voucherModalOpen}
         onClose={handleVoucherModalClose}
         voucherId={selectedVoucherId}
-        breadcrumb={drillDownAccount ? {
-          accountCode: drillDownAccount.accountCode,
-          accountName: drillDownAccount.accountName,
-          amountType: drillDownAccount.amountType,
-        } : undefined}
+        breadcrumb={
+          drillDownAccount
+            ? {
+                accountCode: drillDownAccount.accountCode,
+                accountName: drillDownAccount.accountName,
+                amountType: drillDownAccount.amountType,
+              }
+            : undefined
+        }
       />
     </div>
   )

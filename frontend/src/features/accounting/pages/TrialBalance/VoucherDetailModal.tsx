@@ -229,7 +229,9 @@ export function VoucherDetailModal({
                     <TableRow>
                       <TableHead className="w-[100px]">{t('vouchers.accountCode')}</TableHead>
                       <TableHead>{t('vouchers.accountName')}</TableHead>
-                      <TableHead>{t('vouchers.lineDescription', { defaultValue: 'Diễn giải' })}</TableHead>
+                      <TableHead>
+                        {t('vouchers.lineDescription', { defaultValue: 'Diễn giải' })}
+                      </TableHead>
                       <TableHead className="text-right w-[120px]">{t('vouchers.debit')}</TableHead>
                       <TableHead className="text-right w-[120px]">{t('vouchers.credit')}</TableHead>
                     </TableRow>
@@ -237,13 +239,12 @@ export function VoucherDetailModal({
                   <TableBody>
                     {voucher.lines?.map((line: VoucherLineDTO, index: number) => (
                       <TableRow key={line.id || index}>
-                        <TableCell className="font-mono text-sm">
-                          {line.accountCode}
-                        </TableCell>
-                        <TableCell>
-                          {line.accountName}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={line.description || ''}>
+                        <TableCell className="font-mono text-sm">{line.accountCode}</TableCell>
+                        <TableCell>{line.accountName}</TableCell>
+                        <TableCell
+                          className="max-w-[200px] truncate"
+                          title={line.description || ''}
+                        >
                           {line.description || '-'}
                         </TableCell>
                         <TableCell className="text-right font-mono">
@@ -299,11 +300,7 @@ export function VoucherDetailModal({
                               ({(att.fileSize / 1024).toFixed(1)} KB)
                             </span>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            asChild
-                          >
+                          <Button variant="ghost" size="sm" asChild>
                             <a
                               href={att.downloadUrl || att.signedUrl}
                               target="_blank"
@@ -331,7 +328,8 @@ export function VoucherDetailModal({
               )}
               {voucher.postedByName && (
                 <p>
-                  {t('vouchers.postedBy', { defaultValue: 'Người hạch toán' })}: {voucher.postedByName}
+                  {t('vouchers.postedBy', { defaultValue: 'Người hạch toán' })}:{' '}
+                  {voucher.postedByName}
                   {voucher.postedAt && ` - ${formatDate(voucher.postedAt)}`}
                 </p>
               )}

@@ -179,10 +179,7 @@ export async function validateForExport(periodId: string): Promise<ValidationRes
 /**
  * Export trial balance to PDF format.
  */
-export async function exportTrialBalancePdf(
-  periodId: string,
-  snapshotId?: string,
-): Promise<void> {
+export async function exportTrialBalancePdf(periodId: string, snapshotId?: string): Promise<void> {
   const params = new URLSearchParams({ periodId })
   if (snapshotId) {
     params.append('snapshotId', snapshotId)
