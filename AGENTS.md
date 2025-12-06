@@ -321,4 +321,4 @@ bd hooks install            # Install git hooks (recommended)
 
 From now on, please do not add 'Co-authored-by' or any attribution footer to the git commit messages.
 Before do any task, read bd skills and use nia deep search first. use frontend skills when design frontend
-Do not auto create markdown file if user not request
+Do not auto create markdown (.md) file if user not requested.
