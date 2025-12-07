@@ -17,6 +17,8 @@ import com.accounting.service.PeriodManagementService;
 import com.accounting.service.TrialBalanceService;
 import com.accounting.service.CompanyService;
 import com.accounting.service.report.TrialBalancePdfExportService;
+import com.accounting.service.report.TrialBalanceSnapshotService;
+import com.accounting.service.report.TrialBalanceSnapshotService.PdfExportResult;
 import com.accounting.entity.Company;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -66,6 +68,10 @@ public class TrialBalanceServiceImpl implements TrialBalanceService {
   private final PeriodManagementService periodManagementService;
   private final CompanyService companyService;
   private final TrialBalancePdfExportService trialBalancePdfExportService;
+  private final TrialBalanceSnapshotService trialBalanceSnapshotService;
+
+  // Store last export result for header retrieval
+  private static final ThreadLocal<PdfExportResult> lastExportResult = new ThreadLocal<>();
 
   @Autowired
   public TrialBalanceServiceImpl(
@@ -73,12 +79,29 @@ public class TrialBalanceServiceImpl implements TrialBalanceService {
       ChartOfAccountsRepository chartOfAccountsRepository,
       PeriodManagementService periodManagementService,
       CompanyService companyService,
-      TrialBalancePdfExportService trialBalancePdfExportService) {
+      TrialBalancePdfExportService trialBalancePdfExportService,
+      TrialBalanceSnapshotService trialBalanceSnapshotService) {
     this.voucherLineRepository = voucherLineRepository;
     this.chartOfAccountsRepository = chartOfAccountsRepository;
     this.periodManagementService = periodManagementService;
     this.companyService = companyService;
     this.trialBalancePdfExportService = trialBalancePdfExportService;
+    this.trialBalanceSnapshotService = trialBalanceSnapshotService;
+  }
+
+  /**
+   * Get the last PDF export result for header retrieval.
+   * Thread-safe via ThreadLocal.
+   */
+  public static PdfExportResult getLastExportResult() {
+    return lastExportResult.get();
+  }
+
+  /**
+   * Clear the last export result after headers are set.
+   */
+  public static void clearLastExportResult() {
+    lastExportResult.remove();
   }
 
   @Override
@@ -445,20 +468,27 @@ public class TrialBalanceServiceImpl implements TrialBalanceService {
 
   private BigDecimal calculateDrillDownTotal(Long companyId, Long accountId, UUID periodId,
       AccountingPeriodDTO period, AmountType amountType) {
-    // For simplicity, calculate from data; for period types use sum queries
     switch (amountType) {
+      case OPENING_DEBIT:
+        return voucherLineRepository.sumOpeningDebit(companyId, accountId, period.getStartDate());
+      case OPENING_CREDIT:
+        return voucherLineRepository.sumOpeningCredit(companyId, accountId, period.getStartDate());
       case PERIOD_DEBIT:
         return voucherLineRepository.sumPeriodDebit(companyId, accountId, periodId);
       case PERIOD_CREDIT:
         return voucherLineRepository.sumPeriodCredit(companyId, accountId, periodId);
+      case CLOSING_DEBIT:
+        return voucherLineRepository.sumClosingDebit(companyId, accountId, period.getEndDate());
+      case CLOSING_CREDIT:
+        return voucherLineRepository.sumClosingCredit(companyId, accountId, period.getEndDate());
       default:
-        // For opening/closing, calculate from the full data
-        // This could be optimized with additional sum queries if needed
         return BigDecimal.ZERO;
     }
   }
 
   private DrillDownVoucherDTO mapToVoucherDTO(Object[] row) {
+    // Query returns 7 columns: id(0), voucherNumber(1), voucherDate(2), description(3),
+    // SUM(debit)(4), SUM(credit)(5), status(6)
     DrillDownVoucherDTO dto = new DrillDownVoucherDTO();
     dto.setId((UUID) row[0]);
     dto.setVoucherNumber((String) row[1]);
@@ -466,8 +496,9 @@ public class TrialBalanceServiceImpl implements TrialBalanceService {
     dto.setDescription((String) row[3]);
     dto.setDebit((BigDecimal) row[4]);
     dto.setCredit((BigDecimal) row[5]);
-    dto.setVoucherType(row[6] != null ? row[6].toString() : null);
-    dto.setStatus((String) row[7]);
+    dto.setStatus((String) row[6]);
+    // voucherType is not available from current Voucher entity - kept for API compatibility
+    dto.setVoucherType(null);
     return dto;
   }
 
@@ -528,7 +559,22 @@ public class TrialBalanceServiceImpl implements TrialBalanceService {
 
     try {
       logger.info("Exporting Trial Balance PDF for period {} (isDraft={})", periodId, isDraft);
-      return trialBalancePdfExportService.exportToPdf(report, snapshotId, isDraft);
+
+      // If snapshotId provided, verify hash matches
+      if (snapshotId != null) {
+        boolean hashMatches = trialBalanceSnapshotService.verifySnapshotHash(snapshotId, report);
+        if (!hashMatches) {
+          logger.warn("Data has changed since snapshot {} was created", snapshotId);
+        }
+      }
+
+      // Export with snapshot (AC7.1-10: Snapshot reproducibility)
+      PdfExportResult result = trialBalanceSnapshotService.exportToPdfWithSnapshot(report, periodId, isDraft);
+
+      // Store result for header retrieval by controller
+      lastExportResult.set(result);
+
+      return result.pdfBytes();
     } catch (Exception e) {
       logger.error("Failed to export Trial Balance PDF for period {}: {}", periodId, e.getMessage(), e);
       throw new IllegalStateException("Failed to export Trial Balance report to PDF", e);

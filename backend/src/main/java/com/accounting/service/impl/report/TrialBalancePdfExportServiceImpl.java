@@ -165,9 +165,10 @@ public class TrialBalancePdfExportServiceImpl implements TrialBalancePdfExportSe
     jasperReport.setDataSource(createDataSource(report));
 
     // 5. Export to PDF
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    jasperReport.toPdf(out);
-    return out.toByteArray();
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      jasperReport.toPdf(out);
+      return out.toByteArray();
+    }
   }
 
   /**

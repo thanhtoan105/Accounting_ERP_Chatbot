@@ -7,6 +7,8 @@ import com.accounting.enums.AmountType;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AuditService;
 import com.accounting.service.TrialBalanceService;
+import com.accounting.service.impl.TrialBalanceServiceImpl;
+import com.accounting.service.report.TrialBalanceSnapshotService.PdfExportResult;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -205,7 +207,23 @@ public class TrialBalanceController {
     headers.setContentType(MediaType.APPLICATION_PDF);
     headers.set(HttpHeaders.CONTENT_DISPOSITION,
         "attachment; filename=trial-balance-" + periodId.toString() + ".pdf");
-    // TODO: Add X-Content-SHA256 and X-Snapshot-Id headers when snapshot is implemented
+
+    // AC7.1-06 & AC7.1-10: Add X-Content-SHA256 and X-Snapshot-Id headers
+    try {
+      PdfExportResult exportResult = TrialBalanceServiceImpl.getLastExportResult();
+      if (exportResult != null) {
+        if (exportResult.dataHash() != null) {
+          headers.set("X-Content-SHA256", exportResult.dataHash());
+        }
+        if (exportResult.snapshotId() != null) {
+          headers.set("X-Snapshot-Id", exportResult.snapshotId().toString());
+        }
+        TrialBalanceServiceImpl.clearLastExportResult();
+      }
+    } catch (Exception e) {
+      logger.warn("Failed to set export headers: {}", e.getMessage());
+    }
+
     return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
   }
 
