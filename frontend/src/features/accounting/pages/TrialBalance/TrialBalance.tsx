@@ -91,8 +91,10 @@ export function TrialBalance() {
       amountType: AmountType,
       value: number,
     ) => {
-      // Only allow drill-down if there's a non-zero value
-      if (value === 0) return
+      // Block drill-down only for zero values in PERIOD columns (no activity)
+      // Allow drill-down for OPENING/CLOSING even if 0 (might have offsetting entries)
+      const isPeriodColumn = amountType === 'PERIOD_DEBIT' || amountType === 'PERIOD_CREDIT'
+      if (isPeriodColumn && value === 0) return
 
       setDrillDownAccount({ accountId, accountCode, accountName, amountType })
       setDrillDownOpen(true)

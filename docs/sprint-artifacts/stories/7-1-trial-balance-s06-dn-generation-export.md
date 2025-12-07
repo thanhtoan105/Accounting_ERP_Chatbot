@@ -1,6 +1,6 @@
 # Story 7.1: Trial Balance (S06-DN) Generation & Export - Full Implementation
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -527,18 +527,30 @@ Validate Trial Balance before export.
   ```
 - [x] **13.2** Add Vietnamese translations to `vi/common.json`
 
-### Task 14: E2E Testing (AC: #4-#10)
-- [ ] **14.1** Extend `trial-balance.spec.ts` with drill-down tests:
-  - Click amount cell → drill-down panel opens
-  - Drill-down shows correct vouchers
-  - Pagination works
-  - Sort works
-- [ ] **14.2** Add PDF export test:
-  - Click PDF button → file downloads
-  - Validate PDF headers present
-- [ ] **14.3** Add validation preflight test:
-  - Imbalanced data → export blocked
-  - Error dialog shows
+### Task 14: E2E Testing (AC: #4-#10) ✅
+- [x] **14.1** Extend `trial-balance.spec.ts` with drill-down tests:
+  - Click amount cell → drill-down panel opens (E2E-TB-011)
+  - Drill-down shows correct vouchers (E2E-TB-011)
+  - Pagination works (E2E-TB-012)
+  - Sort works (E2E-TB-012)
+- [x] **14.2** Add PDF export test:
+  - Click PDF button → file downloads (E2E-TB-014)
+  - Validate PDF headers present (E2E-TB-014)
+- [x] **14.3** Add validation preflight test:
+  - Imbalanced data → export blocked (E2E-TB-015)
+  - Error dialog shows (E2E-TB-015)
+
+### Task 15: Code Review Fixes (AI-Review) ✅
+- [x] **15.1** Implement TrialBalanceSnapshotService for AC7.1-10 snapshot reproducibility
+- [x] **15.2** Add X-Content-SHA256 and X-Snapshot-Id headers to PDF export response
+- [x] **15.3** Fix controller to retrieve hash and snapshot ID from export result
+
+### Task 16: Code Review Fixes Session 2 (AI-Review) ✅
+- [x] **16.1** Fix H2: `reexportFromSnapshot()` now regenerates PDF instead of returning null
+- [x] **16.2** Fix H3: Add sum queries for OPENING/CLOSING drill-down totals (was returning 0)
+- [x] **16.3** Fix M1: Clarify voucherType null handling in drill-down DTO (kept for API compat)
+- [x] **16.4** Fix M2: Use try-with-resources for ByteArrayOutputStream in PDF export
+- [x] **16.5** Fix M3: Allow drill-down for zero OPENING/CLOSING values (offsetting entries)
 
 ---
 
@@ -804,8 +816,10 @@ Claude (Amp) - 2025-12-06
   - drillDown section present in vi/common.json
   - pagination keys present
 
-**Pending (E2E tests only):**
-- ⚠️ Task 14: E2E tests for drill-down, PDF export, validation
+**Code Review Session (2025-12-06):**
+- ✅ All HIGH issues fixed
+- ✅ E2E tests verified (16 tests in trial-balance.spec.ts)
+- ⚠️ M3 (streaming export) documented as future enhancement
 
 ### File List
 **Backend - Implemented:**
@@ -814,25 +828,30 @@ Claude (Amp) - 2025-12-06
 - `backend/src/main/java/com/accounting/dto/TrialBalanceValidationDTO.java` - NEW
 - `backend/src/main/java/com/accounting/enums/AmountType.java` - NEW
 - `backend/src/main/java/com/accounting/service/TrialBalanceService.java` - MODIFIED (drill-down, validate, PDF methods)
-- `backend/src/main/java/com/accounting/service/impl/TrialBalanceServiceImpl.java` - MODIFIED (PDF export wired)
+- `backend/src/main/java/com/accounting/service/impl/TrialBalanceServiceImpl.java` - MODIFIED (PDF export with snapshot)
 - `backend/src/main/java/com/accounting/service/report/TrialBalancePdfExportService.java` - NEW (interface)
+- `backend/src/main/java/com/accounting/service/report/TrialBalanceSnapshotService.java` - NEW (interface) [Code Review]
 - `backend/src/main/java/com/accounting/service/impl/report/TrialBalancePdfExportServiceImpl.java` - NEW (implementation)
-- `backend/src/main/java/com/accounting/controller/report/TrialBalanceController.java` - MODIFIED (drill-down, validate, PDF endpoints)
+- `backend/src/main/java/com/accounting/service/impl/report/TrialBalanceSnapshotServiceImpl.java` - NEW (implementation) [Code Review]
+- `backend/src/main/java/com/accounting/controller/report/TrialBalanceController.java` - MODIFIED (X-Content-SHA256, X-Snapshot-Id headers)
 - `backend/src/main/java/com/accounting/repository/VoucherLineRepository.java` - MODIFIED (drill-down queries)
 - `backend/src/main/java/com/accounting/entity/report/ReportSnapshot.java` - NEW
 - `backend/src/main/java/com/accounting/repository/report/ReportSnapshotRepository.java` - NEW
 - `backend/src/main/resources/db/migration/V20251127005__add_cash_book_indexes.sql` - EXISTS (indexes)
 - `backend/src/main/resources/db/migration/V20251204002__create_report_snapshots_table.sql` - NEW
-- `backend/src/test/java/com/accounting/service/impl/TrialBalanceServiceImplDrillDownTest.java` - MODIFIED (added PDF service mock)
+- `backend/src/test/java/com/accounting/service/impl/TrialBalanceServiceImplDrillDownTest.java` - MODIFIED (added snapshot service mock)
 - `backend/src/test/java/com/accounting/service/impl/report/TrialBalancePdfExportServiceImplTest.java` - NEW
 
 **Frontend - Implemented:**
 - `frontend/src/features/accounting/pages/TrialBalance/DrillDownPanel.tsx` - NEW
-- `frontend/src/features/accounting/pages/TrialBalance/VoucherDetailModal.tsx` - NEW (this session)
+- `frontend/src/features/accounting/pages/TrialBalance/VoucherDetailModal.tsx` - NEW
 - `frontend/src/features/accounting/pages/TrialBalance/TrialBalance.tsx` - MODIFIED (VoucherDetailModal integration)
 - `frontend/src/services/trialBalance.ts` - MODIFIED (drill-down, validate, PDF APIs)
 - `frontend/src/i18n/locales/en/common.json` - MODIFIED (drillDown keys)
 - `frontend/src/i18n/locales/vi/common.json` - EXISTS (drillDown keys present)
+
+**E2E Tests:**
+- `tests/e2e/trial-balance.spec.ts` - MODIFIED (16 tests: drill-down, PDF export, validation)
 
 ---
 
@@ -843,3 +862,4 @@ Claude (Amp) - 2025-12-06
 | 2025-12-06 | SM Agent  | Initial full story draft created - extends MVP with drill-down, PDF, validation, snapshots. Comprehensive context from Nia research, Epic 7, and previous stories included. |
 | 2025-12-06 | DEV Agent | Status check: ~70% complete. Tasks 1-3, 6-9 marked complete. Tasks 4-5, 10-14 pending (PDF export, VoucherDetailModal, i18n). File list and completion notes added. |
 | 2025-12-06 | DEV Agent | Full implementation completed: PDF export service (TrialBalancePdfExportServiceImpl with DynamicReports, TT200 layout), VoucherDetailModal.tsx with document lineage, wired into TrialBalance.tsx. All ACs 4-10 now complete. Only E2E tests (Task 14) pending. |
+| 2025-12-07 | Code Review | Adversarial code review completed. Fixed 5 issues: H2 (reexportFromSnapshot null bytes), H3 (drill-down totals 0 for opening/closing), M1 (voucherType null doc), M2 (try-with-resources), M3 (zero value drill-down). All tests passing. Status → done. |

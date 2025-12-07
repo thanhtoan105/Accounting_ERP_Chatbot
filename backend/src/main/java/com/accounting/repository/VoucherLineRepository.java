@@ -82,7 +82,7 @@ public interface VoucherLineRepository
      */
     @Query("SELECT vl.accountId, SUM(vl.debit), SUM(vl.credit) " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND v.status = 'posted' " +
             "AND v.periodId = :periodId " +
@@ -104,7 +104,7 @@ public interface VoucherLineRepository
      */
     @Query("SELECT vl.accountId, SUM(vl.debit), SUM(vl.credit) " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND v.status = 'posted' " +
             "AND v.voucherDate < :periodStartDate " +
@@ -124,7 +124,7 @@ public interface VoucherLineRepository
      */
     @Query("SELECT vl.accountId, COUNT(vl) " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND v.status = 'posted' " +
             "AND v.voucherDate >= :startDate " +
@@ -150,7 +150,7 @@ public interface VoucherLineRepository
      */
     @Query("SELECT vl.accountId, SUM(vl.debit), SUM(vl.credit) " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND v.status = 'posted' " +
             "AND v.voucherDate >= :startDate " +
@@ -172,18 +172,18 @@ public interface VoucherLineRepository
      * @param periodId  period ID
      * @param pageable  pagination parameters
      * @return page of Object arrays: [voucherId (UUID), voucherNumber (String), voucherDate (LocalDate),
-     *         description (String), debit (BigDecimal), credit (BigDecimal), voucherType (String), status (String)]
+     *         description (String), debit (BigDecimal), credit (BigDecimal), status (String)]
      */
     @Query("SELECT v.id, v.voucherNumber, v.voucherDate, v.description, " +
-            "SUM(vl.debit), SUM(vl.credit), v.voucherType, v.status " +
+            "SUM(vl.debit), SUM(vl.credit), v.status " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND vl.accountId = :accountId " +
             "AND v.status = 'posted' " +
             "AND v.periodId = :periodId " +
             "AND vl.debit > 0 " +
-            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.voucherType, v.status")
+            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.status")
     Page<Object[]> findPeriodDebitVouchers(
             @Param("companyId") Long companyId,
             @Param("accountId") Long accountId,
@@ -195,15 +195,15 @@ public interface VoucherLineRepository
      * Used for drill-down from Period Credit column in Trial Balance.
      */
     @Query("SELECT v.id, v.voucherNumber, v.voucherDate, v.description, " +
-            "SUM(vl.debit), SUM(vl.credit), v.voucherType, v.status " +
+            "SUM(vl.debit), SUM(vl.credit), v.status " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND vl.accountId = :accountId " +
             "AND v.status = 'posted' " +
             "AND v.periodId = :periodId " +
             "AND vl.credit > 0 " +
-            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.voucherType, v.status")
+            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.status")
     Page<Object[]> findPeriodCreditVouchers(
             @Param("companyId") Long companyId,
             @Param("accountId") Long accountId,
@@ -215,15 +215,15 @@ public interface VoucherLineRepository
      * Returns vouchers from all periods before the specified start date with debit entries.
      */
     @Query("SELECT v.id, v.voucherNumber, v.voucherDate, v.description, " +
-            "SUM(vl.debit), SUM(vl.credit), v.voucherType, v.status " +
+            "SUM(vl.debit), SUM(vl.credit), v.status " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND vl.accountId = :accountId " +
             "AND v.status = 'posted' " +
             "AND v.voucherDate < :periodStartDate " +
             "AND vl.debit > 0 " +
-            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.voucherType, v.status")
+            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.status")
     Page<Object[]> findOpeningDebitVouchers(
             @Param("companyId") Long companyId,
             @Param("accountId") Long accountId,
@@ -235,15 +235,15 @@ public interface VoucherLineRepository
      * Returns vouchers from all periods before the specified start date with credit entries.
      */
     @Query("SELECT v.id, v.voucherNumber, v.voucherDate, v.description, " +
-            "SUM(vl.debit), SUM(vl.credit), v.voucherType, v.status " +
+            "SUM(vl.debit), SUM(vl.credit), v.status " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND vl.accountId = :accountId " +
             "AND v.status = 'posted' " +
             "AND v.voucherDate < :periodStartDate " +
             "AND vl.credit > 0 " +
-            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.voucherType, v.status")
+            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.status")
     Page<Object[]> findOpeningCreditVouchers(
             @Param("companyId") Long companyId,
             @Param("accountId") Long accountId,
@@ -256,15 +256,15 @@ public interface VoucherLineRepository
      * For closing balance drill-down, we return all vouchers that have debit entries.
      */
     @Query("SELECT v.id, v.voucherNumber, v.voucherDate, v.description, " +
-            "SUM(vl.debit), SUM(vl.credit), v.voucherType, v.status " +
+            "SUM(vl.debit), SUM(vl.credit), v.status " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND vl.accountId = :accountId " +
             "AND v.status = 'posted' " +
             "AND v.voucherDate <= :periodEndDate " +
             "AND vl.debit > 0 " +
-            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.voucherType, v.status")
+            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.status")
     Page<Object[]> findClosingDebitVouchers(
             @Param("companyId") Long companyId,
             @Param("accountId") Long accountId,
@@ -276,15 +276,15 @@ public interface VoucherLineRepository
      * Returns all vouchers up to and including the period end date with net credit effect.
      */
     @Query("SELECT v.id, v.voucherNumber, v.voucherDate, v.description, " +
-            "SUM(vl.debit), SUM(vl.credit), v.voucherType, v.status " +
+            "SUM(vl.debit), SUM(vl.credit), v.status " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND vl.accountId = :accountId " +
             "AND v.status = 'posted' " +
             "AND v.voucherDate <= :periodEndDate " +
             "AND vl.credit > 0 " +
-            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.voucherType, v.status")
+            "GROUP BY v.id, v.voucherNumber, v.voucherDate, v.description, v.status")
     Page<Object[]> findClosingCreditVouchers(
             @Param("companyId") Long companyId,
             @Param("accountId") Long accountId,
@@ -296,7 +296,7 @@ public interface VoucherLineRepository
      */
     @Query("SELECT COALESCE(SUM(vl.debit), 0) " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND vl.accountId = :accountId " +
             "AND v.status = 'posted' " +
@@ -312,7 +312,7 @@ public interface VoucherLineRepository
      */
     @Query("SELECT COALESCE(SUM(vl.credit), 0) " +
             "FROM VoucherLine vl " +
-            "JOIN Voucher v ON vl.voucherId = v.id " +
+            "JOIN vl.voucher v " +
             "WHERE vl.companyId = :companyId " +
             "AND vl.accountId = :accountId " +
             "AND v.status = 'posted' " +
@@ -322,4 +322,68 @@ public interface VoucherLineRepository
             @Param("companyId") Long companyId,
             @Param("accountId") Long accountId,
             @Param("periodId") UUID periodId);
+
+    /**
+     * Calculate total debit for opening balance drill-down.
+     */
+    @Query("SELECT COALESCE(SUM(vl.debit), 0) " +
+            "FROM VoucherLine vl " +
+            "JOIN vl.voucher v " +
+            "WHERE vl.companyId = :companyId " +
+            "AND vl.accountId = :accountId " +
+            "AND v.status = 'posted' " +
+            "AND v.voucherDate < :periodStartDate " +
+            "AND vl.debit > 0")
+    BigDecimal sumOpeningDebit(
+            @Param("companyId") Long companyId,
+            @Param("accountId") Long accountId,
+            @Param("periodStartDate") LocalDate periodStartDate);
+
+    /**
+     * Calculate total credit for opening balance drill-down.
+     */
+    @Query("SELECT COALESCE(SUM(vl.credit), 0) " +
+            "FROM VoucherLine vl " +
+            "JOIN vl.voucher v " +
+            "WHERE vl.companyId = :companyId " +
+            "AND vl.accountId = :accountId " +
+            "AND v.status = 'posted' " +
+            "AND v.voucherDate < :periodStartDate " +
+            "AND vl.credit > 0")
+    BigDecimal sumOpeningCredit(
+            @Param("companyId") Long companyId,
+            @Param("accountId") Long accountId,
+            @Param("periodStartDate") LocalDate periodStartDate);
+
+    /**
+     * Calculate total debit for closing balance drill-down.
+     */
+    @Query("SELECT COALESCE(SUM(vl.debit), 0) " +
+            "FROM VoucherLine vl " +
+            "JOIN vl.voucher v " +
+            "WHERE vl.companyId = :companyId " +
+            "AND vl.accountId = :accountId " +
+            "AND v.status = 'posted' " +
+            "AND v.voucherDate <= :periodEndDate " +
+            "AND vl.debit > 0")
+    BigDecimal sumClosingDebit(
+            @Param("companyId") Long companyId,
+            @Param("accountId") Long accountId,
+            @Param("periodEndDate") LocalDate periodEndDate);
+
+    /**
+     * Calculate total credit for closing balance drill-down.
+     */
+    @Query("SELECT COALESCE(SUM(vl.credit), 0) " +
+            "FROM VoucherLine vl " +
+            "JOIN vl.voucher v " +
+            "WHERE vl.companyId = :companyId " +
+            "AND vl.accountId = :accountId " +
+            "AND v.status = 'posted' " +
+            "AND v.voucherDate <= :periodEndDate " +
+            "AND vl.credit > 0")
+    BigDecimal sumClosingCredit(
+            @Param("companyId") Long companyId,
+            @Param("accountId") Long accountId,
+            @Param("periodEndDate") LocalDate periodEndDate);
 }
