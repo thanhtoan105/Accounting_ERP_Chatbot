@@ -203,11 +203,10 @@
                 <version>2.43.0</version>
                 <configuration>
                     <java>
-                        <eclipse>
-                            <file>""</file>
-                        </eclipse>
-                        <importOrder>java,javax,org,com</importOrder>
-                        <removeUnusedImports>true</removeUnusedImports>
+                        <importOrder>
+                            <order>java,javax,org,com</order>
+                        </importOrder>
+                        <removeUnusedImports />
                     </java>
                 </configuration>
                 <executions>

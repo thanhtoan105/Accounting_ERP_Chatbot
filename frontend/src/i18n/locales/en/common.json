@@ -33,7 +33,9 @@
     "cashBook": "Cash Book",
     "cashBookSummary": "Cash Book Summary",
     "statutoryReports": "Statutory Reports",
-    "reportMappings": "Report Mappings"
+    "reportMappings": "Report Mappings",
+    "reportSchedules": "Report Schedules",
+    "reportCenter": "Report Center"
   },
   "auth": {
     "login": "Log in",
@@ -1116,5 +1118,61 @@
       "updated": "Mapping updated successfully (new version created)",
       "rolledBack": "Mapping rolled back successfully"
     }
+  },
+  "reportSchedules": {
+    "title": "Report Schedules",
+    "createNew": "Create Schedule",
+    "editSchedule": "Edit Schedule",
+    "scheduleName": "Schedule Name",
+    "reportType": "Report Type",
+    "cronExpression": "Schedule Frequency",
+    "periodRule": "Period Selection",
+    "exportFormats": "Export Formats",
+    "recipients": "Recipients",
+    "owner": "Owner",
+    "lastRun": "Last Run",
+    "nextRun": "Next Run",
+    "active": "Active",
+    "inactive": "Inactive",
+    "runNow": "Run Now",
+    "viewHistory": "View History",
+    "disable": "Disable",
+    "enable": "Enable",
+    "periodRules": {
+      "LAST_CLOSED": "Last Closed Period",
+      "CURRENT": "Current Period",
+      "SPECIFIC": "Specific Period"
+    },
+    "cronPresets": {
+      "monthly": "Monthly on 5th",
+      "weekly": "Weekly on Monday",
+      "quarterly": "Quarterly",
+      "custom": "Custom"
+    },
+    "runStatus": {
+      "PENDING": "Pending",
+      "RUNNING": "Running",
+      "SUCCESS": "Success",
+      "PARTIAL_SUCCESS": "Partial Success",
+      "FAILED": "Failed",
+      "CANCELLED": "Cancelled",
+      "SKIPPED_DUPLICATE": "Skipped (Duplicate)"
+    },
+    "triggerType": {
+      "SCHEDULED": "Scheduled",
+      "MANUAL": "Manual",
+      "RETRY": "Retry"
+    }
+  },
+  "reportCenter": {
+    "title": "Report Center",
+    "upcoming": "Upcoming Runs",
+    "history": "Run History",
+    "noUpcoming": "No upcoming runs",
+    "rerun": "Rerun",
+    "viewDetails": "View Details",
+    "duration": "Duration",
+    "queuedAt": "Queued At",
+    "triggeredBy": "Triggered By"
   }
 }

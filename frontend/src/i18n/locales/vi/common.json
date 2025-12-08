@@ -33,7 +33,9 @@
     "cashBook": "Sổ quỹ tiền mặt/ngân hàng",
     "cashBookSummary": "Tổng hợp Sổ quỹ tiền mặt/ngân hàng",
     "statutoryReports": "Báo cáo Tài chính",
-    "reportMappings": "Cấu hình Ánh xạ"
+    "reportMappings": "Cấu hình Ánh xạ",
+    "reportSchedules": "Lịch chạy báo cáo",
+    "reportCenter": "Trung tâm báo cáo"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -1116,5 +1118,61 @@
       "updated": "Cập nhật ánh xạ thành công (đã tạo phiên bản mới)",
       "rolledBack": "Hoàn tác ánh xạ thành công"
     }
+  },
+  "reportSchedules": {
+    "title": "Lịch chạy báo cáo",
+    "createNew": "Tạo lịch mới",
+    "editSchedule": "Chỉnh sửa lịch",
+    "scheduleName": "Tên lịch",
+    "reportType": "Loại báo cáo",
+    "cronExpression": "Tần suất chạy",
+    "periodRule": "Chọn kỳ",
+    "exportFormats": "Định dạng xuất",
+    "recipients": "Người nhận",
+    "owner": "Chủ sở hữu",
+    "lastRun": "Lần chạy cuối",
+    "nextRun": "Lần chạy tiếp",
+    "active": "Hoạt động",
+    "inactive": "Tạm dừng",
+    "runNow": "Chạy ngay",
+    "viewHistory": "Xem lịch sử",
+    "disable": "Vô hiệu hóa",
+    "enable": "Kích hoạt",
+    "periodRules": {
+      "LAST_CLOSED": "Kỳ đóng gần nhất",
+      "CURRENT": "Kỳ hiện tại",
+      "SPECIFIC": "Kỳ cụ thể"
+    },
+    "cronPresets": {
+      "monthly": "Hàng tháng ngày 5",
+      "weekly": "Hàng tuần thứ 2",
+      "quarterly": "Hàng quý",
+      "custom": "Tùy chỉnh"
+    },
+    "runStatus": {
+      "PENDING": "Đang chờ",
+      "RUNNING": "Đang chạy",
+      "SUCCESS": "Thành công",
+      "PARTIAL_SUCCESS": "Một phần thành công",
+      "FAILED": "Thất bại",
+      "CANCELLED": "Đã hủy",
+      "SKIPPED_DUPLICATE": "Bỏ qua (Trùng)"
+    },
+    "triggerType": {
+      "SCHEDULED": "Theo lịch",
+      "MANUAL": "Thủ công",
+      "RETRY": "Thử lại"
+    }
+  },
+  "reportCenter": {
+    "title": "Trung tâm báo cáo",
+    "upcoming": "Lịch chạy sắp tới",
+    "history": "Lịch sử chạy",
+    "noUpcoming": "Không có lịch chạy sắp tới",
+    "rerun": "Chạy lại",
+    "viewDetails": "Xem chi tiết",
+    "duration": "Thời gian",
+    "queuedAt": "Thời điểm xếp hàng",
+    "triggeredBy": "Người kích hoạt"
   }
 }

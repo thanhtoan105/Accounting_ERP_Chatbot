@@ -43,6 +43,8 @@ import {
   IntegrityDashboardPage,
   StatutoryReportsPage,
   ReportMappingsPage,
+  ScheduleManagementPage,
+  ReportCenterPage,
 } from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
@@ -486,6 +488,26 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin']}>
               <ReportMappingsPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/reports/schedules"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
+              <ScheduleManagementPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/reports/center"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <ReportCenterPage />
             </RoleGuard>
           </ProtectedLayout>
         }

@@ -20,3 +20,5 @@ export { ReconciliationListPage, ReconciliationDetailPage } from './pages/BankRe
 export { AuditExplorerPage, IntegrityDashboardPage } from './pages/Audit'
 export { StatutoryReportsPage } from './pages/StatutoryReports'
 export { ReportMappingsPage } from './pages/ReportMappings'
+export { ScheduleManagementPage } from './pages/ReportSchedules'
+export { ReportCenterPage } from './pages/ReportCenter'
