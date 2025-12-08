@@ -6,27 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.accounting.dto.BalanceTooltipDTO;
-import com.accounting.dto.BankAccountCreateRequest;
-import com.accounting.dto.BankAccountDTO;
-import com.accounting.dto.BankAccountUpdateRequest;
-import com.accounting.entity.BankAccount;
-import com.accounting.repository.BankAccountRepository;
-import com.accounting.repository.ChartOfAccountsRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.AuditService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +29,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.BalanceTooltipDTO;
+import com.accounting.dto.BankAccountCreateRequest;
+import com.accounting.dto.BankAccountDTO;
+import com.accounting.dto.BankAccountUpdateRequest;
+import com.accounting.entity.BankAccount;
+import com.accounting.repository.BankAccountRepository;
+import com.accounting.repository.ChartOfAccountsRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.AuditService;
 
 @ExtendWith(MockitoExtension.class)
 class BankAccountServiceImplTest {

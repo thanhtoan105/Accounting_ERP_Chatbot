@@ -1,8 +1,9 @@
 package com.accounting.service;
 
-import com.accounting.dto.OutputVATReportDTO;
 import java.util.Map;
 import java.util.UUID;
+
+import com.accounting.dto.OutputVATReportDTO;
 
 /**
  * Service interface for AR Output VAT report generation and export.
@@ -31,4 +32,3 @@ public interface ARVATReportService {
    */
   byte[] exportVATReport(UUID reportId, String format);
 }
-

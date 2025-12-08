@@ -49,4 +49,3 @@ public class RedisCacheErrorHandler implements CacheErrorHandler {
         logger.error("Cache clear error for cache '{}'", cache.getName(), exception);
     }
 }
-

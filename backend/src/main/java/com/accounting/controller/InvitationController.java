@@ -1,19 +1,11 @@
 package com.accounting.controller;
 
-import com.accounting.dto.AcceptInvitationRequest;
-import com.accounting.dto.AuthResponse;
-import com.accounting.dto.CreateInvitationRequest;
-import com.accounting.dto.InvitationResponse;
-import com.accounting.entity.Invitation;
-import com.accounting.entity.User;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.security.JwtTokenProvider;
-import com.accounting.service.InvitationService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,8 +19,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.accounting.dto.AcceptInvitationRequest;
+import com.accounting.dto.AuthResponse;
+import com.accounting.dto.CreateInvitationRequest;
+import com.accounting.dto.InvitationResponse;
+import com.accounting.entity.Invitation;
+import com.accounting.entity.User;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.security.JwtTokenProvider;
+import com.accounting.service.InvitationService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 /**
  * REST controller for invitation operations.
@@ -176,4 +178,3 @@ public class InvitationController {
     return ResponseEntity.ok(body);
   }
 }
-

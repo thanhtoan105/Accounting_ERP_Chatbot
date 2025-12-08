@@ -1,18 +1,9 @@
 package com.accounting.controller.auth;
 
-import com.accounting.dto.AuthResponse;
-import com.accounting.dto.ForgotPasswordRequest;
-import com.accounting.dto.LoginRequest;
-import com.accounting.dto.ResetPasswordRequest;
-import com.accounting.security.JwtTokenProvider;
-import com.accounting.security.SecurityUtils;
-import com.accounting.service.AuthService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -26,6 +17,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.accounting.dto.AuthResponse;
+import com.accounting.dto.ForgotPasswordRequest;
+import com.accounting.dto.LoginRequest;
+import com.accounting.dto.ResetPasswordRequest;
+import com.accounting.security.JwtTokenProvider;
+import com.accounting.security.SecurityUtils;
+import com.accounting.service.AuthService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -182,4 +185,3 @@ public class AuthController {
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
   }
 }
-

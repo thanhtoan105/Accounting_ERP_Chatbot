@@ -1,7 +1,8 @@
 package com.accounting.ledger.impl;
 
-import com.accounting.ledger.LedgerPeriodService;
 import org.springframework.stereotype.Service;
+
+import com.accounting.ledger.LedgerPeriodService;
 
 @Service
 public class LedgerPeriodServiceImpl implements LedgerPeriodService {
@@ -13,5 +14,3 @@ public class LedgerPeriodServiceImpl implements LedgerPeriodService {
     return false;
   }
 }
-
-

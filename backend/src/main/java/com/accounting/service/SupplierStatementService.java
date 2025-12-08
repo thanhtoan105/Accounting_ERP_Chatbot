@@ -1,5 +1,13 @@
 package com.accounting.service;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.accounting.dto.DetailedStatementDTO;
 import com.accounting.dto.ReconciliationResultDTO;
 import com.accounting.dto.SupplierStatementDTO;
@@ -7,12 +15,6 @@ import com.accounting.dto.SupplierStatementDisputeDTO;
 import com.accounting.dto.SupplierStatementHistoryDTO;
 import com.accounting.dto.UpdateDisputeRequest;
 import com.accounting.entity.SupplierStatementHistory;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service interface for supplier statement generation, reconciliation, and dispute management.
@@ -156,4 +158,3 @@ public interface SupplierStatementService {
    */
   Page<SupplierStatementHistoryDTO> getStatementHistory(Long supplierId, Pageable pageable);
 }
-

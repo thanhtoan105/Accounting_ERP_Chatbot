@@ -1,12 +1,14 @@
 package com.accounting.repository;
 
-import com.accounting.entity.Supplier;
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.accounting.entity.Supplier;
 
 /**
  * Repository for Supplier entities with company scoping and search capabilities.
@@ -104,4 +106,3 @@ public interface SupplierRepository
   List<Supplier> searchByCodeOrNameNative(
       @Param("companyId") Long companyId, @Param("searchTerm") String searchTerm);
 }
-

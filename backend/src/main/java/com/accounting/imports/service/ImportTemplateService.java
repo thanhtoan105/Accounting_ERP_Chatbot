@@ -6,4 +6,3 @@ public interface ImportTemplateService {
 
   byte[] generateTemplate(ImportType type, String format);
 }
-

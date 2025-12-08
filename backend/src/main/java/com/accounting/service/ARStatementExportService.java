@@ -1,7 +1,8 @@
 package com.accounting.service;
 
-import com.accounting.entity.ARStatementHistory;
 import java.util.List;
+
+import com.accounting.entity.ARStatementHistory;
 
 /**
  * Service interface for AR statement export (PDF/Excel).
@@ -33,4 +34,3 @@ public interface ARStatementExportService {
       ARStatementHistory.StatementFormat statementFormat,
       java.time.LocalDate asOfDate);
 }
-

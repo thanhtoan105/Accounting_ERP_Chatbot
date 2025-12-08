@@ -1,7 +1,6 @@
 package com.accounting.imports.model;
 
 import java.time.Instant;
-
 import java.util.UUID;
 
 public record ImportContext(

@@ -1,8 +1,9 @@
 package com.accounting.service;
 
+import java.util.List;
+
 import com.accounting.dto.audit.IntegrityCheckResultDTO;
 import com.accounting.dto.audit.IntegrityIssueDTO;
-import java.util.List;
 
 /**
  * Service interface for sending audit-related alerts and notifications.

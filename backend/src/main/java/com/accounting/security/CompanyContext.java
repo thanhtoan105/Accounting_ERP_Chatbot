@@ -18,5 +18,3 @@ public final class CompanyContext {
     CURRENT_COMPANY_ID.remove();
   }
 }
-
-

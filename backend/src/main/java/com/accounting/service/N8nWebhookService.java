@@ -1,7 +1,8 @@
 package com.accounting.service;
 
-import com.accounting.dto.VoucherEmbeddingPayload;
 import java.util.concurrent.CompletableFuture;
+
+import com.accounting.dto.VoucherEmbeddingPayload;
 
 /**
  * Service for triggering n8n webhook automation for voucher embedding.

@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.ARStatementHistory;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+
+import com.accounting.entity.ARStatementHistory;
 
 /**
  * DTO for AR statement history record.
@@ -120,4 +121,3 @@ public class ARStatementHistoryDTO {
     this.statementHash = statementHash;
   }
 }
-

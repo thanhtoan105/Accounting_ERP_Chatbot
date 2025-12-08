@@ -1,8 +1,9 @@
 package com.accounting.dto;
 
-import com.accounting.entity.ARStatementDelivery;
 import java.time.Instant;
 import java.util.UUID;
+
+import com.accounting.entity.ARStatementDelivery;
 
 /**
  * DTO for AR statement delivery record.
@@ -92,4 +93,3 @@ public class ARStatementDeliveryDTO {
     this.createdAt = createdAt;
   }
 }
-

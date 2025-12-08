@@ -1,13 +1,15 @@
 package com.accounting.repository;
 
-import com.accounting.entity.ARVATCorrection;
-import com.accounting.entity.ARVATCorrection.Status;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import com.accounting.entity.ARVATCorrection;
+import com.accounting.entity.ARVATCorrection.Status;
 
 public interface ARVATCorrectionRepository
     extends JpaRepository<ARVATCorrection, UUID>, JpaSpecificationExecutor<ARVATCorrection> {
@@ -23,4 +25,3 @@ public interface ARVATCorrectionRepository
   List<ARVATCorrection> findByCompanyIdAndInvoiceIdAndCorrectedAtBetweenOrderByCorrectedAtDesc(
       Long companyId, UUID invoiceId, Instant start, Instant end);
 }
-

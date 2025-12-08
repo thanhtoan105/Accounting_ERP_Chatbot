@@ -1,11 +1,12 @@
 package com.accounting.dto;
 
-import com.accounting.entity.PurchaseBillStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.entity.PurchaseBillStatus;
 
 /**
  * DTO for full PurchaseBill details. Used for single purchase bill retrieval.
@@ -259,4 +260,3 @@ public class PurchaseBillDTO {
     this.lines = lines;
   }
 }
-

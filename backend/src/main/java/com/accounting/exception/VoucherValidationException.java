@@ -23,4 +23,3 @@ public class VoucherValidationException extends RuntimeException {
     return validationResult;
   }
 }
-

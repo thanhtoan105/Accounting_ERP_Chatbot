@@ -18,4 +18,3 @@ public interface VoucherValidationService {
    */
   VoucherValidationResult validate(VoucherCreateRequest request);
 }
-

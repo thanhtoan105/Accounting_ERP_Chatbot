@@ -98,4 +98,3 @@ class JwtTokenProviderTest {
     assertTrue(jwtTokenProvider.validateToken(tokenWithRemember));
   }
 }
-

@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.service.VoucherHistoryService;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.Map;
+
+import com.accounting.service.VoucherHistoryService;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * DTO for voucher history entry.
@@ -136,4 +137,3 @@ public class VoucherHistoryEntryDTO {
         this.changes = changes;
     }
 }
-

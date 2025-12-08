@@ -1,24 +1,11 @@
 package com.accounting.service.impl;
 
-import com.accounting.dto.BalanceTooltipDTO;
-import com.accounting.dto.BankAccountCreateRequest;
-import com.accounting.dto.BankAccountDTO;
-import com.accounting.dto.BankAccountUpdateRequest;
-import com.accounting.entity.BankAccount;
-import com.accounting.entity.ChartOfAccount;
-import com.accounting.repository.BankAccountRepository;
-import com.accounting.repository.ChartOfAccountsRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.AuditService;
-import com.accounting.service.BankAccountService;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.servlet.http.HttpServletRequest;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -30,6 +17,21 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.BalanceTooltipDTO;
+import com.accounting.dto.BankAccountCreateRequest;
+import com.accounting.dto.BankAccountDTO;
+import com.accounting.dto.BankAccountUpdateRequest;
+import com.accounting.entity.BankAccount;
+import com.accounting.entity.ChartOfAccount;
+import com.accounting.repository.BankAccountRepository;
+import com.accounting.repository.ChartOfAccountsRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.AuditService;
+import com.accounting.service.BankAccountService;
+
+import jakarta.persistence.criteria.Predicate;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Implementation of BankAccountService for bank account CRUD operations.

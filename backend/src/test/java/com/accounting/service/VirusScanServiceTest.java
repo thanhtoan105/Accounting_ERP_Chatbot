@@ -1,6 +1,7 @@
 package com.accounting.service;
 
-import com.accounting.service.impl.VirusScanServiceImpl;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -8,7 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.accounting.service.impl.VirusScanServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class VirusScanServiceTest {
@@ -142,4 +143,3 @@ class VirusScanServiceTest {
     assertTrue(result.getErrorMessage().contains("blocked file type"));
   }
 }
-

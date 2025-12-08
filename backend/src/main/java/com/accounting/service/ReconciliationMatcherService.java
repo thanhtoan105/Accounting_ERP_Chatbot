@@ -1,10 +1,11 @@
 package com.accounting.service;
 
+import java.util.List;
+import java.util.UUID;
+
 import com.accounting.dto.reconciliation.AutoMatchConfigDTO;
 import com.accounting.dto.reconciliation.AutoMatchResultDTO;
 import com.accounting.dto.reconciliation.LedgerTransactionDTO;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Service for matching bank statement lines to ledger transactions.

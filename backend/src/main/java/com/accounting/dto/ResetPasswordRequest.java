@@ -33,4 +33,3 @@ public class ResetPasswordRequest {
     this.password = password;
   }
 }
-

@@ -1,7 +1,8 @@
 package com.accounting.service;
 
-import com.accounting.dto.ARAgingBucketDTO;
 import java.time.LocalDate;
+
+import com.accounting.dto.ARAgingBucketDTO;
 
 /**
  * Service interface for AR aging calculations.

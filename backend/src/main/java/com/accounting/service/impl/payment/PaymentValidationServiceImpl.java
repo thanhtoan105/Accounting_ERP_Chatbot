@@ -1,5 +1,17 @@
 package com.accounting.service.impl.payment;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.accounting.dto.PaymentAllocationRequest;
 import com.accounting.dto.PaymentValidationResult;
 import com.accounting.entity.APPayment;
@@ -10,18 +22,8 @@ import com.accounting.repository.PurchaseBillRepository;
 import com.accounting.repository.SupplierRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AccountBalanceService;
-import org.springframework.security.core.context.SecurityContextHolder;
 import com.accounting.service.CompanySettingsService;
 import com.accounting.service.PaymentValidationService;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Implementation of PaymentValidationService.
@@ -293,4 +295,3 @@ public class PaymentValidationServiceImpl implements PaymentValidationService {
     return new BigDecimal("20000000.00");
   }
 }
-

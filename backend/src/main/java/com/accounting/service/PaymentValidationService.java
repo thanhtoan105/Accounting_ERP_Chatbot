@@ -1,10 +1,11 @@
 package com.accounting.service;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 import com.accounting.dto.PaymentAllocationRequest;
 import com.accounting.dto.PaymentValidationResult;
 import com.accounting.entity.APPayment;
-import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * Service for payment validation including overpayment prevention,
@@ -65,4 +66,3 @@ public interface PaymentValidationService {
    */
   PaymentValidationResult suggestQuickAddSupplier(String supplierName);
 }
-

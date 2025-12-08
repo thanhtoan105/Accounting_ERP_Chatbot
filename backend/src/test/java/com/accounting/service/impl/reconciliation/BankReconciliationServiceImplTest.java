@@ -4,6 +4,31 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.accounting.dto.reconciliation.BankReconciliationDTO;
 import com.accounting.dto.reconciliation.BankStatementLineDTO;
 import com.accounting.dto.reconciliation.CreateAdjustmentRequestDTO;
@@ -13,7 +38,6 @@ import com.accounting.dto.reconciliation.ReconciliationAdjustmentDTO;
 import com.accounting.entity.BankAccount;
 import com.accounting.entity.ChartOfAccount;
 import com.accounting.entity.Voucher;
-import com.accounting.entity.VoucherLine;
 import com.accounting.entity.reconciliation.AdjustmentStatus;
 import com.accounting.entity.reconciliation.AdjustmentType;
 import com.accounting.entity.reconciliation.BankReconciliation;
@@ -32,29 +56,6 @@ import com.accounting.repository.reconciliation.ReconciliationAdjustmentReposito
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.service.ReconciliationMatcherService;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Unit tests for BankReconciliationServiceImpl.

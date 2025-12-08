@@ -4,6 +4,7 @@
 -- 
 -- Status: Requires system-level installation (not just database)
 -- Benefit: 50-80% storage savings, auto-cleanup, 10-50x performance for queries
+-- Compatible with: TimescaleDB 2.24.0+
 -- ============================================================================
 
 -- ============================================================================
@@ -48,18 +49,23 @@ COMMIT;
 -- ============================================================================
 BEGIN;
 
+-- TimescaleDB requires partitioning column (created_at) to be part of primary key
+-- Drop existing primary key and recreate as composite key
+ALTER TABLE accounting.audit_logs DROP CONSTRAINT IF EXISTS audit_logs_pkey;
+ALTER TABLE accounting.audit_logs ADD PRIMARY KEY (id, created_at);
+
 -- Convert existing audit_logs table to hypertable
 -- Partitioned by created_at column (monthly by default)
 SELECT create_hypertable(
   'accounting.audit_logs',
   'created_at',
   if_not_exists => TRUE,
-  time_partitioning_func => 'public.time_bucket_ng'
+  migrate_data => TRUE
 );
 
 -- Verify conversion
 SELECT * FROM timescaledb_information.hypertables
-WHERE table_name = 'audit_logs';
+WHERE hypertable_name = 'audit_logs';
 
 COMMIT;
 
@@ -75,15 +81,21 @@ COMMIT;
 -- ============================================================================
 BEGIN;
 
--- Enable compression on chunks older than 30 days
+-- First, enable compression on the hypertable (required before adding policy)
+ALTER TABLE accounting.audit_logs SET (
+  timescaledb.compress = true,
+  timescaledb.compress_orderby = 'created_at DESC'
+);
+
+-- Add compression policy for chunks older than 30 days
 SELECT add_compression_policy(
   'accounting.audit_logs',
   INTERVAL '30 days',
   if_not_exists => TRUE
 );
 
--- View compression policy
-SELECT * FROM timescaledb_information.policy
+-- View compression policy (using jobs view, not policy view)
+SELECT * FROM timescaledb_information.jobs
 WHERE hypertable_name = 'audit_logs'
   AND proc_name LIKE '%compress%';
 
@@ -115,8 +127,8 @@ SELECT add_retention_policy(
 --   if_not_exists => TRUE
 -- );
 
--- View retention policy
-SELECT * FROM timescaledb_information.policy
+-- View retention policy (using jobs view)
+SELECT * FROM timescaledb_information.jobs
 WHERE hypertable_name = 'audit_logs'
   AND proc_name LIKE '%retention%';
 
@@ -126,16 +138,17 @@ COMMIT;
 -- VERIFICATION QUERIES
 -- ============================================================================
 
--- Check hypertable stats
-SELECT 
+-- Check hypertable metadata
+SELECT
+  hypertable_schema,
   hypertable_name,
-  total_size,
-  table_size,
-  indexes_size,
   num_chunks,
-  num_rows
-FROM timescaledb_information.hypertable_stats
+  compression_enabled
+FROM timescaledb_information.hypertables
 WHERE hypertable_name = 'audit_logs';
+
+-- Get hypertable size information
+SELECT * FROM hypertable_detailed_size('accounting.audit_logs');
 
 -- List all chunks (partitions)
 SELECT 
@@ -149,17 +162,8 @@ WHERE hypertable_name = 'audit_logs'
 ORDER BY range_start DESC
 LIMIT 20;
 
--- Estimate compression ratio (storage saved)
-SELECT 
-  chunk_name,
-  before_compression_total_bytes,
-  after_compression_total_bytes,
-  ROUND(100.0 * (1 - after_compression_total_bytes::NUMERIC / 
-    NULLIF(before_compression_total_bytes, 0)), 2) AS compression_ratio_percent
-FROM timescaledb_information.compressed_chunk_stats
-WHERE hypertable_name = 'audit_logs'
-ORDER BY after_compression_total_bytes DESC
-LIMIT 10;
+-- Estimate compression ratio (storage saved) using chunk_compression_stats function
+SELECT * FROM chunk_compression_stats('accounting.audit_logs');
 
 -- ============================================================================
 -- PERFORMANCE: Query examples showing hypertable advantages
@@ -186,13 +190,12 @@ LIMIT 10;
 -- MAINTENANCE: Monitoring
 -- ============================================================================
 
--- Check compression job status
+-- Check compression job status (using available columns in v2.24)
 SELECT 
   job_id,
   hypertable_name,
   proc_name,
-  last_start,
-  last_successful_finish,
+  schedule_interval,
   next_start
 FROM timescaledb_information.jobs
 WHERE hypertable_name = 'audit_logs';

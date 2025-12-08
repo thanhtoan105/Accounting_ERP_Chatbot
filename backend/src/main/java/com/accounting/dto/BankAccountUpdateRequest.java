@@ -1,9 +1,11 @@
 package com.accounting.dto;
 
+import java.math.BigDecimal;
+
 import com.accounting.entity.BankAccount;
+
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
-import java.math.BigDecimal;
 
 /**
  * Request DTO for updating an existing BankAccount.

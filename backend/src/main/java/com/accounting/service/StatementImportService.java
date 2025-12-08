@@ -1,11 +1,12 @@
 package com.accounting.service;
 
+import java.io.InputStream;
+import java.util.UUID;
+
 import com.accounting.dto.reconciliation.BankStatementFormatDTO;
 import com.accounting.dto.reconciliation.ColumnMappingSuggestionDTO;
 import com.accounting.dto.reconciliation.StatementImportRequestDTO;
 import com.accounting.dto.reconciliation.StatementImportResultDTO;
-import java.io.InputStream;
-import java.util.UUID;
 
 /**
  * Service for importing and parsing bank statements.

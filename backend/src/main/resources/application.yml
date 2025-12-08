@@ -121,3 +121,12 @@ chatbot:
   cache:
     enabled: ${REDIS_ENABLED:true}
     ttl-hours: 1
+
+# Report Scheduling Configuration
+reporting:
+  schedule:
+    check:
+      cron: "0 */5 * * * *"  # Every 5 minutes
+  orphan:
+    check:
+      cron: "0 0 1 * * *"    # Daily at 1 AM

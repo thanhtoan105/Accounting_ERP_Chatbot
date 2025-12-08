@@ -1,10 +1,11 @@
 package com.accounting.service;
 
-import com.accounting.dto.audit.IntegrityCheckResultDTO;
-import com.accounting.dto.audit.IntegrityIssueDTO;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.dto.audit.IntegrityCheckResultDTO;
+import com.accounting.dto.audit.IntegrityIssueDTO;
 
 /**
  * Service interface for integrity check operations.

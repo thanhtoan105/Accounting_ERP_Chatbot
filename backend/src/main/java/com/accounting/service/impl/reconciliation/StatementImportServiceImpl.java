@@ -1,21 +1,5 @@
 package com.accounting.service.impl.reconciliation;
 
-import com.accounting.security.CompanyContext;
-import com.accounting.dto.reconciliation.BankStatementFormatDTO;
-import com.accounting.dto.reconciliation.ColumnMappingSuggestionDTO;
-import com.accounting.dto.reconciliation.ImportErrorDTO;
-import com.accounting.dto.reconciliation.StatementImportRequestDTO;
-import com.accounting.dto.reconciliation.StatementImportResultDTO;
-import com.accounting.entity.reconciliation.BankReconciliation;
-import com.accounting.entity.reconciliation.BankStatementFormat;
-import com.accounting.entity.reconciliation.BankStatementLine;
-import com.accounting.entity.reconciliation.MatchStatus;
-import com.accounting.entity.reconciliation.ReconciliationStatus;
-import com.accounting.exception.BusinessException;
-import com.accounting.repository.reconciliation.BankReconciliationRepository;
-import com.accounting.repository.reconciliation.BankStatementFormatRepository;
-import com.accounting.repository.reconciliation.BankStatementLineRepository;
-import com.accounting.service.StatementImportService;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -51,6 +36,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.dto.reconciliation.BankStatementFormatDTO;
+import com.accounting.dto.reconciliation.ColumnMappingSuggestionDTO;
+import com.accounting.dto.reconciliation.ImportErrorDTO;
+import com.accounting.dto.reconciliation.StatementImportRequestDTO;
+import com.accounting.dto.reconciliation.StatementImportResultDTO;
+import com.accounting.entity.reconciliation.BankReconciliation;
+import com.accounting.entity.reconciliation.BankStatementFormat;
+import com.accounting.entity.reconciliation.BankStatementLine;
+import com.accounting.entity.reconciliation.MatchStatus;
+import com.accounting.entity.reconciliation.ReconciliationStatus;
+import com.accounting.exception.BusinessException;
+import com.accounting.repository.reconciliation.BankReconciliationRepository;
+import com.accounting.repository.reconciliation.BankStatementFormatRepository;
+import com.accounting.repository.reconciliation.BankStatementLineRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.StatementImportService;
 
 /**
  * Implementation of StatementImportService for bank statement file parsing.

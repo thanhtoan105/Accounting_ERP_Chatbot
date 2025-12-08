@@ -13,6 +13,6 @@ pnpm format:fix
 # Backend checks
 cd "$REPO_ROOT/backend"
 # Temporarily skip tests - tests need to be fixed separately
-mvn -B -U clean compile
+mvnd -B -U clean compile
 
 

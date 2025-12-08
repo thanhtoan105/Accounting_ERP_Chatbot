@@ -1,10 +1,11 @@
 package com.accounting.dto;
 
-import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import jakarta.validation.constraints.Size;
 
 public class OutputVATReportRequest {
 
@@ -67,4 +68,3 @@ public class OutputVATReportRequest {
     this.filters = filters != null ? filters : new HashMap<>();
   }
 }
-

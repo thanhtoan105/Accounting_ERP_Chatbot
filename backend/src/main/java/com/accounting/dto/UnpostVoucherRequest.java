@@ -24,4 +24,3 @@ public class UnpostVoucherRequest {
     this.reason = reason;
   }
 }
-

@@ -1,5 +1,12 @@
 package com.accounting.service.impl.ar;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
 import com.accounting.dto.ARStatementDetailedDTO;
 import com.accounting.dto.ARStatementSummaryDTO;
 import com.accounting.entity.ARStatementHistory;
@@ -11,11 +18,6 @@ import com.accounting.security.CompanyContext;
 import com.accounting.service.ARStatementEmailService;
 import com.accounting.service.ARStatementExportService;
 import com.accounting.service.EmailService;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 /**
  * Implementation of ARStatementEmailService for email delivery.

@@ -1,12 +1,14 @@
 package com.accounting.repository.audit;
 
-import com.accounting.entity.audit.IntegrityCheckResult;
-import com.accounting.entity.audit.IntegrityCheckResult.CheckType;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.accounting.entity.audit.IntegrityCheckResult;
+import com.accounting.entity.audit.IntegrityCheckResult.CheckType;
 
 /**
  * Repository for integrity check results.

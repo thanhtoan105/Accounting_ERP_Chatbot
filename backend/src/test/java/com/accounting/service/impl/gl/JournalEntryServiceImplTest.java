@@ -6,15 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.accounting.entity.JournalEntry;
-import com.accounting.entity.Voucher;
-import com.accounting.entity.VoucherLine;
-import com.accounting.repository.VoucherLineRepository;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import static org.mockito.Mockito.when;
+import com.accounting.entity.JournalEntry;
+import com.accounting.entity.Voucher;
+import com.accounting.entity.VoucherLine;
+import com.accounting.repository.VoucherLineRepository;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)

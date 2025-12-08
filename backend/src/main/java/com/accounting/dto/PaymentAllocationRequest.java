@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.util.UUID;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 /**
  * DTO for payment allocation request (manual allocation override).
@@ -41,4 +42,3 @@ public class PaymentAllocationRequest {
     this.allocatedAmount = allocatedAmount;
   }
 }
-

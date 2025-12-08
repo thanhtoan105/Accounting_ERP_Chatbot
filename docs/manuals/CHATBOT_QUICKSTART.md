@@ -40,6 +40,7 @@ cp .env.example .env
 4. Copy API key from **API Keys** page
 
 **Save to .env:**
+
 ```bash
 PINECONE_API_KEY=pcsk_YOUR_KEY_HERE
 PINECONE_ENVIRONMENT=us-east-1-aws
@@ -65,6 +66,7 @@ PINECONE_INDEX_NAME=accounting-embeddings
    - Copy **KEY 1** and **Endpoint**
 
 **Save to .env:**
+
 ```bash
 AZURE_OPENAI_API_KEY=YOUR_KEY_HERE
 AZURE_OPENAI_ENDPOINT=https://accounting-openai.openai.azure.com/
@@ -79,6 +81,7 @@ AZURE_OPENAI_CHAT_DEPLOYMENT_NAME=gpt-35-turbo
 3. Create API key (API keys → Create new key)
 
 **Save to .env:**
+
 ```bash
 OPENAI_API_KEY=sk-YOUR_KEY_HERE
 # Comment out Azure variables above
@@ -110,6 +113,7 @@ OPENAI_API_KEY=sk-YOUR_KEY_HERE
    ```
 
 **Save to .env:**
+
 ```bash
 N8N_WEBHOOK_URL=https://your-instance.app.n8n.cloud/webhook/voucher-embedding
 N8N_WEBHOOK_SECRET=YOUR_GENERATED_SECRET_HERE
@@ -152,6 +156,7 @@ Run verification script:
 ```
 
 **Expected output:**
+
 ```
 ✓ Pinecone API connection successful
 ✓ Azure OpenAI API connection successful
@@ -168,10 +173,11 @@ Fix any errors (marked with ✗) before proceeding.
 
 ```bash
 cd backend
-mvn spring-boot:run
+mvnd spring-boot:run
 ```
 
 Wait for:
+
 ```
 ✓ Chatbot controller registered at /api/v1/chatbot
 ```
@@ -183,17 +189,19 @@ curl http://localhost:8080/api/v1/chatbot/health
 ```
 
 **Expected response:**
+
 ```json
 {
-  "status": "UP",
-  "service": "chatbot",
-  "message": "Chatbot service is operational"
+	"status": "UP",
+	"service": "chatbot",
+	"message": "Chatbot service is operational"
 }
 ```
 
 ### 5.3 Create Test Voucher
 
 Use Postman/Thunder Client to POST to:
+
 ```
 POST http://localhost:8080/api/v1/vouchers
 Authorization: Bearer YOUR_JWT_TOKEN
@@ -215,6 +223,7 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ```
 
 **Expected response:**
+
 ```json
 {
   "queryId": "...",
@@ -231,21 +240,25 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ## Troubleshooting
 
 ### "Pinecone connection failed"
+
 - Verify API key in `.env` matches Pinecone console
 - Check index name is exactly `accounting-embeddings`
 - Wait 2-3 minutes after index creation
 
 ### "Azure OpenAI authentication failed"
+
 - Verify endpoint ends with `/` (e.g., `https://...azure.com/`)
 - Check deployment names match exactly (case-sensitive)
 - Ensure models are deployed (not just uploaded)
 
 ### "n8n webhook timeout"
+
 - Check n8n service is running
 - Test webhook URL directly with curl
 - Verify webhook secret matches
 
 ### "No results found (confidence < 0.5)"
+
 - Create test vouchers first
 - Wait for embedding pipeline to complete (check n8n)
 - Use more specific accounting terms
@@ -257,6 +270,7 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ✅ **Task 1 complete!** External services configured.
 
 **Continue with:**
+
 - Task 6: Frontend chatbot widget (React components)
 - Task 8: End-to-end testing
 - Task 9: Documentation
@@ -275,19 +289,21 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ### Set Limits
 
 **Azure:**
+
 - Portal → Cost Management → Budgets → Create budget
 
 **OpenAI:**
+
 - Platform → Settings → Billing → Usage limits
 
 ### Estimated Costs (MVP)
 
-| Service | Free Tier | Paid Tier (1000 queries/month) |
-|---------|-----------|--------------------------------|
-| Pinecone | ✅ 100GB | $0 |
-| Azure OpenAI | ✅ $200 credit | ~$3 |
-| n8n | ✅ 5K executions | $0 |
-| **Total** | **$0** | **~$3/month** |
+| Service      | Free Tier        | Paid Tier (1000 queries/month) |
+| ------------ | ---------------- | ------------------------------ |
+| Pinecone     | ✅ 100GB         | $0                             |
+| Azure OpenAI | ✅ $200 credit   | ~$3                            |
+| n8n          | ✅ 5K executions | $0                             |
+| **Total**    | **$0**           | **~$3/month**                  |
 
 ---
 

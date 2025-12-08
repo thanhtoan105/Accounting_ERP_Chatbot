@@ -4,21 +4,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.accounting.entity.Company;
-import com.accounting.entity.User;
-import com.accounting.entity.Voucher;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.repository.VoucherRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import com.accounting.entity.Company;
+import com.accounting.entity.User;
+import com.accounting.entity.Voucher;
 
 @SpringBootTest
 class VoucherRepositoryTest extends com.accounting.test.IntegrationTest {
@@ -236,4 +235,3 @@ class VoucherRepositoryTest extends com.accounting.test.IntegrationTest {
     return voucher;
   }
 }
-

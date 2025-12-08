@@ -1,20 +1,8 @@
 package com.accounting.service;
 
-import com.accounting.dto.ARAgingBucketDTO;
-import com.accounting.entity.Customer;
-import com.accounting.entity.SalesInvoice;
-import com.accounting.entity.SalesInvoiceStatus;
-import com.accounting.repository.CustomerRepository;
-import com.accounting.repository.SalesInvoiceRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.impl.ARAgingCalculationServiceImpl;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -23,9 +11,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.accounting.dto.ARAgingBucketDTO;
+import com.accounting.entity.Customer;
+import com.accounting.entity.SalesInvoice;
+import com.accounting.entity.SalesInvoiceStatus;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.repository.SalesInvoiceRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.impl.ARAgingCalculationServiceImpl;
 
 /**
  * Unit tests for ARAgingCalculationService.

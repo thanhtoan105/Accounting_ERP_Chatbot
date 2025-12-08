@@ -1,19 +1,14 @@
 package com.accounting.controller.sales;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import com.accounting.entity.*;
-import com.accounting.repository.*;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.JwtTokenProvider;
-import com.accounting.security.PasswordEncoder;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +17,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.accounting.entity.*;
+import com.accounting.repository.*;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.JwtTokenProvider;
+import com.accounting.security.PasswordEncoder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Integration tests for Sales Invoice approval workflow endpoints.

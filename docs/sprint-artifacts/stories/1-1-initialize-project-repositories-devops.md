@@ -55,6 +55,7 @@ so that all team members can build, test, and deploy reliably from day one.
   - Frontend: Vitest + Testing Library; minimal smoke tests
 
 ### Project Structure Notes
+
 Frontend is organized feature-first with shadcn/ui:
 
 ```
@@ -67,6 +68,7 @@ frontend/src/
 ```
 
 Use barrel imports: `@/features/auth`, `@/features/accounting`, `@/components`, `@/components/app`, `@/components/voucher`.
+
 - Alignment with unified project structure (paths, modules, naming)
   - Follow `backend/src/main/java/com/accounting/...` package layout and `resources/db/migration` for Flyway
   - Frontend `src/pages`, `src/components`, `src/services`, `src/hooks`, `src/types`, `src/utils`
@@ -102,9 +104,11 @@ Use barrel imports: `@/features/auth`, `@/features/accounting`, `@/components`, 
 - 2025-10-31T03:30Z — Moved Vite app to `frontend/`; cleaned old scaffolds
 - 2025-10-31T03:40Z — Root Husky pre-commit runs FE lint/format/test and BE verify
 - 2025-10-31T03:55Z — Excluded `frontend/coverage` from lint/format; hook re-run clean
+
 ### Completion Notes List
 
 AC mapping:
+
 - AC#1: Backend and frontend scaffolds created with documented structure.
 - AC#2: Docker Compose for Postgres, Maildev, Redis with healthchecks.
 - AC#3: ESLint/Prettier (FE), Spotless/Checkstyle (BE), pre-commit hooks; READMEs.
@@ -113,11 +117,13 @@ AC mapping:
 - AC#6: SpringDoc OpenAPI with Swagger UI at `/api/docs`.
 
 Operational notes:
-- Root Husky pre-commit runs FE lint/format/test and BE `mvn verify`.
+
+- Root Husky pre-commit runs FE lint/format/test and BE `mvndd verify`.
 - Frontend tests run with Vitest + Testing Library; coverage enabled (v8).
 - CI caches: Maven (backend), pnpm and Vitest cache (frontend).
 
 DoD Confirmation:
+
 - All ACs satisfied; all subtasks completed and checked.
 - Local tests and CI pipelines pass.
 - Completed on: 2025-10-31
@@ -125,6 +131,7 @@ DoD Confirmation:
 ### File List
 
 Created/Updated (key):
+
 - backend/
   - pom.xml (Spring Boot 3.5.7, plugins: spring-boot, spotless)
   - src/main/java/com/accounting/Application.java
@@ -153,8 +160,6 @@ Created/Updated (key):
 - Implemented `/health` and SpringDoc Swagger UI at `/api/docs`
 - Added JUnit and Vitest smoke tests; pre-commit hook runs FE lint/format/test and BE verify
 
-
-
 ## Senior Developer Review (AI)
 
 - Reviewer: thanhtoan
@@ -162,59 +167,66 @@ Created/Updated (key):
 - Outcome: Approve — All ACs implemented and tasks verified with evidence; no significant issues found.
 
 ### Summary
+
 The initialization story delivers the expected mono-repo structure, local dev stack, quality gates, CI/CD, and baseline API endpoints. Evidence confirms each AC with working tests and configurations.
 
 ### Key Findings
+
 - HIGH: None
 - MEDIUM: None
 - LOW: Consider adding a short CONTRIBUTING.md to document local dev scripts and commit standards.
 
 ### Acceptance Criteria Coverage
 
-AC# | Description | Status | Evidence
---- | --- | --- | ---
-1 | Repo structure documented for backend, frontend, infra | IMPLEMENTED | backend/pom.xml; frontend/package.json; README.md; docs/architecture.md
-2 | Docker Compose starts Postgres, Maildev, Redis | IMPLEMENTED | docker-compose.yml:3-47
-3 | Pre-commit hooks; READMEs; linters/formatters | IMPLEMENTED | .husky/pre-commit:1-15; frontend/eslint.config.js; frontend/README.md
-4 | GitHub Actions for BE/FE | IMPLEMENTED | .github/workflows/backend.yml:16-25; .github/workflows/frontend.yml:16-48
-5 | /health returns 200 + build info with test | IMPLEMENTED | backend/src/main/java/com/accounting/controller/HealthController.java:19-27; backend/src/test/java/com/accounting/controller/HealthControllerTest.java:20-27
-6 | OpenAPI/Swagger UI at /api/docs | IMPLEMENTED | backend/src/main/resources/application.yml:8-11
+| AC# | Description                                            | Status      | Evidence                                                                                                                                                     |
+| --- | ------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Repo structure documented for backend, frontend, infra | IMPLEMENTED | backend/pom.xml; frontend/package.json; README.md; docs/architecture.md                                                                                      |
+| 2   | Docker Compose starts Postgres, Maildev, Redis         | IMPLEMENTED | docker-compose.yml:3-47                                                                                                                                      |
+| 3   | Pre-commit hooks; READMEs; linters/formatters          | IMPLEMENTED | .husky/pre-commit:1-15; frontend/eslint.config.js; frontend/README.md                                                                                        |
+| 4   | GitHub Actions for BE/FE                               | IMPLEMENTED | .github/workflows/backend.yml:16-25; .github/workflows/frontend.yml:16-48                                                                                    |
+| 5   | /health returns 200 + build info with test             | IMPLEMENTED | backend/src/main/java/com/accounting/controller/HealthController.java:19-27; backend/src/test/java/com/accounting/controller/HealthControllerTest.java:20-27 |
+| 6   | OpenAPI/Swagger UI at /api/docs                        | IMPLEMENTED | backend/src/main/resources/application.yml:8-11                                                                                                              |
 
 Summary: 6 of 6 acceptance criteria fully implemented
 
 ### Task Completion Validation
 
-Task | Marked As | Verified As | Evidence
---- | --- | --- | ---
-Define mono-repo structure and scaffolding | [x] | VERIFIED COMPLETE | backend/, frontend/, docker-compose.yml present
-Local dev stack with Docker Compose | [x] | VERIFIED COMPLETE | docker-compose.yml: services postgres, maildev, redis
-Developer experience and quality gates | [x] | VERIFIED COMPLETE | .husky/pre-commit; frontend eslint/prettier configs; backend checkstyle.xml
-CI/CD pipelines | [x] | VERIFIED COMPLETE | .github/workflows/backend.yml; .github/workflows/frontend.yml
-Backend health and API docs | [x] | VERIFIED COMPLETE | HealthController; application.yml swagger-ui path
-Testing subtasks | [x] | VERIFIED COMPLETE | backend HealthControllerTest; frontend tests in src/
+| Task                                       | Marked As | Verified As       | Evidence                                                                    |
+| ------------------------------------------ | --------- | ----------------- | --------------------------------------------------------------------------- |
+| Define mono-repo structure and scaffolding | [x]       | VERIFIED COMPLETE | backend/, frontend/, docker-compose.yml present                             |
+| Local dev stack with Docker Compose        | [x]       | VERIFIED COMPLETE | docker-compose.yml: services postgres, maildev, redis                       |
+| Developer experience and quality gates     | [x]       | VERIFIED COMPLETE | .husky/pre-commit; frontend eslint/prettier configs; backend checkstyle.xml |
+| CI/CD pipelines                            | [x]       | VERIFIED COMPLETE | .github/workflows/backend.yml; .github/workflows/frontend.yml               |
+| Backend health and API docs                | [x]       | VERIFIED COMPLETE | HealthController; application.yml swagger-ui path                           |
+| Testing subtasks                           | [x]       | VERIFIED COMPLETE | backend HealthControllerTest; frontend tests in src/                        |
 
 Summary: 6 of 6 completed tasks verified, 0 questionable, 0 falsely marked complete
 
 ### Test Coverage and Gaps
+
 - Backend: JUnit smoke test verifies /health status and build fields present.
 - Frontend: Vitest smoke tests present; consider adding one environment variable resolution test later.
 
 ### Architectural Alignment
+
 - Matches `docs/architecture.md` constraints for Spring Boot 3.5.7 (Java 21) and React TS stack.
 
 ### Security Notes
+
 - No secrets committed. Recommend adding a sample `.env.example` for FE and BE.
 
 ### Best-Practices and References
+
 - Spring Boot + SpringDoc baseline
 - Vite React TS + ESLint/Prettier + Husky
 
 ### Action Items
 
 **Code Changes Required:**
+
 - [ ] [Low] Add CONTRIBUTING.md describing workflow and checks [file: README.md]
 - [ ] [Low] Add .env.example files for FE/BE to standardize local config [file: frontend/.env.example, backend/.env.example]
 
 **Advisory Notes:**
-- Note: Consider adding rate limiting guidance in future API stories
 
+- Note: Consider adding rate limiting guidance in future API stories

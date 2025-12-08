@@ -1,11 +1,12 @@
 package com.accounting.dto.reconciliation;
 
-import com.accounting.entity.reconciliation.ReconciliationStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.entity.reconciliation.ReconciliationStatus;
 
 /**
  * Full DTO for BankReconciliation responses with details.

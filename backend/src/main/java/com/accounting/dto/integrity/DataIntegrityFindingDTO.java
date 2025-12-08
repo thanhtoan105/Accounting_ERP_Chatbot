@@ -1,7 +1,8 @@
 package com.accounting.dto.integrity;
 
-import com.accounting.entity.DataIntegritySeverity;
 import java.util.Map;
+
+import com.accounting.entity.DataIntegritySeverity;
 
 public record DataIntegrityFindingDTO(
     String entityType,
@@ -10,6 +11,3 @@ public record DataIntegrityFindingDTO(
     String description,
     DataIntegritySeverity severity,
     Map<String, Object> metadata) {}
-
-
-

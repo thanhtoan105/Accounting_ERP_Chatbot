@@ -1,9 +1,11 @@
 package com.accounting.repository;
 
-import com.accounting.entity.PurchaseBillLine;
 import java.util.List;
 import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.accounting.entity.PurchaseBillLine;
 
 public interface PurchaseBillLineRepository
     extends JpaRepository<PurchaseBillLine, UUID> {
@@ -69,4 +71,3 @@ public interface PurchaseBillLineRepository
    */
   java.util.Optional<PurchaseBillLine> findByCompanyIdAndId(Long companyId, UUID id);
 }
-

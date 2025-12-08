@@ -1,16 +1,31 @@
 package com.accounting.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.accounting.dto.SalesInvoiceCreateRequest;
 import com.accounting.dto.SalesInvoiceLineDTO;
 import com.accounting.entity.AccountingPeriod;
-import com.accounting.entity.ARVATCorrection;
 import com.accounting.entity.AuditLog;
 import com.accounting.entity.ChartOfAccount;
 import com.accounting.entity.Company;
@@ -22,9 +37,8 @@ import com.accounting.entity.SalesInvoiceLine;
 import com.accounting.entity.SalesInvoiceStatus;
 import com.accounting.entity.User;
 import com.accounting.entity.VatRate;
-import com.accounting.entity.Voucher;
-import com.accounting.repository.AccountingPeriodRepository;
 import com.accounting.repository.ARVATCorrectionRepository;
+import com.accounting.repository.AccountingPeriodRepository;
 import com.accounting.repository.AuditLogRepository;
 import com.accounting.repository.ChartOfAccountsRepository;
 import com.accounting.repository.CompanyRepository;
@@ -39,23 +53,6 @@ import com.accounting.security.JwtTokenProvider;
 import com.accounting.security.PasswordEncoder;
 import com.accounting.test.IntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Integration tests for AR VAT audit logging.

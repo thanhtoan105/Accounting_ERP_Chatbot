@@ -112,4 +112,3 @@ public class TrialBalanceDTO {
     this.closingCredit = closingCredit != null ? closingCredit : BigDecimal.ZERO;
   }
 }
-

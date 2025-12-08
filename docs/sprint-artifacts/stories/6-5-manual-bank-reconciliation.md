@@ -8,9 +8,11 @@ Status: done
 **Verdict:** ✅ APPROVED - Ready to merge
 
 ### Summary
+
 All critical issues from previous review have been resolved. Story delivers complete MVP functionality for bank reconciliation.
 
 ### Previous Issues - All Resolved
+
 1. **accounting-97q** - ✅ CLOSED: All 52 files committed to git
 2. **accounting-4oe** - ✅ CLOSED: All reconciliation tests passing (106/106)
 3. **accounting-dib** - ✅ CLOSED: 25+ unit tests added for parsing/matching
@@ -21,12 +23,14 @@ All critical issues from previous review have been resolved. Story delivers comp
 8. **accounting-74w** - ✅ VERIFIED: Progress component follows shadcn/ui conventions
 
 ### Known Deferrals (Tracked in Beads)
+
 - **accounting-ijx** - PDF export not implemented (Excel export available)
 - **accounting-2c1** - Adjustment voucher posting marked TODO (approval workflow works)
 - **accounting-p1l** - One-to-many matching deferred to future enhancement
 - **accounting-aoa** - In-memory error storage to be replaced with Redis/DB in production
 
 ### Test Results
+
 - Backend: 106/106 reconciliation tests passing
 - Frontend: TypeScript compiles without errors
 - E2E: Import, match, adjustment, complete workflow tested
@@ -39,16 +43,19 @@ All critical issues from previous review have been resolved. Story delivers comp
 **Verdict:** ❌ REJECTED - 8 issues found (ALL NOW RESOLVED)
 
 ### Critical Issues (Must Fix)
+
 1. **accounting-97q** - ✅ Commit all untracked files to git (50+ files never committed!)
 2. **accounting-4oe** - ✅ Fix 12 failing tests (4 failures + 8 errors)
 3. **accounting-dib** - ✅ Complete missing unit tests for parsing/matching
 
 ### High Priority Issues
+
 4. **accounting-c81** - ✅ Add missing data-testid attributes to frontend
 5. **accounting-n6y** - ✅ RESOLVED: Implement actual date format detection (stub returns default)
 6. **accounting-byh** - ✅ RESOLVED: Scope clarified - one-to-many matching deferred to future enhancement (see accounting-p1l)
 
 ### Moderate Issues
+
 7. **accounting-ekd** - ✅ RESOLVED: Added FIXME documentation and cleanup-after-download; created accounting-aoa for production implementation
 8. **accounting-74w** - ✅ VERIFIED: Progress component follows shadcn/ui conventions (Radix primitives, cn() utility, proper Tailwind classes)
 
@@ -66,6 +73,7 @@ so that differences are identified and bank balances are certified.
 ## Requirements Context Summary
 
 **Business Requirements:**
+
 - This story delivers bank statement reconciliation capabilities for the Cash & Bank Management module.
 - Primary users are accountants performing monthly bank reconciliation and chief accountants/auditors certifying bank balances.
 - Must support:
@@ -77,6 +85,7 @@ so that differences are identified and bank balances are certified.
   - Track reconciliation status per account/month (Not started/In progress/Completed)
 
 **Technical Context from Tech Spec (Epic 6):**
+
 - **New Services Required:**
   - `BankReconciliationService`: Import statements, auto-match, manual match/unmatch, create adjustments, track status
   - `StatementImportService`: Parse CSV/Excel files, column mapping, duplicate detection
@@ -96,6 +105,7 @@ so that differences are identified and bank balances are certified.
   - RBAC: Accountants can create/match; Chief Accountant approves adjustments and completes reconciliation
 
 **Dependencies:**
+
 - **Prerequisites:**
   - Story 6.1: Cash/Bank Account Management (bank accounts with `lastReconciledDate`, `lastReconciledBalance`)
   - Story 6.2: Cash Receipt Entry & Posting (receipts to match against)
@@ -112,6 +122,7 @@ so that differences are identified and bank balances are certified.
 ## Anti-Pattern Prevention
 
 **DO NOT:**
+
 - Query all voucher lines for GL account 1121; **MUST filter by BOTH `accountId` (GL) AND `bankAccountId`** using `VoucherLineRepository.findByCompanyIdAndAccountIdAndBankAccountId()`
 - Store statement file content in database; **use file storage with URL reference** and store only `statementFileUrl` and `statementFileHash`
 - Skip file hash calculation; **MUST prevent duplicate imports** via SHA256 hash check
@@ -127,11 +138,13 @@ so that differences are identified and bank balances are certified.
 From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done):
 
 - **New Service Pattern:**
+
   - Story 6.4 created `CashBookService`, `CashBookExportService`, `CashBookAsyncExportService`
   - Follow same pattern for `BankReconciliationService`, `StatementImportService`, `ReconciliationMatcher`
   - Service interfaces in `com/accounting/service/`, implementations in `com/accounting/service/impl/reconciliation/`
 
 - **Reuse CashBookService for Ledger Balance:**
+
   - **CRITICAL:** Query ledger balance using existing `CashBookService.getCashBook()`:
     ```java
     CashBookResponseDTO cashBook = cashBookService.getCashBook(
@@ -145,19 +158,23 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
     ```
 
 - **Query Ledger Transactions for Matching:**
+
   - Use `VoucherLineRepository.findByCompanyIdAndAccountIdAndBankAccountId()` to get transactions for specific bank account
   - Filter by posted vouchers only: `voucher.getStatus().equals("posted")`
   - Filter by date range: `voucher.getVoucherDate()` within statement period
 
 - **PDF Export is text-based for MVP:**
+
   - Story 6.4 noted PDF uses plain text, not true PDF format
   - For reconciliation exports, follow same approach for MVP; enhance later with PDFBox/iText
 
 - **Async Processing for Large Datasets:**
+
   - Story 6.4 implemented async export for >10k records with in-memory job registry
   - For statement imports >500 lines, consider async import with job status polling
 
 - **Frontend Patterns:**
+
   - Use shadcn/ui Dialog for modals (voucher detail modal in 6.4)
   - Use React Hook Form + Zod for form validation
   - Toast notifications for success/error states
@@ -169,6 +186,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - Use feature barrel exports in `features/accounting/index.ts`
 
 **Files from Previous Story to Reference/Reuse:**
+
 - `backend/src/main/java/com/accounting/service/CashBookService.java` - Service interface pattern
 - `backend/src/main/java/com/accounting/service/impl/cashbook/CashBookServiceImpl.java` - Implementation pattern
 - `backend/src/main/java/com/accounting/controller/cashbook/CashBookController.java` - Controller pattern
@@ -181,24 +199,28 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
 ### Architecture Alignment
 
 - **Service Layer (NEW):**
+
   - Create `BankReconciliationService` interface and `BankReconciliationServiceImpl`
   - Create `StatementImportService` for file parsing and column mapping
   - Create `ReconciliationMatcher` for auto-match algorithm
   - Follow existing service patterns from `CashBookServiceImpl`
 
 - **Entity Design:**
+
   - `BankReconciliation`: Main reconciliation entity with status tracking
   - `BankStatementLine`: Statement lines with match status (cascade delete on reconciliation)
   - `BankStatementFormat`: Column mapping profiles per bank account (for import reuse)
   - `ReconciliationAdjustment`: Adjustment entries with approval workflow
 
 - **Repository Layer:**
+
   - `BankReconciliationRepository` extends `JpaRepository` with company-scoped queries
   - `BankStatementLineRepository` with custom queries for matching
   - `BankStatementFormatRepository` for format profile persistence
   - `ReconciliationAdjustmentRepository` for adjustment management
 
 - **API and Response Shape:**
+
   - Maintain standard `{ data, meta, error }` response wrapper
   - Use consistent error codes for validation failures, RBAC denials
 
@@ -249,6 +271,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
 ## Tasks / Subtasks
 
 - [x] **Task 1: Database – Entity and Migration (AC: #1-#9)**
+
   - [x] Create `V20251231001__bank_reconciliation_entities.sql` migration
   - [x] Create `bank_reconciliations` table with columns: id (UUID), company_id, bank_account_id, statement_period_start, statement_period_end, statement_balance, ledger_balance, reconciled_balance, status, statement_file_url, statement_file_hash, notes, completed_at, completed_by_id, created_at, updated_at
   - [x] Create `bank_statement_lines` table with: id, reconciliation_id (FK CASCADE DELETE), line_number, transaction_date, description, reference, debit_amount, credit_amount, balance, match_status, matched_voucher_id, matched_at, matched_by_id, match_confidence, match_reason, notes
@@ -263,6 +286,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
     ```
 
 - [x] **Task 2: Backend – Entity Classes (AC: #1-#9)**
+
   - [x] Create `BankReconciliation` entity implementing `CompanyScopedEntity`
   - [x] Create `BankStatementLine` entity with `MatchStatus` enum: UNMATCHED, MATCHED, ADJUSTMENT_REQUIRED
   - [x] Create `BankStatementFormat` entity for column mapping persistence
@@ -271,6 +295,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - [x] Create repository interfaces with company-scoped queries
 
 - [x] **Task 3: Backend – DTOs (AC: #1-#9)**
+
   - [x] Create DTOs in `com/accounting/dto/reconciliation/`:
     - `BankReconciliationDTO`, `BankReconciliationListDTO`
     - `BankStatementLineDTO` with match metadata
@@ -284,6 +309,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
     - `LedgerTransactionDTO`
 
 - [x] **Task 4: Backend – StatementImportService (AC: #1, #2, #7)**
+
   - [x] Create service interface and implementation
   - [x] Implement CSV parsing with Apache Commons CSV
   - [x] Implement Excel parsing with Apache POI (max file size: 10MB)
@@ -295,6 +321,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - [ ] Add unit tests for parsing edge cases
 
 - [x] **Task 5: Backend – ReconciliationMatcher (AC: #3)**
+
   - [x] Create `ReconciliationMatcher` class
   - [x] Implement ledger transaction query using `VoucherLineRepository.findByCompanyIdAndAccountIdAndBankAccountId()`
   - [x] Implement date matching: exact match or ±N days (default 3)
@@ -321,6 +348,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - [x] Add unit tests for matching algorithm
 
 - [x] **Task 6: Backend – BankReconciliationService (AC: #1-#9)**
+
   - [x] Create service interface and implementation per endpoints in Tech Spec
   - [x] Inject `CashBookService` for ledger balance calculation
   - [x] Implement `createReconciliation()` with period validation
@@ -335,6 +363,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - [x] Add audit logging for all operations
 
 - [x] **Task 7: Backend – BankReconciliationController (AC: #1-#9)**
+
   - [x] Create controller at `/api/v1/bank-reconciliations`
   - [x] Implement all endpoints per Tech Spec API specification
   - [x] Add `GET /:id/import-errors/download` for error file download (AC #7)
@@ -343,45 +372,48 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - [ ] Add integration tests
 
 - [x] **Task 8: Frontend – API Service and Types (AC: #1-#9)**
+
   - [x] Create `frontend/src/features/accounting/services/bankReconciliation.ts`
   - [x] Add TypeScript types mirroring all backend DTOs
   - [x] Add API functions for all endpoints
   - [x] Add `downloadImportErrors()` for error file download
 
 - [x] **Task 9: Frontend – i18n Translation Keys**
+
   - [x] Add to `frontend/src/i18n/locales/en/common.json` and `vi/common.json`:
     ```json
     {
-      "bankReconciliation": {
-        "title": "Bank Reconciliation",
-        "newReconciliation": "New Reconciliation",
-        "importStatement": "Import Statement",
-        "autoMatch": "Auto Match",
-        "complete": "Complete Reconciliation",
-        "status": {
-          "notStarted": "Not Started",
-          "inProgress": "In Progress",
-          "completed": "Completed"
-        },
-        "matchStatus": {
-          "unmatched": "Unmatched",
-          "matched": "Matched",
-          "adjustmentRequired": "Adjustment Required"
-        },
-        "adjustmentType": {
-          "bankFee": "Bank Fee",
-          "interestIncome": "Interest Income",
-          "interestExpense": "Interest Expense",
-          "other": "Other"
-        }
-      },
-      "nav": {
-        "bankReconciliation": "Bank Reconciliation"
-      }
+    	"bankReconciliation": {
+    		"title": "Bank Reconciliation",
+    		"newReconciliation": "New Reconciliation",
+    		"importStatement": "Import Statement",
+    		"autoMatch": "Auto Match",
+    		"complete": "Complete Reconciliation",
+    		"status": {
+    			"notStarted": "Not Started",
+    			"inProgress": "In Progress",
+    			"completed": "Completed"
+    		},
+    		"matchStatus": {
+    			"unmatched": "Unmatched",
+    			"matched": "Matched",
+    			"adjustmentRequired": "Adjustment Required"
+    		},
+    		"adjustmentType": {
+    			"bankFee": "Bank Fee",
+    			"interestIncome": "Interest Income",
+    			"interestExpense": "Interest Expense",
+    			"other": "Other"
+    		}
+    	},
+    	"nav": {
+    		"bankReconciliation": "Bank Reconciliation"
+    	}
     }
     ```
 
 - [x] **Task 10: Frontend – ReconciliationList Page (AC: #9)**
+
   - [x] Create `ReconciliationListPage.tsx`
   - [x] Implement data table with columns: Bank Account, Period, Status, Statement Balance, Ledger Balance, Delta, Last Updated
   - [x] Add filters for bank account, status, date range
@@ -390,6 +422,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - [x] Use i18n keys for all user-facing text
 
 - [x] **Task 11: Frontend – ReconciliationDetail Page (AC: #1-#8)**
+
   - [x] Create `ReconciliationDetailPage.tsx`
   - [x] Implement summary cards: Statement Balance, Ledger Balance, Matched Total, Unmatched Total, Delta
   - [x] Implement split-view layout: Statement Lines (left) vs Ledger Transactions (right)
@@ -398,6 +431,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - [x] Add notes field for manual matches
 
 - [x] **Task 12: Frontend – Statement Import Wizard (AC: #1, #2, #7)**
+
   - [x] Create `StatementImportDialog.tsx` with 4-step wizard
   - [x] Step 1: File upload (CSV/Excel, max 10MB) with drag-and-drop
   - [x] Step 2: Column mapping with auto-suggestions and saved profile loading
@@ -408,6 +442,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - [x] Integrate into ReconciliationDetailPage
 
 - [x] **Task 13: Frontend – Adjustment Creation (AC: #5)**
+
   - [x] Create `CreateAdjustmentDialog.tsx`
   - [x] Pre-fill values from selected statement line
   - [x] Select adjustment type (BANK_FEE, INTEREST_INCOME, INTEREST_EXPENSE, OTHER) and GL account
@@ -416,10 +451,12 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - [x] Integrate into ReconciliationDetailPage with Plus button on unmatched lines
 
 - [x] **Task 14: Frontend – Export Functionality (AC: #6)**
+
   - [x] Add Export Excel and Export PDF buttons in ReconciliationDetailPage
   - [x] Reuse export patterns from CashBookPage
 
 - [x] **Task 15: Frontend – Routes and Navigation (AC: #9)**
+
   - [x] Add routes `/accounting/bank-reconciliation` and `/accounting/bank-reconciliation/:id` in `AppRoutes.tsx`
   - [x] Configure RBAC: `requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo']`
   - [x] Add to sidebar in `ProtectedLayout.tsx` under Reports section (after Cash Book):
@@ -429,6 +466,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
   - [x] Update barrel exports in `features/accounting/index.ts`
 
 - [x] **Task 16: Testing – Backend (AC: #1-#9)**
+
   - [x] Unit tests for `StatementImportServiceImpl`
   - [x] Unit tests for `ReconciliationMatcher` (matching algorithm, confidence calculation)
   - [x] Unit tests for `BankReconciliationServiceImpl`
@@ -445,6 +483,7 @@ From **Story 6.4: Bank Book / Cash Book View & Running Balances** (Status: done)
 ### Critical Implementation Details
 
 **1. Querying Ledger Transactions for Matching:**
+
 ```java
 // Get bank account's GL account code
 BankAccount bankAccount = bankAccountRepository.findById(bankAccountId).orElseThrow();
@@ -462,6 +501,7 @@ lines.stream()
 ```
 
 **2. Ledger Balance Calculation:**
+
 ```java
 // Reuse CashBookService - DO NOT duplicate balance logic
 BigDecimal ledgerBalance = cashBookService.getCashBook(
@@ -474,6 +514,7 @@ BigDecimal ledgerBalance = cashBookService.getCashBook(
 ```
 
 **3. Match Confidence Formula:**
+
 ```java
 // Weights
 final double DATE_WEIGHT = 0.3;
@@ -494,6 +535,7 @@ double confidence = (DATE_WEIGHT * dateScore) + (AMOUNT_WEIGHT * amountScore) + 
 ```
 
 **4. Prevent Double-Matching:**
+
 ```java
 // Before matching, validate voucher not already matched
 boolean alreadyMatched = bankStatementLineRepository
@@ -504,11 +546,13 @@ if (alreadyMatched) {
 ```
 
 **5. Adjustment Workflow:**
+
 - Accountants create pending adjustments → status = PENDING
 - Chief Accountant approves → creates voucher via `VoucherService.create()` → status = POSTED
 - Link adjustment.voucherId and update statement line match status
 
 **6. Reconciliation Completion:**
+
 - Validate all statement lines are MATCHED or have POSTED adjustments
 - Compare reconciled balance to ledger balance
 - Update `BankAccount.lastReconciledDate` and `lastReconciledBalance`
@@ -517,6 +561,7 @@ if (alreadyMatched) {
 ### Project Structure Notes
 
 **Backend Structure (NEW):**
+
 - `backend/src/main/java/com/accounting/entity/reconciliation/BankReconciliation.java`
 - `backend/src/main/java/com/accounting/entity/reconciliation/BankStatementLine.java`
 - `backend/src/main/java/com/accounting/entity/reconciliation/BankStatementFormat.java`
@@ -534,6 +579,7 @@ if (alreadyMatched) {
 - `backend/src/main/resources/db/migration/V20251201001__bank_reconciliation_entities.sql`
 
 **Frontend Structure (NEW):**
+
 - `frontend/src/features/accounting/services/bankReconciliation.ts`
 - `frontend/src/features/accounting/pages/BankReconciliation/ReconciliationListPage.tsx`
 - `frontend/src/features/accounting/pages/BankReconciliation/ReconciliationDetailPage.tsx`
@@ -566,7 +612,7 @@ Claude Opus 4.5 (claude-opus-4.5)
 
 ### Debug Log References
 
-- Compilation: `mvn compile -q` - SUCCESS (no errors)
+- Compilation: `mvnd compile -q` - SUCCESS (no errors)
 - Migration filename: Changed from `V20251201001__` to `V20251231001__` to follow date sequence
 
 ### Completion Notes List
@@ -576,6 +622,7 @@ Claude Opus 4.5 (claude-opus-4.5)
 1. **Task 1 Completed:** Created database migration with 4 tables (`bank_reconciliations`, `bank_statement_lines`, `bank_statement_formats`, `reconciliation_adjustments`) plus 8 indexes for query performance.
 
 2. **Task 2 Completed:** Created all entity classes:
+
    - 4 Enums: `ReconciliationStatus`, `MatchStatus`, `AdjustmentType`, `AdjustmentStatus`
    - 4 Entities: `BankReconciliation`, `BankStatementLine`, `BankStatementFormat`, `ReconciliationAdjustment`
    - 4 Repositories with company-scoped queries and custom finder methods
@@ -583,6 +630,7 @@ Claude Opus 4.5 (claude-opus-4.5)
 3. **Task 3 Completed:** Created 15 DTOs for request/response handling, including all types specified plus additional DTOs identified during implementation (`CreateReconciliationRequestDTO`, `CreateAdjustmentRequestDTO`, `LedgerTransactionDTO`).
 
 4. **Task 4 Completed:** Implemented `StatementImportService` and `StatementImportServiceImpl` with:
+
    - CSV parsing using Apache Commons CSV
    - Excel parsing using Apache POI
    - Column auto-detection for Vietnamese and English header patterns
@@ -596,6 +644,7 @@ Claude Opus 4.5 (claude-opus-4.5)
 6. **Utility Created:** Added `BusinessException` class to `com.accounting.exception` package (was missing from project).
 
 **Implementation Notes:**
+
 - Used `CompanyContext.getCompanyId()` pattern from `com.accounting.security.CompanyContext`
 - All entities implement `CompanyScopedEntity` interface for multi-tenancy
 - Repository methods use `findByCompanyIdAnd*` pattern for company scoping
@@ -619,6 +668,7 @@ Claude Opus 4.5 (claude-opus-4.5)
    - Unit tests: ✅ Completed with comprehensive date format detection tests
 
 **Implementation Notes (Session 2):**
+
 - Service is `@Transactional(readOnly = true)` by default, `runAutoMatch()` is `@Transactional` for writes
 - Uses constructor injection for all dependencies
 - LevenshteinDistance instance reused across calls for efficiency
@@ -638,6 +688,7 @@ Claude Opus 4.5 (claude-opus-4.5)
    - **Logging:** All operations logged with user ID
 
 **Implementation Notes (Session 2 - Task 6):**
+
 - Added `countByReconciliationId()` method to `BankStatementLineRepository`
 - Uses `SecurityUtils.getCurrentUserId()` for audit tracking
 - Reconciliation status transitions: NOT_STARTED → IN_PROGRESS (on first match/adjustment) → COMPLETED
@@ -657,6 +708,7 @@ Claude Opus 4.5 (claude-opus-4.5)
    - **Audit:** All operations logged via AuditService.logReconciliationOperation()
 
 **Implementation Notes (Session 2 - Task 7):**
+
 - Added `logReconciliationOperation()` method to AuditService interface and AuditServiceImpl
 - File validation: CSV/Excel only, max 10MB
 - Multipart file upload for statement import (file + JSON config)
@@ -665,6 +717,7 @@ Claude Opus 4.5 (claude-opus-4.5)
 **Session 3 (2025-12-02):**
 
 10. **Task 12 Completed:** Implemented `StatementImportDialog.tsx` with full 4-step wizard (~700 lines):
+
     - **Step 1 (Upload):** Drag-and-drop file upload, CSV/Excel support, 10MB max, file type validation
     - **Step 2 (Mapping):** Column mapping with auto-suggestions from backend, saved profile support, date format selection, skip header rows config
     - **Step 3 (Preview):** Mapping summary display, file info, duplicate detection warning area
@@ -683,6 +736,7 @@ Claude Opus 4.5 (claude-opus-4.5)
     - Fixed `LinkOff` → `Link2Off` icon import bug in ReconciliationDetailPage
 
 **Implementation Notes (Session 3):**
+
 - Both dialogs follow shadcn/ui Dialog pattern from existing import dialogs
 - API functions already existed in bankReconciliation.ts service
 - i18n keys already existed for import and adjustment sections
@@ -692,7 +746,9 @@ Claude Opus 4.5 (claude-opus-4.5)
 **Session 4 (2025-12-02):**
 
 12. **Task 16 Completed (Partial):** Implemented comprehensive backend unit tests (75 tests, all passing):
+
     - **StatementImportServiceImplTest (19 tests):**
+
       - File hash calculation (SHA256) with consistency and uniqueness validation
       - English/Vietnamese column header auto-detection
       - Saved profile loading and persistence
@@ -704,6 +760,7 @@ Claude Opus 4.5 (claude-opus-4.5)
       - File size validation (10MB max)
 
     - **ReconciliationMatcherServiceImplTest (22 tests):**
+
       - Auto-match algorithm with exact match scenarios
       - Auto-apply for high-confidence matches (>0.7 threshold)
       - Date scoring with parameterized tests (0, ±1, ±2-3, >3 days tolerance)
@@ -735,22 +792,26 @@ Claude Opus 4.5 (claude-opus-4.5)
       - Company context validation
 
 **Implementation Notes (Session 4):**
+
 - All tests follow project patterns: Mockito + JUnit 5, `@Nested` class organization
 - Multi-tenancy handled via `CompanyContext.setCompanyId()` in `@BeforeEach`, cleared in `@AfterEach`
 - Tests use `@DisplayName` annotations for readable test reports
 - Fixed test data issues: column detection uses pattern matching, balance calculations account for bank perspective
 - Controller integration tests deferred (requires Spring test context setup)
-- Test execution: `mvn test -Dtest="**/reconciliation/*Test"` - 75 tests, 0 failures
+- Test execution: `mvnd test -Dtest="**/reconciliation/*Test"` - 75 tests, 0 failures
 
 **Session 5 (2025-12-02):**
 
 13. **Task 17 Completed:** Implemented comprehensive frontend E2E test suite for bank reconciliation (4 test files, 27 tests):
+
     - **Test Factory (bank-reconciliation.factory.ts):**
+
       - Factory functions for all DTOs (BankReconciliation, StatementLine, Adjustment, LedgerTransaction, etc.)
       - Test data generators for CSV content (valid, invalid, duplicate)
       - Helper functions for creating test scenarios
 
     - **Import Flow Tests (bank-reconciliation-import.spec.ts - 6 tests):**
+
       - E2E-IMPORT-001: Upload CSV with auto-detected columns and saved profiles
       - E2E-IMPORT-002: Complete 4-step wizard flow (upload → mapping → preview → result)
       - E2E-IMPORT-003: Import errors with downloadable error report
@@ -759,6 +820,7 @@ Claude Opus 4.5 (claude-opus-4.5)
       - E2E-IMPORT-006: File size validation (10MB max)
 
     - **Matching Flow Tests (bank-reconciliation-match.spec.ts - 7 tests):**
+
       - E2E-MATCH-001: Auto-match with high-confidence auto-apply
       - E2E-MATCH-002: Review suggested matches with confidence scores and badges
       - E2E-MATCH-003: Manual match - select ledger transaction
@@ -768,6 +830,7 @@ Claude Opus 4.5 (claude-opus-4.5)
       - E2E-MATCH-007: Filter ledger transactions by date range
 
     - **Adjustment Flow Tests (bank-reconciliation-adjustment.spec.ts - 7 tests):**
+
       - E2E-ADJ-001: Create adjustment with pre-fill from statement line
       - E2E-ADJ-002: Approve adjustment as Chief Accountant
       - E2E-ADJ-003: Reject adjustment with reason
@@ -788,6 +851,7 @@ Claude Opus 4.5 (claude-opus-4.5)
       - E2E-COMPLETE-009: Completion updates bank account last reconciled date
 
 **Implementation Notes (Session 5):**
+
 - All tests follow established patterns from existing AR Statements E2E tests
 - Network-first pattern: intercept API calls BEFORE user actions with `waitForResponse`
 - Mock all backend responses for predictable test execution
@@ -799,9 +863,11 @@ Claude Opus 4.5 (claude-opus-4.5)
 ### File List
 
 **Database Migration (1 file):**
+
 - `backend/src/main/resources/db/migration/V20251231001__bank_reconciliation_entities.sql` (NEW)
 
 **Entity Classes (8 files):**
+
 - `backend/src/main/java/com/accounting/entity/reconciliation/ReconciliationStatus.java` (NEW)
 - `backend/src/main/java/com/accounting/entity/reconciliation/MatchStatus.java` (NEW)
 - `backend/src/main/java/com/accounting/entity/reconciliation/AdjustmentType.java` (NEW)
@@ -812,12 +878,14 @@ Claude Opus 4.5 (claude-opus-4.5)
 - `backend/src/main/java/com/accounting/entity/reconciliation/ReconciliationAdjustment.java` (NEW)
 
 **Repository Interfaces (4 files):**
+
 - `backend/src/main/java/com/accounting/repository/reconciliation/BankStatementFormatRepository.java` (NEW)
 - `backend/src/main/java/com/accounting/repository/reconciliation/BankReconciliationRepository.java` (NEW)
 - `backend/src/main/java/com/accounting/repository/reconciliation/BankStatementLineRepository.java` (NEW)
 - `backend/src/main/java/com/accounting/repository/reconciliation/ReconciliationAdjustmentRepository.java` (NEW)
 
 **DTO Classes (15 files):**
+
 - `backend/src/main/java/com/accounting/dto/reconciliation/ReconciliationAdjustmentDTO.java` (NEW)
 - `backend/src/main/java/com/accounting/dto/reconciliation/BankStatementLineDTO.java` (NEW)
 - `backend/src/main/java/com/accounting/dto/reconciliation/BankStatementFormatDTO.java` (NEW)
@@ -835,32 +903,40 @@ Claude Opus 4.5 (claude-opus-4.5)
 - `backend/src/main/java/com/accounting/dto/reconciliation/CreateAdjustmentRequestDTO.java` (NEW)
 
 **Service Interfaces (3 files):**
+
 - `backend/src/main/java/com/accounting/service/StatementImportService.java` (NEW)
 - `backend/src/main/java/com/accounting/service/ReconciliationMatcherService.java` (NEW)
 - `backend/src/main/java/com/accounting/service/BankReconciliationService.java` (NEW)
 
 **Service Implementations (3 files):**
+
 - `backend/src/main/java/com/accounting/service/impl/reconciliation/StatementImportServiceImpl.java` (NEW)
 - `backend/src/main/java/com/accounting/service/impl/reconciliation/ReconciliationMatcherServiceImpl.java` (NEW)
 - `backend/src/main/java/com/accounting/service/impl/reconciliation/BankReconciliationServiceImpl.java` (NEW)
 
 **Controller (1 file):**
+
 - `backend/src/main/java/com/accounting/controller/reconciliation/BankReconciliationController.java` (NEW)
 
 **Repository Updates (1 file):**
+
 - `backend/src/main/java/com/accounting/repository/reconciliation/BankStatementLineRepository.java` (MODIFIED - added countByReconciliationId)
 
 **Service Updates (2 files):**
+
 - `backend/src/main/java/com/accounting/service/AuditService.java` (MODIFIED - added logReconciliationOperation)
 - `backend/src/main/java/com/accounting/service/impl/AuditServiceImpl.java` (MODIFIED - added logReconciliationOperation impl)
 
 **Utility Classes (1 file):**
+
 - `backend/src/main/java/com/accounting/exception/BusinessException.java` (NEW)
 
 **Frontend API Service (1 file):**
+
 - `frontend/src/features/accounting/services/bankReconciliation.ts` (NEW - ~400 lines, TypeScript types + API functions)
 
 **Frontend Pages (5 files):**
+
 - `frontend/src/features/accounting/pages/BankReconciliation/index.ts` (NEW)
 - `frontend/src/features/accounting/pages/BankReconciliation/ReconciliationListPage.tsx` (NEW - ~630 lines)
 - `frontend/src/features/accounting/pages/BankReconciliation/ReconciliationDetailPage.tsx` (NEW - ~930 lines)
@@ -868,20 +944,24 @@ Claude Opus 4.5 (claude-opus-4.5)
 - `frontend/src/features/accounting/pages/BankReconciliation/CreateAdjustmentDialog.tsx` (NEW - ~450 lines)
 
 **Frontend i18n (2 files):**
+
 - `frontend/src/i18n/locales/en/common.json` (MODIFIED - added bankReconciliation section)
 - `frontend/src/i18n/locales/vi/common.json` (MODIFIED - added bankReconciliation section)
 
 **Frontend Routes/Navigation (3 files):**
+
 - `frontend/src/routes/AppRoutes.tsx` (MODIFIED - added bank reconciliation routes)
 - `frontend/src/layouts/ProtectedLayout.tsx` (MODIFIED - added nav item)
 - `frontend/src/features/accounting/index.ts` (MODIFIED - added exports)
 
 **Backend Test Files (3 files - Session 4):**
+
 - `backend/src/test/java/com/accounting/service/impl/reconciliation/StatementImportServiceImplTest.java` (NEW - 19 tests)
 - `backend/src/test/java/com/accounting/service/impl/reconciliation/ReconciliationMatcherServiceImplTest.java` (NEW - 22 tests)
 - `backend/src/test/java/com/accounting/service/impl/reconciliation/BankReconciliationServiceImplTest.java` (NEW - 34 tests)
 
 **Frontend Test Files (5 files - Session 5):**
+
 - `tests/support/factories/bank-reconciliation.factory.ts` (NEW - Test data factory with 15+ factory functions)
 - `tests/e2e/bank-reconciliation-import.spec.ts` (NEW - 6 E2E tests for import flow)
 - `tests/e2e/bank-reconciliation-match.spec.ts` (NEW - 7 E2E tests for matching flow)
@@ -890,15 +970,15 @@ Claude Opus 4.5 (claude-opus-4.5)
 
 ## Changelog
 
-| Date       | Author    | Changes                              |
-|------------|-----------|--------------------------------------|
-| 2025-12-01 | SM Agent  | Initial story draft created from tech spec, epic, and 6.4 learnings |
+| Date       | Author    | Changes                                                                                                                                                                                                                             |
+| ---------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2025-12-01 | SM Agent  | Initial story draft created from tech spec, epic, and 6.4 learnings                                                                                                                                                                 |
 | 2025-12-01 | SM Agent  | Validation review: Applied 4 critical fixes, 6 enhancements, 3 optimizations. Added Anti-Pattern Prevention section, BankStatementFormat entity, match confidence formula, i18n keys, error file download, double-match prevention. |
-| 2025-12-01 | Dev Agent | Tasks 1-4 completed: Database migration, entities, DTOs, StatementImportService |
-| 2025-12-01 | Dev Agent | Task 5 completed: ReconciliationMatcherServiceImpl with auto-matching algorithm |
-| 2025-12-01 | Dev Agent | Task 6 completed: BankReconciliationServiceImpl with full workflow (~1000 lines) |
-| 2025-12-02 | Dev Agent | Task 7 completed: BankReconciliationController with 20+ REST endpoints |
-| 2025-12-02 | Dev Agent | Tasks 8-15 completed: Frontend implementation (API service, i18n, pages, routes) |
-| 2025-12-02 | Dev Agent | Tasks 12-13 fully implemented: StatementImportDialog (4-step wizard) and CreateAdjustmentDialog (approval workflow) |
-| 2025-12-02 | Dev Agent | Task 16 completed (partial): Created 75 backend unit tests for StatementImportServiceImpl, ReconciliationMatcherServiceImpl, and BankReconciliationServiceImpl - all passing |
-| 2025-12-02 | Dev Agent | Task 17 completed: Created comprehensive frontend E2E test suite (5 files, 27 tests) covering import, matching, adjustment, and completion flows |
+| 2025-12-01 | Dev Agent | Tasks 1-4 completed: Database migration, entities, DTOs, StatementImportService                                                                                                                                                     |
+| 2025-12-01 | Dev Agent | Task 5 completed: ReconciliationMatcherServiceImpl with auto-matching algorithm                                                                                                                                                     |
+| 2025-12-01 | Dev Agent | Task 6 completed: BankReconciliationServiceImpl with full workflow (~1000 lines)                                                                                                                                                    |
+| 2025-12-02 | Dev Agent | Task 7 completed: BankReconciliationController with 20+ REST endpoints                                                                                                                                                              |
+| 2025-12-02 | Dev Agent | Tasks 8-15 completed: Frontend implementation (API service, i18n, pages, routes)                                                                                                                                                    |
+| 2025-12-02 | Dev Agent | Tasks 12-13 fully implemented: StatementImportDialog (4-step wizard) and CreateAdjustmentDialog (approval workflow)                                                                                                                 |
+| 2025-12-02 | Dev Agent | Task 16 completed (partial): Created 75 backend unit tests for StatementImportServiceImpl, ReconciliationMatcherServiceImpl, and BankReconciliationServiceImpl - all passing                                                        |
+| 2025-12-02 | Dev Agent | Task 17 completed: Created comprehensive frontend E2E test suite (5 files, 27 tests) covering import, matching, adjustment, and completion flows                                                                                    |

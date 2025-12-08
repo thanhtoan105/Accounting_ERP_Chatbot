@@ -1,13 +1,15 @@
 package com.accounting.repository;
 
-import com.accounting.entity.Invitation;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.accounting.entity.Invitation;
 
 /**
  * Repository for Invitation entity.
@@ -41,4 +43,3 @@ public interface InvitationRepository
   @Query("SELECT i FROM Invitation i WHERE i.status = 'PENDING' AND i.expiresAt < :now")
   List<Invitation> findExpiredPending(@Param("now") Instant now);
 }
-

@@ -3,27 +3,14 @@ package com.accounting.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.accounting.entity.APAuditBackup;
-import com.accounting.entity.AuditLog;
-import com.accounting.entity.Company;
-import com.accounting.entity.User;
-import com.accounting.repository.APAuditBackupRepository;
-import com.accounting.repository.AuditLogRepository;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.PasswordEncoder;
-import com.accounting.test.IntegrationTest;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +27,18 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.entity.AuditLog;
+import com.accounting.entity.Company;
+import com.accounting.entity.User;
+import com.accounting.repository.APAuditBackupRepository;
+import com.accounting.repository.AuditLogRepository;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.PasswordEncoder;
+import com.accounting.test.IntegrationTest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc

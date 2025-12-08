@@ -1,15 +1,17 @@
 package com.accounting.repository;
 
-import com.accounting.entity.ARPayment;
-import com.accounting.entity.ReceiptStatus;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.accounting.entity.ARPayment;
+import com.accounting.entity.ReceiptStatus;
 
 public interface ARPaymentRepository
     extends JpaRepository<ARPayment, UUID>, JpaSpecificationExecutor<ARPayment> {

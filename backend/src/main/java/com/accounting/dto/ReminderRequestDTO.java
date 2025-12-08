@@ -46,4 +46,3 @@ public class ReminderRequestDTO {
     this.message = message;
   }
 }
-

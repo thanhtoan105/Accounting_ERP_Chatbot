@@ -1,8 +1,8 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: timescale/timescaledb:latest-pg16
     container_name: accounting-postgres
-    command: postgres -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all
+    command: postgres -c shared_preload_libraries=timescaledb,pg_stat_statements -c pg_stat_statements.track=all
     environment:
       POSTGRES_USER: accounting
       POSTGRES_PASSWORD: accounting

@@ -1,7 +1,8 @@
 package com.accounting.dto;
 
-import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Request DTO for posting a voucher.
@@ -36,4 +37,3 @@ public class PostVoucherRequest {
     this.validateOnly = validateOnly != null ? validateOnly : false;
   }
 }
-

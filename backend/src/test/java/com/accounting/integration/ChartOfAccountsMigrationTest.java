@@ -2,20 +2,21 @@ package com.accounting.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.accounting.entity.ChartOfAccount;
-import com.accounting.entity.Company;
-import com.accounting.repository.ChartOfAccountsRepository;
-import com.accounting.repository.CompanyRepository;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.entity.ChartOfAccount;
+import com.accounting.entity.Company;
+import com.accounting.repository.ChartOfAccountsRepository;
+import com.accounting.repository.CompanyRepository;
 
 /**
  * Integration test for COA seed migration.

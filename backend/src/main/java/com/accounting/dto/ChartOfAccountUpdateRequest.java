@@ -98,4 +98,3 @@ public class ChartOfAccountUpdateRequest {
     this.orderingPosition = orderingPosition;
   }
 }
-

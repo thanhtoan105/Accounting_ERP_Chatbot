@@ -1,6 +1,7 @@
 package com.accounting.dto;
 
 import com.accounting.validation.ValidRole;
+
 import jakarta.validation.constraints.Size;
 
 /**
@@ -47,4 +48,3 @@ public class UpdateUserRequest {
     this.status = status;
   }
 }
-

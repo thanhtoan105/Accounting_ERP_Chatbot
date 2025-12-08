@@ -93,4 +93,3 @@ public class SupplierCreateRequest {
     this.active = active;
   }
 }
-

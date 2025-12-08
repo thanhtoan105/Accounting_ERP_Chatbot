@@ -42,4 +42,3 @@ public enum VatRate {
     return rate;
   }
 }
-

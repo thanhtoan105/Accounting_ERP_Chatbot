@@ -1,5 +1,18 @@
 package com.accounting.service.impl.ar;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.accounting.dto.ARStatementDetailedDTO;
 import com.accounting.dto.ARStatementSummaryDTO;
 import com.accounting.entity.ARPayment;
@@ -12,17 +25,6 @@ import com.accounting.repository.ReceiptAllocationRepository;
 import com.accounting.repository.SalesInvoiceRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.ARStatementCalculationService;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Implementation of ARStatementCalculationService for generating summary and detailed customer statements.
@@ -248,4 +250,3 @@ public class ARStatementCalculationServiceImpl implements ARStatementCalculation
     return statement;
   }
 }
-

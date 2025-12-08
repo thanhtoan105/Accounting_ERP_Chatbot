@@ -1,8 +1,9 @@
 package com.accounting.dto.reconciliation;
 
-import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Request DTO for creating a new bank reconciliation.

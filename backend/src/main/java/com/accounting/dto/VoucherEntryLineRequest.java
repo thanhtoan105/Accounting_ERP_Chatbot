@@ -1,10 +1,11 @@
 package com.accounting.dto;
 
+import java.math.BigDecimal;
+import java.util.UUID;
+
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.math.BigDecimal;
-import java.util.UUID;
 
 /**
  * Request payload representing a single voucher entry line (one debit + one credit account).
@@ -113,5 +114,3 @@ public class VoucherEntryLineRequest {
     this.lockAccounts = lockAccounts;
   }
 }
-
-

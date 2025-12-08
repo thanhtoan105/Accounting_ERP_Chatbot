@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.ARStatementDispute;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+
+import com.accounting.entity.ARStatementDispute;
 
 /**
  * DTO for AR statement dispute record.
@@ -156,4 +157,3 @@ public class ARStatementDisputeDTO {
     this.updatedAt = updatedAt;
   }
 }
-

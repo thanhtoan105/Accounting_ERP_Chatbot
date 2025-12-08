@@ -1,6 +1,10 @@
 package com.accounting.entity;
 
+import java.time.Instant;
+import java.util.UUID;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,8 +19,6 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.time.Instant;
-import java.util.UUID;
 
 /**
  * ARStatementDelivery entity for tracking email delivery of customer statements.
@@ -204,4 +206,3 @@ public class ARStatementDelivery implements CompanyScopedEntity {
     this.customer = customer;
   }
 }
-

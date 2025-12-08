@@ -1,26 +1,29 @@
 package com.accounting.service.impl;
 
-import com.accounting.entity.Company;
-import com.accounting.entity.User;
-import com.accounting.dto.UpdateBasicCompanySettingsRequest;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.CompanyService;
-import com.accounting.service.AuditService;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.ValidationException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.accounting.dto.UpdateBasicCompanySettingsRequest;
+import com.accounting.entity.Company;
+import com.accounting.entity.User;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.AuditService;
+import com.accounting.service.CompanyService;
+
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ValidationException;
 
 @Service
 @Transactional

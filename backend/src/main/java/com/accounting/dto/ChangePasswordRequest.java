@@ -50,4 +50,3 @@ public class ChangePasswordRequest {
     this.confirmPassword = confirmPassword;
   }
 }
-

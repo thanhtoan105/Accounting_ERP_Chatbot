@@ -1,5 +1,10 @@
 package com.accounting.service;
 
+import java.util.UUID;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.accounting.dto.reconciliation.BankReconciliationDTO;
 import com.accounting.dto.reconciliation.BankReconciliationListDTO;
 import com.accounting.dto.reconciliation.BankStatementLineDTO;
@@ -8,9 +13,6 @@ import com.accounting.dto.reconciliation.CreateReconciliationRequestDTO;
 import com.accounting.dto.reconciliation.MatchRequestDTO;
 import com.accounting.dto.reconciliation.ReconciliationAdjustmentDTO;
 import com.accounting.entity.reconciliation.MatchStatus;
-import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 /**
  * Service for bank reconciliation operations.

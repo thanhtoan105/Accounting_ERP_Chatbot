@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.PurchaseBillStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
+
+import com.accounting.entity.PurchaseBillStatus;
 
 /**
  * Lightweight DTO for PurchaseBill list view. Excludes full details for performance.
@@ -171,4 +172,3 @@ public class PurchaseBillListDTO {
     this.postedVoucherId = postedVoucherId;
   }
 }
-

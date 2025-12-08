@@ -1,12 +1,14 @@
 package com.accounting.service;
 
-import com.accounting.dto.ARVATCorrectionCreateRequest;
-import com.accounting.dto.ARVATCorrectionDTO;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import com.accounting.dto.ARVATCorrectionCreateRequest;
+import com.accounting.dto.ARVATCorrectionDTO;
 
 /**
  * Service interface for AR VAT correction operations.
@@ -61,4 +63,3 @@ public interface ARVATCorrectionService {
   Page<ARVATCorrectionDTO> getCorrections(
       Pageable pageable, UUID invoiceId, com.accounting.entity.ARVATCorrection.Status status);
 }
-

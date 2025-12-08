@@ -56,7 +56,7 @@ export JWT_SECRET="your-secret-key-change-this-in-production-minimum-256-bits"
 
 ```bash
 cd backend
-mvn spring-boot:run
+mvnd spring-boot:run
 ```
 
 **Kiểm tra:**
@@ -113,16 +113,16 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 ```json
 {
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": 1,
-      "email": "login@example.com",
-      "fullName": "Login User",
-      "role": "USER",
-      "companyId": null
-    }
-  }
+	"data": {
+		"accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+		"user": {
+			"id": 1,
+			"email": "login@example.com",
+			"fullName": "Login User",
+			"role": "USER",
+			"companyId": null
+		}
+	}
 }
 ```
 
@@ -166,10 +166,10 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 ```json
 {
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Invalid credentials"
-  }
+	"error": {
+		"code": "UNAUTHORIZED",
+		"message": "Invalid credentials"
+	}
 }
 ```
 
@@ -210,10 +210,10 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 ```json
 {
-  "error": {
-    "code": "ACCOUNT_LOCKED",
-    "message": "Account is locked. Please try again later."
-  }
+	"error": {
+		"code": "ACCOUNT_LOCKED",
+		"message": "Account is locked. Please try again later."
+	}
 }
 ```
 
@@ -254,16 +254,16 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 
 ```json
 {
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": 1,
-      "email": "login@example.com",
-      "fullName": "Login User",
-      "role": "USER",
-      "companyId": null
-    }
-  }
+	"data": {
+		"accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+		"user": {
+			"id": 1,
+			"email": "login@example.com",
+			"fullName": "Login User",
+			"role": "USER",
+			"companyId": null
+		}
+	}
 }
 ```
 
@@ -286,10 +286,10 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 
 ```json
 {
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Refresh token not found"
-  }
+	"error": {
+		"code": "UNAUTHORIZED",
+		"message": "Refresh token not found"
+	}
 }
 ```
 
@@ -319,9 +319,9 @@ curl -X POST http://localhost:8080/api/v1/auth/forgot-password \
 
 ```json
 {
-  "data": {
-    "message": "If an account with that email exists, a reset link has been sent."
-  }
+	"data": {
+		"message": "If an account with that email exists, a reset link has been sent."
+	}
 }
 ```
 
@@ -367,9 +367,9 @@ curl -X POST http://localhost:8080/api/v1/auth/reset-password \
 
 ```json
 {
-  "data": {
-    "message": "Password has been reset successfully"
-  }
+	"data": {
+		"message": "Password has been reset successfully"
+	}
 }
 ```
 
@@ -405,10 +405,10 @@ curl -X POST http://localhost:8080/api/v1/auth/reset-password \
 
 ```json
 {
-  "error": {
-    "code": "ERROR",
-    "message": "Invalid or expired reset token"
-  }
+	"error": {
+		"code": "ERROR",
+		"message": "Invalid or expired reset token"
+	}
 }
 ```
 
@@ -744,7 +744,7 @@ curl -v -X POST http://localhost:8080/api/v1/auth/login \
 
 ```bash
 cd backend
-mvn test
+mvnd test
 ```
 
 **Kiểm tra test results:**

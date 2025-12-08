@@ -1,8 +1,9 @@
 package com.accounting.service;
 
-import com.accounting.dto.VoucherHistoryEntryDTO;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.dto.VoucherHistoryEntryDTO;
 
 /**
  * Service for retrieving voucher history and generating field-level diffs.
@@ -75,4 +76,3 @@ public interface VoucherHistoryService {
         CHANGED   // Field value changed (exists in both, values differ)
     }
 }
-

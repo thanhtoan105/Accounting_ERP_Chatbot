@@ -1,11 +1,12 @@
 package com.accounting.service;
 
-import com.accounting.dto.VoucherTemplateDTO;
-import com.accounting.dto.VoucherTemplateRequest;
-import com.accounting.dto.VoucherTemplateSummaryDTO;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.accounting.dto.VoucherTemplateDTO;
+import com.accounting.dto.VoucherTemplateRequest;
+import com.accounting.dto.VoucherTemplateSummaryDTO;
 
 public interface VoucherTemplateService {
 
@@ -23,4 +24,3 @@ public interface VoucherTemplateService {
 
   VoucherTemplateDTO deactivate(UUID id);
 }
-

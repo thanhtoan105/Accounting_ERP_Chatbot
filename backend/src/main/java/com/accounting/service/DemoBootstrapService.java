@@ -11,5 +11,3 @@ public interface DemoBootstrapService {
    */
   Map<String, Object> bootstrapDemoCompany();
 }
-
-

@@ -132,4 +132,3 @@ public class PurchaseBillValidationResult {
     return headerErrors != null && !headerErrors.isEmpty();
   }
 }
-

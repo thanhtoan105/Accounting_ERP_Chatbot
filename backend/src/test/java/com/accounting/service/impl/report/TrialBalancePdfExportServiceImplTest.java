@@ -1,20 +1,21 @@
 package com.accounting.service.impl.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.accounting.dto.AccountingPeriodDTO;
-import com.accounting.dto.TrialBalanceDTO;
-import com.accounting.dto.TrialBalanceResponseDTO;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import com.accounting.dto.AccountingPeriodDTO;
+import com.accounting.dto.TrialBalanceDTO;
+import com.accounting.dto.TrialBalanceResponseDTO;
 
 /**
  * Unit tests for TrialBalancePdfExportServiceImpl.

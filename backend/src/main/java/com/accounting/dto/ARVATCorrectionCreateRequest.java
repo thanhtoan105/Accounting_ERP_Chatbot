@@ -1,10 +1,11 @@
 package com.accounting.dto;
 
+import java.math.BigDecimal;
+import java.util.UUID;
+
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.math.BigDecimal;
-import java.util.UUID;
 
 public class ARVATCorrectionCreateRequest {
 
@@ -51,4 +52,3 @@ public class ARVATCorrectionCreateRequest {
     this.reason = reason;
   }
 }
-

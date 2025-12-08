@@ -1,14 +1,17 @@
 package com.accounting.service;
 
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.accounting.dto.ChangePasswordRequest;
 import com.accounting.dto.CreateUserRequest;
 import com.accounting.dto.UpdateProfileRequest;
 import com.accounting.dto.UpdateUserRequest;
 import com.accounting.entity.User;
+
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.List;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 /**
  * Service for user management operations including role assignment.
@@ -149,4 +152,3 @@ public interface UserService {
    */
   void changePassword(Long userId, ChangePasswordRequest request, HttpServletRequest httpRequest);
 }
-

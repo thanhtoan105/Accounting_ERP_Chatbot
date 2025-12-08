@@ -79,22 +79,26 @@ Open your browser and navigate to: [http://localhost:3000](http://localhost:3000
 The secret key must match between Metabase and the backend application.
 
 **Option A: Using the default dev secret (local dev only)**
+
 - The default `dev-secret-key-change-in-production` is already configured in both `docker-compose.yml` and `application.yml`
 
 **Option B: Using a custom secret (recommended for production)**
 
 1. Generate a secure secret key (at least 32 characters):
+
    ```bash
    openssl rand -base64 32
    ```
 
 2. Update `docker-compose.yml`:
+
    ```yaml
    environment:
      MB_EMBEDDING_SECRET_KEY: your-generated-secret-key
    ```
 
 3. Update backend configuration or `.env` file:
+
    ```bash
    METABASE_EMBEDDING_SECRET=your-generated-secret-key
    ```
@@ -102,7 +106,7 @@ The secret key must match between Metabase and the backend application.
 4. Restart services:
    ```bash
    docker compose restart metabase
-   cd backend && mvn spring-boot:run
+   cd backend && mvnd spring-boot:run
    ```
 
 ## Step 4: Create Dashboards and Questions
@@ -241,9 +245,11 @@ ORDER BY ba.balance DESC;
 ### 4.5 Get Dashboard ID
 
 1. While viewing the dashboard, look at the URL:
+
    ```
    http://localhost:3000/dashboard/1-financial-overview
    ```
+
    The dashboard ID is `1` (the number before the dash)
 
 2. Update the frontend Dashboard component if needed:
@@ -283,6 +289,7 @@ You should receive a JWT token response.
 ### Issue: "Failed to load analytics dashboard"
 
 **Solutions:**
+
 1. Verify Metabase is running: `docker compose ps metabase`
 2. Check Metabase logs: `docker compose logs metabase`
 3. Verify the embedding secret matches in both places
@@ -291,6 +298,7 @@ You should receive a JWT token response.
 ### Issue: "No data showing" or "Company filter not working"
 
 **Solutions:**
+
 1. Verify the `company_id` parameter is set to **Locked** in dashboard embedding settings
 2. Check that your user has a valid `company_id` in the JWT token
 3. Verify data exists for your company in the database
@@ -298,6 +306,7 @@ You should receive a JWT token response.
 ### Issue: "Connection refused" to database
 
 **Solutions:**
+
 1. Verify the `accounting_ro` user exists:
    ```bash
    docker exec -it accounting-postgres psql -U accounting -d accounting_dev -c "\\du"

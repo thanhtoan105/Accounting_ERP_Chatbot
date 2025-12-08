@@ -4,16 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.accounting.entity.Company;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.security.CompanyContext;
-import jakarta.persistence.EntityManager;
 import java.time.Year;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +19,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.entity.Company;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.security.CompanyContext;
+
+import jakarta.persistence.EntityManager;
 
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -199,4 +202,3 @@ class SupplierCodeGeneratorTest extends com.accounting.test.IntegrationTest {
         assertTrue(code2.matches("^SUP-\\d{4}-\\d{4}$"));
     }
 }
-

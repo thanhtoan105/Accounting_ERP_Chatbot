@@ -39,5 +39,3 @@ class CompanyContextFilterTest extends com.accounting.test.IntegrationTest {
         .andExpect(jsonPath("$.companyId").doesNotExist());
   }
 }
-
-

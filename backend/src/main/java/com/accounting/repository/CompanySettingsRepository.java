@@ -1,8 +1,10 @@
 package com.accounting.repository;
 
-import com.accounting.entity.CompanySettings;
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.accounting.entity.CompanySettings;
 
 /**
  * Repository for CompanySettings entities.
@@ -26,4 +28,3 @@ public interface CompanySettingsRepository extends JpaRepository<CompanySettings
    */
   boolean existsByCompanyId(Long companyId);
 }
-

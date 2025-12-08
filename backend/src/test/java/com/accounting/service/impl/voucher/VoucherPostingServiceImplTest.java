@@ -5,40 +5,20 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.accounting.dto.JournalEntryDTO;
-import com.accounting.dto.PostVoucherResponse;
-import com.accounting.dto.VoucherCreateRequest;
-import com.accounting.dto.VoucherDTO;
-import com.accounting.dto.VoucherValidationResult;
-import com.accounting.entity.JournalEntry;
-import com.accounting.entity.Voucher;
-import com.accounting.entity.VoucherLine;
-import com.accounting.exception.VoucherPostingException;
-import com.accounting.dto.VoucherEmbeddingPayload;
-import com.accounting.repository.VoucherLineRepository;
-import com.accounting.repository.VoucherRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.N8nWebhookService;
-import com.accounting.service.PeriodManagementService;
-import com.accounting.service.VoucherService;
-import com.accounting.service.VoucherValidationService;
-import jakarta.servlet.http.HttpServletRequest;
-import com.accounting.service.gl.JournalEntryService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +30,26 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.PostVoucherResponse;
+import com.accounting.dto.VoucherCreateRequest;
+import com.accounting.dto.VoucherDTO;
+import com.accounting.dto.VoucherEmbeddingPayload;
+import com.accounting.dto.VoucherValidationResult;
+import com.accounting.entity.JournalEntry;
+import com.accounting.entity.Voucher;
+import com.accounting.entity.VoucherLine;
+import com.accounting.exception.VoucherPostingException;
+import com.accounting.repository.VoucherLineRepository;
+import com.accounting.repository.VoucherRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.N8nWebhookService;
+import com.accounting.service.PeriodManagementService;
+import com.accounting.service.VoucherService;
+import com.accounting.service.VoucherValidationService;
+import com.accounting.service.gl.JournalEntryService;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)

@@ -1,5 +1,14 @@
 package com.accounting.service.impl;
 
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.accounting.dto.AuthResponse;
 import com.accounting.dto.ForgotPasswordRequest;
 import com.accounting.dto.LoginRequest;
@@ -12,14 +21,8 @@ import com.accounting.security.PasswordEncoder;
 import com.accounting.service.AuditService;
 import com.accounting.service.AuthService;
 import com.accounting.service.EmailService;
+
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Instant;
-import java.util.Optional;
-import java.util.UUID;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Transactional
@@ -248,4 +251,3 @@ public class AuthServiceImpl implements AuthService {
     auditService.logPasswordResetCompleted(user, httpRequest);
   }
 }
-

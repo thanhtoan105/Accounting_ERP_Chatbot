@@ -285,6 +285,16 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       url: '/accounting/bank-reconciliation',
       requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
     },
+    {
+      titleKey: 'nav.reportSchedules',
+      url: '/reports/schedules',
+      requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.reportCenter',
+      url: '/reports/center',
+      requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
   ]
 
   // Filter category items based on role

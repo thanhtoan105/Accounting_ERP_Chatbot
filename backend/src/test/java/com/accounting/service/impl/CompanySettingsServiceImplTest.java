@@ -11,20 +11,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.accounting.dto.CompanySettingsDto;
-import com.accounting.dto.UpdateCompanySettingsRequest;
-import com.accounting.entity.CompanySettings;
-import com.accounting.repository.CompanySettingsRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.AuditService;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Set;
 import java.util.Optional;
+import java.util.Set;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +24,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.CompanySettingsDto;
+import com.accounting.dto.UpdateCompanySettingsRequest;
+import com.accounting.entity.CompanySettings;
+import com.accounting.repository.CompanySettingsRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.AuditService;
+
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 
 @ExtendWith(MockitoExtension.class)
 class CompanySettingsServiceImplTest {

@@ -1,10 +1,11 @@
 package com.accounting.service;
 
-import com.accounting.dto.VoucherTypeDTO;
-import com.accounting.dto.VoucherTypeCreateRequest;
-import com.accounting.dto.VoucherTypeUpdateRequest;
 import java.util.List;
 import java.util.Optional;
+
+import com.accounting.dto.VoucherTypeCreateRequest;
+import com.accounting.dto.VoucherTypeDTO;
+import com.accounting.dto.VoucherTypeUpdateRequest;
 
 /**
  * Service for Voucher Type operations.
@@ -73,5 +74,3 @@ public interface VoucherTypeService {
    */
   VoucherTypeDTO activate(Long id);
 }
-
-

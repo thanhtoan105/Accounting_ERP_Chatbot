@@ -1,11 +1,13 @@
 package com.accounting.repository;
 
-import com.accounting.entity.VoucherTemplate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.accounting.entity.VoucherTemplate;
 
 public interface VoucherTemplateRepository extends JpaRepository<VoucherTemplate, UUID> {
 
@@ -22,4 +24,3 @@ public interface VoucherTemplateRepository extends JpaRepository<VoucherTemplate
 
   boolean existsByCompanyIdAndNameIgnoreCaseAndIdNot(Long companyId, String name, UUID id);
 }
-
