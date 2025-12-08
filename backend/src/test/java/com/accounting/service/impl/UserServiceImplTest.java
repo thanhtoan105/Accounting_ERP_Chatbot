@@ -3,18 +3,8 @@ package com.accounting.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.accounting.dto.ChangePasswordRequest;
-import com.accounting.dto.CreateUserRequest;
-import com.accounting.dto.UpdateUserRequest;
-import com.accounting.entity.User;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.PasswordEncoder;
-import com.accounting.service.AuditService;
-import com.accounting.service.EmailService;
-import com.accounting.service.RoleService;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +16,19 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.ChangePasswordRequest;
+import com.accounting.dto.CreateUserRequest;
+import com.accounting.dto.UpdateUserRequest;
+import com.accounting.entity.User;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.PasswordEncoder;
+import com.accounting.service.AuditService;
+import com.accounting.service.EmailService;
+import com.accounting.service.RoleService;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
@@ -283,4 +286,3 @@ class UserServiceImplTest {
     assertEquals("New password and confirm password do not match", exception.getReason());
   }
 }
-

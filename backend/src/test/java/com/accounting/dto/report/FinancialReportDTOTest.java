@@ -2,14 +2,16 @@ package com.accounting.dto.report;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.accounting.enums.ReportType;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import com.accounting.enums.ReportType;
 
 /**
  * Unit tests for financial report DTOs.

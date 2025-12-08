@@ -1,13 +1,14 @@
 package com.accounting.repository;
 
-import com.accounting.entity.User;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.accounting.entity.User;
 
 public interface UserRepository
     extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
@@ -46,4 +47,3 @@ public interface UserRepository
   Optional<User> findByResetTokenAndExpiryAfter(
       @Param("token") String token, @Param("now") java.time.Instant now);
 }
-

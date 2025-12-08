@@ -1,11 +1,8 @@
 package com.accounting.controller;
 
-import com.accounting.dto.CompanySettingsDto;
-import com.accounting.dto.UpdateCompanySettingsRequest;
-import com.accounting.service.CompanySettingsService;
-import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +10,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.accounting.dto.CompanySettingsDto;
+import com.accounting.dto.UpdateCompanySettingsRequest;
+import com.accounting.service.CompanySettingsService;
+
+import jakarta.validation.Valid;
 
 /**
  * REST controller for advanced CompanySettings operations.
@@ -64,4 +67,3 @@ public class AdvancedCompanySettingsController {
     return ResponseEntity.ok(body);
   }
 }
-

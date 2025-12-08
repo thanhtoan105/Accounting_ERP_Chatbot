@@ -1,6 +1,12 @@
 package com.accounting.entity;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,10 +19,6 @@ import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.Instant;
-import java.util.UUID;
 
 /**
  * Voucher entity representing transactional documents in the accounting system.

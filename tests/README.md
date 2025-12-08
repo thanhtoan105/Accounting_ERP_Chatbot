@@ -25,16 +25,19 @@ This directory contains the end-to-end (E2E) test suite for the accounting appli
 ### Installation
 
 1. **Install dependencies** (if not already installed):
+
    ```bash
    pnpm install
    ```
 
 2. **Install Playwright browsers**:
+
    ```bash
    npx playwright install --with-deps
    ```
 
 3. **Configure environment variables**:
+
    - Copy `.env.example` to `.env` (if it exists)
    - Fill in your environment-specific values:
      ```bash
@@ -45,10 +48,11 @@ This directory contains the end-to-end (E2E) test suite for the accounting appli
      ```
 
 4. **Start the application** (if not using Playwright's webServer):
+
    ```bash
    # Start backend
-   cd backend && mvn spring-boot:run
-   
+   cd backend && mvnd spring-boot:run
+
    # Start frontend (in another terminal)
    cd frontend && pnpm dev
    ```
@@ -146,20 +150,20 @@ Our test infrastructure follows a composable fixture pattern:
 import { test, expect } from '../support/fixtures';
 
 test('user can create order', async ({ page, userFactory }) => {
-  // Create test user via factory
-  const user = userFactory.createUser({ email: 'test@example.com' });
-  
-  // Seed via API (fast!)
-  // await apiRequest({ method: 'POST', url: '/api/users', data: user });
-  
-  // Test UI
-  await page.goto('/orders');
-  await page.click('[data-testid="create-order"]');
-  
-  // Assert
-  await expect(page.getByText('Order created')).toBeVisible();
-  
-  // Auto-cleanup: userFactory.cleanup() runs automatically
+	// Create test user via factory
+	const user = userFactory.createUser({ email: 'test@example.com' });
+
+	// Seed via API (fast!)
+	// await apiRequest({ method: 'POST', url: '/api/users', data: user });
+
+	// Test UI
+	await page.goto('/orders');
+	await page.click('[data-testid="create-order"]');
+
+	// Assert
+	await expect(page.getByText('Order created')).toBeVisible();
+
+	// Auto-cleanup: userFactory.cleanup() runs automatically
 });
 ```
 
@@ -182,6 +186,7 @@ const admin = factory.createAdminUser({ email: 'admin@example.com' });
 ```
 
 **Key Benefits**:
+
 - **Parallel-safe**: UUIDs and timestamps prevent collisions
 - **Schema evolution**: Defaults adapt to schema changes
 - **Explicit intent**: Overrides show what matters for each test
@@ -233,16 +238,16 @@ Follow **Given-When-Then** pattern:
 
 ```typescript
 test('user can login', async ({ page, userFactory }) => {
-  // Given: Test user exists
-  const user = userFactory.createUser();
-  
-  // When: User logs in
-  await page.goto('/login');
-  await page.fill('[data-testid="email"]', user.email);
-  await page.click('[data-testid="login-button"]');
-  
-  // Then: User is redirected to dashboard
-  await expect(page).toHaveURL(/.*dashboard/);
+	// Given: Test user exists
+	const user = userFactory.createUser();
+
+	// When: User logs in
+	await page.goto('/login');
+	await page.fill('[data-testid="email"]', user.email);
+	await page.click('[data-testid="login-button"]');
+
+	// Then: User is redirected to dashboard
+	await expect(page).toHaveURL(/.*dashboard/);
 });
 ```
 
@@ -269,30 +274,32 @@ test.setTimeout(180000); // 3 minutes for slow test
 
 ```typescript
 test('handles API errors', async ({ page }) => {
-  // Set up route interception BEFORE navigation
-  await page.route('**/api/orders', (route) => {
-    route.fulfill({
-      status: 500,
-      body: JSON.stringify({ error: 'Server Error' }),
-    });
-  });
-  
-  // Now navigate
-  await page.goto('/orders');
-  
-  // Assert error handling
-  await expect(page.getByText(/error/i)).toBeVisible();
+	// Set up route interception BEFORE navigation
+	await page.route('**/api/orders', (route) => {
+		route.fulfill({
+			status: 500,
+			body: JSON.stringify({ error: 'Server Error' }),
+		});
+	});
+
+	// Now navigate
+	await page.goto('/orders');
+
+	// Assert error handling
+	await expect(page.getByText(/error/i)).toBeVisible();
 });
 ```
 
 ### Failure Artifacts
 
 Artifacts are captured **only on failure**:
+
 - **Screenshots**: `test-results/` directory
 - **Videos**: `test-results/` directory (retain on failure)
 - **Traces**: `test-results/` directory (retain on failure)
 
 View traces:
+
 ```bash
 npx playwright show-trace test-results/trace.zip
 ```
@@ -315,19 +322,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-      
+
       - name: Install dependencies
         run: pnpm install
-      
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
-      
+
       - name: Run tests
         run: pnpm test:e2e
         env:
           BASE_URL: ${{ secrets.STAGING_URL }}
           API_URL: ${{ secrets.STAGING_API_URL }}
-      
+
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@v4
@@ -335,7 +342,7 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 30
-      
+
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
@@ -359,16 +366,19 @@ jobs:
 This test framework follows patterns from the TEA (Test Architect) knowledge base:
 
 - **Fixture Architecture** (`.bmad/bmm/testarch/knowledge/fixture-architecture.md`)
+
   - Pure function → fixture → mergeTests composition
   - Auto-cleanup patterns
   - Composable capabilities
 
 - **Data Factories** (`.bmad/bmm/testarch/knowledge/data-factories.md`)
+
   - Factory functions with overrides
   - Faker-based data generation
   - API-first setup patterns
 
 - **Playwright Configuration** (`.bmad/bmm/testarch/knowledge/playwright-config.md`)
+
   - Environment-based configuration
   - Timeout standards
   - Artifact output configuration
@@ -436,4 +446,3 @@ This test framework follows patterns from the TEA (Test Architect) knowledge bas
 **Framework**: Playwright  
 **Version**: 1.56.1  
 **Last Updated**: 2025-01-XX
-

@@ -1,12 +1,13 @@
 package com.accounting.dto;
 
-import com.accounting.entity.SupplierStatementHistory;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.entity.SupplierStatementHistory;
 
 /**
  * DTO for supplier statement (summary or detailed). Contains statement metadata and bill/payment
@@ -258,4 +259,3 @@ public class SupplierStatementDTO {
     }
   }
 }
-

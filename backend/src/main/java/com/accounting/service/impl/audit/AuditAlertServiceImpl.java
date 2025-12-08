@@ -1,5 +1,14 @@
 package com.accounting.service.impl.audit;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.accounting.dto.audit.IntegrityCheckResultDTO;
 import com.accounting.dto.audit.IntegrityIssueDTO;
 import com.accounting.entity.AuditLog;
@@ -9,13 +18,6 @@ import com.accounting.security.CompanyContext;
 import com.accounting.service.AuditAlertService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Implementation of AuditAlertService for sending audit-related alerts.

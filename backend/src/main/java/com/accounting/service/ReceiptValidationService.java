@@ -1,10 +1,11 @@
 package com.accounting.service;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 import com.accounting.dto.ReceiptAllocationRequest;
 import com.accounting.dto.ReceiptValidationResult;
 import com.accounting.entity.ARPayment;
-import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * Service for receipt validation including overpayment prevention,

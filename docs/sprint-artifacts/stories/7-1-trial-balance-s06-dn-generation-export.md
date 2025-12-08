@@ -13,11 +13,13 @@ so that balances are reconciled, auditable, and can be deterministically regener
 ## Requirements Context Summary
 
 **Business Requirements:**
+
 - This story delivers the **FULL** Trial Balance (S06-DN) implementation, building upon the MVP already completed
 - Adds drill-down from amounts to voucher list, PDF export with TT200 layout, snapshot reproducibility, and validation preflight
 - Primary users: Chief Accountants, Admins, Auditors requiring comprehensive trial balance with auditability
 
 **What MVP (7-1-mvp) Already Delivered (REUSE, DO NOT RECREATE):**
+
 1. Period selector with persistence
 2. Trial Balance table with S06-DN columns
 3. Totals row with `isBalanced` warning
@@ -28,6 +30,7 @@ so that balances are reconciled, auditable, and can be deterministically regener
 8. Balance validation warning banner
 
 **What This Story Adds (FULL IMPLEMENTATION):**
+
 1. **AC7.1-04**: Drill-down from any amount → voucher list (account/period/sign constrained)
 2. **AC7.1-05**: Voucher drill → document lineage (voucher → GL lines → attachments)
 3. **AC7.1-06**: PDF export with TT200 layout, logo, footer, timestamp, hash
@@ -37,6 +40,7 @@ so that balances are reconciled, auditable, and can be deterministically regener
 7. **AC7.1-10**: Snapshot reproducibility with mapping version and data hash
 
 **Dependencies:**
+
 - **Prerequisites:**
   - Epic 6 (Cash & Bank Management) - COMPLETED
   - Story 7.1 MVP - COMPLETED (existing implementation to extend)
@@ -66,6 +70,7 @@ so that balances are reconciled, auditable, and can be deterministically regener
 ## Anti-Pattern Prevention
 
 **DO NOT:**
+
 - Create new Trial Balance calculation logic; **MUST extend existing** `TrialBalanceServiceImpl.getTrialBalanceData()`
 - Duplicate Excel export logic; **MUST extend existing** `exportToExcel()` method
 - Create new PDF library integration; **MUST reuse** `StatutoryReportExportService` pattern from Story 7.2
@@ -76,6 +81,7 @@ so that balances are reconciled, auditable, and can be deterministically regener
 - Skip signed URL expiry for attachments; **MUST use** 7-day expiry per security requirements
 
 **MUST REUSE:**
+
 - `VoucherLineRepository` aggregation queries (already implemented)
 - `PeriodManagementService.isPeriodOpen()` for DRAFT watermark logic
 - `ComplianceExportService.calculateDocumentHash()` from Story 6.6
@@ -87,55 +93,60 @@ so that balances are reconciled, auditable, and can be deterministically regener
 
 ### Backend Components (EXTEND THESE)
 
-| Component | File | Lines | Status |
-|-----------|------|-------|--------|
-| Service Interface | `TrialBalanceService.java` | ~15 | ✅ Extend with drill-down, PDF methods |
-| Service Impl | `TrialBalanceServiceImpl.java` | 365 | ✅ Extend for drill-down, PDF, snapshot |
-| Controller | `TrialBalanceController.java` | ~100 | ✅ Add drill-down, PDF endpoints |
-| Response DTO | `TrialBalanceResponseDTO.java` | ~50 | ✅ Add snapshotHash field |
-| Line DTO | `TrialBalanceDTO.java` | ~30 | ✅ Add drillDownUrl field |
-| Voucher Repository | `VoucherLineRepository.java` | ~200 | ✅ Add drill-down queries |
+| Component          | File                           | Lines | Status                                  |
+| ------------------ | ------------------------------ | ----- | --------------------------------------- |
+| Service Interface  | `TrialBalanceService.java`     | ~15   | ✅ Extend with drill-down, PDF methods  |
+| Service Impl       | `TrialBalanceServiceImpl.java` | 365   | ✅ Extend for drill-down, PDF, snapshot |
+| Controller         | `TrialBalanceController.java`  | ~100  | ✅ Add drill-down, PDF endpoints        |
+| Response DTO       | `TrialBalanceResponseDTO.java` | ~50   | ✅ Add snapshotHash field               |
+| Line DTO           | `TrialBalanceDTO.java`         | ~30   | ✅ Add drillDownUrl field               |
+| Voucher Repository | `VoucherLineRepository.java`   | ~200  | ✅ Add drill-down queries               |
 
 ### Frontend Components (EXTEND THESE)
 
-| Component | File | Lines | Status |
-|-----------|------|-------|--------|
-| Page | `TrialBalance.tsx` | 455 | ✅ Add drill-down modal, PDF button |
-| API Service | `trialBalance.ts` | ~50 | ✅ Add drill-down, PDF APIs |
+| Component   | File               | Lines | Status                              |
+| ----------- | ------------------ | ----- | ----------------------------------- |
+| Page        | `TrialBalance.tsx` | 455   | ✅ Add drill-down modal, PDF button |
+| API Service | `trialBalance.ts`  | ~50   | ✅ Add drill-down, PDF APIs         |
 
 ### Reference Implementations (COPY PATTERNS)
 
-| Pattern | Source File | Use For |
-|---------|-------------|---------|
-| PDF Export | `StatutoryReportExportService.java` | PDF generation with TT200 layout |
-| Document Hash | `ComplianceExportService.java` | SHA-256 hash calculation |
-| DRAFT Watermark | `ComplianceExportService.java` | Open period watermarking |
-| Drill-Down Panel | `DrillDownPanel.tsx` (Story 7.2) | Account → Vouchers drill-down UI |
-| Signed URLs | `AuditLogExportService.java` | 7-day expiry attachment URLs |
+| Pattern          | Source File                         | Use For                          |
+| ---------------- | ----------------------------------- | -------------------------------- |
+| PDF Export       | `StatutoryReportExportService.java` | PDF generation with TT200 layout |
+| Document Hash    | `ComplianceExportService.java`      | SHA-256 hash calculation         |
+| DRAFT Watermark  | `ComplianceExportService.java`      | Open period watermarking         |
+| Drill-Down Panel | `DrillDownPanel.tsx` (Story 7.2)    | Account → Vouchers drill-down UI |
+| Signed URLs      | `AuditLogExportService.java`        | 7-day expiry attachment URLs     |
 
 ---
 
 ## Acceptance Criteria
 
 ### AC7.1-01: Period Selector ✅ (MVP Complete)
+
 Period selector persists last-used period per user; future periods disabled.
 
 **Status:** COMPLETE in MVP - no changes needed.
 
 ### AC7.1-02: Trial Balance Table ✅ (MVP Complete)
+
 Columns per S06-DN; totals satisfy sum(Dr)=sum(Cr).
 
 **Status:** COMPLETE in MVP - no changes needed.
 
 ### AC7.1-03: Posted GL Only ✅ (MVP Complete)
+
 Data pulls only from posted GL.
 
 **Status:** COMPLETE - `VoucherLineRepository` queries include `v.status = 'posted'`.
 
 ### AC7.1-04: Drill-Down from Amounts to Voucher List 🆕
+
 Drill-down from any amount opens voucher list constrained by account/period and amount sign; supports pagination, sorting, and export.
 
 **Implementation:**
+
 1. Make amount cells clickable in Trial Balance table
 2. On click, fetch vouchers filtered by:
    - `accountId = clicked account`
@@ -146,6 +157,7 @@ Drill-down from any amount opens voucher list constrained by account/period and 
 5. Export filtered list to Excel
 
 **Verification:**
+
 - [ ] Click Opening Debit → shows vouchers with debit entries for that account before period start
 - [ ] Click Period Credit → shows vouchers with credit entries for that account in period
 - [ ] Pagination works correctly
@@ -153,9 +165,11 @@ Drill-down from any amount opens voucher list constrained by account/period and 
 - [ ] Export filtered list downloads Excel
 
 ### AC7.1-05: Voucher Drill with Document Lineage 🆕
+
 Voucher drill shows document lineage (voucher → GL lines → attachments) with breadcrumb back to S06; downloads signed and expiring.
 
 **Implementation:**
+
 1. Click voucher row in drill-down list → open voucher detail modal
 2. Show: voucher header, all GL lines, linked attachments
 3. Breadcrumb: `Trial Balance > Account 111 > Voucher GV-001`
@@ -163,15 +177,18 @@ Voucher drill shows document lineage (voucher → GL lines → attachments) with
 5. Back button returns to S06 drill-down context
 
 **Verification:**
+
 - [ ] Clicking voucher opens detail modal with full lineage
 - [ ] Breadcrumb navigation works
 - [ ] Attachment downloads use signed URLs
 - [ ] Back returns to previous drill-down state
 
 ### AC7.1-06: PDF Export with TT200 Layout 🆕
+
 Export PDF: TT200 layout, logo/footer/timestamp/hash.
 
 **Implementation:**
+
 1. Use JasperReports/DynamicReports (same as Story 7.2)
 2. TT200 layout:
    - Header: Company name, logo, report title "BẢNG CÂN ĐỐI SỐ PHÁT SINH"
@@ -183,6 +200,7 @@ Export PDF: TT200 layout, logo/footer/timestamp/hash.
 3. DRAFT watermark if period is open
 
 **Verification:**
+
 - [ ] PDF renders with TT200 layout
 - [ ] Company logo appears in header
 - [ ] Footer contains timestamp and hash
@@ -190,51 +208,62 @@ Export PDF: TT200 layout, logo/footer/timestamp/hash.
 - [ ] Hash can be verified against regenerated report
 
 ### AC7.1-07: Performance Optimization 🆕
+
 Render ≤2s for up to 50k GL rows; streaming export for larger sets.
 
 **Implementation:**
+
 1. Add index on `voucher_line(company_id, voucher_id, account_id)`
 2. Use streaming ResultSet for exports >10k rows
 3. Add progress indicator for long exports
 4. Log slow queries (>500ms threshold)
 
 **Verification:**
+
 - [ ] Report renders in <2s for 50k rows
 - [ ] Export >50k rows uses streaming with progress
 - [ ] Slow query threshold logged at WARN level
 
 ### AC7.1-08: Enhanced Security 🆕
+
 RBAC enforced at query and drill; signed URLs (≤7 days) for attachments/exports.
 
 **Implementation:**
+
 1. `@PreAuthorize` on all new endpoints
 2. Drill-down queries validate company context
 3. Attachment downloads use `AuditLogExportService` signed URL pattern
 4. All access logged with IP and user agent
 
 **Verification:**
+
 - [ ] Non-authorized users get 403 on drill-down
 - [ ] Signed URLs expire after 7 days
 - [ ] Access logged in audit trail
 
 ### AC7.1-09: Validation Preflight 🆕
+
 Blocks export if GL out-of-balance or period locks inconsistent.
 
 **Implementation:**
+
 1. Before export, check `isBalanced` flag
 2. If unbalanced, return validation error with actionable message
 3. Link to help article for resolution
 4. Log validation failure in audit
 
 **Verification:**
+
 - [ ] Export blocked when `isBalanced = false`
 - [ ] Error message shows: "Cannot export: Trial Balance out of balance. Debit: X, Credit: Y. See [Help]."
 - [ ] Validation failure logged as audit entry
 
 ### AC7.1-10: Snapshot Reproducibility 🆕
+
 Storing mapping/version and parameters enables deterministic regeneration; snapshot hash verified on re-export.
 
 **Implementation:**
+
 1. Create `report_snapshots` table (reuse from Story 7.2 if exists)
 2. On export, store:
    - `periodId`, `generatedAt`, `userId`, `parameters` (JSON)
@@ -244,6 +273,7 @@ Storing mapping/version and parameters enables deterministic regeneration; snaps
 4. Hash mismatch triggers warning
 
 **Verification:**
+
 - [ ] Snapshot stored on first export
 - [ ] Re-export with snapshot ID produces identical hash
 - [ ] Hash mismatch shows warning: "Data has changed since original export"
@@ -255,6 +285,7 @@ Storing mapping/version and parameters enables deterministic regeneration; snaps
 ### New Endpoints
 
 #### GET /api/v1/reports/trial-balance/drill-down
+
 Get vouchers for drill-down from Trial Balance amount.
 
 **Request Parameters:**
@@ -269,33 +300,35 @@ Get vouchers for drill-down from Trial Balance amount.
 | sortDir | string | No | `asc`, `desc` |
 
 **Response:**
+
 ```json
 {
-  "data": {
-    "vouchers": [
-      {
-        "id": "uuid",
-        "voucherNumber": "GV-001",
-        "voucherDate": "2025-01-15",
-        "description": "Cash receipt",
-        "debit": 1000000,
-        "credit": 0,
-        "voucherType": "GENERAL"
-      }
-    ],
-    "totalAmount": 5000000,
-    "voucherCount": 25
-  },
-  "meta": {
-    "page": 0,
-    "size": 20,
-    "total": 25,
-    "hasNext": true
-  }
+	"data": {
+		"vouchers": [
+			{
+				"id": "uuid",
+				"voucherNumber": "GV-001",
+				"voucherDate": "2025-01-15",
+				"description": "Cash receipt",
+				"debit": 1000000,
+				"credit": 0,
+				"voucherType": "GENERAL"
+			}
+		],
+		"totalAmount": 5000000,
+		"voucherCount": 25
+	},
+	"meta": {
+		"page": 0,
+		"size": 20,
+		"total": 25,
+		"hasNext": true
+	}
 }
 ```
 
 #### GET /api/v1/reports/trial-balance/export/pdf
+
 Export Trial Balance to PDF.
 
 **Request Parameters:**
@@ -305,6 +338,7 @@ Export Trial Balance to PDF.
 | snapshotId | UUID | No | Use existing snapshot for reproducibility |
 
 **Response Headers:**
+
 ```
 Content-Type: application/pdf
 Content-Disposition: attachment; filename="trial-balance-{periodName}-{timestamp}.pdf"
@@ -313,33 +347,36 @@ X-Snapshot-Id: {snapshotId}
 ```
 
 #### POST /api/v1/reports/trial-balance/validate
+
 Validate Trial Balance before export.
 
 **Request Body:**
+
 ```json
 {
-  "periodId": "uuid"
+	"periodId": "uuid"
 }
 ```
 
 **Response:**
+
 ```json
 {
-  "data": {
-    "valid": false,
-    "errors": [
-      {
-        "code": "GL_IMBALANCE",
-        "message": "Trial Balance out of balance",
-        "details": {
-          "totalDebit": 1000000,
-          "totalCredit": 999500,
-          "difference": 500
-        },
-        "helpUrl": "/help/trial-balance-imbalance"
-      }
-    ]
-  }
+	"data": {
+		"valid": false,
+		"errors": [
+			{
+				"code": "GL_IMBALANCE",
+				"message": "Trial Balance out of balance",
+				"details": {
+					"totalDebit": 1000000,
+					"totalCredit": 999500,
+					"difference": 500
+				},
+				"helpUrl": "/help/trial-balance-imbalance"
+			}
+		]
+	}
 }
 ```
 
@@ -349,20 +386,21 @@ Validate Trial Balance before export.
 
 ### Error Catalog
 
-| Code | HTTP | Message | Resolution |
-|------|------|---------|------------|
-| GL_IMBALANCE | 400 | "Cannot export: Trial Balance out of balance" | Fix posting errors |
-| PERIOD_NOT_FOUND | 404 | "Period not found" | Select valid period |
-| ACCOUNT_NOT_FOUND | 404 | "Account not found for drill-down" | Refresh report |
-| SNAPSHOT_HASH_MISMATCH | 409 | "Data changed since snapshot" | Create new export |
-| EXPORT_TOO_LARGE | 413 | "Export exceeds 100k rows, use streaming" | Use streaming API |
-| ACCESS_DENIED | 403 | "Requires CHIEF_ACCOUNTANT or ADMIN role" | Request access |
+| Code                   | HTTP | Message                                       | Resolution          |
+| ---------------------- | ---- | --------------------------------------------- | ------------------- |
+| GL_IMBALANCE           | 400  | "Cannot export: Trial Balance out of balance" | Fix posting errors  |
+| PERIOD_NOT_FOUND       | 404  | "Period not found"                            | Select valid period |
+| ACCOUNT_NOT_FOUND      | 404  | "Account not found for drill-down"            | Refresh report      |
+| SNAPSHOT_HASH_MISMATCH | 409  | "Data changed since snapshot"                 | Create new export   |
+| EXPORT_TOO_LARGE       | 413  | "Export exceeds 100k rows, use streaming"     | Use streaming API   |
+| ACCESS_DENIED          | 403  | "Requires CHIEF_ACCOUNTANT or ADMIN role"     | Request access      |
 
 ---
 
 ## Tasks / Subtasks
 
 ### Task 1: Backend - Drill-Down Service (AC: #4) ✅
+
 - [x] **1.1** Add `getDrillDownVouchers(UUID periodId, Long accountId, AmountType type, Pageable pageable)` to `TrialBalanceService`
 - [x] **1.2** Implement in `TrialBalanceServiceImpl`:
   - Query `VoucherLine` filtered by account, period, debit/credit
@@ -374,6 +412,7 @@ Validate Trial Balance before export.
 - [x] **1.5** Add unit tests for drill-down logic with ≥85% coverage
 
 ### Task 2: Backend - Drill-Down Repository Queries (AC: #4) ✅
+
 - [x] **2.1** Add to `VoucherLineRepository`:
   ```java
   @Query("SELECT vl, v FROM VoucherLine vl JOIN Voucher v ON vl.voucherId = v.id " +
@@ -387,6 +426,7 @@ Validate Trial Balance before export.
 - [x] **2.4** Add integration test verifying correct vouchers returned
 
 ### Task 3: Backend - Drill-Down Controller (AC: #4) ✅
+
 - [x] **3.1** Add endpoint `GET /api/v1/reports/trial-balance/drill-down` to `TrialBalanceController`
 - [x] **3.2** Add `@PreAuthorize("hasAnyAuthority('chief_accountant','admin')")`
 - [x] **3.3** Validate request parameters
@@ -394,6 +434,7 @@ Validate Trial Balance before export.
 - [x] **3.5** Add integration test for endpoint
 
 ### Task 4: Backend - PDF Export Service (AC: #6) ✅
+
 - [x] **4.1** Create `TrialBalancePdfExportService` interface
 - [x] **4.2** Create `TrialBalancePdfExportServiceImpl` extending `StatutoryReportExportService` pattern:
   - Use JasperReports/DynamicReports
@@ -409,12 +450,14 @@ Validate Trial Balance before export.
 - [x] **4.4** Add unit tests for PDF generation
 
 ### Task 5: Backend - PDF Controller Endpoint (AC: #6) ✅
+
 - [x] **5.1** Add endpoint `GET /api/v1/reports/trial-balance/export/pdf` to controller
 - [x] **5.2** Set response headers: Content-Type, Content-Disposition, X-Content-SHA256, X-Snapshot-Id
 - [x] **5.3** Log export action in audit trail
 - [x] **5.4** Add integration test for PDF download
 
 ### Task 6: Backend - Validation Preflight (AC: #9) ✅
+
 - [x] **6.1** Add `validateForExport(UUID periodId)` to `TrialBalanceService`
 - [x] **6.2** Implement validation:
   - Check `isBalanced` from `getTrialBalanceData()`
@@ -426,6 +469,7 @@ Validate Trial Balance before export.
 - [x] **6.6** Add unit tests for validation logic
 
 ### Task 7: Backend - Snapshot Reproducibility (AC: #10) ✅
+
 - [x] **7.1** Reuse `report_snapshots` table from Story 7.2 or create if not exists:
   ```sql
   CREATE TABLE report_snapshots (
@@ -446,6 +490,7 @@ Validate Trial Balance before export.
 - [x] **7.5** Add integration test for snapshot workflow
 
 ### Task 8: Backend - Performance Optimization (AC: #7) ✅
+
 - [x] **8.1** Add database index:
   ```sql
   CREATE INDEX idx_voucher_line_company_account ON voucher_line(company_id, account_id);
@@ -456,6 +501,7 @@ Validate Trial Balance before export.
 - [x] **8.4** Add performance test with 50k rows
 
 ### Task 9: Frontend - Drill-Down Panel (AC: #4, #5) ✅
+
 - [x] **9.1** Create `TrialBalanceDrillDown.tsx` component (copy pattern from `DrillDownPanel.tsx` in Story 7.2):
   - Sheet/side panel design
   - Table with voucher rows
@@ -473,6 +519,7 @@ Validate Trial Balance before export.
 - [x] **9.4** Add i18n keys for drill-down panel (EN only - VI pending)
 
 ### Task 10: Frontend - Voucher Detail Modal (AC: #5) ✅
+
 - [x] **10.1** Create `VoucherDetailModal.tsx` for document lineage view:
   - Voucher header details
   - GL lines table
@@ -482,12 +529,14 @@ Validate Trial Balance before export.
 - [x] **10.3** Integrate with existing voucher view API
 
 ### Task 11: Frontend - PDF Export Button (AC: #6) ✅
+
 - [x] **11.1** Add PDF export button next to Excel button in `TrialBalance.tsx`
 - [x] **11.2** Add `exportTrialBalancePdf(periodId)` to `trialBalance.ts`
 - [x] **11.3** Show loading state during PDF generation
 - [x] **11.4** Display success/error toast
 
 ### Task 12: Frontend - Validation Preflight UI (AC: #9) ✅
+
 - [x] **12.1** Before export, call validation endpoint
 - [x] **12.2** If invalid, show error dialog with:
   - Error message
@@ -496,6 +545,7 @@ Validate Trial Balance before export.
 - [x] **12.3** Block export button if validation fails
 
 ### Task 13: Frontend - i18n Updates ✅
+
 - [x] **13.1** Add to `en/common.json`:
   ```json
   "trialBalance": {
@@ -528,6 +578,7 @@ Validate Trial Balance before export.
 - [x] **13.2** Add Vietnamese translations to `vi/common.json`
 
 ### Task 14: E2E Testing (AC: #4-#10) ✅
+
 - [x] **14.1** Extend `trial-balance.spec.ts` with drill-down tests:
   - Click amount cell → drill-down panel opens (E2E-TB-011)
   - Drill-down shows correct vouchers (E2E-TB-011)
@@ -541,11 +592,13 @@ Validate Trial Balance before export.
   - Error dialog shows (E2E-TB-015)
 
 ### Task 15: Code Review Fixes (AI-Review) ✅
+
 - [x] **15.1** Implement TrialBalanceSnapshotService for AC7.1-10 snapshot reproducibility
 - [x] **15.2** Add X-Content-SHA256 and X-Snapshot-Id headers to PDF export response
 - [x] **15.3** Fix controller to retrieve hash and snapshot ID from export result
 
 ### Task 16: Code Review Fixes Session 2 (AI-Review) ✅
+
 - [x] **16.1** Fix H2: `reexportFromSnapshot()` now regenerates PDF instead of returning null
 - [x] **16.2** Fix H3: Add sum queries for OPENING/CLOSING drill-down totals (was returning 0)
 - [x] **16.3** Fix M1: Clarify voucherType null handling in drill-down DTO (kept for API compat)
@@ -557,6 +610,7 @@ Validate Trial Balance before export.
 ## Project Structure
 
 **Backend (NEW/MODIFIED):**
+
 ```
 backend/src/main/java/com/accounting/
 ├── controller/report/
@@ -587,6 +641,7 @@ backend/src/test/java/com/accounting/
 ```
 
 **Frontend (NEW/MODIFIED):**
+
 ```
 frontend/src/features/accounting/
 ├── pages/TrialBalance/
@@ -610,31 +665,31 @@ tests/e2e/
 
 ### Backend Test Scenarios
 
-| ID | Scenario | Expected Result |
-|----|----------|-----------------|
-| T1 | Drill-down period debit for account 111 | Returns only debit vouchers for account in period |
-| T2 | Drill-down opening balance | Returns vouchers before period start |
-| T3 | Drill-down with pagination | Page 2 returns correct vouchers |
-| T4 | PDF export closed period | PDF without DRAFT watermark, with hash |
-| T5 | PDF export open period | PDF with DRAFT watermark |
-| T6 | Validation preflight - balanced | Returns valid=true |
-| T7 | Validation preflight - imbalanced | Returns valid=false with error |
-| T8 | Snapshot save on export | Snapshot stored with hash |
-| T9 | Snapshot re-export same data | Identical hash returned |
-| T10 | Snapshot re-export changed data | Hash mismatch warning |
-| T11 | Company A drill-down | Cannot access Company B vouchers |
-| T12 | Non-authorized user drill-down | 403 Forbidden |
+| ID  | Scenario                                | Expected Result                                   |
+| --- | --------------------------------------- | ------------------------------------------------- |
+| T1  | Drill-down period debit for account 111 | Returns only debit vouchers for account in period |
+| T2  | Drill-down opening balance              | Returns vouchers before period start              |
+| T3  | Drill-down with pagination              | Page 2 returns correct vouchers                   |
+| T4  | PDF export closed period                | PDF without DRAFT watermark, with hash            |
+| T5  | PDF export open period                  | PDF with DRAFT watermark                          |
+| T6  | Validation preflight - balanced         | Returns valid=true                                |
+| T7  | Validation preflight - imbalanced       | Returns valid=false with error                    |
+| T8  | Snapshot save on export                 | Snapshot stored with hash                         |
+| T9  | Snapshot re-export same data            | Identical hash returned                           |
+| T10 | Snapshot re-export changed data         | Hash mismatch warning                             |
+| T11 | Company A drill-down                    | Cannot access Company B vouchers                  |
+| T12 | Non-authorized user drill-down          | 403 Forbidden                                     |
 
 ### Frontend Test Scenarios
 
-| ID | Scenario | Expected Result |
-|----|----------|-----------------|
-| F1 | Click Opening Debit cell | Drill-down panel opens |
-| F2 | Drill-down pagination | Navigate pages correctly |
-| F3 | Drill-down sort by date | Vouchers reorder |
-| F4 | Click voucher row | Detail modal opens |
-| F5 | PDF export button click | PDF downloads |
-| F6 | Export blocked - imbalanced | Error dialog shows |
+| ID  | Scenario                    | Expected Result          |
+| --- | --------------------------- | ------------------------ |
+| F1  | Click Opening Debit cell    | Drill-down panel opens   |
+| F2  | Drill-down pagination       | Navigate pages correctly |
+| F3  | Drill-down sort by date     | Vouchers reorder         |
+| F4  | Click voucher row           | Detail modal opens       |
+| F5  | PDF export button click     | PDF downloads            |
+| F6  | Export blocked - imbalanced | Error dialog shows       |
 
 ---
 
@@ -643,6 +698,7 @@ tests/e2e/
 ### Critical Implementation Patterns
 
 **1. Drill-Down Query Pattern:**
+
 ```java
 // TrialBalanceServiceImpl.java - EXTEND existing class
 public DrillDownResponseDTO getDrillDownVouchers(
@@ -675,6 +731,7 @@ public DrillDownResponseDTO getDrillDownVouchers(
 ```
 
 **2. PDF Export Pattern (reuse Story 7.2):**
+
 ```java
 // TrialBalancePdfExportServiceImpl.java - NEW class
 @Service
@@ -724,36 +781,45 @@ public class TrialBalancePdfExportServiceImpl implements TrialBalancePdfExportSe
 ```
 
 **3. Frontend Drill-Down Pattern (copy from DrillDownPanel.tsx):**
+
 ```tsx
 // TrialBalanceDrillDown.tsx - NEW component
 export function TrialBalanceDrillDown({
-  accountId,
-  accountCode,
-  periodId,
-  amountType,
-  onClose
+	accountId,
+	accountCode,
+	periodId,
+	amountType,
+	onClose,
 }: DrillDownProps) {
-  const { t } = useTranslation()
-  const [page, setPage] = useState(0)
-  const [sortBy, setSortBy] = useState<'date' | 'amount'>('date')
+	const { t } = useTranslation();
+	const [page, setPage] = useState(0);
+	const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['trialBalanceDrillDown', accountId, periodId, amountType, page, sortBy],
-    queryFn: () => getTrialBalanceDrillDown(periodId, accountId, amountType, page, sortBy),
-  })
+	const { data, isLoading } = useQuery({
+		queryKey: [
+			'trialBalanceDrillDown',
+			accountId,
+			periodId,
+			amountType,
+			page,
+			sortBy,
+		],
+		queryFn: () =>
+			getTrialBalanceDrillDown(periodId, accountId, amountType, page, sortBy),
+	});
 
-  return (
-    <Sheet open onOpenChange={onClose}>
-      <SheetContent className="w-[600px] sm:max-w-[600px]">
-        <SheetHeader>
-          <SheetTitle>
-            {t('trialBalance.drillDown.title')} - {accountCode}
-          </SheetTitle>
-        </SheetHeader>
-        {/* Voucher table with pagination */}
-      </SheetContent>
-    </Sheet>
-  )
+	return (
+		<Sheet open onOpenChange={onClose}>
+			<SheetContent className='w-[600px] sm:max-w-[600px]'>
+				<SheetHeader>
+					<SheetTitle>
+						{t('trialBalance.drillDown.title')} - {accountCode}
+					</SheetTitle>
+				</SheetHeader>
+				{/* Voucher table with pagination */}
+			</SheetContent>
+		</Sheet>
+	);
 }
 ```
 
@@ -775,19 +841,24 @@ export function TrialBalanceDrillDown({
 ## Dev Agent Record
 
 ### Context Reference
+
 - Story context from Epic 7 and Story 7.1 MVP
 - Pattern references from Story 7.2 (StatutoryReportExportService) and Story 6.6 (ComplianceExportService)
 
 ### Agent Model Used
+
 Claude (Amp) - 2025-12-06
 
 ### Debug Log References
-- Backend tests: `mvn test -Dtest="TrialBalanceServiceImplTest"`
-- Backend drill-down tests: `mvn test -Dtest="TrialBalanceServiceImplDrillDownTest"`
+
+- Backend tests: `mvndd test -Dtest="TrialBalanceServiceImplTest"`
+- Backend drill-down tests: `mvndd test -Dtest="TrialBalanceServiceImplDrillDownTest"`
 - E2E tests: `cd tests && npx playwright test trial-balance.spec.ts`
 
 ### Completion Notes List
+
 **Session 1 (~70%):**
+
 - ✅ AC7.1-04: Drill-down from amounts to voucher list - FULLY IMPLEMENTED
   - Backend: DrillDownVoucherDTO, DrillDownResponseDTO, AmountType enum
   - Backend: getDrillDownVouchers() in TrialBalanceServiceImpl with all 6 amount types
@@ -795,12 +866,13 @@ Claude (Amp) - 2025-12-06
   - Backend: Controller endpoint with @PreAuthorize security
   - Frontend: DrillDownPanel.tsx with pagination, sorting, export
   - Frontend: Click handlers on amount cells in TrialBalance.tsx
-- ✅ AC7.1-07: Performance optimization - indexes exist in V20251127005__add_cash_book_indexes.sql
+- ✅ AC7.1-07: Performance optimization - indexes exist in V20251127005\_\_add_cash_book_indexes.sql
 - ✅ AC7.1-08: Enhanced security - @PreAuthorize on all endpoints
 - ✅ AC7.1-09: Validation preflight - validateForExport() with TrialBalanceValidationDTO
 - ✅ AC7.1-10: Snapshot reproducibility - report_snapshots table and ReportSnapshot entity
 
 **Session 2 (100% - This Session):**
+
 - ✅ AC7.1-05: VoucherDetailModal.tsx - IMPLEMENTED
   - Voucher header details, GL lines table, attachments with signed URLs
   - Breadcrumb navigation (Trial Balance > Account > Voucher)
@@ -817,12 +889,15 @@ Claude (Amp) - 2025-12-06
   - pagination keys present
 
 **Code Review Session (2025-12-06):**
+
 - ✅ All HIGH issues fixed
 - ✅ E2E tests verified (16 tests in trial-balance.spec.ts)
 - ⚠️ M3 (streaming export) documented as future enhancement
 
 ### File List
+
 **Backend - Implemented:**
+
 - `backend/src/main/java/com/accounting/dto/DrillDownVoucherDTO.java` - NEW
 - `backend/src/main/java/com/accounting/dto/DrillDownResponseDTO.java` - NEW
 - `backend/src/main/java/com/accounting/dto/TrialBalanceValidationDTO.java` - NEW
@@ -843,6 +918,7 @@ Claude (Amp) - 2025-12-06
 - `backend/src/test/java/com/accounting/service/impl/report/TrialBalancePdfExportServiceImplTest.java` - NEW
 
 **Frontend - Implemented:**
+
 - `frontend/src/features/accounting/pages/TrialBalance/DrillDownPanel.tsx` - NEW
 - `frontend/src/features/accounting/pages/TrialBalance/VoucherDetailModal.tsx` - NEW
 - `frontend/src/features/accounting/pages/TrialBalance/TrialBalance.tsx` - MODIFIED (VoucherDetailModal integration)
@@ -851,15 +927,16 @@ Claude (Amp) - 2025-12-06
 - `frontend/src/i18n/locales/vi/common.json` - EXISTS (drillDown keys present)
 
 **E2E Tests:**
+
 - `tests/e2e/trial-balance.spec.ts` - MODIFIED (16 tests: drill-down, PDF export, validation)
 
 ---
 
 ## Changelog
 
-| Date       | Author    | Changes                              |
-|------------|-----------|--------------------------------------|
-| 2025-12-06 | SM Agent  | Initial full story draft created - extends MVP with drill-down, PDF, validation, snapshots. Comprehensive context from Nia research, Epic 7, and previous stories included. |
-| 2025-12-06 | DEV Agent | Status check: ~70% complete. Tasks 1-3, 6-9 marked complete. Tasks 4-5, 10-14 pending (PDF export, VoucherDetailModal, i18n). File list and completion notes added. |
-| 2025-12-06 | DEV Agent | Full implementation completed: PDF export service (TrialBalancePdfExportServiceImpl with DynamicReports, TT200 layout), VoucherDetailModal.tsx with document lineage, wired into TrialBalance.tsx. All ACs 4-10 now complete. Only E2E tests (Task 14) pending. |
-| 2025-12-07 | Code Review | Adversarial code review completed. Fixed 5 issues: H2 (reexportFromSnapshot null bytes), H3 (drill-down totals 0 for opening/closing), M1 (voucherType null doc), M2 (try-with-resources), M3 (zero value drill-down). All tests passing. Status → done. |
+| Date       | Author      | Changes                                                                                                                                                                                                                                                         |
+| ---------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2025-12-06 | SM Agent    | Initial full story draft created - extends MVP with drill-down, PDF, validation, snapshots. Comprehensive context from Nia research, Epic 7, and previous stories included.                                                                                     |
+| 2025-12-06 | DEV Agent   | Status check: ~70% complete. Tasks 1-3, 6-9 marked complete. Tasks 4-5, 10-14 pending (PDF export, VoucherDetailModal, i18n). File list and completion notes added.                                                                                             |
+| 2025-12-06 | DEV Agent   | Full implementation completed: PDF export service (TrialBalancePdfExportServiceImpl with DynamicReports, TT200 layout), VoucherDetailModal.tsx with document lineage, wired into TrialBalance.tsx. All ACs 4-10 now complete. Only E2E tests (Task 14) pending. |
+| 2025-12-07 | Code Review | Adversarial code review completed. Fixed 5 issues: H2 (reexportFromSnapshot null bytes), H3 (drill-down totals 0 for opening/closing), M1 (voucherType null doc), M2 (try-with-resources), M3 (zero value drill-down). All tests passing. Status → done.        |

@@ -1,12 +1,12 @@
 package com.accounting.dto;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.UUID;
 
 /**
  * Citation DTO representing a reference to a voucher or document.

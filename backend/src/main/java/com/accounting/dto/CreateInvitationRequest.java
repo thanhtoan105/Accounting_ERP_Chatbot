@@ -1,6 +1,7 @@
 package com.accounting.dto;
 
 import com.accounting.validation.ValidRole;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -38,4 +39,3 @@ public class CreateInvitationRequest {
     this.role = role;
   }
 }
-

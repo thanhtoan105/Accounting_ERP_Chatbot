@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.BankAccount;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+
+import com.accounting.entity.BankAccount;
 
 /**
  * DTO for BankAccount responses. Used in API endpoints.

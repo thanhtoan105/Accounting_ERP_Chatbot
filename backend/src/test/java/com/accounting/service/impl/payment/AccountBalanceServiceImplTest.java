@@ -5,17 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-import com.accounting.entity.BankAccount;
-import com.accounting.entity.JournalEntry;
-import com.accounting.repository.BankAccountRepository;
-import com.accounting.repository.JournalEntryRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.AccountBalanceService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +19,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+
+import com.accounting.entity.BankAccount;
+import com.accounting.entity.JournalEntry;
+import com.accounting.repository.BankAccountRepository;
+import com.accounting.repository.JournalEntryRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.AccountBalanceService;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -200,4 +202,3 @@ class AccountBalanceServiceImplTest {
     return entry;
   }
 }
-

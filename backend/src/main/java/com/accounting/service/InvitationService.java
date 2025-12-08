@@ -1,6 +1,7 @@
 package com.accounting.service;
 
 import com.accounting.entity.Invitation;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -55,4 +56,3 @@ public interface InvitationService {
    */
   java.util.List<Invitation> listInvitations();
 }
-

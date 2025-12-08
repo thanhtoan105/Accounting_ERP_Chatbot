@@ -4,23 +4,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.accounting.entity.AuditLog;
-import com.accounting.entity.User;
-import com.accounting.repository.AuditLogRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.PasswordEncoder;
-import com.accounting.security.CompanyContext;
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+
+import com.accounting.entity.AuditLog;
+import com.accounting.entity.User;
+import com.accounting.repository.AuditLogRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.PasswordEncoder;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @SpringBootTest
 @DirtiesContext
@@ -104,4 +106,3 @@ class AuditServiceImplRoleChangeTest extends com.accounting.test.IntegrationTest
     assertNotNull(log.getCreatedAt());
   }
 }
-

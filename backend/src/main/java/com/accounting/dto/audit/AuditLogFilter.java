@@ -15,6 +15,3 @@ public record AuditLogFilter(
     Instant to,
     int page,
     int size) {}
-
-
-

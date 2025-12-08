@@ -1,11 +1,7 @@
 package com.accounting.controller.report;
 
-import com.accounting.dto.report.MappingVersionDTO;
-import com.accounting.dto.report.ReportMappingDTO;
-import com.accounting.service.ReportMappingService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +11,13 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.accounting.dto.report.MappingVersionDTO;
+import com.accounting.dto.report.ReportMappingDTO;
+import com.accounting.service.ReportMappingService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST controller for managing TT200 report mappings.

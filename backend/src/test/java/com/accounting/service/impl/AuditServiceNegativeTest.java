@@ -2,17 +2,8 @@ package com.accounting.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.accounting.entity.AuditLog;
-import com.accounting.entity.Company;
-import com.accounting.entity.Customer;
-import com.accounting.entity.User;
-import com.accounting.repository.AuditLogRepository;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.CustomerRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.CustomerService;
 import java.time.Instant;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +14,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.entity.AuditLog;
+import com.accounting.entity.Company;
+import com.accounting.entity.Customer;
+import com.accounting.entity.User;
+import com.accounting.repository.AuditLogRepository;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.CustomerService;
 import com.accounting.test.IntegrationTest;
 
 /**

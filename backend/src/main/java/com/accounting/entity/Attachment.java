@@ -1,6 +1,10 @@
 package com.accounting.entity;
 
+import java.time.Instant;
+import java.util.UUID;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,8 +18,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
-import java.util.UUID;
 
 /**
  * Unified Attachment entity for file attachments across all entity types.

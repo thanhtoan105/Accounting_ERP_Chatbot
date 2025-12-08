@@ -5,6 +5,3 @@ public enum DataIntegritySeverity {
   MEDIUM,
   HIGH
 }
-
-
-

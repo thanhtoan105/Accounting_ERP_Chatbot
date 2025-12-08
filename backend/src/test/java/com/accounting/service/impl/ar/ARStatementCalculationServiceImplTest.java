@@ -4,17 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.accounting.dto.ARStatementDetailedDTO;
-import com.accounting.dto.ARStatementSummaryDTO;
-import com.accounting.entity.*;
-import com.accounting.repository.ARPaymentRepository;
-import com.accounting.repository.CustomerRepository;
-import com.accounting.repository.ReceiptAllocationRepository;
-import com.accounting.repository.SalesInvoiceRepository;
-import com.accounting.security.CompanyContext;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +16,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+
+import com.accounting.dto.ARStatementDetailedDTO;
+import com.accounting.dto.ARStatementSummaryDTO;
+import com.accounting.entity.*;
+import com.accounting.repository.ARPaymentRepository;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.repository.ReceiptAllocationRepository;
+import com.accounting.repository.SalesInvoiceRepository;
+import com.accounting.security.CompanyContext;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -196,4 +198,3 @@ class ARStatementCalculationServiceImplTest {
     return allocation;
   }
 }
-

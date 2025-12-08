@@ -8,22 +8,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.accounting.entity.AuditLog;
-import com.accounting.entity.Company;
-import com.accounting.entity.Invitation;
-import com.accounting.entity.User;
-import com.accounting.repository.AuditLogRepository;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.InvitationRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.JwtTokenProvider;
-import com.accounting.security.PasswordEncoder;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.EmailService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,9 +21,23 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.accounting.entity.AuditLog;
+import com.accounting.entity.Company;
+import com.accounting.entity.Invitation;
+import com.accounting.entity.User;
+import com.accounting.repository.AuditLogRepository;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.repository.InvitationRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.JwtTokenProvider;
+import com.accounting.security.PasswordEncoder;
+import com.accounting.service.EmailService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -382,4 +384,3 @@ class InvitationControllerIntegrationTest extends com.accounting.test.Integratio
     assertEquals("accountant", roleCaptor.getValue());
   }
 }
-

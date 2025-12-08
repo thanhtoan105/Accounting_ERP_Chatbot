@@ -1,9 +1,10 @@
 package com.accounting.service;
 
-import com.accounting.entity.AccountControl;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.accounting.entity.AccountControl;
 
 /**
  * Service for managing account control configuration.
@@ -79,4 +80,3 @@ public interface AccountControlService {
       Long costCenterId,
       Long itemId);
 }
-

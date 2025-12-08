@@ -1,11 +1,12 @@
 package com.accounting.dto;
 
-import com.accounting.entity.SalesInvoiceStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.entity.SalesInvoiceStatus;
 
 /**
  * DTO for full SalesInvoice details. Used for single sales invoice retrieval.

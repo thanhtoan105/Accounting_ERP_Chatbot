@@ -1,24 +1,5 @@
 package com.accounting.service.impl.sales;
 
-import com.accounting.dto.AccountingPeriodDTO;
-import com.accounting.dto.OutputVATReportDTO;
-import com.accounting.entity.Customer;
-import com.accounting.entity.SalesInvoice;
-import com.accounting.entity.SalesInvoiceLine;
-import com.accounting.entity.SalesInvoiceStatus;
-import com.accounting.entity.VATReportHistory;
-import com.accounting.entity.VatRate;
-import com.accounting.repository.CustomerRepository;
-import com.accounting.repository.SalesInvoiceLineRepository;
-import com.accounting.repository.SalesInvoiceRepository;
-import com.accounting.repository.VATReportHistoryRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.SecurityUtils;
-import com.accounting.service.ARVATReportService;
-import com.accounting.service.AuditService;
-import com.accounting.service.PeriodManagementService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -28,7 +9,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -38,10 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -63,6 +42,27 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.AccountingPeriodDTO;
+import com.accounting.dto.OutputVATReportDTO;
+import com.accounting.entity.Customer;
+import com.accounting.entity.SalesInvoice;
+import com.accounting.entity.SalesInvoiceLine;
+import com.accounting.entity.SalesInvoiceStatus;
+import com.accounting.entity.VATReportHistory;
+import com.accounting.entity.VatRate;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.repository.SalesInvoiceLineRepository;
+import com.accounting.repository.SalesInvoiceRepository;
+import com.accounting.repository.VATReportHistoryRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.SecurityUtils;
+import com.accounting.service.ARVATReportService;
+import com.accounting.service.AuditService;
+import com.accounting.service.PeriodManagementService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Implementation of ARVATReportService for output VAT report generation and export.
@@ -772,4 +772,3 @@ public class ARVATReportServiceImpl implements ARVATReportService {
   private record ReportComputation(OutputVATReportDTO report, DateRange dateRange) {
   }
 }
-

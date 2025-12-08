@@ -11,24 +11,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.accounting.dto.ARVATCorrectionCreateRequest;
-import com.accounting.dto.ARVATCorrectionDTO;
-import com.accounting.entity.ARVATCorrection;
-import com.accounting.entity.SalesInvoice;
-import com.accounting.entity.SalesInvoiceLine;
-import com.accounting.entity.SalesInvoiceStatus;
-import com.accounting.repository.ARVATCorrectionRepository;
-import com.accounting.repository.SalesInvoiceLineRepository;
-import com.accounting.repository.SalesInvoiceRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.SecurityUtils;
-import com.accounting.service.AuditService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +31,19 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.ARVATCorrectionCreateRequest;
+import com.accounting.dto.ARVATCorrectionDTO;
+import com.accounting.entity.ARVATCorrection;
+import com.accounting.entity.SalesInvoice;
+import com.accounting.entity.SalesInvoiceStatus;
+import com.accounting.repository.ARVATCorrectionRepository;
+import com.accounting.repository.SalesInvoiceLineRepository;
+import com.accounting.repository.SalesInvoiceRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.SecurityUtils;
+import com.accounting.service.AuditService;
 
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
@@ -311,4 +312,3 @@ class ARVATCorrectionServiceImplTest {
     return correction;
   }
 }
-

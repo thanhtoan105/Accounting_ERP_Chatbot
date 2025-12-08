@@ -1,12 +1,13 @@
 package com.accounting.dto;
 
-import com.accounting.entity.PaymentMethod;
-import com.accounting.entity.PaymentStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.entity.PaymentMethod;
+import com.accounting.entity.PaymentStatus;
 
 /**
  * DTO for full APPayment details. Used for single payment retrieval.
@@ -296,4 +297,3 @@ public class APPaymentDTO {
     this.allocations = allocations;
   }
 }
-

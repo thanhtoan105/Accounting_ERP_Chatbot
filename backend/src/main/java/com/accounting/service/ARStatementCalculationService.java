@@ -1,8 +1,9 @@
 package com.accounting.service;
 
+import java.time.LocalDate;
+
 import com.accounting.dto.ARStatementDetailedDTO;
 import com.accounting.dto.ARStatementSummaryDTO;
-import java.time.LocalDate;
 
 /**
  * Service interface for AR statement calculation (summary and detailed views).
@@ -27,4 +28,3 @@ public interface ARStatementCalculationService {
    */
   ARStatementDetailedDTO generateDetailedStatement(Long customerId, LocalDate asOfDate);
 }
-

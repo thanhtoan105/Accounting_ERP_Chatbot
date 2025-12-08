@@ -1,21 +1,5 @@
 package com.accounting.service.impl.report;
 
-import com.accounting.dto.AccountingPeriodDTO;
-import com.accounting.dto.report.DetailedLedgerDTO;
-import com.accounting.dto.report.StatutoryReportDTO;
-import com.accounting.dto.report.StatutoryReportLineDTO;
-import com.accounting.dto.report.ValidationErrorDTO;
-import com.accounting.dto.report.ValidationResultDTO;
-import com.accounting.entity.ChartOfAccount;
-import com.accounting.entity.Company;
-import com.accounting.entity.report.ReportMapping;
-import com.accounting.repository.ChartOfAccountsRepository;
-import com.accounting.repository.VoucherLineRepository;
-import com.accounting.repository.report.ReportMappingRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.CompanyService;
-import com.accounting.service.PeriodManagementService;
-import com.accounting.service.StatutoryReportService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -24,14 +8,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import com.accounting.entity.PeriodStatus;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.AccountingPeriodDTO;
+import com.accounting.dto.report.DetailedLedgerDTO;
+import com.accounting.dto.report.StatutoryReportDTO;
+import com.accounting.dto.report.StatutoryReportLineDTO;
+import com.accounting.dto.report.ValidationErrorDTO;
+import com.accounting.dto.report.ValidationResultDTO;
+import com.accounting.entity.ChartOfAccount;
+import com.accounting.entity.Company;
+import com.accounting.entity.PeriodStatus;
+import com.accounting.entity.report.ReportMapping;
+import com.accounting.repository.ChartOfAccountsRepository;
+import com.accounting.repository.VoucherLineRepository;
+import com.accounting.repository.report.ReportMappingRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.CompanyService;
+import com.accounting.service.PeriodManagementService;
+import com.accounting.service.StatutoryReportService;
 
 /**
  * Implementation of StatutoryReportService for generating TT200 statutory reports.

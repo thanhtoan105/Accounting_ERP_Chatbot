@@ -52,4 +52,3 @@ public class AccountDefaultDTO {
     this.accountName = accountName;
   }
 }
-

@@ -1,9 +1,11 @@
 package com.accounting.repository;
 
-import com.accounting.entity.SalesInvoiceLine;
 import java.util.List;
 import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.accounting.entity.SalesInvoiceLine;
 
 public interface SalesInvoiceLineRepository
     extends JpaRepository<SalesInvoiceLine, UUID> {

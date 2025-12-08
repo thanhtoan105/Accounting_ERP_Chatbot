@@ -334,7 +334,7 @@
     - Log allocation changes with invoice balance deltas
     
     **Coding Standards:**
-    - Backend: Use Spotless formatter (mvn spotless:apply)
+    - Backend: Use Spotless formatter (mvnd spotless:apply)
     - Backend: All validation via Jakarta Bean Validation annotations
     - Backend: Use BigDecimal with SCALE=2, ROUNDING_MODE=HALF_UP for money
     - Frontend: Use ESLint/Prettier

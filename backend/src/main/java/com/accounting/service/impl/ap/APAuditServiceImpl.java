@@ -1,16 +1,5 @@
 package com.accounting.service.impl.ap;
 
-import com.accounting.dto.APAuditEventDTO;
-import com.accounting.dto.APAuditTimelineDTO;
-import com.accounting.entity.AuditLog;
-import com.accounting.repository.AuditLogRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.SecurityUtils;
-import com.accounting.service.APAuditService;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.criteria.Predicate;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -20,18 +9,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.APAuditEventDTO;
+import com.accounting.dto.APAuditTimelineDTO;
+import com.accounting.entity.AuditLog;
+import com.accounting.repository.AuditLogRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.APAuditService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.persistence.criteria.Predicate;
 
 @Service
 @Transactional(readOnly = true)

@@ -3,10 +3,11 @@ package com.accounting.security;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.accounting.exception.CompanyScopeViolationException;
-import com.accounting.repository.CompanyScopedEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import com.accounting.exception.CompanyScopeViolationException;
+import com.accounting.repository.CompanyScopedEntity;
 
 class CompanyScopeEnforcerTest {
 
@@ -48,5 +49,3 @@ class CompanyScopeEnforcerTest {
     assertDoesNotThrow(() -> CompanyScopeEnforcer.enforceForWrite(e));
   }
 }
-
-

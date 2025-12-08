@@ -66,4 +66,3 @@ public class PaymentValidationResult {
     return !warnings.isEmpty();
   }
 }
-

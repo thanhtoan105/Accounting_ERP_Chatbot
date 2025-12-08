@@ -1,9 +1,11 @@
 package com.accounting.repository;
 
-import com.accounting.entity.AuditLog;
 import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import com.accounting.entity.AuditLog;
 
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long>, JpaSpecificationExecutor<AuditLog> {
     
@@ -26,4 +28,3 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long>, JpaSp
      */
     java.util.Optional<AuditLog> findFirstByCompanyIdOrderByCreatedAtDesc(Long companyId);
 }
-

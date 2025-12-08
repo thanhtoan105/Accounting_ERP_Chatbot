@@ -1,17 +1,19 @@
 package com.accounting.service.impl;
 
-import com.accounting.entity.Company;
-import com.accounting.entity.User;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.service.DemoBootstrapService;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.entity.Company;
+import com.accounting.entity.User;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
+import com.accounting.service.DemoBootstrapService;
 
 @Service
 public class DemoBootstrapServiceImpl implements DemoBootstrapService {

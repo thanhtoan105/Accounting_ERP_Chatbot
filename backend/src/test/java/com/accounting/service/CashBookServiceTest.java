@@ -6,14 +6,30 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.accounting.dto.VoucherDTO;
-import com.accounting.dto.cashbook.CashBookFilterDTO;
 import com.accounting.dto.cashbook.CashBookResponseDTO;
 import com.accounting.dto.cashbook.CashBookSummaryDTO;
 import com.accounting.entity.BankAccount;
 import com.accounting.entity.ChartOfAccount;
-import com.accounting.entity.Customer;
-import com.accounting.entity.User;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
 import com.accounting.repository.BankAccountRepository;
@@ -25,23 +41,6 @@ import com.accounting.repository.VoucherLineRepository;
 import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.impl.cashbook.CashBookServiceImpl;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Unit tests for CashBookService.

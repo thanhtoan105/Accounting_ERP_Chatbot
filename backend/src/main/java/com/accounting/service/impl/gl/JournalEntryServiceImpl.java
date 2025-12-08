@@ -1,16 +1,18 @@
 package com.accounting.service.impl.gl;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.accounting.entity.JournalEntry;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
 import com.accounting.repository.JournalEntryRepository;
 import com.accounting.repository.VoucherLineRepository;
 import com.accounting.service.gl.JournalEntryService;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Implementation of JournalEntryService.
@@ -80,4 +82,3 @@ public class JournalEntryServiceImpl implements JournalEntryService {
     return journalEntryRepository.saveAll(journalEntries);
   }
 }
-

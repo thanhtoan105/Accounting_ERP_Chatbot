@@ -1,10 +1,12 @@
 package com.accounting.service;
 
-import com.accounting.entity.Company;
-import com.accounting.dto.UpdateBasicCompanySettingsRequest;
-import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import com.accounting.dto.UpdateBasicCompanySettingsRequest;
+import com.accounting.entity.Company;
 
 public interface CompanyService {
     Company createCompany(Company input);

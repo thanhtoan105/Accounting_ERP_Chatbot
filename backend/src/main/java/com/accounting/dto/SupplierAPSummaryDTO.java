@@ -44,4 +44,3 @@ public class SupplierAPSummaryDTO {
     this.averagePaymentDays = averagePaymentDays;
   }
 }
-

@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.SalesInvoiceStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
+
+import com.accounting.entity.SalesInvoiceStatus;
 
 /**
  * DTO for listing sales invoices in a data table.

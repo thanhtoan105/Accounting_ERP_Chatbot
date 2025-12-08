@@ -1,13 +1,15 @@
 package com.accounting.repository;
 
-import com.accounting.entity.AccountControl;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.accounting.entity.AccountControl;
 
 /**
  * Repository for AccountControl entity.
@@ -53,4 +55,3 @@ public interface AccountControlRepository
   List<AccountControl> findByCompanyIdAndAccountIdIn(
       @Param("companyId") Long companyId, @Param("accountIds") List<Long> accountIds);
 }
-

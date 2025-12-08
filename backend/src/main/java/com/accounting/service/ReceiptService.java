@@ -1,15 +1,17 @@
 package com.accounting.service;
 
-import com.accounting.dto.ARPaymentCreateRequest;
-import com.accounting.dto.ARPaymentDTO;
-import com.accounting.dto.ARPaymentListDTO;
-import com.accounting.dto.ReceiptAllocationRequest;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import com.accounting.dto.ARPaymentCreateRequest;
+import com.accounting.dto.ARPaymentDTO;
+import com.accounting.dto.ARPaymentListDTO;
+import com.accounting.dto.ReceiptAllocationRequest;
 
 /**
  * Service interface for AR receipt operations (create, allocate, post, reverse).

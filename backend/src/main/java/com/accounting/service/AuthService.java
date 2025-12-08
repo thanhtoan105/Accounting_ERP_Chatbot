@@ -4,6 +4,7 @@ import com.accounting.dto.AuthResponse;
 import com.accounting.dto.ForgotPasswordRequest;
 import com.accounting.dto.LoginRequest;
 import com.accounting.dto.ResetPasswordRequest;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {
@@ -17,4 +18,3 @@ public interface AuthService {
 
   void resetPassword(ResetPasswordRequest request, HttpServletRequest httpRequest);
 }
-

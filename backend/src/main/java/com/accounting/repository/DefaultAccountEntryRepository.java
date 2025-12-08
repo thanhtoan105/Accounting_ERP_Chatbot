@@ -1,8 +1,10 @@
 package com.accounting.repository;
 
-import com.accounting.entity.DefaultAccountEntry;
 import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.accounting.entity.DefaultAccountEntry;
 
 public interface DefaultAccountEntryRepository extends JpaRepository<DefaultAccountEntry, Long> {
 
@@ -10,4 +12,3 @@ public interface DefaultAccountEntryRepository extends JpaRepository<DefaultAcco
 
   void deleteByDefaultAccountId(Long defaultAccountId);
 }
-

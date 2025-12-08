@@ -1,6 +1,11 @@
 package com.accounting.entity;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,9 +21,6 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.UUID;
 
 /**
  * VATReportHistory entity for tracking all generated VAT reports.
@@ -313,4 +315,3 @@ public class VATReportHistory implements CompanyScopedEntity {
     return customer;
   }
 }
-

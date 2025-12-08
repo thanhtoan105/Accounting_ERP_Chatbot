@@ -36,4 +36,3 @@ public class BatchReminderRequestDTO {
     this.message = message;
   }
 }
-

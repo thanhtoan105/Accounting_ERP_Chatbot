@@ -34,6 +34,7 @@ This manual provides step-by-step instructions for setting up the MVP Voucher-Fo
 5. Complete onboarding (select "Developer" profile)
 
 **Free Tier Includes:**
+
 - 100GB storage
 - Serverless compute
 - No credit card required
@@ -42,6 +43,7 @@ This manual provides step-by-step instructions for setting up the MVP Voucher-Fo
 
 1. In Pinecone Console, click **"Create Index"**
 2. Fill in index details:
+
    - **Name:** `accounting-embeddings`
    - **Dimensions:** `1536` (for OpenAI text-embedding-ada-002)
    - **Metric:** `cosine`
@@ -58,6 +60,7 @@ This manual provides step-by-step instructions for setting up the MVP Voucher-Fo
 3. Note the **Environment** (usually `us-east-1-aws` for serverless)
 
 **Save these values:**
+
 ```bash
 PINECONE_API_KEY=pcsk_XXXXXX_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 PINECONE_ENVIRONMENT=us-east-1-aws
@@ -88,6 +91,7 @@ Choose **ONE** of the following options:
 1. In **Azure Portal**, search for **"Azure OpenAI"**
 2. Click **"+ Create"**
 3. Fill in resource details:
+
    - **Subscription:** Your subscription
    - **Resource group:** Create new → `accounting-ai-rg`
    - **Region:** `East US` or `West Europe` (check availability)
@@ -104,6 +108,7 @@ Choose **ONE** of the following options:
 3. Click **"+ Create new deployment"**
 
 **Deploy Model 1: Embeddings**
+
 - **Model:** `text-embedding-ada-002`
 - **Deployment name:** `text-embedding-ada-002` (keep same as model name)
 - **Model version:** Auto-update to default
@@ -111,6 +116,7 @@ Choose **ONE** of the following options:
 - Click **"Create"**
 
 **Deploy Model 2: Chat**
+
 - **Model:** `gpt-35-turbo` (or `gpt-4` if available)
 - **Deployment name:** `gpt-35-turbo` (keep same as model name)
 - **Model version:** Auto-update to default
@@ -127,6 +133,7 @@ Choose **ONE** of the following options:
    - **Endpoint** → Save as `AZURE_OPENAI_ENDPOINT` (e.g., `https://accounting-openai.openai.azure.com/`)
 
 **Save these values:**
+
 ```bash
 AZURE_OPENAI_API_KEY=your-32-character-key-here
 AZURE_OPENAI_ENDPOINT=https://accounting-openai.openai.azure.com/
@@ -151,6 +158,7 @@ AZURE_OPENAI_CHAT_DEPLOYMENT_NAME=gpt-35-turbo
 3. Add initial credit ($5-10 recommended for testing)
 
 **Estimated Costs for MVP Testing:**
+
 - Embedding (ada-002): $0.0001 / 1K tokens (~$0.001 per voucher)
 - Chat (gpt-3.5-turbo): $0.0015 / 1K tokens (~$0.01 per query)
 - **Total for 100 queries:** ~$1-2
@@ -165,6 +173,7 @@ AZURE_OPENAI_CHAT_DEPLOYMENT_NAME=gpt-35-turbo
 6. **Save immediately** (won't be shown again!)
 
 **Save this value:**
+
 ```bash
 OPENAI_API_KEY=sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
@@ -186,6 +195,7 @@ Choose **ONE** of the following options:
 5. Complete onboarding
 
 **Free Tier Includes:**
+
 - 5,000 workflow executions/month
 - Unlimited workflows
 - No credit card required
@@ -200,6 +210,7 @@ Choose **ONE** of the following options:
 #### 3.A.3 Configure Workflow Credentials
 
 **Step 1: Configure Webhook Node**
+
 1. Click the **"Webhook"** node (first node)
 2. **Webhook URLs:**
    - Production URL: Copy this → Save as `N8N_WEBHOOK_URL`
@@ -208,6 +219,7 @@ Choose **ONE** of the following options:
 5. Click **"Save"**
 
 **Step 2: Generate Webhook Secret**
+
 1. Generate a random secret (use password generator):
    ```bash
    openssl rand -base64 32
@@ -215,6 +227,7 @@ Choose **ONE** of the following options:
 2. Save as `N8N_WEBHOOK_SECRET`
 
 **Step 3: Configure OpenAI Credentials**
+
 1. Click the **"OpenAI"** node (embedding generation)
 2. Click **"Create New Credential"**
 3. **API Key:** Enter your OpenAI or Azure OpenAI key
@@ -222,6 +235,7 @@ Choose **ONE** of the following options:
 5. Click **"Save"**
 
 **Step 4: Configure Pinecone Credentials**
+
 1. Click the **"Pinecone"** node (upsert vector)
 2. Click **"Create New Credential"**
 3. **API Key:** Enter your Pinecone API key
@@ -232,6 +246,7 @@ Choose **ONE** of the following options:
 
 1. Click **"Test workflow"** button (top right)
 2. Send a test webhook request from your terminal:
+
    ```bash
    curl -X POST https://your-n8n-instance.app.n8n.cloud/webhook/voucher-embedding \
      -H "Content-Type: application/json" \
@@ -295,6 +310,7 @@ docker logs -f n8n
 3. Follow same steps as **Option A** above for workflow import and configuration
 
 **Note:** For self-hosted, your webhook URL will be:
+
 ```
 http://localhost:5678/webhook/voucher-embedding
 ```
@@ -355,6 +371,7 @@ n8n:
 ### 4.2 Create .env File
 
 1. Copy `.env.example` to `.env`:
+
    ```bash
    cp .env.example .env
    ```
@@ -370,10 +387,11 @@ n8n:
 
 ```bash
 cd backend
-mvn spring-boot:run
+mvnd spring-boot:run
 ```
 
 Check logs for successful startup:
+
 ```
 ✓ Pinecone connection established
 ✓ Azure OpenAI service initialized
@@ -393,11 +411,12 @@ curl -X GET http://localhost:8080/api/v1/chatbot/health \
 ```
 
 **Expected response:**
+
 ```json
 {
-  "status": "UP",
-  "service": "chatbot",
-  "message": "Chatbot service is operational"
+	"status": "UP",
+	"service": "chatbot",
+	"message": "Chatbot service is operational"
 }
 ```
 
@@ -425,22 +444,23 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ```
 
 **Expected response:**
+
 ```json
 {
-  "queryId": "uuid-here",
-  "answer": "Tổng công nợ phải trả hiện tại là...",
-  "citations": [
-    {
-      "entityType": "voucher",
-      "voucherNumber": "PC-2023-001",
-      "excerpt": "Thanh toán nhà cung cấp ABC - 50,000,000 VND",
-      "relevanceScore": 0.92,
-      "link": "/vouchers/uuid"
-    }
-  ],
-  "confidenceScore": 0.85,
-  "confidenceLevel": "HIGH",
-  "responseTimeMs": 1234
+	"queryId": "uuid-here",
+	"answer": "Tổng công nợ phải trả hiện tại là...",
+	"citations": [
+		{
+			"entityType": "voucher",
+			"voucherNumber": "PC-2023-001",
+			"excerpt": "Thanh toán nhà cung cấp ABC - 50,000,000 VND",
+			"relevanceScore": 0.92,
+			"link": "/vouchers/uuid"
+		}
+	],
+	"confidenceScore": 0.85,
+	"confidenceLevel": "HIGH",
+	"responseTimeMs": 1234
 }
 ```
 
@@ -451,11 +471,13 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ### Issue: "Pinecone connection failed"
 
 **Causes:**
+
 - Invalid API key
 - Wrong environment name
 - Index not created yet
 
 **Solutions:**
+
 1. Verify API key in `.env` matches Pinecone console
 2. Check environment name (usually `us-east-1-aws` for serverless)
 3. Wait 2-3 minutes after index creation for provisioning
@@ -465,11 +487,13 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ### Issue: "Azure OpenAI authentication failed"
 
 **Causes:**
+
 - Invalid API key
 - Wrong endpoint URL
 - Deployment names don't match
 
 **Solutions:**
+
 1. Verify API key in Azure Portal → Keys and Endpoint
 2. Ensure endpoint ends with trailing `/` (e.g., `https://...azure.com/`)
 3. Check deployment names match exactly (case-sensitive)
@@ -479,11 +503,13 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ### Issue: "n8n webhook timeout"
 
 **Causes:**
+
 - n8n service down
 - Wrong webhook URL
 - Webhook secret mismatch
 
 **Solutions:**
+
 1. Check n8n service status (for self-hosted: `docker logs n8n`)
 2. Verify webhook URL in n8n matches `.env`
 3. Check webhook secret matches in both places
@@ -494,11 +520,13 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ### Issue: "No results found (confidence < 0.5)"
 
 **Causes:**
+
 - No vouchers embedded yet
 - Query too vague
 - Wrong company namespace
 
 **Solutions:**
+
 1. Create test vouchers and wait for embedding
 2. Use more specific accounting terms in query
 3. Verify company ID in JWT token matches embedded data
@@ -508,23 +536,28 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ## Cost Monitoring
 
 ### Pinecone
+
 - Free tier: 100GB storage
 - Monitor usage: Pinecone Console → Usage
 
 ### Azure OpenAI
+
 - Free trial: $200 credit for 30 days
 - Monitor usage: Azure Portal → Cost Management + Billing
 
 ### OpenAI
+
 - Pay-as-you-go
 - Monitor usage: OpenAI Platform → Usage
 - Set spending limits: Settings → Billing → Usage limits
 
 ### n8n Cloud
+
 - Free tier: 5,000 executions/month
 - Monitor usage: n8n Dashboard → Usage
 
 **Estimated Monthly Cost (MVP, 1000 queries/month):**
+
 - Pinecone: $0 (free tier)
 - Azure OpenAI: ~$2-5
 - n8n: $0 (free tier)
@@ -535,6 +568,7 @@ curl -X POST http://localhost:8080/api/v1/chatbot/query \
 ## Next Steps
 
 After successful setup:
+
 1. ✅ Mark Task 1 as complete in story file
 2. ✅ Continue with Task 6: Frontend chatbot widget
 3. ✅ Run end-to-end tests (Task 8)

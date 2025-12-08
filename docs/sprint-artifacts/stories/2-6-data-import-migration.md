@@ -155,12 +155,12 @@ _Sources: Derived from tech spec Story 2.6 and epic requirements for data import
   - Created `ImportControllerSecurityIT` extending shared `IntegrationTest` to leverage Testcontainers Postgres.
   - Injected mocked import facade/template/error services plus `AuditService` to isolate security behaviour.
   - Covered happy path for ADMIN and CHIEF_ACCOUNTANT, forbidden path for ACCOUNTANT, missing company header → 400, and company-scoped error report retrieval.
-  - Tests execute via `mvn test -Dtest=ImportControllerSecurityIT` and pass locally, satisfying AC4 checklist.
+  - Tests execute via `mvnd test -Dtest=ImportControllerSecurityIT` and pass locally, satisfying AC4 checklist.
 - 2025-11-12: AC5 audit logging verification
   - Added `MasterDataImportFacadeAuditIT` with stubbed `MasterDataImportService` to simulate success/failure flows.
   - Asserted audit log persistence captures imported/error counts, user metadata, IP, and user agent for both outcomes.
   - Confirmed audit entries scoped to invoking user/company and cleaned up artifacts post-test.
-  - Validated with `mvn test -Dtest=MasterDataImportFacadeAuditIT,ImportControllerSecurityIT`.
+  - Validated with `mvnd test -Dtest=MasterDataImportFacadeAuditIT,ImportControllerSecurityIT`.
 - 2025-11-12: AC6/AC8 execution plan
   - Backend AC6: create `MasterDataImportPerformanceIT` generating an in-memory CSV with 1,000 valid customer rows (unique codes/emails) and run through real `MasterDataImportFacade` + handlers; capture elapsed time and assert `< 30s`, while verifying success/skip/error counts.
   - Frontend AC6: extend Import Wizard tests to confirm the loading spinner ("Uploading...") appears during mutation pending state and that record counts & pagination summary update after completion.

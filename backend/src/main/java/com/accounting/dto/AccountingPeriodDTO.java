@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.PeriodStatus;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+
+import com.accounting.entity.PeriodStatus;
 
 /**
  * DTO for AccountingPeriod details.

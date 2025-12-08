@@ -50,4 +50,3 @@ public class AcceptInvitationRequest {
     this.fullName = fullName;
   }
 }
-

@@ -1,13 +1,15 @@
 package com.accounting.service;
 
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.accounting.dto.CustomerARSummaryDTO;
 import com.accounting.dto.CustomerCreateRequest;
 import com.accounting.dto.CustomerDTO;
 import com.accounting.dto.CustomerUpdateRequest;
 import com.accounting.entity.Customer;
-import java.util.Optional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 /**
  * Service interface for Customer operations including CRUD, search, and duplicate detection.
@@ -92,4 +94,3 @@ public interface CustomerService {
    */
   CustomerARSummaryDTO getCustomerARSummary(Long customerId);
 }
-

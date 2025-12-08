@@ -1,10 +1,12 @@
 package com.accounting.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  * Request payload for applying a voucher template.
@@ -45,4 +47,3 @@ public class ApplyVoucherTemplateRequest {
     this.description = description;
   }
 }
-

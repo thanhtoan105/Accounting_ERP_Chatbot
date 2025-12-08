@@ -14,19 +14,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.accounting.dto.CustomerARSummaryDTO;
-import com.accounting.dto.CustomerCreateRequest;
-import com.accounting.dto.CustomerDTO;
-import com.accounting.dto.CustomerUpdateRequest;
-import com.accounting.entity.Customer;
-import com.accounting.repository.CustomerRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.AuditService;
-import com.accounting.service.util.CustomerCodeGenerator;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +32,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.CustomerARSummaryDTO;
+import com.accounting.dto.CustomerCreateRequest;
+import com.accounting.dto.CustomerDTO;
+import com.accounting.dto.CustomerUpdateRequest;
+import com.accounting.entity.Customer;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.AuditService;
+import com.accounting.service.util.CustomerCodeGenerator;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerServiceImplTest {
@@ -488,4 +490,3 @@ class CustomerServiceImplTest {
     return customer;
   }
 }
-

@@ -3,6 +3,21 @@ package com.accounting.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.accounting.dto.integrity.DataIntegrityJobResponse;
 import com.accounting.dto.integrity.DataIntegrityRequest;
 import com.accounting.entity.BankAccount;
@@ -19,21 +34,9 @@ import com.accounting.repository.DataIntegrityFindingRepository;
 import com.accounting.repository.DataIntegrityJobRepository;
 import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
-import jakarta.servlet.http.HttpServletRequest;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.transaction.annotation.Transactional;
 import com.accounting.test.IntegrationTest;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @SpringBootTest
 @Transactional

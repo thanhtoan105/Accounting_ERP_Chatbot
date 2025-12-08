@@ -1,7 +1,8 @@
 package com.accounting.dto.audit;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Instant;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * DTO representing a single audit log entry in the Cash & Bank audit explorer.

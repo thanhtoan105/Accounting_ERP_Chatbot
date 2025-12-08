@@ -2,22 +2,11 @@ package com.accounting.imports.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.accounting.dto.ImportResultDTO;
-import com.accounting.entity.AuditLog;
-import com.accounting.entity.User;
-import com.accounting.imports.ImportType;
-import com.accounting.imports.exception.ImportValidationException;
-import com.accounting.imports.model.ImportContext;
-import com.accounting.imports.model.ImportRowError;
-import com.accounting.imports.model.ImportSummary;
-import com.accounting.repository.AuditLogRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +20,20 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import com.accounting.dto.ImportResultDTO;
+import com.accounting.entity.AuditLog;
+import com.accounting.entity.User;
+import com.accounting.imports.ImportType;
+import com.accounting.imports.exception.ImportValidationException;
+import com.accounting.imports.model.ImportContext;
+import com.accounting.imports.model.ImportRowError;
+import com.accounting.imports.model.ImportSummary;
+import com.accounting.repository.AuditLogRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @SpringBootTest
 class MasterDataImportFacadeAuditIT extends com.accounting.test.IntegrationTest {

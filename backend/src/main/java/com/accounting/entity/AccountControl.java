@@ -1,6 +1,10 @@
 package com.accounting.entity;
 
+import java.time.Instant;
+import java.util.UUID;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,8 +15,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
-import java.util.UUID;
 
 /**
  * Account Control entity for company-specific required dimension configuration.
@@ -147,4 +149,3 @@ public class AccountControl implements CompanyScopedEntity {
     this.updatedAt = updatedAt;
   }
 }
-

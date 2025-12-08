@@ -1,10 +1,11 @@
 package com.accounting.dto.reconciliation;
 
-import com.accounting.entity.reconciliation.AdjustmentStatus;
-import com.accounting.entity.reconciliation.AdjustmentType;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+
+import com.accounting.entity.reconciliation.AdjustmentStatus;
+import com.accounting.entity.reconciliation.AdjustmentType;
 
 /**
  * DTO for ReconciliationAdjustment responses.

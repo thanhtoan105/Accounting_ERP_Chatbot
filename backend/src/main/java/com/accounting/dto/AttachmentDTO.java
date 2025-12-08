@@ -1,8 +1,9 @@
 package com.accounting.dto;
 
-import com.accounting.entity.AttachmentEntityType;
 import java.time.Instant;
 import java.util.UUID;
+
+import com.accounting.entity.AttachmentEntityType;
 
 /**
  * Unified DTO for attachment details across all entity types.

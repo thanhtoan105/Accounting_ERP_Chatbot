@@ -5,6 +5,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.*;
+
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import com.accounting.dto.ReceiptAllocationRequest;
 import com.accounting.dto.ReceiptValidationResult;
 import com.accounting.entity.ARPayment;
@@ -17,14 +27,6 @@ import com.accounting.repository.SalesInvoiceRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AccountBalanceService;
 import com.accounting.service.CompanySettingsService;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * Unit Tests for ReceiptValidationService

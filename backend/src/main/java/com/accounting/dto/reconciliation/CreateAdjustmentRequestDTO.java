@@ -1,10 +1,12 @@
 package com.accounting.dto.reconciliation;
 
-import com.accounting.entity.reconciliation.AdjustmentType;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.UUID;
+
+import com.accounting.entity.reconciliation.AdjustmentType;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Request DTO for creating a reconciliation adjustment.

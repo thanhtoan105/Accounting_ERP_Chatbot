@@ -4,17 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.accounting.dto.AccountingPeriodDTO;
-import com.accounting.dto.DrillDownResponseDTO;
-import com.accounting.entity.ChartOfAccount;
-import com.accounting.entity.PeriodStatus;
-import com.accounting.enums.AmountType;
-import com.accounting.repository.ChartOfAccountsRepository;
-import com.accounting.repository.VoucherLineRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.CompanyService;
-import com.accounting.service.PeriodManagementService;
-import com.accounting.service.report.TrialBalancePdfExportService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -22,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +28,19 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.AccountingPeriodDTO;
+import com.accounting.dto.DrillDownResponseDTO;
+import com.accounting.entity.ChartOfAccount;
+import com.accounting.entity.PeriodStatus;
+import com.accounting.enums.AmountType;
+import com.accounting.repository.ChartOfAccountsRepository;
+import com.accounting.repository.VoucherLineRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.CompanyService;
+import com.accounting.service.PeriodManagementService;
+import com.accounting.service.report.TrialBalancePdfExportService;
+import com.accounting.service.report.TrialBalanceSnapshotService;
 
 /**
  * Unit tests for TrialBalanceServiceImpl drill-down methods.
@@ -62,6 +65,9 @@ class TrialBalanceServiceImplDrillDownTest {
   @Mock
   private TrialBalancePdfExportService trialBalancePdfExportService;
 
+  @Mock
+  private TrialBalanceSnapshotService trialBalanceSnapshotService;
+
   private TrialBalanceServiceImpl service;
   private MockedStatic<CompanyContext> companyContextMock;
 
@@ -76,7 +82,8 @@ class TrialBalanceServiceImplDrillDownTest {
         chartOfAccountsRepository,
         periodManagementService,
         companyService,
-        trialBalancePdfExportService);
+        trialBalancePdfExportService,
+        trialBalanceSnapshotService);
 
     companyContextMock = mockStatic(CompanyContext.class);
     companyContextMock.when(CompanyContext::getCompanyId).thenReturn(COMPANY_ID);

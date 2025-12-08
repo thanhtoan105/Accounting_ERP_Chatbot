@@ -1,10 +1,11 @@
 package com.accounting.dto;
 
-import com.accounting.entity.PaymentMethod;
-import com.accounting.entity.ReceiptStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
+
+import com.accounting.entity.PaymentMethod;
+import com.accounting.entity.ReceiptStatus;
 
 /**
  * DTO for receipt list view (summary information).

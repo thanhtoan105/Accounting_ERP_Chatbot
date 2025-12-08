@@ -1,16 +1,18 @@
 package com.accounting.scheduled;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
 import com.accounting.dto.audit.IntegrityCheckResultDTO;
 import com.accounting.dto.audit.IntegrityIssueDTO;
 import com.accounting.entity.Company;
 import com.accounting.repository.CompanyRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.IntegrityCheckService;
-import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 /**
  * Scheduler for Cash & Bank audit operations.

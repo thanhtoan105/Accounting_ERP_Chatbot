@@ -252,4 +252,3 @@ public class DetailedStatementDTO extends SupplierStatementDTO {
     }
   }
 }
-

@@ -1,10 +1,11 @@
 package com.accounting.dto.reconciliation;
 
-import com.accounting.entity.reconciliation.MatchStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+
+import com.accounting.entity.reconciliation.MatchStatus;
 
 /**
  * DTO for BankStatementLine responses.

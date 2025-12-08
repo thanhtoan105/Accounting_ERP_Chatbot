@@ -84,4 +84,3 @@ public class DefaultAccountDTO {
     this.accountDefaults = accountDefaults;
   }
 }
-

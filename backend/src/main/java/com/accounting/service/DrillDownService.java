@@ -1,9 +1,11 @@
 package com.accounting.service;
 
-import com.accounting.dto.report.AccountContributionDTO;
 import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import com.accounting.dto.report.AccountContributionDTO;
 
 /**
  * Service for drill-down navigation from report lines to accounts to vouchers.

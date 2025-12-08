@@ -1,14 +1,17 @@
 <!-- OPENSPEC:START -->
+
 # OpenSpec Instructions
 
 These instructions are for AI assistants working in this project.
 
 Always open `@/openspec/AGENTS.md` when the request:
+
 - Mentions planning or proposals (words like proposal, spec, change, plan)
 - Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
 - Sounds ambiguous and you need the authoritative spec before coding
 
 Use `@/openspec/AGENTS.md` to learn:
+
 - How to create and apply change proposals
 - Spec format and conventions
 - Project structure and guidelines
@@ -18,7 +21,6 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 <!-- OPENSPEC:END -->
 
 Note: This project uses bd (beads) for issue tracking. Use `bd` commands instead of markdown TODOs. See AGENTS.md for workflow details.
-
 
 # CLAUDE. md
 
@@ -34,11 +36,11 @@ This file provides guidance to Claude Code (claude. ai/code) when working with t
 
 ### Backend (Java 21 + Spring Boot 3.5.7)
 
-- Run development server: `cd backend && mvn spring-boot:run`
-- Run tests: `cd backend && mvn test`
-- Build: `cd backend && mvn clean package`
-- Compile: `cd backend && mvn clean compile`
-- Format code: `cd backend && mvn spotless:apply`
+- Run development server: `cd backend && mvnddd spring-boot:run`
+- Run tests: `cd backend && mvnd test`
+- Build: `cd backend && mvnd clean package`
+- Compile: `cd backend && mvnd clean compile`
+- Format code: `cd backend && mvnd spotless:apply`
 
 ### Frontend (React + TypeScript + Vite)
 
@@ -54,11 +56,13 @@ This file provides guidance to Claude Code (claude. ai/code) when working with t
 This is a multi-tenant accounting system built as a monorepo.
 
 ### Backend (Spring Boot)
+
 - **Multi-tenancy**: `CompanyScopedEntity` + `CompanyContext` (ThreadLocal) + `CompanyScopeAspect`.
 - **Security**: JWT, RBAC, Spring Security.
 - **Data**: PostgreSQL (Flyway), JPA/Hibernate.
 
 ### Frontend (React)
+
 - **UI**: shadcn/ui, Tailwind.
 - **Structure**: Feature-based (`src/features/`).
 - **State**: React Query + Context API.
@@ -66,6 +70,7 @@ This is a multi-tenant accounting system built as a monorepo.
 ## MCP Tool Usage Guidelines
 
 ### 1. Codebase Intelligence (Nia AI)
+
 **Tool**: `search_codebase` / `nia_package_search_hybrid`
 
 - **Goal**: Understand architectural patterns or find implementation details across the entire monorepo.
@@ -75,6 +80,7 @@ This is a multi-tenant accounting system built as a monorepo.
 - **Example Prompt**: "Use Nia to search the codebase for all usages of `CompanyScopedEntity` to understand the multi-tenancy implementation."
 
 ### 2. Deep Research & Documentation (Nia AI)
+
 **Tool**: `nia_deep_research_agent` / `index_documentation`
 
 - **Goal**: Research external libraries or index new documentation sources.
@@ -84,6 +90,7 @@ This is a multi-tenant accounting system built as a monorepo.
 - **Example Prompt**: "Use Nia to research the breaking changes in Spring Boot 3.5.7 regarding Security filter chains."
 
 ### 3. Agent Context Sharing (Nia AI)
+
 **Tool**: `save_context` / `retrieve_context` (or `nia_context` with actions)
 
 - **Goal**: Preserve conversation history, plans, and decisions when switching tasks or sessions.
@@ -91,12 +98,17 @@ This is a multi-tenant accounting system built as a monorepo.
   - **Save**: Captures conversation history, edited files, and decisions.
   - **Retrieve**: Restores a previous working state.
 - **Workflow Strategy**:
-  1.   **Checkpointing**: After completing a "Plan Phase" (see below), explicitly save the context.
-      * *Command*: "Save this context as 'Completed Phase 1 - Auth Setup'."
-  2.   **Handoff**: If you need to switch to a different agent or come back later, use retrieve.
-      * *Command*: "Retrieve context for 'Auth Setup'."
+
+  1.  **Checkpointing**: After completing a "Plan Phase" (see below), explicitly save the context.
+
+      - _Command_: "Save this context as 'Completed Phase 1 - Auth Setup'."
+
+  2.  **Handoff**: If you need to switch to a different agent or come back later, use retrieve.
+
+      - _Command_: "Retrieve context for 'Auth Setup'."
 
 ## Table UI Standards (shadcn)
+
 - **Search**: Input field for filtering.
 - **Refresh**: Button to reload data.
 - **Pagination**: Page size selector (10, 20, 50) + navigation.
@@ -114,17 +126,17 @@ This project uses **BMAD Method** for structured AI-driven development and **Bea
 
 ## 🎯 Quick Reference: Which Tool When?
 
-| Situation | Tool | Command |
-|-----------|------|---------|
-| Starting a new feature/epic | BMAD | `*workflow-init` → Choose track |
-| Creating requirements | BMAD PM Agent | `*prd` or `*tech-spec` |
-| Designing architecture | BMAD Architect | `*create-architecture` |
-| Finding next task to work on | Beads | `bd ready --json` |
-| Tracking work in progress | Beads | `bd update <id> --status in_progress` |
-| Discovered new bug/TODO | Beads | `bd create "Title" -t bug -p 1` |
-| Completing a task | Beads | `bd close <id> --reason "Done"` |
-| Viewing dependencies | Beads | `bd dep tree <id>` |
-| Ending session | Both | See "Landing the Plane" below |
+| Situation                    | Tool           | Command                               |
+| ---------------------------- | -------------- | ------------------------------------- |
+| Starting a new feature/epic  | BMAD           | `*workflow-init` → Choose track       |
+| Creating requirements        | BMAD PM Agent  | `*prd` or `*tech-spec`                |
+| Designing architecture       | BMAD Architect | `*create-architecture`                |
+| Finding next task to work on | Beads          | `bd ready --json`                     |
+| Tracking work in progress    | Beads          | `bd update <id> --status in_progress` |
+| Discovered new bug/TODO      | Beads          | `bd create "Title" -t bug -p 1`       |
+| Completing a task            | Beads          | `bd close <id> --reason "Done"`       |
+| Viewing dependencies         | Beads          | `bd dep tree <id>`                    |
+| Ending session               | Both           | See "Landing the Plane" below         |
 
 ---
 
@@ -189,7 +201,7 @@ bd dep add <child-id> <parent-id> --type parent-child
 
 ## 🛬 Landing the Plane (Session End Protocol)
 
-**When ending a session, complete ALL steps.  The plane has NOT landed until `git push` succeeds.**
+**When ending a session, complete ALL steps. The plane has NOT landed until `git push` succeeds.**
 
 ### Step-by-Step Checklist
 
@@ -198,9 +210,9 @@ bd dep add <child-id> <parent-id> --type parent-child
 bd create "TODO: Add integration tests" -t task -p 2 --json
 
 # 2. RUN QUALITY GATES (if code changes were made)
-cd backend && mvn test
+cd backend && mvnd test
 cd frontend && pnpm test
-cd backend && mvn spotless:apply
+cd backend && mvnd spotless:apply
 cd frontend && pnpm format:fix
 
 # 3. UPDATE BEADS - close finished, update status
@@ -227,6 +239,7 @@ bd ready --json  # Show next work item
 ### Summary Template
 
 After landing, provide:
+
 - ✅ **Completed**: What was done this session
 - 📋 **Issues Filed**: New issues created for follow-up
 - 🧪 **Quality Gates**: All passing / issues filed

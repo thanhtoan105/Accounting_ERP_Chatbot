@@ -113,4 +113,3 @@ public class PaymentAllocationDTO {
     this.createdAt = createdAt;
   }
 }
-

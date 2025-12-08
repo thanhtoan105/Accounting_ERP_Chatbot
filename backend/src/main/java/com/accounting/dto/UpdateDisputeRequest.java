@@ -1,6 +1,7 @@
 package com.accounting.dto;
 
 import com.accounting.entity.SupplierStatementDispute;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -32,4 +33,3 @@ public class UpdateDisputeRequest {
     this.resolutionNotes = resolutionNotes;
   }
 }
-

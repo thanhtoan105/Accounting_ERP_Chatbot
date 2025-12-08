@@ -1,8 +1,9 @@
 package com.accounting.service.impl;
 
+import org.springframework.stereotype.Service;
+
 import com.accounting.enums.Role;
 import com.accounting.service.RoleService;
-import org.springframework.stereotype.Service;
 
 /**
  * Implementation of RoleService for role validation and management utilities.
@@ -33,4 +34,3 @@ public class RoleServiceImpl implements RoleService {
     return role.toAuthority();
   }
 }
-

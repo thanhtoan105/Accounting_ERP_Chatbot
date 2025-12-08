@@ -1,20 +1,5 @@
 package com.accounting.service.impl.ap;
 
-import com.accounting.dto.AgingBillDetailsDTO;
-import com.accounting.dto.APAgingBucketDTO;
-import com.accounting.dto.APAgingReportDTO;
-import com.accounting.dto.OverdueCountDTO;
-import com.accounting.dto.OverdueSupplierDTO;
-import com.accounting.entity.PurchaseBill;
-import com.accounting.entity.PurchaseBillStatus;
-import com.accounting.entity.Supplier;
-import com.accounting.entity.PaymentAllocation;
-import com.accounting.repository.APPaymentRepository;
-import com.accounting.repository.PaymentAllocationRepository;
-import com.accounting.repository.PurchaseBillRepository;
-import com.accounting.repository.SupplierRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.APAgingService;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -23,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -42,6 +28,22 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.dto.APAgingBucketDTO;
+import com.accounting.dto.APAgingReportDTO;
+import com.accounting.dto.AgingBillDetailsDTO;
+import com.accounting.dto.OverdueCountDTO;
+import com.accounting.dto.OverdueSupplierDTO;
+import com.accounting.entity.PaymentAllocation;
+import com.accounting.entity.PurchaseBill;
+import com.accounting.entity.PurchaseBillStatus;
+import com.accounting.entity.Supplier;
+import com.accounting.repository.APPaymentRepository;
+import com.accounting.repository.PaymentAllocationRepository;
+import com.accounting.repository.PurchaseBillRepository;
+import com.accounting.repository.SupplierRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.APAgingService;
 
 /**
  * Implementation of APAgingService for AP aging report operations.
@@ -677,4 +679,3 @@ public class APAgingServiceImpl implements APAgingService {
     logger.debug("Aging cache invalidated due to period close: {}", periodId);
   }
 }
-

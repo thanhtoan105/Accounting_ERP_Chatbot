@@ -1,13 +1,15 @@
 package com.accounting.entity;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.UUID;
 
 /**
  * Entity representing an approval workflow for purchase bills and sales

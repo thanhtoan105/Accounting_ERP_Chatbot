@@ -1,12 +1,14 @@
 package com.accounting.service;
 
-import com.accounting.dto.ARStatementHistoryDTO;
-import com.accounting.entity.ARStatementHistory;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import com.accounting.dto.ARStatementHistoryDTO;
+import com.accounting.entity.ARStatementHistory;
 
 /**
  * Service interface for AR statement operations (generation, export, email, history).
@@ -143,4 +145,3 @@ public interface ARStatementService {
    */
   Object regenerateStatement(UUID statementId);
 }
-

@@ -44,4 +44,3 @@ public class OverdueSupplierDTO {
     this.overdueDays = overdueDays;
   }
 }
-

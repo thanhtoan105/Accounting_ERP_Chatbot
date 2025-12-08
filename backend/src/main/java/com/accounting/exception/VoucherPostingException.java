@@ -19,4 +19,3 @@ public class VoucherPostingException extends RuntimeException {
     return validationErrors;
   }
 }
-

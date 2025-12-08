@@ -62,4 +62,3 @@ public class APAgingReportDTO {
     this.hasOverdue = hasOverdue;
   }
 }
-

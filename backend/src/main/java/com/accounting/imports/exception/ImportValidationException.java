@@ -1,10 +1,12 @@
 package com.accounting.imports.exception;
 
-import com.accounting.imports.model.ImportRowAudit;
-import com.accounting.imports.model.ImportRowError;
 import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.imports.model.ImportRowAudit;
+import com.accounting.imports.model.ImportRowError;
 
 public class ImportValidationException extends ResponseStatusException {
 

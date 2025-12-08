@@ -1,12 +1,14 @@
 package com.accounting.service.impl.purchase;
 
-import com.accounting.entity.VatRate;
-import com.accounting.service.purchase.VATService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import com.accounting.entity.VatRate;
+import com.accounting.service.purchase.VATService;
 
 /**
  * Implementation of VATService for purchase bills.
@@ -95,4 +97,3 @@ public class VATServiceImpl implements VATService {
     return VAT_TOLERANCE;
   }
 }
-

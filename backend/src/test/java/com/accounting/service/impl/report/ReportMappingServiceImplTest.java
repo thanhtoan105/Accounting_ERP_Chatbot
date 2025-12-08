@@ -4,22 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.accounting.dto.report.MappingVersionDTO;
-import com.accounting.dto.report.ReportMappingDTO;
-import com.accounting.entity.AuditLog;
-import com.accounting.entity.User;
-import com.accounting.entity.report.ReportMapping;
-import com.accounting.repository.AuditLogRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.repository.report.ReportMappingRepository;
-import com.accounting.repository.report.ReportSnapshotRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.SecurityUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +22,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.report.MappingVersionDTO;
+import com.accounting.dto.report.ReportMappingDTO;
+import com.accounting.entity.AuditLog;
+import com.accounting.entity.User;
+import com.accounting.entity.report.ReportMapping;
+import com.accounting.repository.AuditLogRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.repository.report.ReportMappingRepository;
+import com.accounting.repository.report.ReportSnapshotRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.SecurityUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Unit tests for ReportMappingServiceImpl.

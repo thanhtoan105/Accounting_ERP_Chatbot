@@ -1,5 +1,22 @@
 package com.accounting.service.impl.reconciliation;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import org.apache.commons.text.similarity.LevenshteinDistance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.accounting.dto.reconciliation.AutoMatchConfigDTO;
 import com.accounting.dto.reconciliation.AutoMatchResultDTO;
 import com.accounting.dto.reconciliation.AutoMatchResultDTO.MatchSuggestionDTO;
@@ -21,21 +38,6 @@ import com.accounting.repository.reconciliation.BankReconciliationRepository;
 import com.accounting.repository.reconciliation.BankStatementLineRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.ReconciliationMatcherService;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import org.apache.commons.text.similarity.LevenshteinDistance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Implementation of ReconciliationMatcherService.

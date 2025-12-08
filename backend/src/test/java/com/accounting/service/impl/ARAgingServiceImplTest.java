@@ -1,11 +1,14 @@
 package com.accounting.service.impl;
 
-import com.accounting.dto.ARAgingBucketDTO;
-import com.accounting.dto.ARAgingReportDTO;
-import com.accounting.entity.Customer;
-import com.accounting.repository.CustomerRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.ARAgingCalculationService;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,20 +16,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.accounting.dto.ARAgingBucketDTO;
+import com.accounting.dto.ARAgingReportDTO;
+import com.accounting.entity.Customer;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.ARAgingCalculationService;
 
 /**
  * Unit tests for ARAgingServiceImpl.

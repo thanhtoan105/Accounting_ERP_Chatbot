@@ -21,4 +21,3 @@ public interface ARStatementEmailService {
       Object statement,
       ARStatementHistory.StatementFormat statementFormat);
 }
-

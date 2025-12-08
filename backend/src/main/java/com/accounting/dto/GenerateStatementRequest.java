@@ -1,8 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.SupplierStatementHistory;
-import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+
+import com.accounting.entity.SupplierStatementHistory;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Request DTO for generating supplier statement.
@@ -65,4 +67,3 @@ public class GenerateStatementRequest {
     this.format = format;
   }
 }
-

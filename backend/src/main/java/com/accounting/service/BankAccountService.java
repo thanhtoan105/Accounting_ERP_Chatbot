@@ -1,11 +1,12 @@
 package com.accounting.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.accounting.dto.BalanceTooltipDTO;
 import com.accounting.dto.BankAccountCreateRequest;
 import com.accounting.dto.BankAccountDTO;
 import com.accounting.dto.BankAccountUpdateRequest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 /**
  * Service interface for BankAccount operations including CRUD, search, and balance tooltip.
@@ -79,4 +80,3 @@ public interface BankAccountService {
    */
   BalanceTooltipDTO getBalanceTooltip(Long bankAccountId);
 }
-

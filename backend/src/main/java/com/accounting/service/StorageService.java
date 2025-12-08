@@ -1,6 +1,7 @@
 package com.accounting.service;
 
 import java.util.UUID;
+
 import org.springframework.web.multipart.MultipartFile;
 
 public interface StorageService {

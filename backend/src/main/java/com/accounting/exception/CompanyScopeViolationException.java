@@ -16,5 +16,3 @@ public class CompanyScopeViolationException extends RuntimeException {
     return status;
   }
 }
-
-

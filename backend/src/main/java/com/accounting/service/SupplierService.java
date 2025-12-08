@@ -1,13 +1,15 @@
 package com.accounting.service;
 
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.accounting.dto.SupplierAPSummaryDTO;
 import com.accounting.dto.SupplierCreateRequest;
 import com.accounting.dto.SupplierDTO;
 import com.accounting.dto.SupplierUpdateRequest;
 import com.accounting.entity.Supplier;
-import java.util.Optional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 /**
  * Service interface for Supplier operations including CRUD, search, and duplicate detection.
@@ -92,4 +94,3 @@ public interface SupplierService {
    */
   SupplierAPSummaryDTO getSupplierAPSummary(Long supplierId);
 }
-

@@ -1,10 +1,12 @@
 package com.accounting.service.impl;
 
-import com.accounting.service.VirusScanService;
 import java.util.Locale;
 import java.util.Set;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.accounting.service.VirusScanService;
 
 /**
  * Mock implementation of VirusScanService.
@@ -60,4 +62,3 @@ public class VirusScanServiceImpl implements VirusScanService {
     return "";
   }
 }
-

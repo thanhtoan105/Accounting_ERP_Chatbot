@@ -57,4 +57,3 @@ class RoleTest {
     assertEquals("ROLE_CFO", Role.CFO.toAuthority());
   }
 }
-

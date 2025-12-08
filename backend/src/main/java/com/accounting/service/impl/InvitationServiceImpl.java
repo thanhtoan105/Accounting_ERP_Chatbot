@@ -1,5 +1,15 @@
 package com.accounting.service.impl;
 
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.accounting.entity.Company;
 import com.accounting.entity.Invitation;
 import com.accounting.entity.User;
@@ -13,15 +23,8 @@ import com.accounting.service.AuditService;
 import com.accounting.service.EmailService;
 import com.accounting.service.InvitationService;
 import com.accounting.service.RoleService;
+
 import jakarta.servlet.http.HttpServletRequest;
-import java.security.SecureRandom;
-import java.time.Instant;
-import java.util.Base64;
-import java.util.List;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Implementation of InvitationService for invitation management.
@@ -278,4 +281,3 @@ public class InvitationServiceImpl implements InvitationService {
         .orElse("Company");
   }
 }
-

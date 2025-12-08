@@ -1,6 +1,11 @@
 package com.accounting.entity;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,9 +17,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDate;
-import java.time.Instant;
-import java.util.UUID;
 
 /**
  * AccountingPeriod entity representing fiscal periods in the accounting system.

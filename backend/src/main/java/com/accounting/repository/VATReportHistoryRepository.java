@@ -1,9 +1,11 @@
 package com.accounting.repository;
 
-import com.accounting.entity.VATReportHistory;
 import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import com.accounting.entity.VATReportHistory;
 
 /**
  * Repository for VATReportHistory entity.
@@ -20,4 +22,3 @@ public interface VATReportHistoryRepository
    */
   java.util.Optional<VATReportHistory> findByCompanyIdAndId(Long companyId, UUID reportId);
 }
-

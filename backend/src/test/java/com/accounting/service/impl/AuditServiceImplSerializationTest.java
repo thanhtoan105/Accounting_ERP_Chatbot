@@ -2,17 +2,10 @@ package com.accounting.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.accounting.entity.AuditLog;
-import com.accounting.entity.Company;
-import com.accounting.entity.User;
-import com.accounting.repository.AuditLogRepository;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +16,16 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.entity.AuditLog;
+import com.accounting.entity.Company;
+import com.accounting.entity.User;
+import com.accounting.repository.AuditLogRepository;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
 import com.accounting.test.IntegrationTest;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * AC3: Unit tests assert audit records serialize field diffs, actor identity,

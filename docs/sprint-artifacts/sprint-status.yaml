@@ -98,9 +98,9 @@ development_status:
 
   epic-7: in-progress
   7-1-mvp-trial-balance-basic: done
-  7-1-trial-balance-s06-dn-generation-export: in-progress
-  7-2-statutory-reports-b01-b02-b03-f01-tt200: review # Code review: changes requested
-  7-3-report-scheduling-export-distribution-and-access-control: backlog
+  7-1-trial-balance-s06-dn-generation-export: done
+  7-2-statutory-reports-b01-b02-b03-f01-tt200: done # Code review: changes requested
+  7-3-report-scheduling-export-distribution-and-access-control: done
   7-4-multi-period-comparison-variance-analysis: backlog
   7-5-reporting-audit-compliance-and-integrity: backlog
   7-6-f01-detailed-ledger-report-implementation: backlog

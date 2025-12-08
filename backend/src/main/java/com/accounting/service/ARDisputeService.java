@@ -1,12 +1,14 @@
 package com.accounting.service;
 
-import com.accounting.dto.ARStatementDisputeDTO;
-import com.accounting.entity.ARStatementDispute;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import com.accounting.dto.ARStatementDisputeDTO;
+import com.accounting.entity.ARStatementDispute;
 
 /**
  * Service interface for AR dispute management.
@@ -62,4 +64,3 @@ public interface ARDisputeService {
    */
   List<ARStatementDisputeDTO> getReconciliationNotes(Long customerId);
 }
-

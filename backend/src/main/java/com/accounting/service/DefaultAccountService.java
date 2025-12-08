@@ -1,10 +1,11 @@
 package com.accounting.service;
 
-import com.accounting.dto.DefaultAccountDTO;
-import com.accounting.dto.DefaultAccountCreateRequest;
-import com.accounting.dto.DefaultAccountUpdateRequest;
 import java.util.List;
 import java.util.Optional;
+
+import com.accounting.dto.DefaultAccountCreateRequest;
+import com.accounting.dto.DefaultAccountDTO;
+import com.accounting.dto.DefaultAccountUpdateRequest;
 
 /**
  * Service for Default Account operations.
@@ -56,4 +57,3 @@ public interface DefaultAccountService {
    */
   void delete(Long id);
 }
-

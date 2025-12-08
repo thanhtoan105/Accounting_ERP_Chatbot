@@ -2,20 +2,22 @@ package com.accounting.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.accounting.entity.ChartOfAccount;
-import com.accounting.entity.Company;
-import com.accounting.entity.User;
-import com.accounting.repository.ChartOfAccountsRepository;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.entity.ChartOfAccount;
+import com.accounting.entity.Company;
+import com.accounting.entity.User;
+import com.accounting.repository.ChartOfAccountsRepository;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.repository.UserRepository;
 
 @SpringBootTest
 class DemoBootstrapServiceTest extends com.accounting.test.IntegrationTest {

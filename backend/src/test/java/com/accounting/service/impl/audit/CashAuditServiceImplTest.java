@@ -5,26 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.accounting.dto.audit.CashAuditLogDTO;
-import com.accounting.dto.audit.CashAuditPageDTO;
-import com.accounting.dto.audit.CashAuditQueryDTO;
-import com.accounting.dto.audit.PurgeRequestDTO;
-import com.accounting.dto.audit.PurgeResponseDTO;
-import com.accounting.entity.AuditLog;
-import com.accounting.entity.audit.AuditPurgeRequest;
-import com.accounting.entity.audit.AuditPurgeRequest.PurgeStatus;
-import com.accounting.exception.BusinessException;
-import com.accounting.repository.AuditLogRepository;
-import com.accounting.repository.audit.AuditPurgeRequestRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.SecurityUtils;
-import com.accounting.service.CashAuditService.ExportFormat;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -35,6 +21,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.audit.CashAuditPageDTO;
+import com.accounting.dto.audit.CashAuditQueryDTO;
+import com.accounting.dto.audit.PurgeRequestDTO;
+import com.accounting.dto.audit.PurgeResponseDTO;
+import com.accounting.entity.AuditLog;
+import com.accounting.entity.audit.AuditPurgeRequest;
+import com.accounting.exception.BusinessException;
+import com.accounting.repository.AuditLogRepository;
+import com.accounting.repository.audit.AuditPurgeRequestRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.SecurityUtils;
+import com.accounting.service.CashAuditService.ExportFormat;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Unit tests for CashAuditServiceImpl.

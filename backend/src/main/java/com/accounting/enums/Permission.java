@@ -38,4 +38,3 @@ public class Permission {
     // Utility class - prevent instantiation
   }
 }
-

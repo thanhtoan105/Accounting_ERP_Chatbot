@@ -13,7 +13,9 @@ so that I can quickly find voucher information, check account balances, and unde
 ## Acceptance Criteria
 
 ### AC 9.0.1 - Embedding Trigger
+
 After every successful voucher save/post operation, the backend triggers an n8n webhook that receives:
+
 - Company ID
 - Voucher header (number, date, description)
 - Line items (account code, account name, debit, credit, line description)
@@ -21,23 +23,28 @@ After every successful voucher save/post operation, the backend triggers an n8n 
 - Summary balances (total debit/credit)
 
 **Success Criteria:**
+
 - Webhook triggered within 200ms of voucher post
 - Fire-and-forget pattern (doesn't block voucher posting)
 - Webhook payload includes all required fields in JSON format
 
 ### AC 9.0.2 - Idempotent Embedding
+
 Embeddings are stored in Pinecone under company-specific namespaces (`company_{companyId}`). Re-indexing the same voucher ID is idempotent (overwrites existing embedding). Retry logic handles n8n unavailability with exponential backoff (3 attempts) and logs all failures.
 
 **Success Criteria:**
+
 - Pinecone namespace format: `company_{UUID}`
 - Embedding ID format: `voucher_{entityId}`
 - Retry attempts: 1s, 5s, 15s delays
 - Failed webhooks logged to database with retry status
 
 ### AC 9.0.3 - Chatbot Panel
+
 A minimal in-app chatbot panel (floating, expandable) allows Vietnamese questions like "Tình hình công nợ hiện tại ra sao?" (What is the current AR/AP status?). Panel accessible from all authenticated pages via icon in header. Queries call backend `/api/v1/chatbot/query` endpoint.
 
 **Success Criteria:**
+
 - Floating widget in bottom-right corner of all main pages
 - Widget toggle button in app header
 - Chat interface with message history (scrollable)
@@ -45,7 +52,9 @@ A minimal in-app chatbot panel (floating, expandable) allows Vietnamese question
 - Error boundary for graceful error handling
 
 ### AC 9.0.4 - Hybrid Retrieval with Citations
+
 RAG query performs hybrid retrieval (semantic + metadata filters) over Pinecone + ledger aggregates. Responses ALWAYS include:
+
 - (a) Natural-language answer in Vietnamese
 - (b) Citation list with voucher/invoice IDs and clickable links
 - (c) Confidence indicator (0.0-1.0)
@@ -53,6 +62,7 @@ RAG query performs hybrid retrieval (semantic + metadata filters) over Pinecone 
 If no evidence found (confidence < 0.5), chatbot replies "Không đủ dữ liệu" with next-step suggestions.
 
 **Success Criteria:**
+
 - Hybrid search: semantic (Pinecone) + metadata filters (company_id, period_id)
 - Top 10 results with relevance score > 0.7
 - Answer format: Vietnamese text + citation section with links
@@ -60,7 +70,9 @@ If no evidence found (confidence < 0.5), chatbot replies "Không đủ dữ li�
 - Fallback message if confidence < 0.5
 
 ### AC 9.0.5 - Audit Logging
+
 Each chatbot query is audit-logged in `chatbot_queries` table with:
+
 - User ID
 - Company ID
 - Timestamp
@@ -80,9 +92,11 @@ Errors surfaced to user with retry guidance.
 - Integration with existing `AuditService` for TT200 compliance
 
 ### AC 9.0.6 - Feature Flag
+
 Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI without affecting voucher posting workflows. When disabled, chatbot icon hidden from UI; voucher workflows continue normally.
 
 **Success Criteria:**
+
 - Environment variable: `CHATBOT_ENABLED=true|false`
 - When false: widget icon hidden, API returns 503
 - Voucher posting unaffected by chatbot status
@@ -91,7 +105,9 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
 ## Tasks / Subtasks
 
 ### Task 1: Setup Infrastructure and External Services (AC 9.0.1, 9.0.2, 9.0.6)
+
 - [x] 1.1 - Setup Pinecone Account and Index
+
   - [x] Create Pinecone account (Serverless free tier)
   - [x] Create index `accounting-embeddings` with:
     - Dimensions: 1536 (OpenAI ada-002)
@@ -101,6 +117,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Test connection from backend with health check endpoint
 
 - [x] 1.2 - Setup OpenAI Account and API Access
+
   - [x] Create OpenAI account or use existing
   - [x] Generate API key with access to:
     - Embedding model: `text-embedding-ada-002`
@@ -109,6 +126,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Configure rate limits and cost monitoring
 
 - [x] 1.3 - Setup n8n Workflow Automation
+
   - [x] Deploy n8n Docker container (or use cloud instance)
   - [x] Create "Voucher Embedding Automation" workflow with:
     - HTTP webhook trigger (POST)
@@ -138,7 +156,9 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Document all environment variables in README
 
 ### Task 2: Backend - Database Schema and Entities (AC 9.0.5)
+
 - [x] 2.1 - Create Flyway Migration for Chatbot Tables
+
   - [x] Create migration: `V20251229__create_chatbot_tables.sql` (updated version number)
   - [x] Define table `chatbot_queries` with fields:
     - id (BIGSERIAL PRIMARY KEY)
@@ -165,7 +185,9 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Add custom query methods (findBySessionId, findByUserId, date ranges, analytics)
 
 ### Task 3: Backend - External Service Integration (AC 9.0.1, 9.0.2)
+
 - [x] 3.1 - Create N8nWebhookService
+
   - [x] Create interface `N8nWebhookService` with async/sync methods
   - [x] Create implementation `N8nWebhookServiceImpl`
   - [x] Implement method: `triggerEmbedding(VoucherEmbeddingPayload payload)` with @Async
@@ -176,6 +198,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Add unit tests with MockWebServer - Integration tests added with Mockito
 
 - [x] 3.2 - Create EmbeddingService (Placeholder)
+
   - [x] Create interface `EmbeddingService` (for future direct embedding)
   - [x] Add method signatures: `embedVoucher()`, `deleteEmbedding()`, `embedVouchersBatch()`
   - [x] Document that MVP uses n8n; direct embedding deferred with comprehensive JavaDoc
@@ -190,7 +213,9 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Add integration test: verify webhook called after voucher post - 2 tests added and passing
 
 ### Task 4: Backend - RAG Query Processing Services (AC 9.0.4)
+
 - [x] 4.1 - Create PineconeClient Wrapper
+
   - [x] Add Maven dependency: `io.pinecone:pinecone-client:2.1.0` (already added in Phase 1)
   - [x] Create configuration class `PineconeConfig` (already exists from Phase 1)
   - [x] Create `PineconeService` interface and `PineconeServiceImpl` with methods:
@@ -204,6 +229,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Use Pinecone SDK v2.x API (direct method calls, no protobuf Request objects)
 
 - [x] 4.2 - Create OpenAIClient Wrapper
+
   - [x] Add Maven dependency: `com.azure:azure-ai-openai:1.0.0-beta.8` (Azure OpenAI SDK, already added in Phase 1)
   - [x] Create configuration class `AzureOpenAIConfig` (already exists from Phase 1)
   - [x] Create `AzureOpenAIService` interface and `AzureOpenAIServiceImpl` with methods:
@@ -215,6 +241,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Vietnamese prompt engineering for accounting terminology
 
 - [x] 4.3 - Create RAGQueryService
+
   - [x] Create interface `RAGQueryService` with `RetrievalResult` and `Citation` inner classes
   - [x] Create implementation `RAGQueryServiceImpl`
   - [x] Implement method: `retrieveRelevantContext(query, companyId, userId, filters)`
@@ -235,7 +262,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Flow:
     1. Validate query (non-empty, max 5000 chars from config)
     2. Call `RAGQueryService.retrieveRelevantContext()`
-    3. Calculate confidence score: (avgScore * 0.7) + (citationCount/5 * 0.3)
+    3. Calculate confidence score: (avgScore _ 0.7) + (citationCount/5 _ 0.3)
     4. Generate LLM response via AzureOpenAIService OR return fallback if confidence < 0.5
     5. Convert citations to DTOs
     6. Create `ChatbotQuery` entity with audit hash (generated in @PrePersist)
@@ -248,12 +275,15 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Transactional processing with proper error handling
 
 ### Task 5: Backend - REST API Endpoints (AC 9.0.3, 9.0.4, 9.0.5)
+
 - [x] 5.1 - Create ChatbotController
+
   - [x] Create `@RestController` class: `ChatbotController`
   - [x] Add base path: `/api/v1/chatbot`
   - [x] Add security annotation: `@PreAuthorize("isAuthenticated()")`
 
 - [x] 5.2 - Implement POST /api/v1/chatbot/query Endpoint
+
   - [x] Method signature: `query(@RequestBody ChatbotQueryRequest request)`
   - [x] Extract user ID and company ID from JWT token (via SecurityContext)
   - [x] Validate request body (Jakarta Bean Validation)
@@ -263,6 +293,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Add OpenAPI documentation annotations
 
 - [x] 5.3 - Create DTOs
+
   - [x] `ChatbotQueryRequest`: query, sessionId, language, contextFilters
   - [x] `ChatbotQueryResponse`: answer, citations[], confidenceScore, queryId, responseTimeMs
   - [x] `Citation`: entityType, entityId, voucherNumber, excerpt, relevanceScore, link
@@ -276,18 +307,22 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Test error handling (Pinecone down, OpenAI error)
 
 ### Task 6: Frontend - Chatbot Widget Component (AC 9.0.3, 9.0.4)
+
 - [x] 6.1 - Create Chatbot Feature Structure
+
   - [x] Create directory: `frontend/src/features/chatbot/`
   - [x] Create subdirectories: `components/`, `hooks/`, `services/`, `types/`
   - [x] Create barrel export: `index.ts`
 
 - [x] 6.2 - Create Chatbot Service and Types
+
   - [x] Create `services/chatbot.ts` with axios client
   - [x] Define API methods: `submitQuery(request)`, `getHistory(sessionId)`
   - [x] Create `types/chatbot.ts` with TypeScript interfaces:
     - `ChatbotQueryRequest`, `ChatbotQueryResponse`, `Citation`, `ChatMessage`
 
 - [x] 6.3 - Create useChatbot Custom Hook
+
   - [x] Create `hooks/useChatbot.ts`
   - [x] Use `@tanstack/react-query` for API state management
   - [x] Manage local state: messages array, loading, error
@@ -295,6 +330,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Add optimistic updates for better UX
 
 - [x] 6.4 - Create ChatbotWidget Component
+
   - [x] Create `components/ChatbotWidget.tsx`
   - [x] Use shadcn/ui components: Dialog, ScrollArea, Button, Input, Badge
   - [x] Implement floating widget in bottom-right corner (fixed position)
@@ -305,6 +341,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Display error messages with retry button
 
 - [x] 6.5 - Create ChatMessage Component
+
   - [x] Create `components/ChatMessage.tsx`
   - [x] Support message types: user, assistant, error, system
   - [x] Display user messages (right-aligned, blue background)
@@ -313,6 +350,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Add markdown rendering for answer text (use `react-markdown`)
 
 - [x] 6.6 - Create CitationList Component
+
   - [x] Create `components/CitationList.tsx`
   - [x] Display citations below answer text
   - [x] Render clickable links to voucher detail pages
@@ -320,6 +358,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Add relevance score display (optional)
 
 - [x] 6.7 - Integrate ChatbotWidget into ProtectedLayout
+
   - [x] Import `ChatbotWidget` in `ProtectedLayout.tsx`
   - [x] Add widget to layout (conditionally rendered)
   - [x] Add feature flag check from environment variable
@@ -332,7 +371,9 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Add URL parameter support for opening voucher from citation
 
 ### Task 7: Frontend - Styling and UX Polish (AC 9.0.3)
+
 - [x] 7.1 - Add Tailwind CSS Styles for Chatbot
+
   - [x] Install `@tailwindcss/typography` for markdown rendering
   - [x] Add custom styles for chat messages (bubbles, timestamps)
   - [x] Add animations for widget expand/collapse
@@ -340,6 +381,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Ensure responsive design (mobile-friendly, though MVP is desktop-focused)
 
 - [x] 7.2 - Add Loading States and Skeletons
+
   - [x] Add skeleton loader for chat messages during loading (`ChatSkeleton.tsx`)
   - [x] Add animated typing indicator for assistant responses (`chatbot-typing-dot`)
   - [x] Add pulse animation for send button during processing (`chatbot-send-loading`)
@@ -351,7 +393,9 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Add retry button for transient errors
 
 ### Task 8: Testing and Validation (All ACs)
+
 - [x] 8.1 - Unit Tests (Backend)
+
   - [x] Test `ChatbotService.processQuery()` with mock dependencies (`ChatbotServiceImplTest.java`)
   - [x] Test `RAGQueryService.retrieveRelevantVouchers()` with mock Pinecone
   - [x] Test `N8nWebhookService.triggerEmbedding()` with MockWebServer
@@ -360,6 +404,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Target: 70% code coverage for chatbot package - **Achieved: 23+ tests**
 
 - [x] 8.2 - Integration Tests (Backend)
+
   - [x] Test end-to-end query flow: API → Service → Pinecone → OpenAI → Response (`ChatbotControllerIntegrationTest.java`)
   - [x] Test webhook trigger after voucher post (verify payload)
   - [x] Test idempotent embedding (re-embed same voucher ID)
@@ -369,6 +414,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Use TestContainers for PostgreSQL and Redis - **11 integration tests**
 
 - [x] 8.3 - Unit Tests (Frontend)
+
   - [x] Test `useChatbot` hook state management (Vitest + Testing Library)
   - [x] Test `ChatMessage` component rendering (user vs assistant)
   - [x] Test `CitationList` component link generation
@@ -376,6 +422,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Target: 60% coverage for chatbot feature - **Achieved: 34 tests passing**
 
 - [x] 8.4 - E2E Tests (Playwright)
+
   - [x] Test chatbot widget open/close flow
   - [x] Test submit Vietnamese query → receive answer with citations
   - [x] Test citation link click → navigate to voucher detail
@@ -394,12 +441,15 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [ ] Test citation relevance and accuracy
 
 ### Task 9: Documentation and Deployment Preparation (AC 9.0.6)
+
 - [x] 9.1 - Update CLAUDE.md
+
   - [x] Add chatbot setup instructions
   - [x] Document environment variables
   - [x] Add troubleshooting section
 
 - [x] 9.2 - Create Chatbot Setup Manual
+
   - [x] Create `docs/manuals/chatbot_setup.md`
   - [x] Document Pinecone account setup and index configuration
   - [x] Document OpenAI API key setup
@@ -408,6 +458,7 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
   - [x] Add testing checklist
 
 - [x] 9.3 - Create .env.example Entries
+
   - [x] Add all chatbot-related environment variables with example values (lines 43-116)
   - [x] Add comments explaining each variable
 
@@ -425,21 +476,25 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
 Story 8-0 successfully integrated Metabase for BI dashboards using JWT SSO. Key patterns to reuse for chatbot integration:
 
 - **External Service Integration Pattern**:
+
   - Service interface + implementation pattern (`MetabaseService` / `MetabaseServiceImpl`)
   - Configuration via `application.yml` with environment variables
   - Separate controller for service-specific endpoints (`AnalyticsController`)
 
 - **JWT Token Handling**:
+
   - JJWT library with modern API (updated from deprecated methods)
   - Token generation with custom claims (company_id, user roles)
   - 10-minute token expiration as reference point
 
 - **React Integration**:
+
   - Feature-first structure: `features/analytics/` with services, pages, components
   - Barrel exports via `index.ts` for clean imports
   - Integration with existing routing and protected layout
 
 - **Security**:
+
   - Role-based endpoint protection (`@PreAuthorize("hasAnyRole('ADMIN','CFO','CHIEF_ACCOUNTANT')")`)
   - Company context extraction from JWT token
   - External service authentication via shared secrets
@@ -450,6 +505,7 @@ Story 8-0 successfully integrated Metabase for BI dashboards using JWT SSO. Key 
   - Clear separation of completed tasks vs. next steps
 
 **Apply to Story 9.0:**
+
 - Use similar service interface pattern for `ChatbotService`, `EmbeddingService`, `RAGQueryService`
 - Follow JWT extraction pattern from `AnalyticsController` in `ChatbotController`
 - Reuse React feature structure: `features/chatbot/` with services, hooks, components
@@ -461,6 +517,7 @@ Story 8-0 successfully integrated Metabase for BI dashboards using JWT SSO. Key 
 ### Architecture Patterns and Constraints
 
 **Multi-Tenancy**:
+
 - All chatbot entities extend `CompanyScopedEntity` for automatic company filtering
   - Pattern reference: See `com.accounting.entity.AuditLog` for CompanyScopedEntity usage example
   - See `com.accounting.repository.SalesInvoiceRepository` for company-scoped query patterns
@@ -471,6 +528,7 @@ Story 8-0 successfully integrated Metabase for BI dashboards using JWT SSO. Key 
   - Test pattern: See `SalesInvoiceApprovalServiceImplTest` for multi-tenant isolation test examples
 
 **Security**:
+
 - JWT authentication required for all chatbot endpoints
   - Pattern reference: See `com.accounting.security.JwtAuthenticationFilter` for JWT validation flow
 - RBAC enforcement: Accountant sees only their vouchers, Chief Accountant sees all company data
@@ -480,12 +538,14 @@ Story 8-0 successfully integrated Metabase for BI dashboards using JWT SSO. Key 
 - Sensitive data exclusion: Don't embed password fields, API keys in Pinecone
 
 **Performance**:
+
 - Fire-and-forget webhook trigger (< 200ms, non-blocking)
 - Target query response time: P95 < 5 seconds (Pinecone + OpenAI)
 - Rate limiting: 20 queries per user per minute (future enhancement, placeholder for MVP)
 - Caching: Redis cache for frequently asked questions (1-hour TTL)
 
 **Testing Standards**:
+
 - Unit tests: 70% coverage for backend chatbot package
 - Integration tests: End-to-end flows with TestContainers
 - E2E tests: Playwright for chatbot widget UI interactions
@@ -500,6 +560,7 @@ Story 8-0 successfully integrated Metabase for BI dashboards using JWT SSO. Key 
 **Note:** Project structure guidance provided inline in this story as no unified-project-structure.md document exists yet. Future stories should refer to this section as a pattern for chatbot module organization.
 
 **Backend Java Package Structure**:
+
 ```
 com.accounting.controller/
   - ChatbotController.java (REST API for chatbot queries)
@@ -527,6 +588,7 @@ com.accounting.repository/
 ```
 
 **Frontend React Structure**:
+
 ```
 frontend/src/features/chatbot/ (NEW)
   - components/
@@ -543,6 +605,7 @@ frontend/src/features/chatbot/ (NEW)
 ```
 
 **Database Tables** (Flyway migration):
+
 - `chatbot_queries` (main query log table)
 - `chatbot_feedback` (placeholder for Story 9.4)
 - `guardrail_logs` (placeholder for Story 9.1)
@@ -550,6 +613,7 @@ frontend/src/features/chatbot/ (NEW)
 ### References
 
 **Technical Specifications**:
+
 - Tech Spec: [docs/sprint-artifacts/tech-spec-epic-9.md](../../docs/sprint-artifacts/tech-spec-epic-9.md)
   - Section: Detailed Design > Services and Modules
   - Section: Detailed Design > APIs and Interfaces
@@ -557,11 +621,13 @@ frontend/src/features/chatbot/ (NEW)
   - Section: Detailed Design > Workflows > Embedding Automation Flow
 
 **Architecture Documents**:
+
 - Multi-tenancy pattern: Backend uses `CompanyContext` + `CompanyScopedEntity`
 - Security: JWT authentication via `JwtAuthenticationFilter`
 - Audit logging: Integration with existing `AuditService` for TT200 compliance
 
 **External Documentation**:
+
 - Pinecone Docs: https://docs.pinecone.io/
 - OpenAI Embedding API: https://platform.openai.com/docs/guides/embeddings
 - OpenAI Chat Completions: https://platform.openai.com/docs/guides/chat
@@ -569,6 +635,7 @@ frontend/src/features/chatbot/ (NEW)
 - LangChain (optional reference): https://www.langchain.com/
 
 **Architecture Documents**:
+
 - Multi-tenancy & Security: [docs/architecture/security-architecture.md](../../architecture/security-architecture.md)
   - Section: Authentication (JWT access tokens, refresh tokens)
   - Section: Authorization (RBAC enforcement, company-level data isolation)
@@ -581,6 +648,7 @@ frontend/src/features/chatbot/ (NEW)
   - Section: Webhook Design
 
 **Code Examples**:
+
 - JWT token extraction: See `AnalyticsController.java` from Story 8-0
 - Service interface pattern: See `MetabaseService.java` / `MetabaseServiceImpl.java`
 - React feature structure: See `frontend/src/features/analytics/`
@@ -589,6 +657,7 @@ frontend/src/features/chatbot/ (NEW)
 ### Technical Debt and Future Enhancements
 
 **Known Limitations in MVP (Stories 9.1-9.5 will address)**:
+
 - No RBAC guardrail enforcement (all authenticated users can query any voucher in their company)
 - No feedback mechanism for incorrect answers
 - No usage analytics dashboard
@@ -598,6 +667,7 @@ frontend/src/features/chatbot/ (NEW)
 - No documentation RAG (only voucher data embedded)
 
 **Post-MVP Improvements**:
+
 - Direct embedding service (bypass n8n for lower latency)
 - Advanced caching strategy (vector cache + FAQ cache)
 - Multi-language support beyond Vietnamese/English
@@ -627,6 +697,7 @@ frontend/src/features/chatbot/ (NEW)
 #### Phase 3: Service Layer - External Integration (2025-11-24)
 
 **✅ Task 3.1 - N8nWebhookService Completed**
+
 - Created `N8nWebhookService` interface with async/sync methods + health check
 - Implemented `N8nWebhookServiceImpl` with full retry logic and circuit breaker
 - Key features:
@@ -641,12 +712,14 @@ frontend/src/features/chatbot/ (NEW)
   - Designed for n8n webhook consumption with minimal payload size
 
 **✅ Task 3.2 - EmbeddingService Placeholder Completed**
+
 - Created `EmbeddingService` interface with comprehensive JavaDoc
 - Documented future implementation plan (post-MVP direct embedding)
 - Method signatures: `embedVoucher()`, `deleteEmbedding()`, `embedVouchersBatch()`
 - Clear documentation that MVP uses n8n; direct embedding deferred
 
 **Patterns Applied**:
+
 - Async processing follows Spring best practices with `@Async` annotation
 - Retry logic uses explicit delays rather than Spring Retry for fine control
 - OkHttpClient configured with connection pooling and timeouts
@@ -654,6 +727,7 @@ frontend/src/features/chatbot/ (NEW)
 - Circuit breaker pattern via `isAvailable()` health check method
 
 **✅ Task 3.3 - VoucherPostingService Integration Completed**
+
 - Injected `N8nWebhookService` into `VoucherPostingServiceImpl` constructor
 - Added webhook trigger after successful voucher posting (post-transaction commit)
 - Implementation details:
@@ -668,10 +742,12 @@ frontend/src/features/chatbot/ (NEW)
   - Payload includes: company_id, voucher header, line items, balance summary
 
 **Verification**:
-- Backend compiles successfully: `mvn compile` ✅
+
+- Backend compiles successfully: `mvnd compile` ✅
 - Integration follows existing patterns (constructor injection, try-catch for external services)
 
 **✅ Task 3 Testing - Integration Tests Added**
+
 - Added 2 unit tests to `VoucherPostingServiceImplTest`:
   1. `postVoucher_successfulPosting_triggersN8nWebhook()`:
      - Verifies webhook called exactly once after successful posting
@@ -682,9 +758,10 @@ frontend/src/features/chatbot/ (NEW)
      - Verifies voucher still posts successfully (fire-and-forget pattern)
      - Confirms non-blocking behavior per AC 9.0.1
 - Updated test setUp() to include N8nWebhookService mock
-- Tests pass: `mvn test -Dtest=VoucherPostingServiceImplTest#postVoucher_successfulPosting_triggersN8nWebhook` ✅
+- Tests pass: `mvnd test -Dtest=VoucherPostingServiceImplTest#postVoucher_successfulPosting_triggersN8nWebhook` ✅
 
 **✅ Task 2.1 - Flyway Migration Completed**
+
 - Created `V20251229__create_chatbot_tables.sql` (incremented from V20251228 to maintain Flyway sequence)
 - Schema design decisions:
   - Changed `company_id` from UUID to BIGINT to match existing `companies` table schema
@@ -697,6 +774,7 @@ frontend/src/features/chatbot/ (NEW)
   - Composite index on (company_id, created_at) for company-scoped chronological queries
 
 **✅ Task 2.2 - JPA Entity & Repository Completed**
+
 - Created `ChatbotQuery` entity with CompanyScopedEntity interface for automatic multi-tenancy
 - Security & Compliance features implemented:
   - SHA-256 audit hash generation in `@PrePersist` hook for tamper detection
@@ -712,17 +790,20 @@ frontend/src/features/chatbot/ (NEW)
 - Validation: All Jakarta Bean Validation annotations added (@NotNull, @Size, @Min/@Max, @PositiveOrZero)
 
 **Patterns Applied**:
+
 - Followed existing entity patterns from `ARReminderConfiguration` (UUID primary keys, @PrePersist, timestamps)
 - Repository methods follow Spring Data JPA naming conventions for auto-implementation
 - Custom `@Query` JPQL for aggregate methods (calculateAverageConfidenceScore, calculateAverageResponseTime)
 
 **Verification**:
-- Backend compiles successfully: `mvn clean compile` ✅
+
+- Backend compiles successfully: `mvnd clean compile` ✅
 - All files follow project code style and conventions
 
 #### Phase 4: RAG Query Processing Services (2025-11-24)
 
 **✅ Task 4.1 - PineconeService Completed**
+
 - Created `PineconeService` interface with comprehensive API abstractions for vector database operations
 - Implemented `PineconeServiceImpl` using Pinecone Java SDK v2.x (not protobuf-based API)
 - Key implementation details:
@@ -736,6 +817,7 @@ frontend/src/features/chatbot/ (NEW)
 - Performance: Connection pooling handled by Pinecone SDK internally
 
 **✅ Task 4.2 - AzureOpenAIService Completed**
+
 - Created `AzureOpenAIService` interface for embeddings and chat completions
 - Implemented `AzureOpenAIServiceImpl` using Azure OpenAI Java SDK v1.0.0-beta.8
 - Key features:
@@ -747,6 +829,7 @@ frontend/src/features/chatbot/ (NEW)
 - Bilingual support: Vietnamese (default) and English fallback messages
 
 **✅ Task 4.3 - RAGQueryService Completed**
+
 - Created `RAGQueryService` interface with `RetrievalResult` and `Citation` inner classes
 - Implemented `RAGQueryServiceImpl` orchestrating hybrid retrieval
 - Retrieval pipeline:
@@ -760,6 +843,7 @@ frontend/src/features/chatbot/ (NEW)
 - Performance metrics: Average score calculation, total match count
 
 **✅ Task 4.4 - ChatbotService Completed**
+
 - Created `ChatbotService` interface with `ChatbotQueryResponse` and `CitationDTO` inner classes
 - Implemented `ChatbotServiceImpl` orchestrating end-to-end RAG pipeline
 - Complete processing flow:
@@ -775,6 +859,7 @@ frontend/src/features/chatbot/ (NEW)
 - Database persistence: Float confidence (matches entity schema), JSONB citations, @Transactional
 
 **Patterns Applied**:
+
 - Service interface + implementation pattern consistent with existing codebase
 - Constructor injection with `@RequiredArgsConstructor` (Lombok)
 - Conditional bean creation: `@ConditionalOnProperty(prefix = "chatbot", name = "enabled")`
@@ -783,7 +868,8 @@ frontend/src/features/chatbot/ (NEW)
 - Configuration-driven: All thresholds, limits, and prompts configurable via application.yml
 
 **Verification**:
-- Backend compiles successfully: `mvn clean compile` ✅
+
+- Backend compiles successfully: `mvnd clean compile` ✅
 - All services integrate with Spring Boot configuration ✅
 - Proper error handling and logging throughout ✅
 - No compilation errors or warnings ✅
@@ -791,6 +877,7 @@ frontend/src/features/chatbot/ (NEW)
 #### Phase 5: REST API Layer (2025-11-24)
 
 **✅ Task 5.1-5.3 - ChatbotController and DTOs Completed**
+
 - Created `ChatbotController` with comprehensive REST API for chatbot query processing
 - REST API Implementation:
   - POST `/api/v1/chatbot/query` - Main chatbot query endpoint with full request/response handling
@@ -821,6 +908,7 @@ frontend/src/features/chatbot/ (NEW)
   - Example payloads and descriptions
 
 **✅ Task 5.4 - Integration Tests Completed**
+
 - Created `ChatbotControllerIntegrationTest` with 11 comprehensive test cases:
   1. `query_validRequest_returnsSuccessResponse()` - Full query flow with citations
   2. `query_lowConfidence_returnsFallbackMessage()` - Low confidence handling (< 0.5)
@@ -847,6 +935,7 @@ frontend/src/features/chatbot/ (NEW)
   - Error scenario coverage
 
 **Architecture Highlights**:
+
 - **Layered Architecture**: Clear separation between API layer (DTOs) and service layer (service DTOs)
 - **Security Pattern**: JWT authentication with user/company context extraction from SecurityContext
 - **Feature Flag**: Graceful degradation when chatbot disabled (503 response, clear messaging)
@@ -855,7 +944,8 @@ frontend/src/features/chatbot/ (NEW)
 - **OpenAPI Integration**: Full Swagger documentation for API discovery and testing
 
 **Verification**:
-- Backend compiles successfully: `mvn clean compile` ✅
+
+- Backend compiles successfully: `mvnd clean compile` ✅
 - API design validated through successful compilation ✅
 - Integration tests created (11 test cases covering all AC requirements) ✅
 - Note: Tests require external service configuration (Pinecone, Azure OpenAI) to run successfully
@@ -863,6 +953,7 @@ frontend/src/features/chatbot/ (NEW)
   - Once services configured (Task 1), tests will pass with real credentials
 
 **Patterns Applied**:
+
 - Controller → Service → Repository layered architecture
 - DTO conversion at API boundary (service layer DTOs ≠ API DTOs)
 - Constructor injection for dependencies (via `@RequiredArgsConstructor`)
@@ -872,6 +963,7 @@ frontend/src/features/chatbot/ (NEW)
 #### Phase 6: Frontend Chatbot Widget (2025-11-24)
 
 **✅ Task 6 Completed - Complete Frontend Implementation**
+
 - Created full frontend chatbot feature with shadcn/ui components
 - Feature structure: `features/chatbot/` with components, hooks, services, types
 - Key components implemented:
@@ -891,6 +983,7 @@ frontend/src/features/chatbot/ (NEW)
   - Persistent widget state across pages
 
 **Verification**:
+
 - TypeScript compilation: ✅ Passing
 - All components integrated successfully
 - Frontend ready for backend connectivity
@@ -898,6 +991,7 @@ frontend/src/features/chatbot/ (NEW)
 #### Phase 7: Frontend Unit Tests (2025-11-25)
 
 **✅ Task 8.3 Completed - Comprehensive Frontend Test Coverage**
+
 - Created 34 unit tests across 3 test files:
   - `useChatbot.test.tsx` (9 tests): Hook state management, API calls, error scenarios
   - `ChatMessage.test.tsx` (13 tests): Message rendering, confidence badges, citations display
@@ -918,12 +1012,14 @@ frontend/src/features/chatbot/ (NEW)
 - Test results: **✅ All 34 tests passing**
 
 **Technical Decisions**:
+
 - Renamed hook test from `.ts` to `.tsx` for JSX support (QueryClientProvider)
 - Added Router context wrapper for components using Link
 - Simplified optimistic update tests to focus on API call verification
 - Used function declarations instead of arrow functions for wrapper components
 
 **Documentation Updates**:
+
 - Updated [CLAUDE.md](../../CLAUDE.md:188-221) with chatbot architecture and usage patterns
 - Added code examples for frontend (TypeScript/React) and backend (Java/Spring Boot)
 - Documented external service requirements and setup guide reference
@@ -934,17 +1030,20 @@ frontend/src/features/chatbot/ (NEW)
 #### Created Files
 
 **Phase 2: Database Layer**
+
 - `backend/src/main/resources/db/migration/V20251229__create_chatbot_tables.sql` - Database schema migration
 - `backend/src/main/java/com/accounting/entity/ChatbotQuery.java` - JPA entity with audit hashing
 - `backend/src/main/java/com/accounting/repository/ChatbotQueryRepository.java` - Repository with analytics methods
 
 **Phase 3: External Service Integration**
+
 - `backend/src/main/java/com/accounting/service/N8nWebhookService.java` - Webhook service interface
 - `backend/src/main/java/com/accounting/service/impl/N8nWebhookServiceImpl.java` - Webhook implementation with retry logic
 - `backend/src/main/java/com/accounting/dto/VoucherEmbeddingPayload.java` - DTO for n8n webhook payload
 - `backend/src/main/java/com/accounting/service/EmbeddingService.java` - Placeholder interface for future direct embedding
 
 **Phase 4: RAG Query Processing Services**
+
 - `backend/src/main/java/com/accounting/service/PineconeService.java` - Pinecone service interface for vector operations
 - `backend/src/main/java/com/accounting/service/impl/PineconeServiceImpl.java` - Pinecone service implementation with SDK v2.x
 - `backend/src/main/java/com/accounting/service/AzureOpenAIService.java` - Azure OpenAI service interface for embeddings and completions
@@ -955,6 +1054,7 @@ frontend/src/features/chatbot/ (NEW)
 - `backend/src/main/java/com/accounting/service/impl/ChatbotServiceImpl.java` - Chatbot service implementation with confidence scoring and audit logging
 
 **Phase 5: REST API Layer**
+
 - `backend/src/main/java/com/accounting/controller/ChatbotController.java` - REST controller for chatbot query API with health check
 - `backend/src/main/java/com/accounting/dto/ChatbotQueryRequest.java` - Request DTO with validation annotations
 - `backend/src/main/java/com/accounting/dto/ChatbotQueryResponse.java` - Response DTO with confidence level calculation
@@ -962,6 +1062,7 @@ frontend/src/features/chatbot/ (NEW)
 - `backend/src/test/java/com/accounting/controller/ChatbotControllerIntegrationTest.java` - 11 integration tests for API endpoints
 
 **Phase 1: Infrastructure Setup Documentation** (Task 1 preparation)
+
 - `.env.example` - Environment variables template with all chatbot configuration variables
 - `docs/manuals/chatbot_setup.md` - Comprehensive setup manual (Pinecone, Azure OpenAI, n8n)
 - `docs/manuals/CHATBOT_QUICKSTART.md` - 5-minute quick start guide for rapid setup
@@ -969,6 +1070,7 @@ frontend/src/features/chatbot/ (NEW)
 - `scripts/verify-chatbot-setup.sh` - Automated setup verification script with connectivity tests
 
 **Phase 6: Frontend Chatbot Widget** (2025-11-24)
+
 - `frontend/src/features/chatbot/types/chatbot.ts` - TypeScript type definitions (6 interfaces)
 - `frontend/src/features/chatbot/services/chatbot.ts` - Axios API client for chatbot queries
 - `frontend/src/features/chatbot/hooks/useChatbot.ts` - React Query hook for chatbot state management
@@ -978,6 +1080,7 @@ frontend/src/features/chatbot/ (NEW)
 - `frontend/src/features/chatbot/index.ts` - Barrel export file for clean imports
 
 **Phase 7: Frontend Unit Tests** (2025-11-25)
+
 - `frontend/src/features/chatbot/hooks/__tests__/useChatbot.test.tsx` - 9 unit tests for useChatbot hook
 - `frontend/src/features/chatbot/components/__tests__/ChatMessage.test.tsx` - 13 unit tests for ChatMessage component
 - `frontend/src/features/chatbot/components/__tests__/CitationList.test.tsx` - 12 unit tests for CitationList component
@@ -985,21 +1088,26 @@ frontend/src/features/chatbot/ (NEW)
 #### Modified Files
 
 **Phase 3: External Service Integration**
+
 - `backend/src/main/java/com/accounting/service/impl/voucher/VoucherPostingServiceImpl.java` - Added N8nWebhookService injection, webhook trigger after posting, buildEmbeddingPayload() helper, and getAccountCode/Name() placeholders
 - `backend/src/test/java/com/accounting/service/impl/voucher/VoucherPostingServiceImplTest.java` - Added N8nWebhookService mock and 2 integration tests for webhook triggering
 
 **Phase 4: RAG Query Processing Services**
+
 - `backend/src/main/java/com/accounting/service/ChatbotService.java` - Added `isAvailable()` method for health checks
 - `backend/src/main/java/com/accounting/service/impl/ChatbotServiceImpl.java` - Implemented `isAvailable()` checking Pinecone, OpenAI, and database availability
 
 **Phase 5: REST API Layer**
+
 - `backend/src/main/java/com/accounting/dto/ChatbotQueryRequest.java` - Added `@Builder.Default` annotation to language field to fix Lombok warning
 
 **Phase 6: Frontend Integration** (2025-11-24)
+
 - `frontend/src/layouts/ProtectedLayout.tsx` - Integrated ChatbotWidget with feature flag support
 - `frontend/src/routes/AppRoutes.tsx` - Updated routing configuration for chatbot pages
 
 **Phase 7: Documentation Updates** (2025-11-25)
+
 - `CLAUDE.md` - Added comprehensive chatbot architecture section (lines 188-221) with usage patterns and external service requirements
 
 ## Change Log
@@ -1042,55 +1150,56 @@ Story 9.0 MVP Voucher RAG Chatbot has been **systematically validated** with **a
 
 ### Acceptance Criteria Coverage (6/6 IMPLEMENTED)
 
-| AC # | Description | Status | Evidence (file:line) |
-|------|-------------|--------|----------------------|
-| AC 9.0.1 | Embedding Trigger | ✅ VERIFIED | `VoucherPostingServiceImpl.java:169-176` - Fire-and-forget webhook trigger |
-| AC 9.0.2 | Idempotent Embedding | ✅ VERIFIED | `N8nWebhookServiceImpl.java:32-36` - Retry delays 1s/5s/15s with exponential backoff |
-| AC 9.0.3 | Chatbot Panel | ✅ VERIFIED | `ChatbotWidget.tsx:63-192` - Floating widget with expand/collapse, `ProtectedLayout.tsx:370` |
-| AC 9.0.4 | Hybrid Retrieval | ✅ VERIFIED | `RAGQueryServiceImpl.java:54-165` - Pinecone + Azure OpenAI with confidence scoring |
-| AC 9.0.5 | Audit Logging | ✅ VERIFIED | `ChatbotQuery.java:90-94` - SHA-256 hash in @PrePersist, `V20251229__create_chatbot_tables.sql` |
-| AC 9.0.6 | Feature Flag | ✅ VERIFIED | `ChatbotController.java:57` - @ConditionalOnProperty, `ChatbotWidget.tsx:59-61` |
+| AC #     | Description          | Status      | Evidence (file:line)                                                                            |
+| -------- | -------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
+| AC 9.0.1 | Embedding Trigger    | ✅ VERIFIED | `VoucherPostingServiceImpl.java:169-176` - Fire-and-forget webhook trigger                      |
+| AC 9.0.2 | Idempotent Embedding | ✅ VERIFIED | `N8nWebhookServiceImpl.java:32-36` - Retry delays 1s/5s/15s with exponential backoff            |
+| AC 9.0.3 | Chatbot Panel        | ✅ VERIFIED | `ChatbotWidget.tsx:63-192` - Floating widget with expand/collapse, `ProtectedLayout.tsx:370`    |
+| AC 9.0.4 | Hybrid Retrieval     | ✅ VERIFIED | `RAGQueryServiceImpl.java:54-165` - Pinecone + Azure OpenAI with confidence scoring             |
+| AC 9.0.5 | Audit Logging        | ✅ VERIFIED | `ChatbotQuery.java:90-94` - SHA-256 hash in @PrePersist, `V20251229__create_chatbot_tables.sql` |
+| AC 9.0.6 | Feature Flag         | ✅ VERIFIED | `ChatbotController.java:57` - @ConditionalOnProperty, `ChatbotWidget.tsx:59-61`                 |
 
 ---
 
 ### Task Completion Validation (9/9 VERIFIED)
 
-| Task | Marked | Verified | Evidence |
-|------|--------|----------|----------|
-| Task 1: Infrastructure | ✅ | ✅ VERIFIED | `application.yml`, `.env.example`, 3 setup guides in `docs/manuals/` |
-| Task 2: Database | ✅ | ✅ VERIFIED | `V20251229__create_chatbot_tables.sql`, `ChatbotQuery.java`, `ChatbotQueryRepository.java` |
-| Task 3: External Services | ✅ | ✅ VERIFIED | `N8nWebhookService.java`, `N8nWebhookServiceImpl.java`, `VoucherPostingServiceImpl.java:169-176` |
-| Task 4: RAG Services | ✅ | ✅ VERIFIED | 4 service interfaces + 4 implementations in `service/impl/` |
-| Task 5: REST API | ✅ | ✅ VERIFIED | `ChatbotController.java`, 3 DTOs, OpenAPI annotations |
-| Task 6: Frontend Widget | ✅ | ✅ VERIFIED | 6 components in `features/chatbot/components/` |
-| Task 7: UX Polish | ✅ | ✅ VERIFIED | `ChatbotErrorBoundary.tsx`, `ChatSkeleton.tsx`, CSS animations in `index.css:186-194` |
-| Task 8: Testing | ✅ | ✅ VERIFIED | Unit tests passing, E2E tests exist (9 tests in `chatbot-widget.spec.ts`) |
-| Task 9: Documentation | ✅ | ✅ VERIFIED | `CLAUDE.md:188-221`, `CHATBOT_QUICKSTART.md`, `chatbot_setup.md` |
+| Task                      | Marked | Verified    | Evidence                                                                                         |
+| ------------------------- | ------ | ----------- | ------------------------------------------------------------------------------------------------ |
+| Task 1: Infrastructure    | ✅     | ✅ VERIFIED | `application.yml`, `.env.example`, 3 setup guides in `docs/manuals/`                             |
+| Task 2: Database          | ✅     | ✅ VERIFIED | `V20251229__create_chatbot_tables.sql`, `ChatbotQuery.java`, `ChatbotQueryRepository.java`       |
+| Task 3: External Services | ✅     | ✅ VERIFIED | `N8nWebhookService.java`, `N8nWebhookServiceImpl.java`, `VoucherPostingServiceImpl.java:169-176` |
+| Task 4: RAG Services      | ✅     | ✅ VERIFIED | 4 service interfaces + 4 implementations in `service/impl/`                                      |
+| Task 5: REST API          | ✅     | ✅ VERIFIED | `ChatbotController.java`, 3 DTOs, OpenAPI annotations                                            |
+| Task 6: Frontend Widget   | ✅     | ✅ VERIFIED | 6 components in `features/chatbot/components/`                                                   |
+| Task 7: UX Polish         | ✅     | ✅ VERIFIED | `ChatbotErrorBoundary.tsx`, `ChatSkeleton.tsx`, CSS animations in `index.css:186-194`            |
+| Task 8: Testing           | ✅     | ✅ VERIFIED | Unit tests passing, E2E tests exist (9 tests in `chatbot-widget.spec.ts`)                        |
+| Task 9: Documentation     | ✅     | ✅ VERIFIED | `CLAUDE.md:188-221`, `CHATBOT_QUICKSTART.md`, `chatbot_setup.md`                                 |
 
 ---
 
 ### Security Review
 
-| Check | Status | Evidence |
-|-------|--------|----------|
-| JWT Authentication | ✅ PASS | `ChatbotController.java:58` - `@PreAuthorize("isAuthenticated()")` |
-| Company Scoping | ✅ PASS | `ChatbotController.java:199-206` - Uses `CompanyContext.getCompanyId()` |
-| User ID Extraction | ✅ PASS | `ChatbotController.java:185-187` - Uses `SecurityUtils.getCurrentUserId()` |
-| Input Validation | ✅ PASS | Max 5000 chars, `ChatbotQueryRequest.java` Jakarta Bean Validation |
-| Audit Trail | ✅ PASS | SHA-256 hash in `ChatbotQuery.java:102-125`, tamper detection via `verifyAuditHash()` |
-| Feature Flag | ✅ PASS | `@ConditionalOnProperty(chatbot.enabled)` for graceful degradation |
+| Check              | Status  | Evidence                                                                              |
+| ------------------ | ------- | ------------------------------------------------------------------------------------- |
+| JWT Authentication | ✅ PASS | `ChatbotController.java:58` - `@PreAuthorize("isAuthenticated()")`                    |
+| Company Scoping    | ✅ PASS | `ChatbotController.java:199-206` - Uses `CompanyContext.getCompanyId()`               |
+| User ID Extraction | ✅ PASS | `ChatbotController.java:185-187` - Uses `SecurityUtils.getCurrentUserId()`            |
+| Input Validation   | ✅ PASS | Max 5000 chars, `ChatbotQueryRequest.java` Jakarta Bean Validation                    |
+| Audit Trail        | ✅ PASS | SHA-256 hash in `ChatbotQuery.java:102-125`, tamper detection via `verifyAuditHash()` |
+| Feature Flag       | ✅ PASS | `@ConditionalOnProperty(chatbot.enabled)` for graceful degradation                    |
 
 ---
 
 ### Test Execution Results
 
-**Backend Compilation:** ✅ PASS (`mvn compile` successful)
+**Backend Compilation:** ✅ PASS (`mvnd compile` successful)
 
 **Backend Unit Tests:**
+
 ```
 ChatbotServiceImplTest: ✅ All tests passing
 - processQuery_validRequest_returnsResponse
-- processQuery_lowConfidence_returnsFallback  
+- processQuery_lowConfidence_returnsFallback
 - processQuery_englishLanguage_returnsEnglish
 - isAvailable_allHealthy_returnsTrue
 - isAvailable_openAIDown_returnsFalse
@@ -1099,35 +1208,37 @@ ChatbotServiceImplTest: ✅ All tests passing
 **Frontend Chatbot Tests:** 32/34 passing (2 minor assertion issues in CitationList.test.tsx - link role)
 
 **E2E Tests:** 9 test cases exist in `chatbot-widget.spec.ts` covering:
+
 - Widget open/close, Vietnamese query submission, citations, low confidence, error handling, Enter key, loading states, clear history
 
 ---
 
 ### Code Quality Assessment
 
-| Aspect | Rating | Notes |
-|--------|--------|-------|
-| Architecture | ✅ Excellent | Clean layered architecture (Controller → Service → Repository) |
-| Error Handling | ✅ Good | Try-catch blocks, fallback messages, error boundaries |
-| Logging | ✅ Good | SLF4J with appropriate log levels (INFO, DEBUG, WARN, ERROR) |
-| Configuration | ✅ Good | Externalized via `application.yml` and environment variables |
-| Multi-tenancy | ✅ Good | Company-scoped Pinecone namespaces, CompanyContext integration |
-| Vietnamese Support | ✅ Good | Fallback messages in Vietnamese, accounting terminology |
+| Aspect             | Rating       | Notes                                                          |
+| ------------------ | ------------ | -------------------------------------------------------------- |
+| Architecture       | ✅ Excellent | Clean layered architecture (Controller → Service → Repository) |
+| Error Handling     | ✅ Good      | Try-catch blocks, fallback messages, error boundaries          |
+| Logging            | ✅ Good      | SLF4J with appropriate log levels (INFO, DEBUG, WARN, ERROR)   |
+| Configuration      | ✅ Good      | Externalized via `application.yml` and environment variables   |
+| Multi-tenancy      | ✅ Good      | Company-scoped Pinecone namespaces, CompanyContext integration |
+| Vietnamese Support | ✅ Good      | Fallback messages in Vietnamese, accounting terminology        |
 
 ---
 
 ### Minor Issues (Non-blocking)
 
-| # | Severity | Issue | Recommendation |
-|---|----------|-------|----------------|
-| 1 | LOW | 2 frontend tests failing (CitationList link assertion) | Fix role assertion in test file |
-| 2 | LOW | Backend integration tests require external services | Expected - tests pass with mocks |
+| #   | Severity | Issue                                                  | Recommendation                   |
+| --- | -------- | ------------------------------------------------------ | -------------------------------- |
+| 1   | LOW      | 2 frontend tests failing (CitationList link assertion) | Fix role assertion in test file  |
+| 2   | LOW      | Backend integration tests require external services    | Expected - tests pass with mocks |
 
 ---
 
 ### Files Verified (All Present ✅)
 
 **Backend (18 files):**
+
 - Controller: `ChatbotController.java`
 - Services: `ChatbotService.java`, `ChatbotServiceImpl.java`, `RAGQueryService.java`, `RAGQueryServiceImpl.java`, `AzureOpenAIService.java`, `AzureOpenAIServiceImpl.java`, `PineconeService.java`, `PineconeServiceImpl.java`, `N8nWebhookService.java`, `N8nWebhookServiceImpl.java`
 - Entity: `ChatbotQuery.java`
@@ -1136,6 +1247,7 @@ ChatbotServiceImplTest: ✅ All tests passing
 - Migration: `V20251229__create_chatbot_tables.sql`
 
 **Frontend (10 files):**
+
 - Components: `ChatbotWidget.tsx`, `ChatMessage.tsx`, `CitationList.tsx`, `ChatSkeleton.tsx`, `ChatbotErrorBoundary.tsx`, `FormattedMessage.tsx`
 - Hooks: `useChatbot.ts`
 - Services: `chatbot.ts`
@@ -1143,6 +1255,7 @@ ChatbotServiceImplTest: ✅ All tests passing
 - Barrel: `index.ts`
 
 **Documentation (3 files):**
+
 - `docs/manuals/CHATBOT_QUICKSTART.md`
 - `docs/manuals/chatbot_setup.md`
 - `docs/manuals/chatbot-setup-guide.md`
@@ -1154,6 +1267,7 @@ ChatbotServiceImplTest: ✅ All tests passing
 **None blocking - story ready for deployment.**
 
 **Advisory Notes:**
+
 - [ ] [LOW] Fix 2 frontend test assertions in `CitationList.test.tsx` (non-blocking)
 - Note: E2E tests ready - run with `npx playwright test tests/e2e/chatbot-widget.spec.ts`
 - Note: Manual QA checklist available at bottom of story file
@@ -1166,6 +1280,7 @@ ChatbotServiceImplTest: ✅ All tests passing
 **Outcome: ✅ APPROVED FOR PRODUCTION**
 
 **Rationale:**
+
 - ✅ All 6 acceptance criteria verified with code evidence
 - ✅ All 9 tasks confirmed complete with file verification
 - ✅ Security review passed (proper authentication, company scoping, input validation)
@@ -1175,6 +1290,7 @@ ChatbotServiceImplTest: ✅ All tests passing
 - ✅ E2E tests exist for UI validation
 
 **Ready for:**
+
 1. E2E test execution: `npx playwright test tests/e2e/chatbot-widget.spec.ts`
 2. Manual QA sign-off using checklist at bottom of story
 3. Production deployment
@@ -1183,40 +1299,40 @@ ChatbotServiceImplTest: ✅ All tests passing
 
 ## Manual QA Checklist - Vietnamese Language Quality (Task 8.5)
 
-**Tester:** _________________  
-**Date:** _________________  
+**Tester:** ********\_********  
+**Date:** ********\_********  
 **Environment:** Development / Staging
 
 ### Test Cases
 
-| # | Query (Vietnamese) | Expected Behavior | Pass/Fail | Notes |
-|---|-------------------|-------------------|-----------|-------|
-| 1 | "Công nợ phải trả là bao nhiêu?" | Returns Vietnamese answer with VND amounts formatted correctly | ⬜ | |
-| 2 | "Phiếu chi tháng 11?" | Lists payment vouchers from period 202311 with citations | ⬜ | |
-| 3 | "Thanh toán nhà cung cấp ABC?" | Returns relevant vouchers for supplier ABC with links | ⬜ | |
-| 4 | "Tổng hợp chi phí quý 4?" | Returns expense summary with confidence score | ⬜ | |
-| 5 | "Câu hỏi không liên quan đến kế toán" | Returns low confidence fallback message in Vietnamese | ⬜ | |
+| #   | Query (Vietnamese)                    | Expected Behavior                                              | Pass/Fail | Notes |
+| --- | ------------------------------------- | -------------------------------------------------------------- | --------- | ----- |
+| 1   | "Công nợ phải trả là bao nhiêu?"      | Returns Vietnamese answer with VND amounts formatted correctly | ⬜        |       |
+| 2   | "Phiếu chi tháng 11?"                 | Lists payment vouchers from period 202311 with citations       | ⬜        |       |
+| 3   | "Thanh toán nhà cung cấp ABC?"        | Returns relevant vouchers for supplier ABC with links          | ⬜        |       |
+| 4   | "Tổng hợp chi phí quý 4?"             | Returns expense summary with confidence score                  | ⬜        |       |
+| 5   | "Câu hỏi không liên quan đến kế toán" | Returns low confidence fallback message in Vietnamese          | ⬜        |       |
 
 ### UI/UX Verification
 
-| # | Check Item | Pass/Fail | Notes |
-|---|------------|-----------|-------|
-| 1 | Vietnamese text displays correctly (no encoding issues) | ⬜ | |
-| 2 | Typing indicator animation shows during processing | ⬜ | |
-| 3 | Error boundary shows Vietnamese fallback message on error | ⬜ | |
-| 4 | Confidence badge shows correct Vietnamese label (Cao/Trung bình/Thấp) | ⬜ | |
-| 5 | Citation links navigate to correct voucher detail page | ⬜ | |
-| 6 | Widget opens/closes smoothly with animation | ⬜ | |
-| 7 | Clear history confirmation dialog shows in Vietnamese | ⬜ | |
+| #   | Check Item                                                            | Pass/Fail | Notes |
+| --- | --------------------------------------------------------------------- | --------- | ----- |
+| 1   | Vietnamese text displays correctly (no encoding issues)               | ⬜        |       |
+| 2   | Typing indicator animation shows during processing                    | ⬜        |       |
+| 3   | Error boundary shows Vietnamese fallback message on error             | ⬜        |       |
+| 4   | Confidence badge shows correct Vietnamese label (Cao/Trung bình/Thấp) | ⬜        |       |
+| 5   | Citation links navigate to correct voucher detail page                | ⬜        |       |
+| 6   | Widget opens/closes smoothly with animation                           | ⬜        |       |
+| 7   | Clear history confirmation dialog shows in Vietnamese                 | ⬜        |       |
 
 ### Response Quality
 
-| Criteria | Rating (1-5) | Comments |
-|----------|--------------|----------|
-| Grammar accuracy | | |
-| Context relevance | | |
-| Citation accuracy | | |
-| Response time (< 3s) | | |
+| Criteria             | Rating (1-5) | Comments |
+| -------------------- | ------------ | -------- |
+| Grammar accuracy     |              |          |
+| Context relevance    |              |          |
+| Citation accuracy    |              |          |
+| Response time (< 3s) |              |          |
 
 **Overall QA Result:** ⬜ PASS / ⬜ FAIL  
-**Sign-off:** _________________
+**Sign-off:** ********\_********

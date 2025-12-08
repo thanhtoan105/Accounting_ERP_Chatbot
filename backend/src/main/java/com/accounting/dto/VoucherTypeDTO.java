@@ -167,7 +167,3 @@ public class VoucherTypeDTO {
     this.updatedAt = updatedAt;
   }
 }
-
-
-
-

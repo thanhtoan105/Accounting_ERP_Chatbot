@@ -1,9 +1,10 @@
 package com.accounting.dto.audit;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDate;
 
 /**
  * DTO for requesting audit log purge.

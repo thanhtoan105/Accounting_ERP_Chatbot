@@ -17,6 +17,7 @@ so that cashflow risk is controlled real-time.
 This story implements AP aging reports and overdue alerts functionality, enabling AP clerks and chief accountants to monitor accounts payable aging, identify overdue bills, and proactively manage cash flow risk. The system calculates aging buckets (Current, 1-30d, 31-60d, 61-90d, >90d) per supplier, provides drill-down capabilities to bill/payment history, supports exportable reports, displays dashboard badges for overdue payables, and includes a reminder/alert system for follow-up actions. The implementation leverages Redis caching for performance optimization and enforces RBAC to ensure users only see data they're authorized to access.
 
 **Technical Context from Tech Spec:**
+
 - Aging buckets calculation: Current (dueDate >= asOfDate), 1-30d (asOfDate - 30 < dueDate < asOfDate), 31-60d (asOfDate - 60 < dueDate <= asOfDate - 30), 61-90d (asOfDate - 90 < dueDate <= asOfDate - 60), >90d (dueDate <= asOfDate - 90)
 - Per-supplier aggregation with drill-down to bill/payment history
 - Redis caching with TTL: 5 minutes, invalidated on bill/payment post or period close
@@ -61,6 +62,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
 - **Approval Workflow Integration**: Story 4.2 established approval workflow patterns - aging reports should only include POSTED bills (not PENDING_APPROVAL or REJECTED) [Source: docs/sprint-artifacts/stories/4-2-purchase-bill-approval-workflow-maker-checker.md#completion-notes-list]
 
 **Pending Items from Story 4.3:**
+
 - **Notification Service**: Story 4.3's notification service implementation is pending - aging report alerts may need to handle notifications manually until service is available [Source: docs/sprint-artifacts/stories/4-3-cash-payments-linked-to-bills-standalone.md#pending-items-for-future-stories]
 
 ### Architecture Alignment
@@ -103,6 +105,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
 ## Tasks / Subtasks
 
 - [x] Backend: Create APAgingService and aging calculation logic (AC: #1, #2, #9)
+
   - [x] Create `APAgingService` interface and `APAgingServiceImpl`
   - [x] Implement `calculateAgingBuckets(supplierId, asOfDate, periodId)` method:
     - [x] Query POSTED bills with remaining_balance > 0 for supplier
@@ -117,6 +120,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
   - [x] Add RBAC filtering (CFO/Chief see all, AP clerk limited to assigned/own suppliers)
 
 - [x] Backend: Redis caching implementation (AC: #1, #2)
+
   - [x] Configure Spring Cache with Redis backend for aging reports
   - [x] Implement cache key pattern: `ap-aging:{supplierId}:{periodId}:{asOfDate}`
   - [x] Set TTL: 5 minutes for aging report cache
@@ -126,6 +130,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
   - [x] Add `@CacheEvict` annotation to invalidation points
 
 - [x] Backend: Aging report controller and API (AC: #1, #2, #3, #4, #8, #10)
+
   - [x] Create `APAgingController` with REST endpoints:
     - [x] `GET /api/v1/ap-aging` (aging report with pagination, sorting, filters)
     - [x] `GET /api/v1/ap-aging/overdue` (overdue suppliers list for dashboard)
@@ -138,6 +143,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
   - [x] Log all view and export events via `AuditService`
 
 - [x] Backend: Drill-down to bill/payment history (AC: #3)
+
   - [x] Implement `getAgingBillDetails(supplierId, bucket, periodId, asOfDate)` method
   - [x] Query bills in specified aging bucket with payment history
   - [x] Include bill details: bill number, date, due date, total amount, remaining balance, status
@@ -146,6 +152,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
   - [x] Add pagination for large result sets
 
 - [x] Backend: Export functionality (AC: #4, #10)
+
   - [x] Implement `exportAgingReport(format, filters)` method (format: Excel, PDF)
   - [x] Use Apache POI for Excel export
   - [x] Use simple text-based PDF export for MVP (backed by byte[] stream, compatible with PDF download)
@@ -154,6 +161,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
   - [x] Log export events via `AuditService` with format and filter details
 
 - [x] Backend: Reminder and alert service (AC: #6, #7, #10)
+
   - [x] Create `APAgingAlertService` interface and `APAgingAlertServiceImpl`
   - [x] Implement `sendReminder(supplierId, billIds, recipients)` method:
     - [x] Generate reminder message with bill details and aging information
@@ -166,6 +174,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
   - [x] Log all alert/reminder events via `AuditService`
 
 - [x] Frontend: Aging report component (AC: #1, #2, #3, #4, #8)
+
   - [x] Create `APAgingReport` component following existing report patterns
   - [x] Display aging buckets table with columns: Supplier, Current, 1-30d, 31-60d, 61-90d, >90d, Total
   - [x] Add filters: supplier, period, asOfDate, status, bucket
@@ -177,6 +186,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
   - [x] Display overdue badges/highlights for suppliers with overdue amounts
 
 - [x] Frontend: Drill-down bill/payment history component (AC: #3)
+
   - [x] Create `AgingBillDetailsDialog` or `AgingBillDetailsPanel` component
   - [x] Display bills in selected aging bucket with details: bill number, date, due date, total, remaining balance, status
   - [x] Display payment history for each bill: payment number, date, amount, allocated amount
@@ -185,6 +195,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
   - [x] Add close/back button to return to aging report
 
 - [x] Frontend: Dashboard badge component (AC: #5)
+
   - [x] Create `APAgingBadge` component for dashboard
   - [x] Display overdue count badge with number of overdue payables
   - [x] Display top overdue suppliers list (limit: 5)
@@ -193,6 +204,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
   - [x] Add loading state while fetching data
 
 - [x] Frontend: Reminder and alert UI (AC: #6, #7)
+
   - [x] Add "Remind" button/action in aging report for each supplier or bill
   - [x] Create `ReminderDialog` component:
     - [x] Select recipients (supplier contacts, internal users)
@@ -224,6 +236,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
 **Aging Calculation Design**: Calculate aging buckets based on `due_date` and `asOfDate` (report date). Use `remaining_balance` (not total amount) for bills with partial payments. Only include POSTED bills with remaining_balance > 0. Exclude deleted/reversed bills (status != DELETED, status != REVERSED). Aggregate by supplier for summary view, support drill-down to individual bills.
 
 **Redis Caching Strategy**: Implement Redis caching for aging reports to optimize performance. Cache key pattern: `ap-aging:{supplierId}:{periodId}:{asOfDate}`. TTL: 5 minutes. Invalidate cache on:
+
 - Bill post/update (status change to POSTED, remaining_balance update)
 - Payment post (remaining_balance update)
 - Period close (aging data changes)
@@ -231,6 +244,7 @@ This story implements AP aging reports and overdue alerts functionality, enablin
 Use Spring Cache abstraction with `@Cacheable` and `@CacheEvict` annotations.
 
 **RBAC Filtering**: Enforce role-based access control at service and API levels:
+
 - CFO and Chief Accountant: See all aging data (no filtering)
 - AP Clerk: Limited to assigned/own suppliers (filter by supplier assignments)
 - Filter applied at database query level for performance
@@ -244,6 +258,7 @@ Use Spring Cache abstraction with `@Cacheable` and `@CacheEvict` annotations.
 ### Project Structure Notes
 
 Follow the established project structure patterns for feature organization:
+
 - Backend services organized under `service/` and `service/impl/ap/` packages
 - Frontend features organized under `features/accounting/pages/APAging/` following feature-first structure
 - Shared components in `components/ap-aging/` for reusable aging report components
@@ -257,6 +272,7 @@ Follow the established project structure patterns for feature organization:
 ### Source Tree Components
 
 **Backend Extensions**:
+
 - `backend/src/main/java/com/accounting/service/APAgingService.java` - Aging calculation service
 - `backend/src/main/java/com/accounting/service/APAgingAlertService.java` - Alert/reminder service
 - `backend/src/main/java/com/accounting/service/impl/ap/APAgingServiceImpl.java` - Aging service implementation
@@ -269,6 +285,7 @@ Follow the established project structure patterns for feature organization:
 - Extend existing `PurchaseBillRepository` and `PaymentRepository` for aging queries
 
 **Frontend Extensions**:
+
 - `frontend/src/features/accounting/pages/APAging/APAgingReport.tsx` - Aging report page
 - `frontend/src/features/accounting/pages/APAging/AgingBillDetailsDialog.tsx` - Drill-down dialog
 - `frontend/src/components/ap-aging/APAgingBadge.tsx` - Dashboard badge component
@@ -280,6 +297,7 @@ Follow the established project structure patterns for feature organization:
 ### Testing Standards Summary
 
 Follow testing patterns established in Stories 4.1, 4.2, and 4.3:
+
 - Use TestContainers with PostgreSQL for integration tests
 - Mock Redis cache in unit tests, use real Redis in integration tests
 - Test aging bucket calculation with various scenarios (all buckets, edge cases, partial payments)
@@ -294,16 +312,19 @@ Follow testing patterns established in Stories 4.1, 4.2, and 4.3:
 ### References
 
 **Primary Requirements**:
+
 - docs/epics/epic-4-accounts-payable-ap-module.md#story-44-ap-aging-and-overdue-alerts (epic-level context and requirements)
 - docs/sprint-artifacts/tech-spec-epic-4.md#story-44-ap-aging-and-overdue-alerts (detailed acceptance criteria)
 - docs/sprint-artifacts/tech-spec-epic-4.md#ap-aging-calculation-flow (Mermaid flowchart)
 
 **Previous Story Patterns**:
+
 - docs/sprint-artifacts/stories/4-1-purchase-bills-entry-edit-and-draft-management.md (service patterns, RBAC, audit logging)
 - docs/sprint-artifacts/stories/4-2-purchase-bill-approval-workflow-maker-checker.md (approval workflow, status tracking)
 - docs/sprint-artifacts/stories/4-3-cash-payments-linked-to-bills-standalone.md (payment allocation, remaining_balance calculation, Redis caching patterns)
 
 **Architecture Documentation**:
+
 - docs/architecture/data-architecture.md (purchase_bills and ap_payments table schema)
 - docs/architecture/security-architecture.md (RBAC patterns)
 - docs/architecture/performance-considerations.md (caching strategy, database optimization)
@@ -326,51 +347,62 @@ Follow testing patterns established in Stories 4.1, 4.2, and 4.3:
 ## File List
 
 **Backend Services:**
+
 - `backend/src/main/java/com/accounting/service/APAgingService.java` (new)
 - `backend/src/main/java/com/accounting/service/APAgingAlertService.java` (new)
 - `backend/src/main/java/com/accounting/service/impl/ap/APAgingServiceImpl.java` (new)
 - `backend/src/main/java/com/accounting/service/impl/ap/APAgingAlertServiceImpl.java` (new)
 
 **Backend Controllers:**
+
 - `backend/src/main/java/com/accounting/controller/ap/APAgingController.java` (new)
 
 **Backend DTOs:**
+
 - `backend/src/main/java/com/accounting/dto/APAgingReportDTO.java` (new)
 - `backend/src/main/java/com/accounting/dto/APAgingBucketDTO.java` (new)
 - `backend/src/main/java/com/accounting/dto/AgingBillDetailsDTO.java` (new)
 - `backend/src/main/java/com/accounting/dto/ReminderRequestDTO.java` (new)
 
 **Backend Configuration:**
+
 - `backend/src/main/java/com/accounting/config/CacheConfig.java` (updated - add Redis cache configuration for aging reports)
 
 **Backend Tests:**
+
 - `backend/src/test/java/com/accounting/service/impl/ap/APAgingServiceImplTest.java` (new)
 - `backend/src/test/java/com/accounting/service/impl/ap/APAgingAlertServiceImplTest.java` (new)
 - `backend/src/test/java/com/accounting/service/impl/ap/APAgingCachingTest.java` (new)
 - `backend/src/test/java/com/accounting/integration/APAgingIntegrationTest.java` (new)
 
 **Frontend Tests:**
+
 - `frontend/src/features/accounting/pages/APAging/__tests__/APAgingReport.test.tsx` (new)
 - `frontend/src/components/ap-aging/__tests__/APAgingBadge.test.tsx` (new)
 - `frontend/src/components/ap-aging/__tests__/ReminderDialog.test.tsx` (new)
 
 **Frontend Types:**
+
 - `frontend/src/types/apAging.ts` (new)
 
 **Frontend Services:**
+
 - `frontend/src/services/apAging.ts` (new)
 
 **Frontend Pages:**
+
 - `frontend/src/features/accounting/pages/APAging/APAgingReport.tsx` (new)
 - `frontend/src/features/accounting/pages/APAging/index.ts` (new)
 
 **Frontend Components:**
+
 - `frontend/src/components/ap-aging/APAgingBadge.tsx` (new)
 - `frontend/src/components/ap-aging/AgingBillDetailsDialog.tsx` (new)
 - `frontend/src/components/ap-aging/ReminderDialog.tsx` (new)
 - `frontend/src/components/ap-aging/index.ts` (new)
 
 **Frontend Routes (Modified):**
+
 - `frontend/src/features/accounting/index.ts` (modified)
 - `frontend/src/routes/AppRoutes.tsx` (modified)
 - `frontend/src/features/dashboard/pages/Dashboard.tsx` (modified - add APAgingBadge)
@@ -378,6 +410,7 @@ Follow testing patterns established in Stories 4.1, 4.2, and 4.3:
 ## Dev Agent Record
 
 ### Debug Log
+
 - Investigated Flyway migration failure caused by trigger script referencing `payment_allocations` before the table existed. Fixed by renaming the trigger migration to `V20251209__add_overpayment_prevention_trigger.sql` so it executes after `V20251208__create_ap_payments.sql`.
 - Integration tests initially failed due to missing company context and validation fields. Updated `APAgingIntegrationTest` to seed company code, set `CompanyContext`, and populate required user/purchase-bill attributes.
 - Addressed Mockito strictness and SecurityContext requirements in `APAgingServiceImplTest` and `APAgingAlertServiceImplTest` by providing explicit stubs for `findById`, supplier lists, and authority lookups.
@@ -385,8 +418,9 @@ Follow testing patterns established in Stories 4.1, 4.2, and 4.3:
 - Created component-level Vitest suites for `APAgingReport`, `APAgingBadge`, and `ReminderDialog`, stubbing Radix `Select` + shadcn dependencies and mocking toast/navigation side effects to keep jsdom stable.
 
 ### Completion Notes
+
 - Added comprehensive unit tests for `APAgingServiceImpl` and `APAgingAlertServiceImpl`, plus end-to-end controller coverage via `APAgingIntegrationTest` (spins up full Spring Boot + Flyway + Testcontainers PostgreSQL).
-- Verified command suite: `mvn test -Dtest=APAgingServiceImplTest,APAgingAlertServiceImplTest,APAgingIntegrationTest` and `pnpm vitest run src/features/accounting/pages/APAging/__tests__/APAgingReport.test.tsx src/components/ap-aging/__tests__/APAgingBadge.test.tsx src/components/ap-aging/__tests__/ReminderDialog.test.tsx`.
+- Verified command suite: `mvnd test -Dtest=APAgingServiceImplTest,APAgingAlertServiceImplTest,APAgingIntegrationTest` and `pnpm vitest run src/features/accounting/pages/APAging/__tests__/APAgingReport.test.tsx src/components/ap-aging/__tests__/APAgingBadge.test.tsx src/components/ap-aging/__tests__/ReminderDialog.test.tsx`.
 - Outstanding follow-ups: PDF export implementation, cache invalidation on period close, alert scheduling UI/configuration.
 
 ## Change Log
@@ -411,46 +445,48 @@ The AP Aging implementation has a solid foundation with comprehensive service la
 ## Key Findings
 
 ### HIGH SEVERITY ISSUES
+
 1. **CRITICAL: Aging bucket calculation logic is backward** - `APAgingServiceImpl.java:93` calculates `daysDiff = ChronoUnit.DAYS.between(dueDate, currentDate)` which produces negative values for overdue bills, causing incorrect bucket assignments
 2. **CRITICAL: PDF export not implemented** - Throws `UnsupportedOperationException` despite being required by AC #4
 3. **MEDIUM: Missing cache invalidation on period close** - Cache invalidation for period close not implemented as mentioned in task
 
 ### MEDIUM SEVERITY ISSUES
+
 4. Alert scheduling functionality missing (deferred per task notes)
 5. Some TODOs and placeholder code in production implementation
 
 ## Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC #1 | Aging buckets: Current, 1–30d, 31–60d, 61–90d, >90d; per supplier | **MISSING** | `APAgingServiceImpl.java:93` - logic error makes calculation incorrect |
-| AC #2 | Lists/badges overdue suppliers and bill totals; sort/filter by segment | IMPLEMENTED | `APAgingServiceImpl.java:192`, `APAgingReport.tsx:69` |
-| AC #3 | Drill-down from bucket → bill/payment history; filters by status/period | IMPLEMENTED | `APAgingServiceImpl.java:282`, `AgingBillDetailsDialog.tsx` |
-| AC #4 | Exportable to Excel/PDF with applied snapshot filters/criteria | **PARTIAL** | Excel implemented, PDF throws `UnsupportedOperationException` at `APAgingServiceImpl.java:523` |
-| AC #5 | Dashboard badge: count of overdue payables and top overdue suppliers | IMPLEMENTED | `APAgingServiceImpl.java:221`, `APAgingBadge.tsx` |
-| AC #6 | "Remind" triggers in-app/email, with audit log; batch send | IMPLEMENTED | `APAgingAlertServiceImpl.java:47`, `ReminderDialog.tsx` |
-| AC #7 | Alerts auto-notify relevant roles per schedule/config | DEFERRED | Marked as deferred in task notes |
-| AC #8 | RBAC: CFO/Chief see all; AP clerk limited to assigned/own | IMPLEMENTED | `APAgingServiceImpl.java:555`, `@PreAuthorize` annotations |
-| AC #9 | Do not display/aggregate deleted/reversed bills; partial payments shown remaining only | IMPLEMENTED | `APAgingServiceImpl.java:531`, remaining balance calculation |
-| AC #10 | All alert, view, export events logged with initiator/user | IMPLEMENTED | `APAgingController.java:46`, audit logging throughout |
+| AC#    | Description                                                                            | Status      | Evidence                                                                                       |
+| ------ | -------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------- |
+| AC #1  | Aging buckets: Current, 1–30d, 31–60d, 61–90d, >90d; per supplier                      | **MISSING** | `APAgingServiceImpl.java:93` - logic error makes calculation incorrect                         |
+| AC #2  | Lists/badges overdue suppliers and bill totals; sort/filter by segment                 | IMPLEMENTED | `APAgingServiceImpl.java:192`, `APAgingReport.tsx:69`                                          |
+| AC #3  | Drill-down from bucket → bill/payment history; filters by status/period                | IMPLEMENTED | `APAgingServiceImpl.java:282`, `AgingBillDetailsDialog.tsx`                                    |
+| AC #4  | Exportable to Excel/PDF with applied snapshot filters/criteria                         | **PARTIAL** | Excel implemented, PDF throws `UnsupportedOperationException` at `APAgingServiceImpl.java:523` |
+| AC #5  | Dashboard badge: count of overdue payables and top overdue suppliers                   | IMPLEMENTED | `APAgingServiceImpl.java:221`, `APAgingBadge.tsx`                                              |
+| AC #6  | "Remind" triggers in-app/email, with audit log; batch send                             | IMPLEMENTED | `APAgingAlertServiceImpl.java:47`, `ReminderDialog.tsx`                                        |
+| AC #7  | Alerts auto-notify relevant roles per schedule/config                                  | DEFERRED    | Marked as deferred in task notes                                                               |
+| AC #8  | RBAC: CFO/Chief see all; AP clerk limited to assigned/own                              | IMPLEMENTED | `APAgingServiceImpl.java:555`, `@PreAuthorize` annotations                                     |
+| AC #9  | Do not display/aggregate deleted/reversed bills; partial payments shown remaining only | IMPLEMENTED | `APAgingServiceImpl.java:531`, remaining balance calculation                                   |
+| AC #10 | All alert, view, export events logged with initiator/user                              | IMPLEMENTED | `APAgingController.java:46`, audit logging throughout                                          |
 
 **Summary:** 8 of 10 acceptance criteria implemented, 1 critical logic error, 1 partial implementation
 
 ## Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Backend: Create APAgingService and aging calculation logic | ✅ | **NOT DONE** | Critical logic error at `APAgingServiceImpl.java:93` |
-| Backend: Redis caching implementation | ✅ | IMPLEMENTED | Cache annotations and Redis configuration present |
-| Backend: Aging report controller and API | ✅ | IMPLEMENTED | `APAgingController.java` with all endpoints |
-| Backend: Drill-down to bill/payment history | ✅ | IMPLEMENTED | `getAgingBillDetails` method implemented |
-| Backend: Export functionality | ✅ | **PARTIAL** | Excel working, PDF throws exception |
-| Backend: Reminder and alert service | ✅ | IMPLEMENTED | `APAgingAlertServiceImpl.java` functional |
-| Frontend: Aging report component | ✅ | IMPLEMENTED | `APAgingReport.tsx` with full functionality |
-| Frontend: Drill-down bill/payment history component | ✅ | IMPLEMENTED | `AgingBillDetailsDialog.tsx` |
-| Frontend: Dashboard badge component | ✅ | IMPLEMENTED | `APAgingBadge.tsx` |
-| Frontend: Reminder and alert UI | ✅ | IMPLEMENTED | `ReminderDialog.tsx` |
-| Testing: Unit and integration tests | ✅ | IMPLEMENTED | Test suites passing, coverage adequate |
+| Task                                                       | Marked As | Verified As  | Evidence                                             |
+| ---------------------------------------------------------- | --------- | ------------ | ---------------------------------------------------- |
+| Backend: Create APAgingService and aging calculation logic | ✅        | **NOT DONE** | Critical logic error at `APAgingServiceImpl.java:93` |
+| Backend: Redis caching implementation                      | ✅        | IMPLEMENTED  | Cache annotations and Redis configuration present    |
+| Backend: Aging report controller and API                   | ✅        | IMPLEMENTED  | `APAgingController.java` with all endpoints          |
+| Backend: Drill-down to bill/payment history                | ✅        | IMPLEMENTED  | `getAgingBillDetails` method implemented             |
+| Backend: Export functionality                              | ✅        | **PARTIAL**  | Excel working, PDF throws exception                  |
+| Backend: Reminder and alert service                        | ✅        | IMPLEMENTED  | `APAgingAlertServiceImpl.java` functional            |
+| Frontend: Aging report component                           | ✅        | IMPLEMENTED  | `APAgingReport.tsx` with full functionality          |
+| Frontend: Drill-down bill/payment history component        | ✅        | IMPLEMENTED  | `AgingBillDetailsDialog.tsx`                         |
+| Frontend: Dashboard badge component                        | ✅        | IMPLEMENTED  | `APAgingBadge.tsx`                                   |
+| Frontend: Reminder and alert UI                            | ✅        | IMPLEMENTED  | `ReminderDialog.tsx`                                 |
+| Testing: Unit and integration tests                        | ✅        | IMPLEMENTED  | Test suites passing, coverage adequate               |
 
 **Summary:** 1 task falsely marked complete (aging calculation logic), 1 task partially complete (export functionality)
 
@@ -479,11 +515,13 @@ The AP Aging implementation has a solid foundation with comprehensive service la
 ## Action Items
 
 ### Code Changes Required:
+
 - [ ] **[HIGH] Fix aging bucket calculation logic** (AC #1) [file: backend/src/main/java/com/accounting/service/impl/ap/APAgingServiceImpl.java:93]
 - [ ] **[HIGH] Implement PDF export functionality** (AC #4) [file: backend/src/main/java/com/accounting/service/impl/ap/APAgingServiceImpl.java:523]
 - [ ] **[MEDIUM] Add cache invalidation on period close** (Backend cache task) [file: backend/src/main/java/com/accounting/service/impl/ap/APAgingServiceImpl.java]
 
 ### Advisory Notes:
+
 - Note: Consider implementing alert scheduling functionality for future iterations
 - Note: The foundation is solid - once logic error is fixed, implementation will be robust
 - Note: Tests should be updated to catch aging calculation edge cases
@@ -499,8 +537,9 @@ The AP Aging implementation has a solid foundation with comprehensive service la
 ### Summary
 
 Comprehensive re-review confirms that all HIGH and MEDIUM severity issues identified in the previous review (2025-11-18) have been successfully resolved. The AP Aging implementation is now production-ready with:
+
 - ✅ Correct aging bucket calculation logic
-- ✅ Complete PDF export functionality  
+- ✅ Complete PDF export functionality
 - ✅ Redis cache invalidation on period close
 - ✅ All unit, integration, and component tests passing
 - ✅ Proper RBAC enforcement and audit logging
@@ -510,6 +549,7 @@ Comprehensive re-review confirms that all HIGH and MEDIUM severity issues identi
 **All previous action items have been successfully resolved:**
 
 #### ✅ [HIGH] Fixed aging bucket calculation logic (AC #1)
+
 - **Previous Issue:** `APAgingServiceImpl.java:93` calculated `daysDiff = ChronoUnit.DAYS.between(dueDate, currentDate)` producing negative values for overdue bills
 - **Resolution:** Logic corrected at line 96. Now properly calculates overdue days as positive values: `long daysDiff = ChronoUnit.DAYS.between(dueDate, currentDate)` with clear comments explaining that positive values indicate overdue bills
 - **Evidence:** `APAgingServiceImpl.java:94-117` - Aging bucket assignment logic correctly handles:
@@ -517,23 +557,25 @@ Comprehensive re-review confirms that all HIGH and MEDIUM severity issues identi
   - 1-30d overdue: `overdueDays <= 30` (lines 105-106)
   - 31-60d overdue: `overdueDays <= 60` (lines 107-108)
   - 61-90d overdue: `overdueDays <= 90` (lines 109-110)
-  - >90d overdue: `overdueDays > 90` (lines 111-113)
+  - > 90d overdue: `overdueDays > 90` (lines 111-113)
 - **Test Coverage:** All unit and integration tests passing, including edge cases
 
 #### ✅ [HIGH] Implemented PDF export functionality (AC #4)
+
 - **Previous Issue:** PDF export threw `UnsupportedOperationException` at `APAgingServiceImpl.java:523`
 - **Resolution:** Complete text-based PDF export implementation at lines 523-572 with:
   - Structured report format with header, criteria, and data rows
   - Applied filters (supplier, period, asOfDate, status, bucket) included in export
   - Snapshot timestamp and metadata
   - UTF-8 encoding for Vietnamese characters
-- **Evidence:** 
+- **Evidence:**
   - `APAgingServiceImpl.java:397-403` - Export routing logic checks format and calls `exportToPDF()`
   - `APAgingServiceImpl.java:523-572` - Complete `exportToPDF()` method implementation
   - Production-grade implementation suitable for MVP (documented with comment noting future enhancement to full PDF library if needed)
 - **Audit Compliance:** Export events logged via `AuditService` as required by AC #10
 
 #### ✅ [MEDIUM] Added cache invalidation on period close
+
 - **Previous Issue:** Cache invalidation for period close not implemented
 - **Resolution:** Dedicated method `invalidateAgingCacheOnPeriodClose(UUID periodId)` implemented at line 676 with:
   - `@CacheEvict` annotation clearing all aging report cache entries
@@ -546,39 +588,43 @@ Comprehensive re-review confirms that all HIGH and MEDIUM severity issues identi
 
 Re-validation of all 10 acceptance criteria:
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC #1 | Aging buckets: Current, 1–30d, 31–60d, 61–90d, >90d; per supplier | ✅ **IMPLEMENTED** | `APAgingServiceImpl.java:94-117` - Correct bucket calculation logic |
-| AC #2 | Lists/badges overdue suppliers and bill totals; sort/filter by segment | ✅ IMPLEMENTED | `APAgingServiceImpl.java:192-237`, `APAgingReport.tsx` |
-| AC #3 | Drill-down from bucket → bill/payment history; filters by status/period | ✅ IMPLEMENTED | `APAgingServiceImpl.java:282-357`, `AgingBillDetailsDialog.tsx` |
-| AC #4 | Exportable to Excel/PDF with applied snapshot filters/criteria | ✅ **IMPLEMENTED** | Excel: `APAgingServiceImpl.java:408-514`, PDF: `APAgingServiceImpl.java:523-572` |
-| AC #5 | Dashboard badge: count of overdue payables and top overdue suppliers | ✅ IMPLEMENTED | `APAgingServiceImpl.java:221-237`, `APAgingBadge.tsx` |
-| AC #6 | "Remind" triggers in-app/email, with audit log; batch send | ✅ IMPLEMENTED | `APAgingAlertServiceImpl.java:47-109`, `ReminderDialog.tsx` |
-| AC #7 | Alerts auto-notify relevant roles per schedule/config | ⚠️ DEFERRED | Marked as deferred in tasks (lines 164, 165, 202-206) - acceptable for MVP |
-| AC #8 | RBAC: CFO/Chief see all; AP clerk limited to assigned/own | ✅ IMPLEMENTED | `APAgingServiceImpl.java:610-626`, `@PreAuthorize` annotations throughout |
-| AC #9 | Do not display/aggregate deleted/reversed bills; partial payments shown remaining only | ✅ IMPLEMENTED | `APAgingServiceImpl.java:577-594` filters by status, remaining balance calculation |
-| AC #10 | All alert, view, export events logged with initiator/user | ✅ IMPLEMENTED | `APAgingController.java` audit logging throughout |
+| AC#    | Description                                                                            | Status             | Evidence                                                                           |
+| ------ | -------------------------------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------- |
+| AC #1  | Aging buckets: Current, 1–30d, 31–60d, 61–90d, >90d; per supplier                      | ✅ **IMPLEMENTED** | `APAgingServiceImpl.java:94-117` - Correct bucket calculation logic                |
+| AC #2  | Lists/badges overdue suppliers and bill totals; sort/filter by segment                 | ✅ IMPLEMENTED     | `APAgingServiceImpl.java:192-237`, `APAgingReport.tsx`                             |
+| AC #3  | Drill-down from bucket → bill/payment history; filters by status/period                | ✅ IMPLEMENTED     | `APAgingServiceImpl.java:282-357`, `AgingBillDetailsDialog.tsx`                    |
+| AC #4  | Exportable to Excel/PDF with applied snapshot filters/criteria                         | ✅ **IMPLEMENTED** | Excel: `APAgingServiceImpl.java:408-514`, PDF: `APAgingServiceImpl.java:523-572`   |
+| AC #5  | Dashboard badge: count of overdue payables and top overdue suppliers                   | ✅ IMPLEMENTED     | `APAgingServiceImpl.java:221-237`, `APAgingBadge.tsx`                              |
+| AC #6  | "Remind" triggers in-app/email, with audit log; batch send                             | ✅ IMPLEMENTED     | `APAgingAlertServiceImpl.java:47-109`, `ReminderDialog.tsx`                        |
+| AC #7  | Alerts auto-notify relevant roles per schedule/config                                  | ⚠️ DEFERRED        | Marked as deferred in tasks (lines 164, 165, 202-206) - acceptable for MVP         |
+| AC #8  | RBAC: CFO/Chief see all; AP clerk limited to assigned/own                              | ✅ IMPLEMENTED     | `APAgingServiceImpl.java:610-626`, `@PreAuthorize` annotations throughout          |
+| AC #9  | Do not display/aggregate deleted/reversed bills; partial payments shown remaining only | ✅ IMPLEMENTED     | `APAgingServiceImpl.java:577-594` filters by status, remaining balance calculation |
+| AC #10 | All alert, view, export events logged with initiator/user                              | ✅ IMPLEMENTED     | `APAgingController.java` audit logging throughout                                  |
 
 **Summary:** 9 of 10 acceptance criteria fully implemented. AC #7 (scheduled alerts) deferred per MVP scope - acceptable as manual reminders (AC #6) are fully functional.
 
 ### Test Results - All Passing ✅
 
 **Backend Tests:**
+
 ```
 ✅ APAgingServiceImplTest - 7/7 tests passing
-✅ APAgingAlertServiceImplTest - All tests passing  
+✅ APAgingAlertServiceImplTest - All tests passing
 ✅ APAgingIntegrationTest - Full integration tests passing
 ```
-- Command: `mvn test -Dtest=APAgingServiceImplTest,APAgingAlertServiceImplTest,APAgingIntegrationTest`
+
+- Command: `mvnd test -Dtest=APAgingServiceImplTest,APAgingAlertServiceImplTest,APAgingIntegrationTest`
 - Exit code: 0 (success)
 - Coverage: Adequate for service layer and critical flows
 
 **Frontend Tests:**
+
 ```
 ✅ APAgingReport.test.tsx - 3/3 tests passing
-✅ APAgingBadge.test.tsx - 3/3 tests passing  
+✅ APAgingBadge.test.tsx - 3/3 tests passing
 ✅ ReminderDialog.test.tsx - 3/3 tests passing
 ```
+
 - Command: `pnpm vitest run src/features/accounting/pages/APAging/__tests__/APAgingReport.test.tsx src/components/ap-aging/__tests__/APAgingBadge.test.tsx src/components/ap-aging/__tests__/ReminderDialog.test.tsx`
 - Exit code: 0 (success)
 - Total: 9/9 tests passing
@@ -586,6 +632,7 @@ Re-validation of all 10 acceptance criteria:
 ### Code Quality Assessment
 
 **Strengths:**
+
 - ✅ Clean architecture with proper separation of concerns (service/controller/repository layers)
 - ✅ Comprehensive error handling and validation
 - ✅ Detailed logging for debugging and audit trails
@@ -595,6 +642,7 @@ Re-validation of all 10 acceptance criteria:
 - ✅ Consistent naming conventions following project standards
 
 **Acceptable Limitations for MVP:**
+
 - Note: TODO at line 622 for supplier assignments (AP Clerk sees all suppliers for now - RBAC company filtering still enforced, fine-grained supplier assignments deferred)
 - Note: TODO at line 67 for email integration (awaiting generic email service - reminders log to audit trail for now)
 - Note: TODO at line 169 for scheduled alerts (deferred per AC #7 task notes - manual reminders fully functional)
@@ -604,34 +652,40 @@ These TODOs represent future enhancements beyond MVP scope and do not impact cor
 ### Architecture & Security Review
 
 **Multi-Tenancy:** ✅ Excellent
+
 - All queries properly scoped by `companyId` via `CompanyContext`
 - No cross-company data leakage possible
 - Automatic filtering at repository level
 
-**RBAC Enforcement:** ✅ Excellent  
+**RBAC Enforcement:** ✅ Excellent
+
 - Method-level security via `@PreAuthorize` annotations
 - Role-based data filtering implemented
 - Company-scoped access control enforced
 
 **Caching Strategy:** ✅ Excellent
+
 - Redis caching with 5-minute TTL as specified
 - Cache key pattern: `ap-aging:{supplierId}:{periodId}:{asOfDate}`
 - Proper cache invalidation on bill/payment changes AND period close
 - Fallback to database on cache miss
 
 **Performance:** ✅ Good
+
 - Efficient database queries with proper indexing
 - Pagination support for large result sets
 - Eager loading with `@EntityGraph` to avoid N+1 queries
 - Remaining balance calculation optimized
 
 **Audit Compliance:** ✅ Excellent
+
 - All operations logged with user, timestamp, IP
 - Export events include format and filter details
 - Reminder/alert events captured with recipients
 - Immutable audit trail as required by AC #10
 
 **Security:** ✅ No concerns identified
+
 - Input validation present
 - SQL injection prevented via JPA parameterized queries
 - No sensitive data exposure in logs
@@ -640,6 +694,7 @@ These TODOs represent future enhancements beyond MVP scope and do not impact cor
 ### Deployment Readiness
 
 **Pre-Deployment Checklist:**
+
 - ✅ All acceptance criteria satisfied (9/10, 1 deferred per MVP scope)
 - ✅ All critical and high-priority action items resolved
 - ✅ Unit tests passing (100% of test suite)
@@ -652,6 +707,7 @@ These TODOs represent future enhancements beyond MVP scope and do not impact cor
 - ✅ Database migrations tested (Flyway)
 
 **Recommended Post-Deployment Actions:**
+
 1. Monitor aging report generation times in production (target < 5s per tech spec)
 2. Monitor Redis cache hit/miss rates (should be high after warm-up)
 3. Verify audit log entries for aging operations
@@ -669,6 +725,7 @@ These TODOs represent future enhancements beyond MVP scope and do not impact cor
 The AP Aging and Overdue Alerts feature is complete, tested, and ready for production use. All critical issues from the previous review have been resolved with high-quality implementations. The code demonstrates excellent architecture, proper security controls, and comprehensive testing coverage.
 
 **Key Achievements:**
+
 - ✅ Mathematically correct aging bucket calculations
 - ✅ Complete export functionality (Excel + PDF)
 - ✅ Robust caching strategy with proper invalidation
@@ -679,4 +736,3 @@ The AP Aging and Overdue Alerts feature is complete, tested, and ready for produ
 **Next Story:** Story 4-4 is complete. Ready to proceed with Story 4-5 (Supplier Statement & Reconciliation) or Epic 4 retrospective.
 
 ---
-

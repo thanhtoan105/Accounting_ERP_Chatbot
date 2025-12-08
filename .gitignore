@@ -22,7 +22,7 @@ replay_pid*.log
 application-local.yml
 
 # Maven wrapper downloads (keep wrapper JAR/script committed)
-.mvn/timing.properties
+.mvnd/timing.properties
 
 # --- Node / Frontend (Vite/React) ---
 frontend/node_modules/

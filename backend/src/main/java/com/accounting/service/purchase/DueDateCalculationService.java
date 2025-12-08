@@ -51,4 +51,3 @@ public interface DueDateCalculationService {
    */
   Integer getDefaultPaymentTerms();
 }
-

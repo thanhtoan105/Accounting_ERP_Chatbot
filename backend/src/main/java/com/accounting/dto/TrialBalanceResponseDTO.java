@@ -134,4 +134,3 @@ public class TrialBalanceResponseDTO {
     this.isBalanced = isBalanced;
   }
 }
-

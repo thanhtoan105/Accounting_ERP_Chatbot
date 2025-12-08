@@ -1,6 +1,11 @@
 package com.accounting.entity;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,9 +20,6 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Default Account entity representing preset accounts for voucher types.
@@ -148,4 +150,3 @@ public class DefaultAccount implements CompanyScopedEntity {
     this.company = company;
   }
 }
-

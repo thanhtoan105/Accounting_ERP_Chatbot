@@ -845,7 +845,7 @@ Claude Opus 4
 
 ### Debug Log References
 
-- Backend tests: `mvn test -Dtest="StatutoryReportServiceImplTest,ReportMappingServiceImplTest"`
+- Backend tests: `mvnd test -Dtest="StatutoryReportServiceImplTest,ReportMappingServiceImplTest"`
 - E2E tests: `cd tests && npx playwright test statutory-reports.spec.ts report-mappings.spec.ts`
 
 ### Completion Notes List
@@ -927,10 +927,10 @@ Claude Opus 4
 
 ## Changelog
 
-| Date       | Author    | Changes                                                                                                                                                                                                                                                       |
-| ---------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2025-12-04 | SM Agent  | Initial full version created per Epic 7 spec                                                                                                                                                                                                                  |
-| 2025-12-04 | SM Agent  | **OPTIMIZED**: Reduced from 3 to 2 new tables by reusing `audit_logs` for mapping audit trail. Enhanced `report_mappings` schema with `is_current`, `level`, `is_calculated`, `formula`, `line_name_english` columns for better performance and i18n support. |
-| 2025-12-04 | Dev Agent | **BACKEND COMPLETE**: Tasks 1-8 implemented - migrations, entities, repositories, DTOs, services (Statutory, Mapping, DrillDown, Export), controllers with RBAC                                                                                               |
-| 2025-12-04 | Dev Agent | **FRONTEND COMPLETE**: Tasks 9-14 implemented - StatutoryReportsPage, ReportTable, DrillDownPanel, ReportMappingsPage, API services, i18n (EN/VI), routes                                                                                                     |
-| 2025-12-06 | Code Review | **REVIEW PASS**: Fixed doc gaps (added V20251205001 migration, VoucherLineRepository, ValidationDTO files to File List). Removed unused `truncate()` dead code. Deferred items: hardcoded Vietnamese in Excel (i18n enhancement), E2E tests (Task 16).         |
+| Date       | Author      | Changes                                                                                                                                                                                                                                                       |
+| ---------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2025-12-04 | SM Agent    | Initial full version created per Epic 7 spec                                                                                                                                                                                                                  |
+| 2025-12-04 | SM Agent    | **OPTIMIZED**: Reduced from 3 to 2 new tables by reusing `audit_logs` for mapping audit trail. Enhanced `report_mappings` schema with `is_current`, `level`, `is_calculated`, `formula`, `line_name_english` columns for better performance and i18n support. |
+| 2025-12-04 | Dev Agent   | **BACKEND COMPLETE**: Tasks 1-8 implemented - migrations, entities, repositories, DTOs, services (Statutory, Mapping, DrillDown, Export), controllers with RBAC                                                                                               |
+| 2025-12-04 | Dev Agent   | **FRONTEND COMPLETE**: Tasks 9-14 implemented - StatutoryReportsPage, ReportTable, DrillDownPanel, ReportMappingsPage, API services, i18n (EN/VI), routes                                                                                                     |
+| 2025-12-06 | Code Review | **REVIEW PASS**: Fixed doc gaps (added V20251205001 migration, VoucherLineRepository, ValidationDTO files to File List). Removed unused `truncate()` dead code. Deferred items: hardcoded Vietnamese in Excel (i18n enhancement), E2E tests (Task 16).        |

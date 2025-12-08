@@ -1,11 +1,8 @@
 package com.accounting.controller.admin;
 
-import com.accounting.dto.UpdateBasicCompanySettingsRequest;
-import com.accounting.entity.Company;
-import com.accounting.service.CompanyService;
-import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +13,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.accounting.dto.UpdateBasicCompanySettingsRequest;
+import com.accounting.entity.Company;
+import com.accounting.service.CompanyService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/admin/company")
@@ -57,5 +60,3 @@ public class CompanySettingsController {
     return ResponseEntity.ok(body);
   }
 }
-
-

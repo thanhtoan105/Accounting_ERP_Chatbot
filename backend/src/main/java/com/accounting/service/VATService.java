@@ -1,15 +1,16 @@
 package com.accounting.service;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import com.accounting.dto.InputVATReportDTO;
 import com.accounting.dto.VATCorrectionCreateRequest;
 import com.accounting.dto.VATCorrectionDTO;
 import com.accounting.dto.VATValidationResultDTO;
 import com.accounting.entity.PurchaseBill;
 import com.accounting.entity.VatRate;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Service interface for VAT validation, reporting, and corrections.

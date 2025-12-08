@@ -1,7 +1,8 @@
 package com.accounting.dto.reconciliation;
 
-import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Request DTO for manual match operation.

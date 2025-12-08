@@ -4,10 +4,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.annotation.DirtiesContext;
+
 import com.accounting.dto.APPaymentCreateRequest;
 import com.accounting.dto.PaymentAllocationRequest;
-import com.accounting.entity.AccountingPeriod;
 import com.accounting.entity.APPayment;
+import com.accounting.entity.AccountingPeriod;
 import com.accounting.entity.BankAccount;
 import com.accounting.entity.Company;
 import com.accounting.entity.CompanySettings;
@@ -35,21 +52,6 @@ import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.PaymentService;
 import com.accounting.test.IntegrationTest;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.annotation.DirtiesContext;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -376,4 +378,3 @@ class PaymentVoucherPostingIntegrationTest extends IntegrationTest {
     jdbcTemplate.execute("TRUNCATE TABLE chart_of_accounts RESTART IDENTITY CASCADE");
   }
 }
-

@@ -1,6 +1,9 @@
 package com.accounting.entity;
 
+import java.time.Instant;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,7 +16,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.time.Instant;
 
 /**
  * Customer entity for master data management.
@@ -168,5 +170,3 @@ public class Customer implements CompanyScopedEntity {
     this.updatedAt = updatedAt;
   }
 }
-
-
