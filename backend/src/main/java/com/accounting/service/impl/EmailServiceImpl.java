@@ -1,20 +1,23 @@
 package com.accounting.service.impl;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import com.accounting.service.EmailService;
 import com.resend.Resend;
 import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.Attachment;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
+
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -501,5 +504,31 @@ public class EmailServiceImpl implements EmailService {
           e);
       throw new RuntimeException("Failed to send AR statement email", e);
     }
+  }
+
+  @Override
+  public void sendScheduledReportEmail(
+      String recipientEmail,
+      com.accounting.entity.report.ReportSchedule schedule,
+      com.accounting.entity.report.ReportScheduleRun run,
+      java.util.List<com.accounting.dto.report.ReportDownloadLink> downloadLinks,
+      byte[] pdfAttachment) {
+    // Delegate to ReportDistributionService for scheduled report emails
+    // This method exists for interface compliance; actual implementation is in ReportDistributionServiceImpl
+    logger.warn(
+        "sendScheduledReportEmail called on EmailServiceImpl - this should be handled by ReportDistributionService. Recipient: {}, Schedule: {}",
+        recipientEmail,
+        schedule != null ? schedule.getName() : "null");
+  }
+
+  @Override
+  public void sendScheduleFailureNotification(
+      com.accounting.entity.report.ReportSchedule schedule,
+      com.accounting.entity.report.ReportScheduleRun run) {
+    // Delegate to ReportDistributionService for failure notifications
+    // This method exists for interface compliance; actual implementation is in ReportDistributionServiceImpl
+    logger.warn(
+        "sendScheduleFailureNotification called on EmailServiceImpl - this should be handled by ReportDistributionService. Schedule: {}",
+        schedule != null ? schedule.getName() : "null");
   }
 }
