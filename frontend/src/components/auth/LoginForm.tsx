@@ -95,8 +95,7 @@ export function LoginForm({ className, accountCreated, onSuccess, ...props }: Lo
         setTimeout(() => onSuccess(response.user), 1500)
       } else {
         setTimeout(() => {
-          const hasNoCompany = userCompanyId == null || userCompanyId === 0
-          navigate(hasNoCompany ? '/company' : '/')
+          navigate('/')
         }, 1500)
       }
     } catch (err) {

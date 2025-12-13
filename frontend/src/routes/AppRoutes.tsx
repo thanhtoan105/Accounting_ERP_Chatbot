@@ -4,7 +4,9 @@ import { Dashboard as AnalyticsDashboard } from '@/features/analytics'
 import { CompanySettings } from '@/features/company'
 import { Login, ForgotPassword, ResetPassword } from '@/features/auth'
 import { UserManagement } from '@/features/users'
+import { TenantManagementPage } from '@/features/admin'
 import UserProfile from '@/pages/UserProfile'
+import AwaitingCompanyPage from '@/pages/AwaitingCompanyPage'
 import {
   VoucherTypeList,
   ChartOfAccounts,
@@ -45,6 +47,7 @@ import {
   ReportMappingsPage,
   ScheduleManagementPage,
   ReportCenterPage,
+  MultiPeriodComparisonPage,
 } from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
@@ -64,6 +67,28 @@ export default function AppRoutes() {
 
       {/* Public invitation route */}
       <Route path="/invite/:token" element={<AcceptInvitation />} />
+
+      {/* Protected - Awaiting company (for users without company assignment) */}
+      <Route
+        path="/awaiting-company"
+        element={
+          <ProtectedLayout>
+            <AwaitingCompanyPage />
+          </ProtectedLayout>
+        }
+      />
+
+      {/* Super Admin routes */}
+      <Route
+        path="/admin/tenants"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['super_admin']}>
+              <TenantManagementPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
 
       {/* Protected */}
       <Route
@@ -478,6 +503,16 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
               <StatutoryReportsPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/reports/comparison"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
+              <MultiPeriodComparisonPage />
             </RoleGuard>
           </ProtectedLayout>
         }

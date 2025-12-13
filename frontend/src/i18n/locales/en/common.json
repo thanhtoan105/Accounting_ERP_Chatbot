@@ -35,7 +35,9 @@
     "statutoryReports": "Statutory Reports",
     "reportMappings": "Report Mappings",
     "reportSchedules": "Report Schedules",
-    "reportCenter": "Report Center"
+    "reportCenter": "Report Center",
+    "multiPeriodComparison": "Multi-Period Comparison",
+    "tenantManagement": "Tenant Management"
   },
   "auth": {
     "login": "Log in",
@@ -1174,5 +1176,57 @@
     "duration": "Duration",
     "queuedAt": "Queued At",
     "triggeredBy": "Triggered By"
+  },
+  "multiPeriodComparison": {
+    "title": "Multi-Period Comparison",
+    "subtitle": "Compare financial reports across multiple periods with variance analysis",
+    "selectPeriods": "Select periods to compare (max 4)",
+    "variance": "Variance",
+    "variancePercent": "Variance %",
+    "favorable": "Favorable",
+    "unfavorable": "Unfavorable",
+    "neutral": "Neutral",
+    "material": "Material variance",
+    "hideZeros": "Hide zero values",
+    "hideImmaterial": "Hide immaterial variances",
+    "showSparklines": "Show trend sparklines",
+    "hiddenLines": "{{count}} lines hidden",
+    "noPeriodsSelected": "Select at least one period to generate a comparison report",
+    "draftPeriodWarning": "One or more selected periods are still open. Values may change.",
+    "presets": {
+      "yoy": "Year-over-Year",
+      "mom": "Month-over-Month",
+      "quarterly": "Last 4 Quarters",
+      "custom": "Custom Selection"
+    },
+    "reportOptions": "Report Options",
+    "configureParams": "Configure comparison parameters",
+    "periods": "Periods",
+    "displayOptions": "Display Options",
+    "trend": "Trend"
+  },
+  "comparisonSettings": {
+    "title": "Comparison Settings",
+    "description": "Configure thresholds and display preferences for multi-period comparison reports",
+    "thresholds": "Variance Thresholds",
+    "percentThreshold": "Percentage Threshold",
+    "percentThresholdHelp": "Lines with variance exceeding this percentage will be highlighted",
+    "absoluteThreshold": "Absolute Threshold (VND)",
+    "absoluteThresholdHelp": "Current value: {{value}}",
+    "defaultMode": "Default Comparison Mode",
+    "displayPreferences": "Display Preferences",
+    "showSparklines": "Show Sparklines",
+    "sparklinesHelp": "Display trend charts in comparison table",
+    "hideImmaterial": "Hide Immaterial by Default",
+    "hideImmaterialHelp": "Automatically hide lines below threshold when opening reports",
+    "saveSuccess": "Settings saved successfully",
+    "saveFailed": "Failed to save settings",
+    "loadError": "Failed to load comparison settings",
+    "modes": {
+      "yoy": "Year-over-Year",
+      "mom": "Month-over-Month",
+      "quarterly": "Quarterly",
+      "custom": "Custom"
+    }
   }
 }

@@ -26,6 +26,15 @@ public interface InvitationRepository
   Optional<Invitation> findByToken(String token);
 
   /**
+   * Find invitation by token hash (SHA-256).
+   * Preferred over findByToken for security.
+   *
+   * @param tokenHash SHA-256 hash of the invitation token
+   * @return invitation or empty
+   */
+  Optional<Invitation> findByTokenHash(String tokenHash);
+
+  /**
    * Find invitation by email and company ID.
    *
    * @param email user email

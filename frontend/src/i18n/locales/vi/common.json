@@ -35,7 +35,9 @@
     "statutoryReports": "Báo cáo Tài chính",
     "reportMappings": "Cấu hình Ánh xạ",
     "reportSchedules": "Lịch chạy báo cáo",
-    "reportCenter": "Trung tâm báo cáo"
+    "reportCenter": "Trung tâm báo cáo",
+    "multiPeriodComparison": "So sánh đa kỳ",
+    "tenantManagement": "Quản lý Tenant"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -1174,5 +1176,57 @@
     "duration": "Thời gian",
     "queuedAt": "Thời điểm xếp hàng",
     "triggeredBy": "Người kích hoạt"
+  },
+  "multiPeriodComparison": {
+    "title": "So sánh đa kỳ",
+    "subtitle": "So sánh báo cáo tài chính qua nhiều kỳ với phân tích chênh lệch",
+    "selectPeriods": "Chọn các kỳ để so sánh (tối đa 4)",
+    "variance": "Chênh lệch",
+    "variancePercent": "Chênh lệch %",
+    "favorable": "Thuận lợi",
+    "unfavorable": "Bất lợi",
+    "neutral": "Trung tính",
+    "material": "Chênh lệch trọng yếu",
+    "hideZeros": "Ẩn giá trị bằng 0",
+    "hideImmaterial": "Ẩn chênh lệch không trọng yếu",
+    "showSparklines": "Hiển thị biểu đồ xu hướng",
+    "hiddenLines": "{{count}} dòng đã ẩn",
+    "noPeriodsSelected": "Chọn ít nhất một kỳ để tạo báo cáo so sánh",
+    "draftPeriodWarning": "Một hoặc nhiều kỳ được chọn vẫn đang mở. Giá trị có thể thay đổi.",
+    "presets": {
+      "yoy": "So sánh cùng kỳ năm",
+      "mom": "So sánh tháng liên tiếp",
+      "quarterly": "4 quý gần nhất",
+      "custom": "Tùy chỉnh"
+    },
+    "reportOptions": "Tùy chọn báo cáo",
+    "configureParams": "Cấu hình tham số so sánh",
+    "periods": "Kỳ",
+    "displayOptions": "Tùy chọn hiển thị",
+    "trend": "Xu hướng"
+  },
+  "comparisonSettings": {
+    "title": "Cài đặt so sánh",
+    "description": "Cấu hình ngưỡng và tùy chọn hiển thị cho báo cáo so sánh đa kỳ",
+    "thresholds": "Ngưỡng chênh lệch",
+    "percentThreshold": "Ngưỡng phần trăm",
+    "percentThresholdHelp": "Các dòng có chênh lệch vượt ngưỡng này sẽ được đánh dấu",
+    "absoluteThreshold": "Ngưỡng tuyệt đối (VND)",
+    "absoluteThresholdHelp": "Giá trị hiện tại: {{value}}",
+    "defaultMode": "Chế độ so sánh mặc định",
+    "displayPreferences": "Tùy chọn hiển thị",
+    "showSparklines": "Hiển thị biểu đồ mini",
+    "sparklinesHelp": "Hiển thị biểu đồ xu hướng trong bảng so sánh",
+    "hideImmaterial": "Ẩn không trọng yếu theo mặc định",
+    "hideImmaterialHelp": "Tự động ẩn các dòng dưới ngưỡng khi mở báo cáo",
+    "saveSuccess": "Đã lưu cài đặt thành công",
+    "saveFailed": "Lưu cài đặt thất bại",
+    "loadError": "Tải cài đặt so sánh thất bại",
+    "modes": {
+      "yoy": "Cùng kỳ năm trước",
+      "mom": "Tháng liên tiếp",
+      "quarterly": "Theo quý",
+      "custom": "Tùy chỉnh"
+    }
   }
 }

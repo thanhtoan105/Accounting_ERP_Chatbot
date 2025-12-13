@@ -51,13 +51,13 @@ BEGIN;
 
 -- TimescaleDB requires partitioning column (created_at) to be part of primary key
 -- Drop existing primary key and recreate as composite key
-ALTER TABLE accounting.audit_logs DROP CONSTRAINT IF EXISTS audit_logs_pkey;
-ALTER TABLE accounting.audit_logs ADD PRIMARY KEY (id, created_at);
+ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS audit_logs_pkey;
+ALTER TABLE audit_logs ADD PRIMARY KEY (id, created_at);
 
 -- Convert existing audit_logs table to hypertable
 -- Partitioned by created_at column (monthly by default)
 SELECT create_hypertable(
-  'accounting.audit_logs',
+  'audit_logs',
   'created_at',
   if_not_exists => TRUE,
   migrate_data => TRUE
@@ -82,14 +82,14 @@ COMMIT;
 BEGIN;
 
 -- First, enable compression on the hypertable (required before adding policy)
-ALTER TABLE accounting.audit_logs SET (
+ALTER TABLE audit_logs SET (
   timescaledb.compress = true,
   timescaledb.compress_orderby = 'created_at DESC'
 );
 
 -- Add compression policy for chunks older than 30 days
 SELECT add_compression_policy(
-  'accounting.audit_logs',
+  'audit_logs',
   INTERVAL '30 days',
   if_not_exists => TRUE
 );
@@ -115,14 +115,14 @@ BEGIN;
 
 -- Delete audit logs older than 2 years automatically
 SELECT add_retention_policy(
-  'accounting.audit_logs',
+  'audit_logs',
   INTERVAL '2 years',
   if_not_exists => TRUE
 );
 
 -- Optional: For longer compliance requirements (7 years)
 -- SELECT add_retention_policy(
---   'accounting.audit_logs',
+--   'audit_logs',
 --   INTERVAL '7 years',
 --   if_not_exists => TRUE
 -- );
@@ -148,7 +148,7 @@ FROM timescaledb_information.hypertables
 WHERE hypertable_name = 'audit_logs';
 
 -- Get hypertable size information
-SELECT * FROM hypertable_detailed_size('accounting.audit_logs');
+SELECT * FROM hypertable_detailed_size('audit_logs');
 
 -- List all chunks (partitions)
 SELECT 
@@ -163,7 +163,7 @@ ORDER BY range_start DESC
 LIMIT 20;
 
 -- Estimate compression ratio (storage saved) using chunk_compression_stats function
-SELECT * FROM chunk_compression_stats('accounting.audit_logs');
+SELECT * FROM chunk_compression_stats('audit_logs');
 
 -- ============================================================================
 -- PERFORMANCE: Query examples showing hypertable advantages
@@ -171,7 +171,7 @@ SELECT * FROM chunk_compression_stats('accounting.audit_logs');
 
 -- Example 1: Find all logs for a specific company in last 30 days
 -- (Hypertable automatically prunes unnecessary chunks)
--- SELECT COUNT(*) FROM accounting.audit_logs
+-- SELECT COUNT(*) FROM audit_logs
 -- WHERE company_id = 42 
 --   AND created_at > CURRENT_TIMESTAMP - INTERVAL '30 days';
 -- Expected: ~50-100ms (compared to 500ms without hypertable)
@@ -182,7 +182,7 @@ SELECT * FROM chunk_compression_stats('accounting.audit_logs');
 --   time_bucket('1 month', created_at) AS month,
 --   COUNT(*) AS log_count,
 --   COUNT(DISTINCT company_id) AS unique_companies
--- FROM accounting.audit_logs
+-- FROM audit_logs
 -- GROUP BY month
 -- ORDER BY month DESC;
 
@@ -216,8 +216,8 @@ WHERE hypertable_name = 'audit_logs';
 -- BEGIN;
 -- 
 -- -- Drop hypertable policies
--- SELECT remove_compression_policy('accounting.audit_logs', if_exists => TRUE);
--- SELECT remove_retention_policy('accounting.audit_logs', if_exists => TRUE);
+-- SELECT remove_compression_policy('audit_logs', if_exists => TRUE);
+-- SELECT remove_retention_policy('audit_logs', if_exists => TRUE);
 -- 
 -- -- Detach hypertable (complex operation - not recommended after data accumulation)
 -- -- SELECT timescaledb_pre_restore();

@@ -123,6 +123,11 @@ public class CompanySettings implements CompanyScopedEntity {
   @Column(name = "numbering_config", columnDefinition = "JSONB")
   private String numberingConfig; // JSON: { "voucher": { "prefix": "VC", "sequence": 1 }, ... }
 
+  // Comparison settings section (stored as JSON)
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "comparison_settings", columnDefinition = "JSONB")
+  private String comparisonSettings; // JSON: { "varianceThresholdPercent": 10.0, "defaultComparisonMode": "YOY", ... }
+
   // Integrations section
   @Column(name = "bank_reconciliation_enabled", nullable = false)
   private Boolean bankReconciliationEnabled = false; // Placeholder
@@ -325,6 +330,14 @@ public class CompanySettings implements CompanyScopedEntity {
 
   public void setNumberingConfig(String numberingConfig) {
     this.numberingConfig = numberingConfig;
+  }
+
+  public String getComparisonSettings() {
+    return comparisonSettings;
+  }
+
+  public void setComparisonSettings(String comparisonSettings) {
+    this.comparisonSettings = comparisonSettings;
   }
 
   public Boolean getBankReconciliationEnabled() {

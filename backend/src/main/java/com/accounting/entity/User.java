@@ -60,6 +60,9 @@ public class User implements CompanyScopedEntity {
   @Column(name = "status", nullable = false, length = 20)
   private String status = "ACTIVE";
 
+  @Column(name = "is_super_admin", nullable = false)
+  private Boolean isSuperAdmin = false;
+
   @PrePersist
   public void prePersist() {
     if (createdAt == null) {
@@ -178,6 +181,27 @@ public class User implements CompanyScopedEntity {
 
   public void setStatus(String status) {
     this.status = status;
+  }
+
+  public Boolean getIsSuperAdmin() {
+    return isSuperAdmin;
+  }
+
+  public void setIsSuperAdmin(Boolean isSuperAdmin) {
+    this.isSuperAdmin = isSuperAdmin;
+  }
+
+  public boolean isSuperAdmin() {
+    return Boolean.TRUE.equals(isSuperAdmin);
+  }
+
+  /**
+   * Check if user requires a company context.
+   * Super admins don't require company, regular users do.
+   * @return true if company is required, false for super admins
+   */
+  public boolean requiresCompany() {
+    return !isSuperAdmin();
   }
 
   /**

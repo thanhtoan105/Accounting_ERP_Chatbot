@@ -3,7 +3,7 @@
  * Role values match backend: 'admin', 'accountant', 'chief_accountant', 'cfo'
  */
 
-export type Role = 'admin' | 'accountant' | 'chief_accountant' | 'cfo'
+export type Role = 'super_admin' | 'admin' | 'accountant' | 'chief_accountant' | 'cfo'
 
 /**
  * Check if user has a specific role.
@@ -41,6 +41,13 @@ export function isAdmin(userRole: string | null | undefined): boolean {
  */
 export function isChiefAccountant(userRole: string | null | undefined): boolean {
   return hasRole(userRole, 'chief_accountant')
+}
+
+/**
+ * Check if user is super admin.
+ */
+export function isSuperAdmin(userRole: string | null | undefined): boolean {
+  return hasRole(userRole, 'super_admin')
 }
 
 /**
@@ -84,6 +91,8 @@ export function canChangeRoles(userRole: string | null | undefined): boolean {
 export function getRoleDisplayName(role: string | null | undefined): string {
   if (!role) return 'Unknown'
   switch (role.toLowerCase()) {
+    case 'super_admin':
+      return 'Super Administrator'
     case 'admin':
       return 'Administrator'
     case 'accountant':
@@ -102,7 +111,7 @@ export function getRoleDisplayName(role: string | null | undefined): string {
  */
 export function isValidRole(role: string | null | undefined): role is Role {
   if (!role) return false
-  const validRoles: Role[] = ['admin', 'accountant', 'chief_accountant', 'cfo']
+  const validRoles: Role[] = ['super_admin', 'admin', 'accountant', 'chief_accountant', 'cfo']
   return validRoles.includes(role.toLowerCase() as Role)
 }
 
@@ -112,6 +121,8 @@ export function isValidRole(role: string | null | undefined): role is Role {
  */
 function getRoleLevel(role: Role): number {
   switch (role) {
+    case 'super_admin':
+      return 5
     case 'admin':
       return 4
     case 'chief_accountant':
@@ -128,7 +139,8 @@ function getRoleLevel(role: Role): number {
 /**
  * Check if a role can manage another role.
  * Rules:
- * - ADMIN can manage everyone (except themselves, handled separately)
+ * - SUPER_ADMIN can manage everyone
+ * - ADMIN can manage everyone (except super_admin)
  * - CHIEF_ACCOUNTANT can only manage lower roles (ACCOUNTANT, CFO)
  * - Others cannot manage anyone
  */
@@ -141,8 +153,12 @@ export function canManageRole(
   const requester = requesterRole.toLowerCase() as Role
   const target = targetRole.toLowerCase() as Role
 
+  if (requester === 'super_admin') {
+    return true // SUPER_ADMIN can manage everyone
+  }
+
   if (requester === 'admin') {
-    return true // ADMIN can manage everyone
+    return target !== 'super_admin' // ADMIN can manage everyone except super_admin
   }
 
   if (requester === 'chief_accountant') {
@@ -156,7 +172,8 @@ export function canManageRole(
 /**
  * Check if a role can assign another role.
  * Rules:
- * - Only ADMIN can assign ADMIN role
+ * - Only SUPER_ADMIN can assign SUPER_ADMIN role
+ * - Only ADMIN or SUPER_ADMIN can assign ADMIN role
  * - CHIEF_ACCOUNTANT cannot promote (cannot assign roles >= their own)
  */
 export function canAssignRole(
@@ -168,8 +185,13 @@ export function canAssignRole(
   const requester = requesterRole.toLowerCase() as Role
   const assigned = newRole.toLowerCase() as Role
 
-  // Only ADMIN can assign ADMIN role
-  if (assigned === 'admin' && requester !== 'admin') {
+  // Only SUPER_ADMIN can assign SUPER_ADMIN role
+  if (assigned === 'super_admin' && requester !== 'super_admin') {
+    return false
+  }
+
+  // Only ADMIN or SUPER_ADMIN can assign ADMIN role
+  if (assigned === 'admin' && requester !== 'admin' && requester !== 'super_admin') {
     return false
   }
 
@@ -188,13 +210,18 @@ export function canAssignRole(
 
 /**
  * Get available roles that a user can assign.
- * - ADMIN can assign all roles
+ * - SUPER_ADMIN can assign all roles including super_admin
+ * - ADMIN can assign all roles except super_admin
  * - CHIEF_ACCOUNTANT can only assign ACCOUNTANT and CFO
  */
 export function getAssignableRoles(requesterRole: string | null | undefined): Role[] {
   if (!requesterRole) return []
 
   const requester = requesterRole.toLowerCase() as Role
+
+  if (requester === 'super_admin') {
+    return ['super_admin', 'admin', 'accountant', 'chief_accountant', 'cfo']
+  }
 
   if (requester === 'admin') {
     return ['admin', 'accountant', 'chief_accountant', 'cfo']
