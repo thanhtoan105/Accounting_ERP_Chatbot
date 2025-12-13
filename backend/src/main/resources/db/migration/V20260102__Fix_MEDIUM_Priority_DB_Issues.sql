@@ -28,12 +28,12 @@ BEGIN;
 
 -- Add index on retention_until for efficient filtering
 CREATE INDEX IF NOT EXISTS idx_audit_logs_retention_until
-  ON accounting.audit_logs(retention_until)
+  ON audit_logs(retention_until)
   WHERE retention_until IS NOT NULL;
 
 -- Procedure to cleanup expired audit logs (call manually monthly)
 -- This can be used in a cron job or background task
--- DELETE FROM accounting.audit_logs 
+-- DELETE FROM audit_logs 
 -- WHERE retention_until IS NOT NULL 
 --   AND retention_until < CURRENT_TIMESTAMP;
 
@@ -64,27 +64,27 @@ COMMIT;
 -- BEGIN;
 -- 
 -- -- Step 1: Add new TEXT column (temporary name)
--- ALTER TABLE accounting.companies
+-- ALTER TABLE companies
 --   ADD COLUMN code_new TEXT;
 -- 
 -- -- Step 2: Copy data from VARCHAR to TEXT
--- UPDATE accounting.companies SET code_new = code;
+-- UPDATE companies SET code_new = code;
 -- 
 -- -- Step 3: Add NOT NULL and CHECK constraint
--- ALTER TABLE accounting.companies
+-- ALTER TABLE companies
 --   ALTER COLUMN code_new SET NOT NULL;
 -- 
--- ALTER TABLE accounting.companies
+-- ALTER TABLE companies
 --   ADD CONSTRAINT ck_companies_code_length CHECK (LENGTH(code_new) <= 50);
 -- 
 -- -- Step 4: Create index if needed (for lookups)
--- CREATE INDEX IF NOT EXISTS idx_companies_code_new ON accounting.companies(code_new);
+-- CREATE INDEX IF NOT EXISTS idx_companies_code_new ON companies(code_new);
 -- 
 -- -- Step 5: Swap columns (old app uses code, new app uses code_new)
 -- -- DO NOT RUN YET - Wait until app is updated:
--- -- ALTER TABLE accounting.companies RENAME COLUMN code TO code_old;
--- -- ALTER TABLE accounting.companies RENAME COLUMN code_new TO code;
--- -- ALTER TABLE accounting.companies DROP COLUMN code_old;
+-- -- ALTER TABLE companies RENAME COLUMN code TO code_old;
+-- -- ALTER TABLE companies RENAME COLUMN code_new TO code;
+-- -- ALTER TABLE companies DROP COLUMN code_old;
 -- 
 -- COMMIT;
 
@@ -98,11 +98,11 @@ BEGIN;
 
 -- sales_invoices: Add more partial indexes for soft-deleted queries
 CREATE INDEX IF NOT EXISTS idx_sales_invoices_company_active_status_created
-  ON accounting.sales_invoices(company_id, status, created_at DESC)
+  ON sales_invoices(company_id, status, created_at DESC)
   WHERE is_deleted = false;
 
 CREATE INDEX IF NOT EXISTS idx_sales_invoices_company_active_date_range
-  ON accounting.sales_invoices(company_id, invoice_date)
+  ON sales_invoices(company_id, invoice_date)
   WHERE is_deleted = false AND status != 'DRAFT';
 
 COMMIT;
@@ -114,11 +114,11 @@ COMMIT;
 BEGIN;
 
 CREATE INDEX IF NOT EXISTS idx_audit_logs_retention_until
-  ON accounting.audit_logs(retention_until)
+  ON audit_logs(retention_until)
   WHERE retention_until IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_audit_logs_retention_company
-  ON accounting.audit_logs(company_id, retention_until)
+  ON audit_logs(company_id, retention_until)
   WHERE retention_until IS NOT NULL;
 
 COMMIT;
@@ -199,17 +199,17 @@ SELECT
   END as age_bucket,
   COUNT(*) as record_count,
   pg_size_pretty(SUM(pg_column_size(id) + pg_column_size(created_at))) as approx_size
-FROM accounting.audit_logs
+FROM audit_logs
 GROUP BY age_bucket
 ORDER BY age_bucket;
 
 -- Manual cleanup query (run monthly or via cron job)
--- DELETE FROM accounting.audit_logs 
+-- DELETE FROM audit_logs 
 -- WHERE retention_until IS NOT NULL 
 --   AND retention_until < CURRENT_TIMESTAMP;
 
 -- Alternative: Delete logs older than 2 years (if no retention_until)
--- DELETE FROM accounting.audit_logs 
+-- DELETE FROM audit_logs 
 -- WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '2 years'
 --   AND retention_until IS NULL;
 

@@ -32,11 +32,13 @@ import com.accounting.entity.Company;
 import com.accounting.entity.PeriodStatus;
 import com.accounting.entity.report.ReportMapping;
 import com.accounting.repository.ChartOfAccountsRepository;
+import com.accounting.repository.CompanySettingsRepository;
 import com.accounting.repository.VoucherLineRepository;
 import com.accounting.repository.report.ReportMappingRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.CompanyService;
 import com.accounting.service.PeriodManagementService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Unit tests for StatutoryReportServiceImpl.
@@ -61,8 +63,12 @@ class StatutoryReportServiceImplTest {
   @Mock
   private CompanyService companyService;
 
+  @Mock
+  private CompanySettingsRepository companySettingsRepository;
+
   private StatutoryReportServiceImpl service;
   private MockedStatic<CompanyContext> companyContextMock;
+  private ObjectMapper objectMapper;
 
   private static final Long COMPANY_ID = 1L;
   private static final UUID PERIOD_ID = UUID.randomUUID();
@@ -70,12 +76,16 @@ class StatutoryReportServiceImplTest {
 
   @BeforeEach
   void setUp() {
+    objectMapper = new ObjectMapper();
+
     service = new StatutoryReportServiceImpl(
         reportMappingRepository,
         voucherLineRepository,
         chartOfAccountsRepository,
         periodManagementService,
-        companyService);
+        companyService,
+        companySettingsRepository,
+        objectMapper);
 
     companyContextMock = mockStatic(CompanyContext.class);
     companyContextMock.when(CompanyContext::getCompanyId).thenReturn(COMPANY_ID);

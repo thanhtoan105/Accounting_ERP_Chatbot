@@ -1,10 +1,12 @@
 package com.accounting.service.impl.report;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,22 +20,30 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.accounting.dto.AccountingPeriodDTO;
+import com.accounting.dto.report.ComparisonSettingsDTO;
 import com.accounting.dto.report.DetailedLedgerDTO;
+import com.accounting.dto.report.MultiPeriodLineDTO;
+import com.accounting.dto.report.MultiPeriodReportDTO;
+import com.accounting.dto.report.PeriodColumnDTO;
 import com.accounting.dto.report.StatutoryReportDTO;
 import com.accounting.dto.report.StatutoryReportLineDTO;
 import com.accounting.dto.report.ValidationErrorDTO;
 import com.accounting.dto.report.ValidationResultDTO;
+import com.accounting.dto.report.VarianceDTO;
 import com.accounting.entity.ChartOfAccount;
 import com.accounting.entity.Company;
 import com.accounting.entity.PeriodStatus;
 import com.accounting.entity.report.ReportMapping;
 import com.accounting.repository.ChartOfAccountsRepository;
+import com.accounting.repository.CompanySettingsRepository;
 import com.accounting.repository.VoucherLineRepository;
 import com.accounting.repository.report.ReportMappingRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.CompanyService;
 import com.accounting.service.PeriodManagementService;
 import com.accounting.service.StatutoryReportService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Implementation of StatutoryReportService for generating TT200 statutory reports.
@@ -50,30 +60,37 @@ public class StatutoryReportServiceImpl implements StatutoryReportService {
   private static final String REPORT_B02 = "B02";
   private static final String REPORT_B03 = "B03";
 
+  private static final int MAX_PERIODS_FOR_COMPARISON = 4;
+
   // Report names
   private static final Map<String, String[]> REPORT_NAMES = Map.of(
-      REPORT_B01, new String[]{"Bảng cân đối kế toán", "Balance Sheet"},
-      REPORT_B02, new String[]{"Báo cáo kết quả hoạt động kinh doanh", "Income Statement"},
-      REPORT_B03, new String[]{"Báo cáo lưu chuyển tiền tệ", "Cash Flow Statement"}
-  );
+      REPORT_B01, new String[] {"Bảng cân đối kế toán", "Balance Sheet"},
+      REPORT_B02, new String[] {"Báo cáo kết quả hoạt động kinh doanh", "Income Statement"},
+      REPORT_B03, new String[] {"Báo cáo lưu chuyển tiền tệ", "Cash Flow Statement"});
 
   private final ReportMappingRepository reportMappingRepository;
   private final VoucherLineRepository voucherLineRepository;
   private final ChartOfAccountsRepository chartOfAccountsRepository;
   private final PeriodManagementService periodManagementService;
   private final CompanyService companyService;
+  private final CompanySettingsRepository companySettingsRepository;
+  private final ObjectMapper objectMapper;
 
   public StatutoryReportServiceImpl(
       ReportMappingRepository reportMappingRepository,
       VoucherLineRepository voucherLineRepository,
       ChartOfAccountsRepository chartOfAccountsRepository,
       PeriodManagementService periodManagementService,
-      CompanyService companyService) {
+      CompanyService companyService,
+      CompanySettingsRepository companySettingsRepository,
+      ObjectMapper objectMapper) {
     this.reportMappingRepository = reportMappingRepository;
     this.voucherLineRepository = voucherLineRepository;
     this.chartOfAccountsRepository = chartOfAccountsRepository;
     this.periodManagementService = periodManagementService;
     this.companyService = companyService;
+    this.companySettingsRepository = companySettingsRepository;
+    this.objectMapper = objectMapper;
   }
 
   @Override
@@ -555,5 +572,289 @@ public class StatutoryReportServiceImpl implements StatutoryReportService {
 
     boolean valid = errors.isEmpty();
     return new ValidationResultDTO(valid, errors, warnings, periodStatus, isBalanced);
+  }
+
+  @Override
+  public MultiPeriodReportDTO generateMultiPeriodReport(String reportType, List<UUID> periodIds) {
+    Long companyId = CompanyContext.getCompanyId();
+    if (companyId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing company context");
+    }
+
+    if (periodIds == null || periodIds.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one period required");
+    }
+    if (periodIds.size() > MAX_PERIODS_FOR_COMPARISON) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Maximum " + MAX_PERIODS_FOR_COMPARISON + " periods allowed for comparison");
+    }
+
+    if (!REPORT_NAMES.containsKey(reportType)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown report type: " + reportType);
+    }
+
+    List<AccountingPeriodDTO> periods = new ArrayList<>();
+    for (UUID periodId : periodIds) {
+      AccountingPeriodDTO period =
+          periodManagementService
+              .getPeriodById(periodId)
+              .orElseThrow(
+                  () ->
+                      new ResponseStatusException(
+                          HttpStatus.NOT_FOUND, "Period not found: " + periodId));
+
+      if (!companyId.equals(period.getCompanyId())) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Period " + periodId + " belongs to a different company");
+      }
+      periods.add(period);
+    }
+
+    periods.sort((a, b) -> a.getStartDate().compareTo(b.getStartDate()));
+
+    Company company = companyService.getCurrentCompanySettings();
+    if (company == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Company settings not found");
+    }
+
+    List<StatutoryReportDTO> singlePeriodReports = new ArrayList<>();
+    for (AccountingPeriodDTO period : periods) {
+      StatutoryReportDTO report = generateReport(reportType, period.getId(), null);
+      singlePeriodReports.add(report);
+    }
+
+    List<PeriodColumnDTO> periodColumns = new ArrayList<>();
+    boolean hasDraftPeriod = false;
+    for (AccountingPeriodDTO period : periods) {
+      boolean isDraft = PeriodStatus.OPEN.equals(period.getStatus());
+      if (isDraft) {
+        hasDraftPeriod = true;
+      }
+      periodColumns.add(
+          new PeriodColumnDTO(
+              period.getId(),
+              period.getPeriodName(),
+              period.getStartDate(),
+              period.getEndDate(),
+              period.getFiscalYear() != null ? period.getFiscalYear().toString() : null,
+              isDraft));
+    }
+
+    Map<String, List<BigDecimal>> lineValuesMap = new LinkedHashMap<>();
+    Map<String, StatutoryReportLineDTO> lineMetaMap = new HashMap<>();
+
+    if (!singlePeriodReports.isEmpty()) {
+      for (StatutoryReportLineDTO line : singlePeriodReports.get(0).getLines()) {
+        lineValuesMap.put(line.getLineCode(), new ArrayList<>());
+        lineMetaMap.put(line.getLineCode(), line);
+      }
+    }
+
+    for (StatutoryReportDTO report : singlePeriodReports) {
+      Map<String, BigDecimal> reportLineValues = new HashMap<>();
+      for (StatutoryReportLineDTO line : report.getLines()) {
+        reportLineValues.put(line.getLineCode(), line.getCurrentAmount());
+      }
+
+      for (String lineCode : lineValuesMap.keySet()) {
+        BigDecimal value = reportLineValues.getOrDefault(lineCode, BigDecimal.ZERO);
+        lineValuesMap.get(lineCode).add(value);
+      }
+    }
+
+    ComparisonSettingsDTO settings = loadComparisonSettings(companyId);
+
+    List<MultiPeriodLineDTO> multiPeriodLines = new ArrayList<>();
+    for (Map.Entry<String, List<BigDecimal>> entry : lineValuesMap.entrySet()) {
+      String lineCode = entry.getKey();
+      List<BigDecimal> values = entry.getValue();
+      StatutoryReportLineDTO meta = lineMetaMap.get(lineCode);
+
+      List<VarianceDTO> variances = calculateVariances(lineCode, values, periods, reportType);
+
+      List<Double> sparklineData = calculateSparklineData(values);
+
+      boolean isMaterial = checkMateriality(variances, settings);
+
+      Map<UUID, BigDecimal> periodValuesMap = new LinkedHashMap<>();
+      for (int i = 0; i < periods.size(); i++) {
+        periodValuesMap.put(periods.get(i).getId(), values.get(i));
+      }
+
+      multiPeriodLines.add(
+          new MultiPeriodLineDTO(
+              lineCode,
+              meta.getLineName(),
+              meta.getLineNameEnglish(),
+              meta.getLevel(),
+              meta.isCalculated(),
+              periodValuesMap,
+              variances,
+              sparklineData,
+              isMaterial,
+              meta.isHasDrillDown()));
+    }
+
+    String[] reportNames = REPORT_NAMES.get(reportType);
+    return new MultiPeriodReportDTO(
+        reportType,
+        reportNames[0],
+        companyId,
+        company.getName(),
+        periodColumns,
+        multiPeriodLines,
+        settings,
+        Instant.now(),
+        hasDraftPeriod);
+  }
+
+  private ComparisonSettingsDTO loadComparisonSettings(Long companyId) {
+    return companySettingsRepository
+        .findByCompanyId(companyId)
+        .map(
+            settings -> {
+              String json = settings.getComparisonSettings();
+              if (json != null && !json.isBlank()) {
+                try {
+                  return objectMapper.readValue(json, ComparisonSettingsDTO.class);
+                } catch (JsonProcessingException e) {
+                  logger.warn("Failed to parse comparison settings JSON: {}", e.getMessage());
+                }
+              }
+              return ComparisonSettingsDTO.defaults();
+            })
+        .orElse(ComparisonSettingsDTO.defaults());
+  }
+
+  private List<VarianceDTO> calculateVariances(
+      String lineCode,
+      List<BigDecimal> values,
+      List<AccountingPeriodDTO> periods,
+      String reportType) {
+    List<VarianceDTO> variances = new ArrayList<>();
+
+    for (int i = 1; i < values.size(); i++) {
+      BigDecimal priorValue = values.get(i - 1);
+      BigDecimal currentValue = values.get(i);
+      UUID fromPeriodId = periods.get(i - 1).getId();
+      UUID toPeriodId = periods.get(i).getId();
+
+      BigDecimal absoluteVariance = currentValue.subtract(priorValue);
+
+      Double percentVariance = null;
+      if (priorValue.compareTo(BigDecimal.ZERO) != 0) {
+        percentVariance =
+            absoluteVariance
+                .divide(priorValue.abs(), 6, RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100"))
+                .doubleValue();
+      } else if (absoluteVariance.compareTo(BigDecimal.ZERO) != 0) {
+        percentVariance = Double.POSITIVE_INFINITY;
+      }
+
+      String direction = determineVarianceDirection(lineCode, absoluteVariance, reportType);
+
+      variances.add(
+          new VarianceDTO(fromPeriodId, toPeriodId, absoluteVariance, percentVariance, direction));
+    }
+
+    return variances;
+  }
+
+  private String determineVarianceDirection(
+      String lineCode, BigDecimal absoluteVariance, String reportType) {
+    if (absoluteVariance.compareTo(BigDecimal.ZERO) == 0) {
+      return "NEUTRAL";
+    }
+
+    boolean isIncrease = absoluteVariance.compareTo(BigDecimal.ZERO) > 0;
+
+    if (REPORT_B02.equals(reportType)) {
+      boolean isExpenseLine = isExpenseLine(lineCode);
+      if (isExpenseLine) {
+        return isIncrease ? "UNFAVORABLE" : "FAVORABLE";
+      } else {
+        return isIncrease ? "FAVORABLE" : "UNFAVORABLE";
+      }
+    } else if (REPORT_B01.equals(reportType)) {
+      if (isLiabilityLine(lineCode)) {
+        return "NEUTRAL";
+      }
+      return isIncrease ? "FAVORABLE" : "UNFAVORABLE";
+    }
+
+    return "NEUTRAL";
+  }
+
+  private boolean isExpenseLine(String lineCode) {
+    if (lineCode == null || lineCode.isEmpty()) {
+      return false;
+    }
+    char firstChar = lineCode.charAt(0);
+    if (firstChar == '6' || firstChar == '8') {
+      return true;
+    }
+    return lineCode.equals("22")
+        || lineCode.equals("25")
+        || lineCode.equals("26")
+        || lineCode.equals("32")
+        || lineCode.equals("51");
+  }
+
+  private boolean isLiabilityLine(String lineCode) {
+    if (lineCode == null || lineCode.isEmpty()) {
+      return false;
+    }
+    char firstChar = lineCode.charAt(0);
+    return firstChar == '3' || firstChar == '4';
+  }
+
+  private List<Double> calculateSparklineData(List<BigDecimal> values) {
+    if (values == null || values.isEmpty()) {
+      return new ArrayList<>();
+    }
+
+    BigDecimal min = values.stream().min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+    BigDecimal max = values.stream().max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+    BigDecimal range = max.subtract(min);
+
+    List<Double> sparkline = new ArrayList<>();
+    for (BigDecimal value : values) {
+      if (range.compareTo(BigDecimal.ZERO) == 0) {
+        sparkline.add(0.5);
+      } else {
+        double normalized =
+            value
+                .subtract(min)
+                .divide(range, 6, RoundingMode.HALF_UP)
+                .doubleValue();
+        sparkline.add(normalized);
+      }
+    }
+
+    return sparkline;
+  }
+
+  private boolean checkMateriality(List<VarianceDTO> variances, ComparisonSettingsDTO settings) {
+    if (variances == null || variances.isEmpty()) {
+      return false;
+    }
+
+    for (VarianceDTO variance : variances) {
+      if (variance.absoluteVariance() != null
+          && variance.absoluteVariance().abs().compareTo(settings.varianceThresholdAbsolute())
+              >= 0) {
+        return true;
+      }
+
+      if (variance.percentVariance() != null
+          && !variance.percentVariance().isInfinite()
+          && Math.abs(variance.percentVariance()) >= settings.varianceThresholdPercent()) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

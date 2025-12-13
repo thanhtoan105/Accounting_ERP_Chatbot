@@ -1,48 +1,33 @@
 package com.accounting.test;
 
 import org.flywaydb.core.Flyway;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+@Testcontainers(disabledWithoutDocker = true)
 @Import(TestStorageConfig.class)
 public abstract class IntegrationTest {
-  // QUAN TRỌNG: Static final để container được share giữa tất cả test classes
-  // withReuse(true) cho phép container được reuse giữa các test runs
-  @SuppressWarnings("resource") // Container được reuse intentionally, cleanup khi JVM shutdown
-  private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
-      DockerImageName.parse("postgres:16.4-alpine"))
+  // Container managed by @Testcontainers extension - starts before @DynamicPropertySource
+  // Mark TimescaleDB as compatible substitute for PostgreSQL
+  private static final DockerImageName TIMESCALEDB_IMAGE = DockerImageName
+      .parse("timescale/timescaledb:latest-pg16")
+      .asCompatibleSubstituteFor("postgres");
+
+  @Container
+  @SuppressWarnings("resource")
+  static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(TIMESCALEDB_IMAGE)
       .withDatabaseName("accounting_test")
       .withUsername("test")
       .withPassword("test")
-      .withReuse(true); // <-- QUAN TRỌNG: Cho phép reuse container
+      .withReuse(true);
 
   @org.springframework.beans.factory.annotation.Autowired private Flyway flyway;
-
-  @BeforeAll
-  static void startContainer() {
-    // Container chỉ khởi động 1 lần cho tất cả tests
-    // Nếu container đã chạy (từ test class trước), sẽ reuse
-    if (!POSTGRES.isRunning()) {
-    POSTGRES.start();
-    }
-  }
-
-  @AfterAll
-  static void stopContainer() {
-    // KHÔNG stop container để có thể reuse cho test classes tiếp theo
-    // Container sẽ tự động stop khi JVM shutdown hoặc khi không còn test nào dùng
-    // Chỉ stop nếu thực sự cần (ví dụ: cleanup cuối cùng)
-    // POSTGRES.stop(); // <-- Commented out để enable reuse
-    
-    // Note: Suppressing resource leak warning vì container được reuse intentionally
-    // Container sẽ được cleanup khi JVM shutdown
-  }
 
   @DynamicPropertySource
   static void registerDataSourceProperties(DynamicPropertyRegistry registry) {

@@ -1,5 +1,7 @@
 package com.accounting.controller.report;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.accounting.dto.report.AccountContributionDTO;
 import com.accounting.dto.report.DetailedLedgerDTO;
+import com.accounting.dto.report.MultiPeriodReportDTO;
 import com.accounting.dto.report.StatutoryReportDTO;
 import com.accounting.dto.report.ValidationResultDTO;
 import com.accounting.service.DrillDownService;
@@ -244,5 +247,76 @@ public class StatutoryReportController {
     ValidationResultDTO result = statutoryReportService.validateForExport(periodId, reportType);
     HttpStatus status = result.isValid() ? HttpStatus.OK : HttpStatus.UNPROCESSABLE_ENTITY;
     return ResponseEntity.status(status).body(result);
+  }
+
+  // ==================== Multi-Period Comparison ====================
+
+  @GetMapping("/multi-period")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'AUDITOR')")
+  @Operation(summary = "Generate multi-period comparison report",
+      description = "Generate a report comparing up to 4 periods with variance analysis")
+  public ResponseEntity<MultiPeriodReportDTO> generateMultiPeriodReport(
+      @Parameter(description = "Report type: B01, B02, or B03", required = true)
+      @RequestParam String reportType,
+      @Parameter(description = "Comma-separated period IDs (max 4)", required = true)
+      @RequestParam String periodIds) {
+
+    List<UUID> periodIdList = Arrays.stream(periodIds.split(","))
+        .map(String::trim)
+        .map(UUID::fromString)
+        .toList();
+
+    MultiPeriodReportDTO report = statutoryReportService.generateMultiPeriodReport(reportType, periodIdList);
+    return ResponseEntity.ok(report);
+  }
+
+  @GetMapping("/multi-period/export/excel")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'AUDITOR')")
+  @Operation(summary = "Export multi-period comparison report to Excel",
+      description = "Export a multi-period comparison report with dynamic columns and variance highlighting")
+  public ResponseEntity<byte[]> exportMultiPeriodToExcel(
+      @Parameter(description = "Report type: B01, B02, or B03", required = true)
+      @RequestParam String reportType,
+      @Parameter(description = "Comma-separated period IDs (max 4)", required = true)
+      @RequestParam String periodIds) {
+
+    List<UUID> periodIdList = Arrays.stream(periodIds.split(","))
+        .map(String::trim)
+        .map(UUID::fromString)
+        .toList();
+
+    MultiPeriodReportDTO report = statutoryReportService.generateMultiPeriodReport(reportType, periodIdList);
+    byte[] excelBytes = exportService.exportMultiPeriodToExcel(report);
+
+    String filename = reportType + "_MultiPeriod_" + periodIdList.size() + "periods.xlsx";
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+        .body(excelBytes);
+  }
+
+  @GetMapping("/multi-period/export/pdf")
+  @PreAuthorize("hasAnyRole('ADMIN', 'CHIEF_ACCOUNTANT', 'CFO', 'AUDITOR')")
+  @Operation(summary = "Export multi-period comparison report to PDF",
+      description = "Export a multi-period comparison report in landscape format for 4+ columns")
+  public ResponseEntity<byte[]> exportMultiPeriodToPdf(
+      @Parameter(description = "Report type: B01, B02, or B03", required = true)
+      @RequestParam String reportType,
+      @Parameter(description = "Comma-separated period IDs (max 4)", required = true)
+      @RequestParam String periodIds) {
+
+    List<UUID> periodIdList = Arrays.stream(periodIds.split(","))
+        .map(String::trim)
+        .map(UUID::fromString)
+        .toList();
+
+    MultiPeriodReportDTO report = statutoryReportService.generateMultiPeriodReport(reportType, periodIdList);
+    byte[] pdfBytes = exportService.exportMultiPeriodToPdf(report);
+
+    String filename = reportType + "_MultiPeriod_" + periodIdList.size() + "periods.pdf";
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+        .contentType(MediaType.APPLICATION_PDF)
+        .body(pdfBytes);
   }
 }

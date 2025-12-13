@@ -57,12 +57,20 @@ public class SecurityConfig {
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers(
+                auth
+                    // Public endpoints
+                    .requestMatchers(
                         "/api/v1/auth/**",
-                        "/api/v1/invitations/**",
+                        "/api/v1/invitations/{token}",
+                        "/api/v1/invitations/{token}/accept",
+                        "/api/v1/invitations/validate/**",
                         "/api/v1/health",
                         "/error")
                     .permitAll()
+                    // Admin endpoints (super admin only)
+                    .requestMatchers("/api/v1/admin/**")
+                    .hasRole("SUPER_ADMIN")
+                    // All other endpoints require authentication
                     .requestMatchers("/api/v1/**")
                     .authenticated()
                     .anyRequest()

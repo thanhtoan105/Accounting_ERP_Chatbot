@@ -24,8 +24,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.accounting.dto.report.MultiPeriodLineDTO;
+import com.accounting.dto.report.MultiPeriodReportDTO;
+import com.accounting.dto.report.PeriodColumnDTO;
 import com.accounting.dto.report.StatutoryReportDTO;
 import com.accounting.dto.report.StatutoryReportLineDTO;
+import com.accounting.dto.report.VarianceDTO;
+import com.accounting.security.SecurityUtils;
 
 import net.sf.dynamicreports.jasper.builder.JasperReportBuilder;
 import net.sf.dynamicreports.report.builder.column.TextColumnBuilder;
@@ -465,5 +470,402 @@ public class StatutoryReportExportService {
     }
 
     return dataSource;
+  }
+
+  // ==================== Multi-Period Export Methods ====================
+
+  /**
+   * Export a multi-period comparison report to Excel format.
+   * Generates dynamic columns based on selected periods with variance columns.
+   *
+   * @param report the multi-period report to export
+   * @return Excel file as byte array
+   */
+  public byte[] exportMultiPeriodToExcel(MultiPeriodReportDTO report) {
+    try (Workbook workbook = new XSSFWorkbook()) {
+      String sheetName = SHEET_NAMES.getOrDefault(report.reportType(), report.reportType()) + " - Comparison";
+      Sheet sheet = workbook.createSheet(sheetName);
+
+      CellStyle headerStyle = createHeaderStyle(workbook);
+      CellStyle titleStyle = createTitleStyle(workbook);
+      CellStyle numberStyle = createNumberStyle(workbook);
+      CellStyle level1Style = createLevel1Style(workbook);
+      CellStyle level2Style = createLevel2Style(workbook);
+      CellStyle highlightStyle = createHighlightStyle(workbook);
+      CellStyle highlightNumberStyle = createHighlightNumberStyle(workbook);
+
+      int rowNum = 0;
+
+      rowNum = addMultiPeriodTitleSection(sheet, rowNum, report, titleStyle);
+      rowNum = addMultiPeriodCompanyInfo(sheet, rowNum, report);
+      rowNum++;
+
+      rowNum = addMultiPeriodColumnHeaders(sheet, rowNum, report, headerStyle);
+      rowNum = addMultiPeriodDataRows(sheet, rowNum, report, numberStyle, level1Style, level2Style,
+          highlightStyle, highlightNumberStyle);
+
+      int totalColumns = 2 + report.periods().size() + (report.periods().size() - 1) * 2;
+      autoSizeColumns(sheet, totalColumns);
+
+      ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+      workbook.write(outputStream);
+      return outputStream.toByteArray();
+
+    } catch (IOException e) {
+      logger.error("Failed to export multi-period report to Excel: {}", e.getMessage(), e);
+      throw new IllegalStateException("Failed to export multi-period report to Excel", e);
+    }
+  }
+
+  /**
+   * Export a multi-period comparison report to PDF format.
+   * Uses landscape orientation for reports with 4+ columns.
+   *
+   * @param report the multi-period report to export
+   * @return PDF file as byte array
+   */
+  public byte[] exportMultiPeriodToPdf(MultiPeriodReportDTO report) {
+    try {
+      return generateMultiPeriodPdf(report);
+    } catch (Exception e) {
+      logger.error("Failed to export multi-period report to PDF: {}", e.getMessage(), e);
+      throw new IllegalStateException("Failed to export multi-period report to PDF", e);
+    }
+  }
+
+  private int addMultiPeriodTitleSection(Sheet sheet, int rowNum, MultiPeriodReportDTO report, CellStyle titleStyle) {
+    Row titleRow = sheet.createRow(rowNum++);
+    Cell titleCell = titleRow.createCell(0);
+    titleCell.setCellValue(report.reportName().toUpperCase() + " - SO SÁNH NHIỀU KỲ");
+    titleCell.setCellStyle(titleStyle);
+    int totalColumns = 2 + report.periods().size() * 2;
+    sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, totalColumns - 1));
+
+    Row subtitleRow = sheet.createRow(rowNum++);
+    Cell subtitleCell = subtitleRow.createCell(0);
+    subtitleCell.setCellValue("Multi-Period Comparison Report");
+    sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, totalColumns - 1));
+
+    rowNum++;
+    return rowNum;
+  }
+
+  private int addMultiPeriodCompanyInfo(Sheet sheet, int rowNum, MultiPeriodReportDTO report) {
+    Row companyRow = sheet.createRow(rowNum++);
+    companyRow.createCell(0).setCellValue("Doanh nghiệp:");
+    companyRow.createCell(1).setCellValue(report.companyName());
+
+    Row periodsRow = sheet.createRow(rowNum++);
+    periodsRow.createCell(0).setCellValue("Các kỳ so sánh:");
+    StringBuilder periodsStr = new StringBuilder();
+    for (int i = 0; i < report.periods().size(); i++) {
+      if (i > 0) periodsStr.append(", ");
+      periodsStr.append(report.periods().get(i).periodName());
+    }
+    periodsRow.createCell(1).setCellValue(periodsStr.toString());
+
+    if (report.hasDraftPeriod()) {
+      Row draftRow = sheet.createRow(rowNum++);
+      draftRow.createCell(0).setCellValue("Lưu ý:");
+      draftRow.createCell(1).setCellValue("Báo cáo bao gồm kỳ chưa đóng (DỰ THẢO)");
+    }
+
+    Row generatedRow = sheet.createRow(rowNum++);
+    generatedRow.createCell(0).setCellValue("Ngày lập:");
+    generatedRow.createCell(1).setCellValue(
+        report.generatedAt() != null
+            ? TIMESTAMP_FORMATTER.format(report.generatedAt().atZone(DEFAULT_ZONE))
+            : "");
+
+    return rowNum;
+  }
+
+  private int addMultiPeriodColumnHeaders(Sheet sheet, int rowNum, MultiPeriodReportDTO report, CellStyle headerStyle) {
+    Row headerRow = sheet.createRow(rowNum++);
+
+    int col = 0;
+    createStyledCell(headerRow, col++, "Mã số", headerStyle);
+    createStyledCell(headerRow, col++, "Chỉ tiêu", headerStyle);
+
+    for (int i = 0; i < report.periods().size(); i++) {
+      PeriodColumnDTO period = report.periods().get(i);
+      String periodHeader = period.periodName();
+      if (period.isDraft()) {
+        periodHeader += " (*)";
+      }
+      createStyledCell(headerRow, col++, periodHeader, headerStyle);
+
+      if (i > 0) {
+        createStyledCell(headerRow, col++, "Chênh lệch", headerStyle);
+        createStyledCell(headerRow, col++, "Chênh lệch %", headerStyle);
+      }
+    }
+
+    return rowNum;
+  }
+
+  private int addMultiPeriodDataRows(Sheet sheet, int rowNum, MultiPeriodReportDTO report,
+      CellStyle numberStyle, CellStyle level1Style, CellStyle level2Style,
+      CellStyle highlightStyle, CellStyle highlightNumberStyle) {
+
+    for (MultiPeriodLineDTO line : report.lines()) {
+      Row row = sheet.createRow(rowNum++);
+
+      CellStyle textStyle = line.level() == 1 ? level1Style : level2Style;
+      CellStyle numStyle = line.isMaterial() ? highlightNumberStyle : numberStyle;
+      CellStyle lineTextStyle = line.isMaterial() ? highlightStyle : textStyle;
+
+      int col = 0;
+
+      Cell codeCell = row.createCell(col++);
+      codeCell.setCellValue(line.lineCode());
+      codeCell.setCellStyle(lineTextStyle);
+
+      Cell nameCell = row.createCell(col++);
+      String indent = "  ".repeat(Math.max(0, line.level() - 1));
+      String displayName = indent + line.lineName();
+      if (line.isMaterial()) {
+        displayName = "⚠ " + displayName;
+      }
+      nameCell.setCellValue(displayName);
+      nameCell.setCellStyle(lineTextStyle);
+
+      int varianceIndex = 0;
+      for (int i = 0; i < report.periods().size(); i++) {
+        PeriodColumnDTO period = report.periods().get(i);
+        BigDecimal value = line.periodValues().get(period.periodId());
+
+        Cell valueCell = row.createCell(col++);
+        if (value != null && value.compareTo(BigDecimal.ZERO) != 0) {
+          valueCell.setCellValue(value.doubleValue());
+          valueCell.setCellStyle(numStyle);
+        }
+
+        if (i > 0 && line.variances() != null && varianceIndex < line.variances().size()) {
+          VarianceDTO variance = line.variances().get(varianceIndex++);
+          
+          Cell absoluteVarianceCell = row.createCell(col++);
+          if (variance.absoluteVariance() != null && variance.absoluteVariance().compareTo(BigDecimal.ZERO) != 0) {
+            absoluteVarianceCell.setCellValue(variance.absoluteVariance().doubleValue());
+            absoluteVarianceCell.setCellStyle(numStyle);
+          }
+
+          Cell varianceCell = row.createCell(col++);
+
+          if (variance.percentVariance() != null) {
+            if (variance.percentVariance().isInfinite()) {
+              varianceCell.setCellValue("∞");
+            } else {
+              varianceCell.setCellValue(String.format("%.1f%%", variance.percentVariance()));
+            }
+          } else {
+            varianceCell.setCellValue("N/A");
+          }
+          varianceCell.setCellStyle(numStyle);
+        }
+      }
+    }
+
+    return rowNum;
+  }
+
+  private CellStyle createHighlightStyle(Workbook workbook) {
+    CellStyle style = workbook.createCellStyle();
+    Font font = workbook.createFont();
+    font.setBold(true);
+    font.setColor(org.apache.poi.ss.usermodel.IndexedColors.DARK_RED.getIndex());
+    style.setFont(font);
+    style.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.LIGHT_YELLOW.getIndex());
+    style.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+    return style;
+  }
+
+  private CellStyle createHighlightNumberStyle(Workbook workbook) {
+    CellStyle style = createHighlightStyle(workbook);
+    style.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("#,##0"));
+    style.setAlignment(HorizontalAlignment.RIGHT);
+    return style;
+  }
+
+  private byte[] generateMultiPeriodPdf(MultiPeriodReportDTO report) throws Exception {
+    boolean useLandscape = report.periods().size() >= 3;
+
+    StyleBuilder boldStyle = stl.style().bold();
+    StyleBuilder boldCenteredStyle = stl.style(boldStyle)
+        .setHorizontalTextAlignment(HorizontalTextAlignment.CENTER);
+    StyleBuilder titleStyle = stl.style(boldCenteredStyle)
+        .setFontSize(14)
+        .setVerticalTextAlignment(VerticalTextAlignment.MIDDLE);
+    StyleBuilder columnTitleStyle = stl.style(boldStyle)
+        .setHorizontalTextAlignment(HorizontalTextAlignment.CENTER)
+        .setBackgroundColor(new Color(240, 240, 240))
+        .setBorder(stl.pen1Point())
+        .setPadding(3);
+    StyleBuilder columnStyle = stl.style()
+        .setBorder(stl.pen1Point())
+        .setPadding(2);
+    StyleBuilder numberStyle = stl.style(columnStyle)
+        .setHorizontalTextAlignment(HorizontalTextAlignment.RIGHT)
+        .setPattern("#,##0");
+    StyleBuilder highlightStyle = stl.style(columnStyle)
+        .bold()
+        .setForegroundColor(new Color(139, 0, 0))
+        .setBackgroundColor(new Color(255, 255, 200));
+
+    String userIdentity = getUserIdentityForFooter();
+    
+    JasperReportBuilder reportBuilder = report()
+        .setPageFormat(PageType.A4, useLandscape ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT)
+        .setPageMargin(margin(15))
+        .title(createMultiPeriodTitleComponent(report, titleStyle))
+        .pageFooter(
+            cmp.horizontalList(
+                cmp.text("Ngày lập: " + (report.generatedAt() != null
+                    ? TIMESTAMP_FORMATTER.format(report.generatedAt().atZone(DEFAULT_ZONE))
+                    : "-") + " | Người lập: " + userIdentity),
+                cmp.pageXofY().setHorizontalTextAlignment(HorizontalTextAlignment.RIGHT)
+            )
+        );
+
+    TextColumnBuilder<String> lineCodeColumn = col.column("Mã số", "lineCode", type.stringType())
+        .setStyle(columnStyle)
+        .setTitleStyle(columnTitleStyle)
+        .setWidth(30);
+
+    TextColumnBuilder<String> lineNameColumn = col.column("Chỉ tiêu", "lineName", type.stringType())
+        .setStyle(columnStyle)
+        .setTitleStyle(columnTitleStyle)
+        .setWidth(useLandscape ? 150 : 120);
+
+    reportBuilder.columns(lineCodeColumn, lineNameColumn);
+
+    for (int i = 0; i < report.periods().size(); i++) {
+      PeriodColumnDTO period = report.periods().get(i);
+      String periodName = period.periodName();
+      if (period.isDraft()) {
+        periodName += " (*)";
+      }
+
+      TextColumnBuilder<BigDecimal> periodColumn = col.column(periodName, "period" + i, type.bigDecimalType())
+          .setStyle(numberStyle)
+          .setTitleStyle(columnTitleStyle)
+          .setWidth(useLandscape ? 60 : 50);
+      reportBuilder.addColumn(periodColumn);
+
+      if (i > 0) {
+        TextColumnBuilder<BigDecimal> absVarianceColumn = col.column("Δ", "absVariance" + (i - 1), type.bigDecimalType())
+            .setStyle(numberStyle)
+            .setTitleStyle(columnTitleStyle)
+            .setWidth(45);
+        reportBuilder.addColumn(absVarianceColumn);
+        
+        TextColumnBuilder<String> varianceColumn = col.column("Δ%", "variance" + (i - 1), type.stringType())
+            .setStyle(columnStyle)
+            .setTitleStyle(columnTitleStyle)
+            .setWidth(35);
+        reportBuilder.addColumn(varianceColumn);
+      }
+    }
+
+    reportBuilder.setDataSource(createMultiPeriodDataSource(report));
+
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    reportBuilder.toPdf(outputStream);
+    return outputStream.toByteArray();
+  }
+
+  private ComponentBuilder<?, ?> createMultiPeriodTitleComponent(MultiPeriodReportDTO report, StyleBuilder titleStyle) {
+    StringBuilder periodsStr = new StringBuilder();
+    for (int i = 0; i < report.periods().size(); i++) {
+      if (i > 0) periodsStr.append(" | ");
+      periodsStr.append(report.periods().get(i).periodName());
+    }
+
+    return cmp.verticalList(
+        cmp.text(report.companyName())
+            .setStyle(stl.style().bold().setFontSize(11).setHorizontalTextAlignment(HorizontalTextAlignment.CENTER)),
+        cmp.verticalGap(8),
+        cmp.text(report.reportName().toUpperCase() + " - SO SÁNH NHIỀU KỲ").setStyle(titleStyle),
+        cmp.text("Multi-Period Comparison Report")
+            .setStyle(stl.style().setFontSize(9).setHorizontalTextAlignment(HorizontalTextAlignment.CENTER)),
+        cmp.verticalGap(5),
+        cmp.text("Các kỳ: " + periodsStr)
+            .setStyle(stl.style().setFontSize(9).setHorizontalTextAlignment(HorizontalTextAlignment.CENTER)),
+        report.hasDraftPeriod()
+            ? cmp.text("*** Bao gồm kỳ DỰ THẢO ***")
+                .setStyle(stl.style().bold().setForegroundColor(Color.RED)
+                    .setHorizontalTextAlignment(HorizontalTextAlignment.CENTER))
+            : cmp.verticalGap(0),
+        cmp.verticalGap(10)
+    );
+  }
+
+  private JRDataSource createMultiPeriodDataSource(MultiPeriodReportDTO report) {
+    int periodCount = report.periods().size();
+    int varianceCount = Math.max(0, periodCount - 1);
+
+    String[] columnNames = new String[2 + periodCount + varianceCount * 2];
+    columnNames[0] = "lineCode";
+    columnNames[1] = "lineName";
+
+    for (int i = 0; i < periodCount; i++) {
+      columnNames[2 + i] = "period" + i;
+    }
+    for (int i = 0; i < varianceCount; i++) {
+      columnNames[2 + periodCount + i * 2] = "absVariance" + i;
+      columnNames[2 + periodCount + i * 2 + 1] = "variance" + i;
+    }
+
+    DRDataSource dataSource = new DRDataSource(columnNames);
+
+    for (MultiPeriodLineDTO line : report.lines()) {
+      Object[] rowData = new Object[columnNames.length];
+
+      String indent = "  ".repeat(Math.max(0, line.level() - 1));
+      String displayName = indent + line.lineName();
+      if (line.isMaterial()) {
+        displayName = "⚠ " + displayName;
+      }
+
+      rowData[0] = line.lineCode();
+      rowData[1] = displayName;
+
+      for (int i = 0; i < periodCount; i++) {
+        PeriodColumnDTO period = report.periods().get(i);
+        rowData[2 + i] = line.periodValues().get(period.periodId());
+      }
+
+      for (int i = 0; i < varianceCount && i < (line.variances() != null ? line.variances().size() : 0); i++) {
+        VarianceDTO variance = line.variances().get(i);
+        rowData[2 + periodCount + i * 2] = variance.absoluteVariance();
+        if (variance.percentVariance() != null) {
+          if (variance.percentVariance().isInfinite()) {
+            rowData[2 + periodCount + i * 2 + 1] = "∞";
+          } else {
+            rowData[2 + periodCount + i * 2 + 1] = String.format("%.1f%%", variance.percentVariance());
+          }
+        } else {
+          rowData[2 + periodCount + i * 2 + 1] = "N/A";
+        }
+      }
+
+      dataSource.add(rowData);
+    }
+
+    return dataSource;
+  }
+
+  private String getUserIdentityForFooter() {
+    try {
+      String email = SecurityUtils.getCurrentUserEmail();
+      if (email != null && !email.isEmpty()) {
+        return email;
+      }
+      Long userId = SecurityUtils.getCurrentUserId();
+      return "User ID: " + userId;
+    } catch (Exception e) {
+      logger.debug("Could not get user identity for PDF footer: {}", e.getMessage());
+      return "N/A";
+    }
   }
 }

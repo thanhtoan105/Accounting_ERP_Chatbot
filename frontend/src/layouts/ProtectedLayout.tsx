@@ -64,6 +64,12 @@ const navItems: (NavItem & { labelKey: string })[] = [
     requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
   },
   {
+    path: '/accounting/reports/comparison',
+    label: 'Multi-Period Comparison',
+    labelKey: 'nav.multiPeriodComparison',
+    requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+  },
+  {
     path: '/vouchers',
     label: 'Vouchers',
     labelKey: 'nav.vouchers',
@@ -116,6 +122,12 @@ const navItems: (NavItem & { labelKey: string })[] = [
     label: 'Audit Logs',
     labelKey: 'nav.auditLogs',
     requiredRoles: ['admin', 'chief_accountant'],
+  },
+  {
+    path: '/admin/tenants',
+    label: 'Tenant Management',
+    labelKey: 'nav.tenantManagement',
+    requiredRoles: ['super_admin'],
   },
 ]
 
@@ -294,6 +306,11 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       titleKey: 'nav.reportCenter',
       url: '/reports/center',
       requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.multiPeriodComparison',
+      url: '/accounting/reports/comparison',
+      requiredRoles: ['admin', 'chief_accountant', 'cfo'],
     },
   ]
 

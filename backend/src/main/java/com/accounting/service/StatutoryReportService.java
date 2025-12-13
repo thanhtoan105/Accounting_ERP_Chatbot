@@ -1,8 +1,10 @@
 package com.accounting.service;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.accounting.dto.report.DetailedLedgerDTO;
+import com.accounting.dto.report.MultiPeriodReportDTO;
 import com.accounting.dto.report.StatutoryReportDTO;
 import com.accounting.dto.report.ValidationResultDTO;
 
@@ -61,4 +63,14 @@ public interface StatutoryReportService {
    * @return validation result with structured errors/warnings
    */
   ValidationResultDTO validateForExport(UUID periodId, String reportType);
+
+  /**
+   * Generate multi-period comparison report.
+   * Supports up to 4 periods with variance calculation between consecutive periods.
+   *
+   * @param reportType the report type ('B01', 'B02', 'B03')
+   * @param periodIds list of accounting period IDs (max 4)
+   * @return multi-period report with variances and sparkline data
+   */
+  MultiPeriodReportDTO generateMultiPeriodReport(String reportType, List<UUID> periodIds);
 }

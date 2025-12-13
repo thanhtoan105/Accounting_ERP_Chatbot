@@ -5,6 +5,7 @@ package com.accounting.enums;
  * Used for role-based access control (RBAC).
  */
 public enum Role {
+  SUPER_ADMIN("super_admin"),
   ADMIN("admin"),
   ACCOUNTANT("accountant"),
   CHIEF_ACCOUNTANT("chief_accountant"),
@@ -88,8 +89,11 @@ public enum Role {
     if (targetRole == null) {
       return false;
     }
+    if (this == SUPER_ADMIN) {
+      return true; // SUPER_ADMIN can manage everyone
+    }
     if (this == ADMIN) {
-      return true; // ADMIN can manage everyone (except themselves, handled separately)
+      return targetRole != SUPER_ADMIN; // ADMIN can manage everyone except SUPER_ADMIN
     }
     if (this == CHIEF_ACCOUNTANT) {
       // CHIEF_ACCOUNTANT can only manage lower roles (ACCOUNTANT, CFO)
@@ -106,6 +110,7 @@ public enum Role {
    */
   private int getHierarchyLevel() {
     return switch (this) {
+      case SUPER_ADMIN -> 5;
       case ADMIN -> 4;
       case CHIEF_ACCOUNTANT -> 3;
       case CFO -> 2;

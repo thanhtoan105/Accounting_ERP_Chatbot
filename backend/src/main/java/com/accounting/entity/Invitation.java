@@ -50,6 +50,21 @@ public class Invitation implements CompanyScopedEntity {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
+  @Column(name = "revoked_at")
+  private Instant revokedAt;
+
+  @Column(name = "accepted_at")
+  private Instant acceptedAt;
+
+  @Column(name = "ip_address", length = 45)
+  private String ipAddress;
+
+  @Column(name = "invited_by")
+  private Long invitedBy;
+
+  @Column(name = "token_hash", length = 64)
+  private String tokenHash;
+
   public Long getId() {
     return id;
   }
@@ -147,5 +162,57 @@ public class Invitation implements CompanyScopedEntity {
    */
   public boolean isPending() {
     return "PENDING".equals(status);
+  }
+
+  public Instant getRevokedAt() {
+    return revokedAt;
+  }
+
+  public void setRevokedAt(Instant revokedAt) {
+    this.revokedAt = revokedAt;
+  }
+
+  public Instant getAcceptedAt() {
+    return acceptedAt;
+  }
+
+  public void setAcceptedAt(Instant acceptedAt) {
+    this.acceptedAt = acceptedAt;
+  }
+
+  public String getIpAddress() {
+    return ipAddress;
+  }
+
+  public void setIpAddress(String ipAddress) {
+    this.ipAddress = ipAddress;
+  }
+
+  public Long getInvitedBy() {
+    return invitedBy;
+  }
+
+  public void setInvitedBy(Long invitedBy) {
+    this.invitedBy = invitedBy;
+  }
+
+  public String getTokenHash() {
+    return tokenHash;
+  }
+
+  public void setTokenHash(String tokenHash) {
+    this.tokenHash = tokenHash;
+  }
+
+  public boolean isRevoked() {
+    return revokedAt != null;
+  }
+
+  public boolean isAccepted() {
+    return acceptedAt != null;
+  }
+
+  public boolean isActive() {
+    return isPending() && !isExpired() && !isRevoked() && !isAccepted();
   }
 }

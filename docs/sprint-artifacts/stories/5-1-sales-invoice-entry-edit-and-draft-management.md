@@ -192,7 +192,7 @@ None - implementation proceeded without major blockers
 - Unique constraint on `(company_id, customer_id, invoice_number, year)` with `is_deleted = false` filter
 
 **Build Status:**
-✅ `mvn compile -DskipTests` - BUILD SUCCESS
+✅ `mvnd compile -DskipTests` - BUILD SUCCESS
 
 **Frontend Implementation - Completed 2025-11-20**
 
@@ -417,7 +417,7 @@ Story 5.1 (Sales Invoice Entry, Edit, and Draft Management) has been successfull
 | Frontend: Sales invoice form + line items grid     | ✅ Completed  | **VERIFIED COMPLETE** | `SalesInvoiceForm.tsx` with customer picker, date pickers, line grid, autosave (30s), undo/redo hook                                                    |
 | Frontend: Attachments UI (DEFERRED)                | ⬜ Incomplete | **CORRECTLY MARKED**  | Components referenced but not wired; Deferred pending backend service                                                                                   |
 | Frontend: Import dialog (DEFERRED)                 | ⬜ Incomplete | **CORRECTLY MARKED**  | Component referenced but not implemented; Deferred pending backend service                                                                              |
-| Testing: Backend unit and integration tests        | ✅ Completed  | **VERIFIED COMPLETE** | 9/9 validation unit tests passing; 6/6 integration tests passing; Verified via `mvn test`                                                               |
+| Testing: Backend unit and integration tests        | ✅ Completed  | **VERIFIED COMPLETE** | 9/9 validation unit tests passing; 6/6 integration tests passing; Verified via `mvnd test`                                                              |
 | Testing: Frontend component and E2E tests          | ⬜ Incomplete | **CORRECTLY MARKED**  | Deferred to future sprint; Backend coverage is comprehensive                                                                                            |
 
 **Summary:** 7 of 7 completed tasks verified as actually complete. 4 tasks correctly marked incomplete (deferred features). **No false completions detected.**
