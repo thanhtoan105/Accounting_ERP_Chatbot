@@ -203,7 +203,7 @@ Module agents use the same injection process as simple agents:
 2. **Activation block** with standard steps
 3. **Menu handlers** based on usage (workflow, exec, tmpl, data)
 4. **Rules section** for consistent behavior
-5. **Auto-injected** *help and *exit commands
+5. **Auto-injected** \*help and \*exit commands
 
 **Key difference:** Module agents load **module-specific config** instead of core config:
 
@@ -302,14 +302,13 @@ menu:
 
 ## Best Practices
 
-1. **Use .bmad paths** - Portable across installations
-2. **Organize workflows by phase** - Clear progression for users
-3. **Include workflow-status** - Help users track progress
-4. **Reference module config** - Consistent behavior
-5. **No Handlebars templating** - Module agents are fixed personalities
-6. **Professional personas** - Match module purpose
-7. **Clear trigger names** - Self-documenting commands
-8. **Group related workflows** - Logical menu organization
+1. **Organize workflows by phase** - Clear progression for users
+2. **Include workflow-status** - Help users track progress
+3. **Reference module config** - Consistent behavior
+4. **No Handlebars templating** - Module agents are fixed personalities
+5. **Professional personas** - Match module purpose
+6. **Clear trigger names** - Self-documenting commands
+7. **Group related workflows** - Logical menu organization
 
 ## Common Patterns
 
@@ -342,14 +341,14 @@ menu:
 
 ## Module Agent vs Simple/Expert
 
-| Aspect        | Module Agent                     | Simple/Expert Agent             |
-| ------------- | -------------------------------- | ------------------------------- |
-| Location      | `.bmad/{module}/agents/` | `.bmad/custom/agents/`  |
-| Persona       | Fixed, professional              | Customizable via install_config |
-| Handlebars    | No templating                    | Yes, extensive                  |
-| Menu actions  | Workflows, tasks, templates      | Prompts, inline actions         |
-| Configuration | Module config.yaml               | Core config or none             |
-| Purpose       | Professional tooling             | Personal utilities              |
+| Aspect        | Module Agent                | Simple/Expert Agent             |
+| ------------- | --------------------------- | ------------------------------- |
+| Location      | `.bmad/{module}/agents/`    | `.bmad/custom/agents/`          |
+| Persona       | Fixed, professional         | Customizable via install_config |
+| Handlebars    | No templating               | Yes, extensive                  |
+| Menu actions  | Workflows, tasks, templates | Prompts, inline actions         |
+| Configuration | Module config.yaml          | Core config or none             |
+| Purpose       | Professional tooling        | Personal utilities              |
 
 ## Validation Checklist
 

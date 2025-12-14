@@ -3,7 +3,7 @@ name: 'step-01-brainstorm'
 description: 'Optional brainstorming for agent ideas'
 
 # Path Definitions
-workflow_path: '{project-root}/src/modules/bmb/workflows/create-agent'
+workflow_path: '{project-root}/bmb/workflows/create-agent/create-agent'
 
 # File References
 thisStepFile: '{workflow_path}/steps/step-01-brainstorm.md'

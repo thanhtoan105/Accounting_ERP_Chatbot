@@ -3,7 +3,7 @@ name: 'step-10-build-tools'
 description: 'Handle build tools availability and generate compiled agent if needed'
 
 # Path Definitions
-workflow_path: '{project-root}/src/modules/bmb/workflows/create-agent'
+workflow_path: '{project-root}/bmb/workflows/create-agent/create-agent'
 
 # File References
 thisStepFile: '{workflow_path}/steps/step-10-build-tools.md'

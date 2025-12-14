@@ -83,3 +83,4 @@ jacoco.exec
 
 # Git worktrees
 .worktrees/
+tests/.auth/

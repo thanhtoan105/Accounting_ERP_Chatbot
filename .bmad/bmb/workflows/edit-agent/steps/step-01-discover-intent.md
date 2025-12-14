@@ -3,7 +3,7 @@ name: 'step-01-discover-intent'
 description: 'Get agent path and user editing goals'
 
 # Path Definitions
-workflow_path: '{project-root}/src/modules/bmb/workflows/edit-agent'
+workflow_path: '{project-root}/bmb/workflows/create-agent/edit-agent'
 
 # File References
 thisStepFile: '{workflow_path}/steps/step-01-discover-intent.md'

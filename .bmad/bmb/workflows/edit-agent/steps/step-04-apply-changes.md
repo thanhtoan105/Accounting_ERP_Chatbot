@@ -3,7 +3,7 @@ name: 'step-04-apply-changes'
 description: 'Apply approved changes to the agent'
 
 # Path Definitions
-workflow_path: '{project-root}/src/modules/bmb/workflows/edit-agent'
+workflow_path: '{project-root}/bmb/workflows/create-agent/edit-agent'
 
 # File References
 thisStepFile: '{workflow_path}/steps/step-04-apply-changes.md'

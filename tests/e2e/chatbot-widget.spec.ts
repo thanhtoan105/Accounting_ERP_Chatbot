@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { TEST_USERS } from '../auth.global-setup';
 
 /**
  * Chatbot Widget E2E Tests
@@ -15,12 +16,9 @@ import { test, expect } from '../support/fixtures';
  */
 
 test.describe('Chatbot Widget', () => {
-    // Setup: Login before each test
-    test.beforeEach(async ({ page, userFactory }) => {
-        const user = userFactory.createUser({
-            email: 'chatbot.test@example.com',
-            password: 'ChatbotTest123!',
-        });
+    // Setup: Login before each test using centralized credentials
+    test.beforeEach(async ({ page }) => {
+        const credentials = TEST_USERS.accountant;
 
         // Mock successful login
         await page.route('**/api/v1/auth/login', async (route) => {
@@ -33,7 +31,7 @@ test.describe('Chatbot Widget', () => {
                         refreshToken: 'mock-refresh-token-' + Date.now(),
                         user: {
                             id: 1,
-                            email: user.email,
+                            email: credentials.email,
                             fullName: 'Chatbot Test User',
                             role: 'ACCOUNTANT',
                             companyId: 1,
@@ -46,8 +44,8 @@ test.describe('Chatbot Widget', () => {
         // Login
         await page.goto('/login');
         await page.waitForSelector('[data-testid="email-input"]', { state: 'visible' });
-        await page.fill('[data-testid="email-input"]', user.email);
-        await page.fill('[data-testid="password-input"]', user.password || '');
+        await page.fill('[data-testid="email-input"]', credentials.email);
+        await page.fill('[data-testid="password-input"]', credentials.password);
         await page.click('[data-testid="login-button"]');
         await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
     });

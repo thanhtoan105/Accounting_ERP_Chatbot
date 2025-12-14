@@ -79,7 +79,12 @@ export function AppSidebar({
         <div className="px-3 py-2 text-sm">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start p-2" size="sm" data-testid="user-menu-button">
+              <Button
+                variant="ghost"
+                className="w-full justify-start p-2"
+                size="sm"
+                data-testid="user-menu-button"
+              >
                 <div className="flex items-center gap-2 w-full justify-between">
                   <Avatar className="size-8">
                     <AvatarFallback>
@@ -114,7 +119,11 @@ export function AppSidebar({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {onLogout && (
-                <DropdownMenuItem onClick={onLogout} className="text-destructive" data-testid="logout-button">
+                <DropdownMenuItem
+                  onClick={onLogout}
+                  className="text-destructive"
+                  data-testid="logout-button"
+                >
                   <LogOut className="mr-2 size-4" />
                   <span>{t('auth.logout')}</span>
                 </DropdownMenuItem>

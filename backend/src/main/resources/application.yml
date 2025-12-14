@@ -77,6 +77,13 @@ jwt:
 metabase:
   site-url: ${METABASE_SITE_URL:http://localhost:3000}
   embedding-secret: ${METABASE_EMBEDDING_SECRET:dev-secret-key-change-in-production}
+  api-key: ${METABASE_API_KEY:}
+  admin-email: ${METABASE_ADMIN_EMAIL:admin@example.com}
+  admin-password: ${METABASE_ADMIN_PASSWORD:}
+  db:
+    host: ${METABASE_DB_HOST:postgres}
+    port: ${METABASE_DB_PORT:5432}
+    name: ${METABASE_DB_NAME:accounting_dev}
 
 # AI Chatbot Configuration
 chatbot:
@@ -130,3 +137,16 @@ reporting:
   orphan:
     check:
       cron: "0 0 1 * * *"    # Daily at 1 AM
+
+# Dashboard ETL Configuration (Epic 8.0)
+dashboard:
+  etl:
+    enabled: ${DASHBOARD_ETL_ENABLED:true}
+    cron: ${DASHBOARD_ETL_CRON:0 */5 * * * *}  # Every 5 minutes
+    lock-ttl-seconds: ${DASHBOARD_ETL_LOCK_TTL:300}  # 5 minutes lock timeout
+    business-hours:
+      enabled: ${DASHBOARD_ETL_BUSINESS_HOURS_ENABLED:false}
+      start: ${DASHBOARD_ETL_BUSINESS_HOURS_START:8}
+      end: ${DASHBOARD_ETL_BUSINESS_HOURS_END:18}
+  refresh:
+    rate-limit-seconds: ${DASHBOARD_REFRESH_RATE_LIMIT:60}  # 1 refresh per minute per user

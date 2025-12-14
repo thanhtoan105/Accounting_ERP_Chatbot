@@ -1,4 +1,10 @@
 import { Page, expect } from '@playwright/test';
+import {
+  loginViaUI,
+  verifyAuthenticated,
+  waitForPostLoginStabilization,
+} from '../auth/login';
+import { getUserByRole, type TestRole } from '../auth/users';
 
 /**
  * Authentication Helper
@@ -12,7 +18,7 @@ import { Page, expect } from '@playwright/test';
  *
  * This function bypasses the login page entirely by:
  * 1. Setting up route intercepts for all auth-related APIs
- * 2. Directly injecting authentication tokens into localStorage
+ * 2. Directly injecting authentication tokens into localStorage via addInitScript
  * 3. Mocking the /me endpoint for user info
  *
  * Use this for tests that mock ALL API calls and don't require a real backend.
@@ -26,7 +32,6 @@ export async function setupMockAuth(
   const userId = role === 'chief_accountant' ? 2 : 1;
   const fullName = role === 'chief_accountant' ? 'Chief Accountant' : 'Test User';
 
-  // Mock all auth-related API routes
   await page.route('**/api/v1/auth/**', async (route) => {
     const url = route.request().url();
 
@@ -66,7 +71,6 @@ export async function setupMockAuth(
     }
   });
 
-  // Mock company context API
   await page.route('**/api/v1/companies/**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -77,24 +81,48 @@ export async function setupMockAuth(
     });
   });
 
-  // Navigate to a blank page first to set localStorage
-  await page.goto('about:blank');
-
-  // Inject auth tokens directly into localStorage
-  await page.evaluate(({ email, role, userId, fullName, companyId }) => {
-    localStorage.setItem('accessToken', 'mock-access-token-' + Date.now());
-    localStorage.setItem('refreshToken', 'mock-refresh-token-' + Date.now());
-    localStorage.setItem('activeCompanyId', String(companyId));
-    localStorage.setItem('user', JSON.stringify({
-      id: userId,
-      email,
-      fullName,
-      role,
-      companyId,
-    }));
-  }, { email, role, userId, fullName, companyId });
+  await page.addInitScript(
+    ({ email, role, userId, fullName, companyId }) => {
+      localStorage.setItem('accessToken', 'mock-access-token-' + Date.now());
+      localStorage.setItem('refreshToken', 'mock-refresh-token-' + Date.now());
+      localStorage.setItem('activeCompanyId', String(companyId));
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          id: userId,
+          email,
+          fullName,
+          role,
+          companyId,
+        }),
+      );
+    },
+    { email, role, userId, fullName, companyId },
+  );
 }
 
+/**
+ * Setup mock authentication for a specific role.
+ * Uses centralized user definitions.
+ */
+export async function setupMockAuthForRole(
+  page: Page,
+  role: TestRole,
+  companyId: number = 1,
+) {
+  const user = getUserByRole(role, true);
+  await setupMockAuth(page, user.email, role, companyId);
+}
+
+/**
+ * Login as a user via UI.
+ *
+ * @param page - Playwright page
+ * @param email - User email (defaults to admin@example.com)
+ * @param password - User password (defaults to 'password')
+ * @param role - User role (defaults to 'admin')
+ * @param useRealAuth - If true, performs real login; if false, mocks the auth API
+ */
 export async function loginAsUser(
   page: Page,
   email: string = 'admin@example.com',
@@ -103,57 +131,22 @@ export async function loginAsUser(
   useRealAuth: boolean = true,
 ) {
   if (useRealAuth) {
-    // Use real authentication - navigate to login and submit
-    await page.goto('/login');
-
-    // Wait for login form to be ready
-    await page.waitForSelector('[data-testid="email-input"]', { state: 'visible' });
-
-    // Fill login form and submit
-    await page.fill('[data-testid="email-input"]', email);
-    await page.fill('[data-testid="password-input"]', password);
-
-    // Click login button and wait for API call to complete
-    const [response] = await Promise.all([
-      page.waitForResponse(
-        (response) => response.url().includes('/api/v1/auth/login') && response.status() === 200,
-        { timeout: 10000 },
-      ),
-      page.click('[data-testid="login-button"]'),
-    ]);
-
-    // Verify API response
-    expect(response.status()).toBe(200);
-
-    // Wait for navigation away from login page (LoginForm redirects after 1.5s)
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 });
-
-    // Verify we're logged in (not on login page)
-    const currentUrl = page.url();
-    expect(currentUrl).not.toContain('/login');
-
-    // Wait for navigation to stabilize (no hard wait needed - waitForURL above handles it)
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
-
-    // Check final URL after redirect
-    const finalUrl = page.url();
-
-    // If we're on company selection page, navigate to home
-    if (finalUrl.includes('/company')) {
-      await page.goto('/');
-      await page.waitForLoadState('networkidle');
-    }
-
-    // Verify authentication by checking localStorage for token
-    const hasToken = await page.evaluate(() => {
-      return !!localStorage.getItem('accessToken');
+    await loginViaUI(page, {
+      email,
+      password,
+      waitForAuthResponse: true,
+      postLoginUrl: '/',
+      timeout: 15000,
+      handleCompanySelection: true,
     });
 
+    await waitForPostLoginStabilization(page, 5000);
+
+    const hasToken = await verifyAuthenticated(page);
     if (!hasToken) {
       throw new Error('Authentication failed - no access token in localStorage');
     }
   } else {
-    // Mock authentication (for CI/testing without backend)
     await page.route('**/api/v1/auth/login', async (route) => {
       await route.fulfill({
         status: 200,
@@ -174,20 +167,28 @@ export async function loginAsUser(
       });
     });
 
-    await page.goto('/login');
-    await page.waitForSelector('[data-testid="email-input"]', { state: 'visible' });
-    await page.fill('[data-testid="email-input"]', email);
-    await page.fill('[data-testid="password-input"]', password);
-
-    const [response] = await Promise.all([
-      page.waitForResponse(
-        (response) => response.url().includes('/api/v1/auth/login') && response.status() === 200,
-      ),
-      page.click('[data-testid="login-button"]'),
-    ]);
-
-    expect(response.status()).toBe(200);
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
+    await loginViaUI(page, {
+      email,
+      password,
+      waitForAuthResponse: true,
+      postLoginUrl: '/',
+      timeout: 10000,
+      handleCompanySelection: false,
+    });
   }
 }
 
+/**
+ * Login as a specific role using centralized credentials.
+ * Convenience method that uses TEST_USERS definitions.
+ */
+export async function loginAsRole(
+  page: Page,
+  role: TestRole,
+  options: { mode?: 'real' | 'mock' } = { mode: 'real' },
+) {
+  const useMock = options.mode === 'mock';
+  const user = getUserByRole(role, useMock);
+
+  await loginAsUser(page, user.email, user.password, role, !useMock);
+}

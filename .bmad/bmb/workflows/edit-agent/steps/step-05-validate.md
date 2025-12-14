@@ -3,7 +3,7 @@ name: 'step-05-validate'
 description: 'Validate that changes work correctly'
 
 # Path Definitions
-workflow_path: '{project-root}/src/modules/bmb/workflows/edit-agent'
+workflow_path: '{project-root}/bmb/workflows/create-agent/edit-agent'
 
 # File References
 thisStepFile: '{workflow_path}/steps/step-05-validate.md'

@@ -1,0 +1,120 @@
+{
+	"version": 1,
+	"skills": {
+		"template": {
+			"name": "template",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876926
+		},
+		"algorithmic-art": {
+			"name": "algorithmic-art",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876927
+		},
+		"brand-guidelines": {
+			"name": "brand-guidelines",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876927
+		},
+		"canvas-design": {
+			"name": "canvas-design",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876928
+		},
+		"doc-coauthoring": {
+			"name": "doc-coauthoring",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876928
+		},
+		"docx": {
+			"name": "docx",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876928
+		},
+		"frontend-design": {
+			"name": "frontend-design",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876928
+		},
+		"internal-comms": {
+			"name": "internal-comms",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876929
+		},
+		"mcp-builder": {
+			"name": "mcp-builder",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876929
+		},
+		"pdf": {
+			"name": "pdf",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876929
+		},
+		"pptx": {
+			"name": "pptx",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876930
+		},
+		"skill-creator": {
+			"name": "skill-creator",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876930
+		},
+		"slack-gif-creator": {
+			"name": "slack-gif-creator",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876930
+		},
+		"theme-factory": {
+			"name": "theme-factory",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876930
+		},
+		"web-artifacts-builder": {
+			"name": "web-artifacts-builder",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876931
+		},
+		"webapp-testing": {
+			"name": "webapp-testing",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876931
+		},
+		"xlsx": {
+			"name": "xlsx",
+			"source": "https://github.com/anthropics/skills.git",
+			"installedAt": 1765459876931
+		},
+		"bigquery": {
+			"name": "bigquery",
+			"source": "https://github.com/sourcegraph/amp-contrib.git",
+			"installedAt": 1765460057953
+		},
+		"tmux": {
+			"name": "tmux",
+			"source": "https://github.com/sourcegraph/amp-contrib.git",
+			"installedAt": 1765460057953
+		},
+		"web-browser": {
+			"name": "web-browser",
+			"source": "https://github.com/sourcegraph/amp-contrib.git",
+			"installedAt": 1765460057954
+		},
+		"article-to-prototype-cskill": {
+			"name": "article-to-prototype-cskill",
+			"source": "https://github.com/FrancyJGLisboa/agent-skill-creator.git",
+			"installedAt": 1765460086728
+		},
+		"amp-skill-3e968e15671449dd": {
+			"name": "amp-skill-3e968e15671449dd",
+			"source": "https://github.com/FrancyJGLisboa/agent-skill-creator.git",
+			"installedAt": 1765460086730
+		},
+		"dev-browser": {
+			"name": "dev-browser",
+			"source": "https://github.com/SawyerHood/dev-browser.git",
+			"installedAt": 1765546749265
+		}
+	}
+}

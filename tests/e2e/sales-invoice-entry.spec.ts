@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { TEST_USERS } from '../auth.global-setup';
 
 /**
  * Epic 5 - Story 5.1: Sales Invoice Entry, Edit, and Draft Management
@@ -12,8 +13,8 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
   test.beforeEach(async ({ page }) => {
     // Setup: Login as accountant
     await page.goto('/login');
-    await page.fill('[data-testid="email-input"]', 'accountant@test.example.com');
-    await page.fill('[data-testid="password-input"]', 'Test@123456');
+    await page.fill('[data-testid="email-input"]', TEST_USERS.accountant.email);
+    await page.fill('[data-testid="password-input"]', TEST_USERS.accountant.password);
     await page.click('[data-testid="login-button"]');
     await page.waitForURL('/dashboard');
   });
@@ -273,8 +274,8 @@ test.describe('Story 5.1: Sales Invoice Entry', () => {
       // WHEN: Different user (Chief Accountant) tries to edit draft
       const newPage = await context.newPage();
       await newPage.goto('/login');
-      await newPage.fill('[data-testid="email-input"]', 'chief@test.example.com');
-      await newPage.fill('[data-testid="password-input"]', 'Test@123456');
+      await newPage.fill('[data-testid="email-input"]', TEST_USERS.chief_accountant.email);
+      await newPage.fill('[data-testid="password-input"]', TEST_USERS.chief_accountant.password);
       await newPage.click('[data-testid="login-button"]');
       await newPage.waitForURL('/dashboard');
 

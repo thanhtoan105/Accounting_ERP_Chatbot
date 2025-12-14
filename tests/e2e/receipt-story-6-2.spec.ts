@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { TEST_USERS } from '../auth.global-setup';
 
 /**
  * Story 6.2: Cash Receipt Entry & Posting - E2E Tests
@@ -12,16 +13,9 @@ import { test, expect, Page } from '@playwright/test';
 const BASE_URL = 'http://localhost:5173';
 const API_URL = 'http://localhost:8080/api/v1';
 
-// Test credentials
-const ACCOUNTANT_USER = {
-    email: 'accountant@test.com',
-    password: 'Test@123',
-};
-
-const CHIEF_ACCOUNTANT_USER = {
-    email: 'chief@test.com',
-    password: 'Test@123',
-};
+// Use centralized test credentials
+const ACCOUNTANT_USER = TEST_USERS.accountant;
+const CHIEF_ACCOUNTANT_USER = TEST_USERS.chief_accountant;
 
 // Helper: Login
 async function login(page: Page, email: string, password: string) {

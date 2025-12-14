@@ -16,8 +16,8 @@ targetWorkflowStepsPath: '{target_workflow_steps_path}'
 complianceReportTemplate: '{workflow_path}/templates/compliance-report.md'
 
 # Documentation References
-stepTemplate: '{project-root}/.bmad/bmb/docs/workflows/step-template.md'
-workflowTemplate: '{project-root}/.bmad/bmb/docs/workflows/workflow-template.md'
+stepTemplate: '{project-root}/.bmad/bmb/docs/workflows/templates/step-template.md'
+workflowTemplate: '{project-root}/.bmad/bmb/docs/workflows/templates/workflow-template.md'
 ---
 
 # Step 3: Step-by-Step Validation
@@ -186,7 +186,7 @@ For each step:
 
 "**Path Variable Validation:**"
 
-- Check format: `{project-root}/.bmad/bmb/...` vs `{project-root}/src/modules/bmb/...`
+- Check format: `{project-root}/.bmad/bmb/...` vs `{project-root}/bmb/...`
 - Ensure consistent variable usage across all step files
 - Validate relative vs absolute path usage
 
@@ -232,13 +232,13 @@ For each step file with violations:
 2. [Second most frequent]
 3. [Third most frequent]
 
-**Ready for Phase 3:** Holistic workflow analysis
+**Ready for Phase 4:** File Validation workflow analysis
 
 - Flow optimization assessment
 - Goal alignment verification
 - Meta-workflow failure analysis
 
-**Select an Option:** [C] Continue to Holistic Analysis [X] Exit"
+**Select an Option:** [C] Continue to File Validation [X] Exit"
 
 ## Menu Handling Logic:
 
