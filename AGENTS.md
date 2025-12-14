@@ -1,4 +1,4 @@
-<!-- OPENSPEC:START -->
+ <!-- OPENSPEC:START -->
 
 # OpenSpec Instructions
 
@@ -20,10 +20,6 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 <!-- OPENSPEC:END -->
 
-Note: This project uses bd (beads) for issue tracking. Use `bd` commands instead of markdown TODOs. See AGENTS.md for workflow details.
-
-This file provides guidance when working with this repository.
-
 ## Development Commands
 
 ### Docker Services
@@ -39,6 +35,38 @@ This file provides guidance when working with this repository.
 - Build: `cd backend && mvnd clean package`
 - Compile: `cd backend && mvnd clean compile`
 - Format code: `cd backend && mvnd spotless:apply`
+
+### Flyway Migration Naming Convention
+
+**Pattern**: `V<TIMESTAMP>__<description>.sql`
+
+**Format**: `VYYYYMMDDNNN__snake_case_description.sql`
+
+- `YYYY` = Year (4 digits)
+- `MM` = Month (2 digits)
+- `DD` = Day (2 digits)
+- `NNN` = Sequence number for same day (001, 002, 003...)
+
+**Examples**:
+
+```
+V20251208001__create_users_table.sql
+V20251208002__add_email_index.sql
+V20251209001__create_orders_table.sql
+```
+
+**Rules**:
+
+1. **Always use timestamp format** for new migrations (avoids conflicts)
+2. **Use snake_case** for description (underscores, not spaces)
+3. **Double underscore** `__` separates version from description
+4. **Never rename** migrations after they've been applied to any environment
+5. **Repeatable migrations** use `R__` prefix (e.g., `R__refresh_views.sql`)
+
+**If you need to fix an applied migration**:
+
+- Create a NEW migration with the fix, don't modify the old one
+- Run `flyway repair` if checksum validation fails
 
 ### Frontend (React + TypeScript + Vite)
 
@@ -65,228 +93,88 @@ This is a multi-tenant accounting system built as a monorepo.
 - **Structure**: Feature-based (`src/features/`).
 - **State**: React Query + Context API.
 
-## MCP Tool Usage Guidelines
-
-### 1. Codebase Intelligence (Nia AI)
-
-**Tool**: `search_codebase` / `nia_package_search_hybrid`
-
-- **Goal**: Understand architectural patterns or find implementation details across the entire monorepo.
-- **When to use**:
-  - Before starting a new feature to understand existing patterns (e.g., "How is `CompanyContext` propagated in async tasks?").
-  - When debugging complex cross-module issues.
-- **Example Prompt**: "Use Nia to search the codebase for all usages of `CompanyScopedEntity` to understand the multi-tenancy implementation."
-
-### 2. Deep Research & Documentation (Nia AI)
-
-**Tool**: `nia_deep_research_agent` / `index_documentation`
-
-- **Goal**: Research external libraries or index new documentation sources.
-- **When to use**:
-  - When proposing a new library comparison (e.g., "Compare Zod vs Yup for this project").
-  - When the project uses a specific library version (e.g., Spring Boot 3.5.7) and you need up-to-date specs.
-- **Example Prompt**: "Use Nia to research the breaking changes in Spring Boot 3.5.7 regarding Security filter chains."
-
-### 3. Agent Context Sharing (Nia AI)
-
-**Tool**: `save_context` / `retrieve_context` (or `nia_context` with actions)
-
-- **Goal**: Preserve conversation history, plans, and decisions when switching tasks or sessions.
-- **Actions**:
-  - **Save**: Captures conversation history, edited files, and decisions.
-  - **Retrieve**: Restores a previous working state.
-- **Workflow Strategy**:
-  1.  **Checkpointing**: After completing a "Plan Phase" (see below), explicitly save the context.
-
-
-      * *Command*: "Save this context as 'Completed Phase 1 - Auth Setup'."
-  2.  **Handoff**: If you need to switch to a different agent or come back later, use retrieve.
-
-
-      * *Command*: "Retrieve context for 'Auth Setup'."
-
-## Table UI Standards (shadcn)
-
-- **Search**: Input field for filtering.
-- **Refresh**: Button to reload data.
-- **Pagination**: Page size selector (10, 20, 50) + navigation.
-
-## Development Rules
-
-- **Do not create markdown files** unless explicitly requested.
-- **Always Use Nia MCP** for deep understanding, search codebase, find relevance, context management and some task relevance.
-
----
-
-# BMAD Method + Beads Integration
-
-This project uses **BMAD Method** for structured AI-driven development and **Beads** (`bd`) for issue tracking and agent memory.
-
-## 🎯 Quick Reference: Which Tool When?
-
-| Situation                    | Tool           | Command                               |
-| ---------------------------- | -------------- | ------------------------------------- |
-| Starting a new feature/epic  | BMAD           | `*workflow-init` → Choose track       |
-| Creating requirements        | BMAD PM Agent  | `*prd` or `*tech-spec`                |
-| Designing architecture       | BMAD Architect | `*create-architecture`                |
-| Finding next task to work on | Beads          | `bd ready --json`                     |
-| Tracking work in progress    | Beads          | `bd update <id> --status in_progress` |
-| Discovered new bug/TODO      | Beads          | `bd create "Title" -t bug -p 1`       |
-| Completing a task            | Beads          | `bd close <id> --reason "Done"`       |
-| Viewing dependencies         | Beads          | `bd dep tree <id>`                    |
-| Ending session               | Both           | See "Landing the Plane" below         |
-
----
-
-### Using bv as an AI sidecar
-
-bv is a fast terminal UI for Beads projects (.beads/beads.jsonl). It renders lists/details and precomputes dependency metrics (PageRank, critical path, cycles, etc.) so you instantly see blockers and execution order. For agents, it’s a graph sidecar: instead of parsing JSONL or risking hallucinated traversal, call the robot flags to get deterministic, dependency-aware outputs.
-
-_IMPORTANT: As an agent, you must ONLY use bv with the robot flags, otherwise you'll get stuck in the interactive TUI that's intended for human usage only!_
-
-- bv --robot-help — shows all AI-facing commands.
-- bv --robot-insights — JSON graph metrics (PageRank, betweenness, HITS, critical path, cycles) with top-N summaries for quick triage.
-- bv --robot-plan — JSON execution plan: parallel tracks, items per track, and unblocks lists showing what each item frees up.
-- bv --robot-priority — JSON priority recommendations with reasoning and confidence.
-- bv --robot-recipes — list recipes (default, actionable, blocked, etc.); apply via bv --recipe <name> to pre-filter/sort before other flags.
-- bv --robot-diff --diff-since <commit|date> — JSON diff of issue changes, new/closed items, and cycles introduced/resolved.
-
-Use these commands instead of hand-rolling graph logic; bv already computes the hard parts so agents can act safely and quickly.
-
-## 🛬 Landing the Plane (Session End Protocol)
-
-**When ending a session, complete ALL steps. The plane has NOT landed until `git push` succeeds.**
-
-### Step-by-Step Checklist
-
-```bash
-# 1. FILE ISSUES for remaining work
-bd create "TODO: Add integration tests" -t task -p 2 --json
-
-# 2. RUN QUALITY GATES (if code changes were made)
-cd backend && mvnd test
-cd frontend && pnpm test
-cd backend && mvnd spotless:apply
-cd frontend && pnpm format:fix
-
-# 3. UPDATE BEADS - close finished, update status
-bd close <id1> <id2> --reason "Implemented" --json
-bd update <id3> --status blocked --json
-
-# 4.  SYNC AND PUSH (MANDATORY - DO NOT SKIP)
-git pull --rebase
-# If conflicts in . beads/beads.jsonl:
-#   git checkout --theirs .beads/beads.jsonl
-#   bd import -i .beads/beads.jsonl
-bd sync
-git add .
-git commit -m "feat: <summary of work>"
-git push  # ← MUST complete successfully
-
-# 5.  VERIFY clean state
-git status  # Must show "up to date with origin"
-
-# 6.  PROVIDE NEXT SESSION PROMPT
-bd ready --json  # Show next work item
-```
-
-### Summary Template
-
-After landing, provide:
-
-- ✅ **Completed**: What was done this session
-- 📋 **Issues Filed**: New issues created for follow-up
-- 🧪 **Quality Gates**: All passing / issues filed
-- 🔄 **Git Status**: Confirmed pushed to remote
-- ➡️ **Next Session**: `"Continue work on bd-XXX: [title].  [context]"`
-
----
-
-## 🔄 Integrating BMAD Stories with Beads
-
-### Converting PRD to Beads Issues
-
-After BMAD creates epics and stories, convert them to Beads:
-
-```bash
-# Create Epic
-bd create "Epic: User Authentication" -t epic -p 1
-# Returns: bd-a1b2
-
-# Create child tasks (auto-hierarchical IDs)
-bd create "Design login UI" -t task -p 2
-# Returns: bd-a1b2. 1
-
-bd create "Implement JWT backend" -t task -p 1
-# Returns: bd-a1b2.2
-
-bd create "Write unit tests" -t task -p 2
-# Returns: bd-a1b2. 3
-
-# Set dependencies
-bd dep add bd-a1b2. 3 bd-a1b2.2  # Tests depend on backend
-```
-
-### Workflow: BMAD Story → Beads → Implementation
-
-```
-1. SM agent creates story file (*create-story)
-2. Convert to Beads: bd create "Story title" -t task
-3. DEV agent implements (*dev-story)
-4. Update status: bd update <id> --status in_progress
-5.  Complete: bd close <id> --reason "Implemented"
-6.  Sync: bd sync && git push
-```
-
----
-
-## ⚡ Quick Commands Reference
-
-```bash
-# === BEADS ESSENTIALS ===
-bd ready                    # Find unblocked work
-bd ready --json             # JSON for programmatic use
-bd list --status open       # All open issues
-bd show <id>                # Issue details
-bd stats                    # Project overview
-
-# === ISSUE MANAGEMENT ===
-bd create "Title" -t task -p 2 --json
-bd update <id> --status in_progress
-bd close <id> --reason "Done"
-bd dep add <blocked> <blocker>
-bd dep tree <id>
-
-# === SYNC & GIT ===
-bd sync                     # Force immediate sync
-bd hooks install            # Install git hooks (recommended)
-
-# === BMAD WORKFLOWS ===
-*workflow-init              # Start new project
-*workflow-status            # Check current phase
-*prd                        # Create PRD (PM agent)
-*tech-spec                  # Create tech spec (PM agent)
-*create-architecture        # Design system (Architect)
-*sprint-planning            # Initialize sprint (SM)
-*create-story               # Draft story (SM)
-*dev-story                  # Implement (DEV)
-*code-review                # Review code (DEV)
-```
-
----
-
-## 🚨 Critical Rules
-
-1. **NEVER skip `bd sync` and `git push`** at session end
-2. **Use FRESH CHATS** for each BMAD workflow
-3. **Query `bd ready`** at session start - don't rely on context memory
-4. **File issues for ALL discovered work** - bugs, TODOs, ideas
-5. **Use Nia MCP** for codebase search and context preservation
-6. **Test before committing** if code was changed
-
----
-
 From now on, please do not add 'Co-authored-by' or any attribution footer to the git commit messages.
-Before do any task, read bd skills and use nia deep search first. use frontend skills when design frontend
 Do not auto create markdown (.md) file if user not requested.
-Always spawn subagents when needed.
+Always call beads to create issues for team then spawn the subagents to join team and work on task.
+
+## Issue Tracking with bd (beads)
+
+**IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
+
+### Why bd?
+
+- Dependency-aware: Track blockers and relationships between issues
+- Git-friendly: Auto-syncs to JSONL for version control
+- Agent-optimized: JSON output, ready work detection, discovered-from links
+- Prevents duplicate tracking systems and confusion
+
+### Quick Start
+
+**Check for ready work:**
+```bash
+bd ready --json
+```
+
+**Create new issues:**
+```bash
+bd create "Issue title" -t bug|feature|task -p 0-4 --json
+bd create "Issue title" -p 1 --deps discovered-from:bd-123 --json
+bd create "Subtask" --parent <epic-id> --json  # Hierarchical subtask (gets ID like epic-id.1)
+```
+
+**Claim and update:**
+```bash
+bd update bd-42 --status in_progress --json
+bd update bd-42 --priority 1 --json
+```
+
+**Complete work:**
+```bash
+bd close bd-42 --reason "Completed" --json
+```
+
+### Issue Types
+
+- `bug` - Something broken
+- `feature` - New functionality
+- `task` - Work item (tests, docs, refactoring)
+- `epic` - Large feature with subtasks
+- `chore` - Maintenance (dependencies, tooling)
+
+### Priorities
+
+- `0` - Critical (security, data loss, broken builds)
+- `1` - High (major features, important bugs)
+- `2` - Medium (default, nice-to-have)
+- `3` - Low (polish, optimization)
+- `4` - Backlog (future ideas)
+
+### Workflow for AI Agents
+
+1. **Check ready work**: `bd ready` shows unblocked issues
+2. **Claim your task**: `bd update <id> --status in_progress`
+3. **Work on it**: Implement, test, document
+4. **Discover new work?** Create linked issue:
+   - `bd create "Found bug" -p 1 --deps discovered-from:<parent-id>`
+5. **Complete**: `bd close <id> --reason "Done"`
+6. **Commit together**: Always commit the `.beads/issues.jsonl` file together with the code changes so issue state stays in sync with code state
+
+### Auto-Sync
+
+bd automatically syncs with git:
+- Exports to `.beads/issues.jsonl` after changes (5s debounce)
+- Imports from JSONL when newer (e.g., after `git pull`)
+- No manual export/import needed!
+
+### Important Rules
+
+- ✅ Use bd for ALL task tracking
+- ✅ Always use `--json` flag for programmatic use
+- ✅ Link discovered work with `discovered-from` dependencies
+- ✅ Check `bd ready` before asking "what should I work on?"
+- ✅ Store AI planning docs in `history/` directory
+- ✅ Run `bd <cmd> --help` to discover available flags
+- ❌ Do NOT create markdown TODO lists
+- ❌ Do NOT use external issue trackers
+- ❌ Do NOT duplicate tracking systems
+- ❌ Do NOT clutter repo root with planning documents

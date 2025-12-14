@@ -102,12 +102,12 @@ development_status:
   7-2-statutory-reports-b01-b02-b03-f01-tt200: done # Code review: changes requested
   7-3-report-scheduling-export-distribution-and-access-control: done
   7-4-multi-period-comparison-variance-analysis: done
-  7-5-reporting-audit-compliance-and-integrity: backlog
-  7-6-f01-detailed-ledger-report-implementation: backlog
+  7-5-reporting-audit-compliance-and-integrity: deferred
+  7-6-f01-detailed-ledger-report-implementation: deferred
   epic-7-retrospective: optional
 
-  epic-8: backlog
-  8-0-mvp-metabase-integration: done
+  epic-8: in-progress
+  8-0-metabase-integration-full: ready-for-dev
   8-1-real-time-financial-dashboard-setup-data-pipeline: backlog
   8-2-widget-configuration-user-personalization: backlog
   8-3-drill-down-filtering-and-interactive-exploration: backlog

@@ -3,7 +3,7 @@ name: 'step-09-customize'
 description: 'Optional personalization with customization file creation'
 
 # Path Definitions
-workflow_path: '{project-root}/src/modules/bmb/workflows/create-agent'
+workflow_path: '{project-root}/bmb/workflows/create-agent/create-agent'
 
 # File References
 thisStepFile: '{workflow_path}/steps/step-09-customize.md'

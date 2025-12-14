@@ -1,19 +1,30 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
+
+const authDir = path.join(__dirname, 'tests', '.auth');
+
+const ROLES = ['admin', 'chief_accountant', 'accountant', 'cfo'] as const;
+type Role = (typeof ROLES)[number];
+
+function getStorageStatePath(role: Role): string {
+  return path.join(authDir, `${role}.json`);
+}
 
 /**
  * Playwright Test Configuration
- * 
+ *
  * This configuration follows production-ready patterns:
+ * - Global setup for multi-role authentication
  * - Standardized timeouts (action: 15s, navigation: 30s, test: 60s)
  * - Failure-only artifact capture (screenshots, videos, traces)
  * - HTML + JUnit reporters for CI integration
- * - Multi-browser support (chromium, firefox, webkit)
+ * - Multi-browser and multi-role support
  * - Parallel execution with CI-aware worker configuration
  */
 export default defineConfig({
   // Test directory - includes both E2E and API tests
   testDir: './tests',
-  testMatch: ['**/*.spec.ts'], // Match all spec files
+  testMatch: ['**/*.spec.ts'],
 
   // Parallel execution
   fullyParallel: true,
@@ -22,9 +33,9 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
 
   // Timeout configuration
-  timeout: 60 * 1000, // Test timeout: 60s
+  timeout: 60 * 1000,
   expect: {
-    timeout: 15 * 1000, // Assertion timeout: 15s
+    timeout: 15 * 1000,
   },
 
   // Global test settings
@@ -33,8 +44,8 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 15 * 1000, // Action timeout: 15s
-    navigationTimeout: 30 * 1000, // Navigation timeout: 30s
+    actionTimeout: 15 * 1000,
+    navigationTimeout: 30 * 1000,
   },
 
   // Reporters
@@ -44,23 +55,67 @@ export default defineConfig({
     ['list'],
   ],
 
-  // Browser projects
+  // Browser projects with role-based authentication
   projects: [
+    // Setup project - runs global authentication
+    {
+      name: 'setup',
+      testMatch: /global-setup\.ts/,
+    },
+
+    // === Chromium projects for each role ===
+    {
+      name: 'chromium-admin',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: getStorageStatePath('admin'),
+      },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'chromium-chief_accountant',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: getStorageStatePath('chief_accountant'),
+      },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'chromium-accountant',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: getStorageStatePath('accountant'),
+      },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'chromium-cfo',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: getStorageStatePath('cfo'),
+      },
+      dependencies: ['setup'],
+    },
+
+    // Default chromium project (no auth, for unauthenticated tests)
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    // Only run chromium in CI to save time and resources
-    ...(process.env.CI ? [] : [
-      {
-        name: 'firefox',
-        use: { ...devices['Desktop Firefox'] },
-      },
-      {
-        name: 'webkit',
-        use: { ...devices['Desktop Safari'] },
-      },
-    ]),
+
+    // Cross-browser testing (only in local dev)
+    ...(process.env.CI
+      ? []
+      : [
+          {
+            name: 'firefox',
+            use: { ...devices['Desktop Firefox'] },
+          },
+          {
+            name: 'webkit',
+            use: { ...devices['Desktop Safari'] },
+          },
+        ]),
   ],
 
   // Web server configuration - start frontend dev server for tests
@@ -71,4 +126,3 @@ export default defineConfig({
     timeout: 120 * 1000,
   },
 });
-

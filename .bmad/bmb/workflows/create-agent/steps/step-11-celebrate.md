@@ -3,7 +3,7 @@ name: 'step-11-celebrate'
 description: 'Celebrate completion and guide next steps for using the agent'
 
 # Path Definitions
-workflow_path: '{project-root}/src/modules/bmb/workflows/create-agent'
+workflow_path: '{project-root}/bmb/workflows/create-agent/create-agent'
 
 # File References
 thisStepFile: '{workflow_path}/steps/step-11-celebrate.md'

@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { TEST_USERS } from '../auth.global-setup';
 
 /**
  * Example Test Suite
@@ -19,10 +20,10 @@ test.describe('Example Test Suite', () => {
   });
 
   test('should create user and login', async ({ page, userFactory }) => {
-    // Given: Create test user via factory
+    // Given: Create test user via factory using centralized credentials
     const user = userFactory.createUser({
-      email: 'test@example.com',
-      password: 'TestPassword123!',
+      email: TEST_USERS.accountant.email,
+      password: TEST_USERS.accountant.password,
     });
 
     // Mock login API response (since backend may not be available in CI)

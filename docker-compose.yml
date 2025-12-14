@@ -33,32 +33,80 @@ services:
     networks:
       - accounting-net
 
+  metabase-db:
+    image: postgres:16-alpine
+    container_name: accounting-metabase-db
+    environment:
+      POSTGRES_USER: metabase
+      POSTGRES_PASSWORD: ${METABASE_DB_PASSWORD:-metabase}
+      POSTGRES_DB: metabase
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metabase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - metabase-db-data:/var/lib/postgresql/data
+    networks:
+      - accounting-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
   metabase:
-    image: metabase/metabase:latest
+    image: metabase/metabase:v0.50.36
     container_name: accounting-metabase
     environment:
       MB_DB_TYPE: postgres
-      MB_DB_DBNAME: metabase_app_db
+      MB_DB_DBNAME: metabase
       MB_DB_PORT: 5432
-      MB_DB_USER: accounting
-      MB_DB_PASS: accounting
-      MB_DB_HOST: postgres
+      MB_DB_USER: metabase
+      MB_DB_PASS: ${METABASE_DB_PASSWORD:-metabase}
+      MB_DB_HOST: metabase-db
+      MB_SITE_URL: ${METABASE_SITE_URL:-http://localhost:3000}
       MB_EMBEDDING_SECRET_KEY: ${METABASE_EMBEDDING_SECRET:-dev-secret-key-change-in-production}
+      MB_JWT_SHARED_SECRET: ${METABASE_JWT_SECRET:-dev-jwt-secret-change-in-production}
+      MB_JWT_ENABLED: "true"
+      MB_JWT_IDENTITY_PROVIDER_URI: ""
+      MB_JWT_ATTRIBUTE_EMAIL: email
+      MB_JWT_ATTRIBUTE_FIRSTNAME: first_name
+      MB_JWT_ATTRIBUTE_LASTNAME: last_name
+      MB_JWT_ATTRIBUTE_GROUPS: groups
+      MB_ENABLE_EMBEDDING: "true"
+      MB_ENABLE_PUBLIC_SHARING: "false"
+      MB_NATIVE_QUERY_DISABLED: "true"
+      MB_PASSWORD_COMPLEXITY: strong
+      MB_PASSWORD_LENGTH: 12
+      MB_SESSION_TIMEOUT: 30
+      MB_SESSION_COOKIES: "true"
+      MB_ENABLE_QUERY_CACHING: "true"
+      MB_QUERY_CACHING_MAX_TTL: 300
+      JAVA_TIMEZONE: Asia/Ho_Chi_Minh
     depends_on:
-      postgres:
+      metabase-db:
         condition: service_healthy
     ports:
       - "3000:3000"
     volumes:
-      - metabase-data:/metabase-data
+      - metabase-plugins:/plugins
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 120s
     networks:
       - accounting-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2"
+        reservations:
+          memory: 1G
 
   n8n:
     image: n8nio/n8n:latest
@@ -83,7 +131,8 @@ services:
 volumes:
   pgdata:
   pgadmin-data:
-  metabase-data:
+  metabase-db-data:
+  metabase-plugins:
   n8n-data:
 
 

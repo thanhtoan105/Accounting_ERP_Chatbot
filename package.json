@@ -3,10 +3,11 @@
   "private": true,
   "scripts": {
     "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test --grep @smoke",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
-    "test:e2e:report": "playwright show-report test-results/html"
+    "test:e2e:report": "playwright show-report"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.3.0",

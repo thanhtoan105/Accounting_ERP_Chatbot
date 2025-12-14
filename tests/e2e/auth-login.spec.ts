@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { TEST_USERS } from '../auth.global-setup';
 
 /**
  * Authentication - Login Flow Tests
@@ -16,8 +17,8 @@ test.describe('Authentication - Login', () => {
     test('[P0] should login with valid credentials and redirect to dashboard', async ({ page, userFactory }) => {
         // GIVEN: Valid user credentials
         const user = userFactory.createUser({
-            email: 'test.user@example.com',
-            password: 'ValidPass123!',
+            email: TEST_USERS.accountant.email,
+            password: TEST_USERS.accountant.password,
         });
 
         // Mock successful login API response
@@ -82,8 +83,8 @@ test.describe('Authentication - Login', () => {
     });
 
     test('[P1] should display error for invalid credentials', async ({ page }) => {
-        // GIVEN: Invalid credentials
-        const invalidEmail = 'wrong@example.com';
+        // GIVEN: Invalid credentials (valid email, wrong password)
+        const invalidEmail = TEST_USERS.accountant.email;
         const invalidPassword = 'WrongPassword123!';
 
         // Mock failed login API response
@@ -119,20 +120,17 @@ test.describe('Authentication - Login', () => {
         // WHEN: User clicks login without filling fields
         await page.click('[data-testid="login-button"]');
 
-        // THEN: Required field errors should appear
-        const emailInput = page.locator('[data-testid="email-input"]');
-        const passwordInput = page.locator('[data-testid="password-input"]');
-
-        // Check for HTML5 validation or custom validation
-        await expect(emailInput).toHaveAttribute('required', '');
-        await expect(passwordInput).toHaveAttribute('required', '');
+        // THEN: Zod validation error messages should appear
+        // The form uses react-hook-form + zod for custom validation (not HTML5 required)
+        await expect(page.getByText(/invalid email|email is required/i)).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(/password is required/i)).toBeVisible({ timeout: 5000 });
     });
 
     test('[P2] should persist session on page reload', async ({ page, userFactory }) => {
         // GIVEN: User is logged in
         const user = userFactory.createUser({
-            email: 'session.test@example.com',
-            password: 'SessionTest123!',
+            email: TEST_USERS.accountant.email,
+            password: TEST_USERS.accountant.password,
         });
 
         await page.route('**/api/v1/auth/login', async (route) => {
@@ -182,8 +180,8 @@ test.describe('Authentication - Login', () => {
         await page.goto('/login');
         await page.waitForSelector('[data-testid="email-input"]', { state: 'visible' });
 
-        await page.fill('[data-testid="email-input"]', 'test@example.com');
-        await page.fill('[data-testid="password-input"]', 'Password123!');
+        await page.fill('[data-testid="email-input"]', TEST_USERS.accountant.email);
+        await page.fill('[data-testid="password-input"]', TEST_USERS.accountant.password);
         await page.click('[data-testid="login-button"]');
 
         // THEN: Network error should be handled gracefully

@@ -2,8 +2,8 @@
 
 ## Migration Summary
 
-**Legacy Workflow:** `src/modules/bmb/workflows-legacy/create-agent/workflow.yaml` + `instructions.md`
-**New Workflow:** `src/modules/bmb/workflows/create-agent/workflow.md` + 11 step files
+**Legacy Workflow:** `bmb/workflows/create-agent-legacy/create-agent/workflow.yaml` + `instructions.md`
+**New Workflow:** `bmb/workflows/create-agent/create-agent/workflow.md` + 11 step files
 **Migration Date:** 2025-11-30T06:32:21.248Z
 **Migration Status:** ✅ COMPLETE
 
