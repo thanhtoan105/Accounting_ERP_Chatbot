@@ -3,22 +3,27 @@ package com.accounting.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.accounting.entity.User;
-import com.accounting.entity.dashboard.DashboardAuditLog;
 import com.accounting.repository.UserRepository;
-import com.accounting.repository.dashboard.DashboardAuditLogRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.service.MetabaseService;
+import com.accounting.service.analytics.AnalyticsAuditService;
+import com.accounting.service.analytics.AnalyticsAuditService.AuditAction;
+import com.accounting.service.analytics.AnalyticsAuditService.ResourceType;
+import com.accounting.service.analytics.AnalyticsAuthorizationService;
+import com.accounting.service.analytics.AnalyticsAuthorizationService.WidgetScope;
 import com.accounting.service.analytics.MetabaseEmbedService.MetabaseEmbedConfig;
 import com.accounting.service.analytics.MetabaseEmbedServiceImpl;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Controller for analytics and BI dashboard operations.
@@ -31,17 +36,20 @@ public class AnalyticsController {
     private final MetabaseService metabaseService;
     private final MetabaseEmbedServiceImpl metabaseEmbedService;
     private final UserRepository userRepository;
-    private final DashboardAuditLogRepository auditLogRepository;
+    private final AnalyticsAuditService auditService;
+    private final AnalyticsAuthorizationService authorizationService;
 
     public AnalyticsController(
             MetabaseService metabaseService,
             MetabaseEmbedServiceImpl metabaseEmbedService,
             UserRepository userRepository,
-            DashboardAuditLogRepository auditLogRepository) {
+            AnalyticsAuditService auditService,
+            AnalyticsAuthorizationService authorizationService) {
         this.metabaseService = metabaseService;
         this.metabaseEmbedService = metabaseEmbedService;
         this.userRepository = userRepository;
-        this.auditLogRepository = auditLogRepository;
+        this.auditService = auditService;
+        this.authorizationService = authorizationService;
     }
 
     /**
@@ -120,7 +128,7 @@ public class AnalyticsController {
     @PreAuthorize("hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT', 'ACCOUNTANT_GENERAL', 'ACCOUNTANT_AR', 'ACCOUNTANT_AP', 'CASHIER', 'FINANCE', 'ACCOUNTANT')")
     @Operation(summary = "Generate Metabase SSO JWT token",
                description = "Generate a JWT token for Metabase SSO with locked company_id")
-    public ResponseEntity<Map<String, Object>> getSsoToken() {
+    public ResponseEntity<Map<String, Object>> getSsoToken(HttpServletRequest request) {
         Long companyId = CompanyContext.getCompanyId();
         Long userId = SecurityUtils.getCurrentUserId();
 
@@ -129,7 +137,8 @@ public class AnalyticsController {
 
         String token = metabaseEmbedService.generateJwtToken(user, companyId);
 
-        logAuditEvent(companyId, userId, "SSO_TOKEN_GENERATED", "JWT", null);
+        auditService.logAction(companyId, userId, AuditAction.SSO_TOKEN_GENERATED,
+                ResourceType.JWT, null, null, request);
 
         return ResponseEntity.ok(Map.of(
                 "jwt", token,
@@ -144,11 +153,15 @@ public class AnalyticsController {
     @PreAuthorize("hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT', 'ACCOUNTANT_GENERAL', 'ACCOUNTANT_AR', 'ACCOUNTANT_AP', 'CASHIER', 'FINANCE', 'ACCOUNTANT')")
     @Operation(summary = "Log analytics event",
                description = "Log frontend analytics events for audit trail")
-    public ResponseEntity<Void> logEvent(@RequestBody EventRequest request) {
+    public ResponseEntity<Void> logEvent(@RequestBody EventRequest eventRequest, HttpServletRequest request) {
         Long companyId = CompanyContext.getCompanyId();
         Long userId = SecurityUtils.getCurrentUserId();
 
-        logAuditEvent(companyId, userId, request.eventType(), request.resourceType(), request.resourceId());
+        AuditAction action = mapEventTypeToAction(eventRequest.eventType());
+        ResourceType resourceType = mapResourceType(eventRequest.resourceType());
+
+        auditService.logAction(companyId, userId, action, resourceType,
+                eventRequest.resourceId(), null, request);
 
         return ResponseEntity.ok().build();
     }
@@ -167,6 +180,67 @@ public class AnalyticsController {
 
         List<DashboardInfo> dashboards = getDashboardsForRole(user.getRole());
         return ResponseEntity.ok(dashboards);
+    }
+
+    /**
+     * Get allowed widgets for the current user based on role.
+     */
+    @GetMapping("/metabase/widgets")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT', 'ACCOUNTANT_GENERAL', 'ACCOUNTANT_AR', 'ACCOUNTANT_AP', 'CASHIER', 'FINANCE', 'ACCOUNTANT')")
+    @Operation(summary = "List allowed widgets",
+               description = "Get list of widgets the current user can access based on role")
+    public ResponseEntity<WidgetPermissionsResponse> getWidgetPermissions() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        WidgetScope scope = authorizationService.getWidgetScope(user);
+        List<String> allowedWidgets = authorizationService.getAllowedWidgets(user);
+        boolean canRefresh = authorizationService.canManualRefresh(user);
+        boolean canViewETL = authorizationService.canViewETLStatus(user);
+
+        return ResponseEntity.ok(new WidgetPermissionsResponse(
+                scope.name(),
+                allowedWidgets,
+                canRefresh,
+                canViewETL
+        ));
+    }
+
+    /**
+     * Check widget access for specific widget.
+     */
+    @GetMapping("/metabase/widgets/{widgetKey}/access")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT', 'ACCOUNTANT_GENERAL', 'ACCOUNTANT_AR', 'ACCOUNTANT_AP', 'CASHIER', 'FINANCE', 'ACCOUNTANT')")
+    @Operation(summary = "Check widget access",
+               description = "Check if user can access a specific widget")
+    public ResponseEntity<Map<String, Object>> checkWidgetAccess(
+            @PathVariable String widgetKey,
+            HttpServletRequest request) {
+        Long companyId = CompanyContext.getCompanyId();
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        boolean allowed = authorizationService.canViewWidget(user, widgetKey);
+
+        if (!allowed) {
+            auditService.logWidgetAccessDenied(companyId, userId, widgetKey, user.getRole());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "allowed", false,
+                            "widgetKey", widgetKey,
+                            "message", "Access denied to widget: " + widgetKey
+                    ));
+        }
+
+        auditService.logAction(companyId, userId, AuditAction.WIDGET_ACCESSED,
+                ResourceType.WIDGET, widgetKey, null, request);
+
+        return ResponseEntity.ok(Map.of(
+                "allowed", true,
+                "widgetKey", widgetKey
+        ));
     }
 
     private List<DashboardInfo> getDashboardsForRole(String role) {
@@ -206,14 +280,30 @@ public class AnalyticsController {
                 .toList();
     }
 
-    private void logAuditEvent(Long companyId, Long userId, String action, String resourceType, String resourceId) {
-        try {
-            DashboardAuditLog log = DashboardAuditLog.create(companyId, userId, action, resourceType);
-            log.setResourceId(resourceId);
-            auditLogRepository.save(log);
-        } catch (Exception e) {
-            // Log failure but don't fail the request
+    private AuditAction mapEventTypeToAction(String eventType) {
+        if (eventType == null) {
+            return AuditAction.DASHBOARD_VIEW_LOADED;
         }
+        return switch (eventType.toUpperCase()) {
+            case "VIEW_LOADED", "DASHBOARD_VIEW_LOADED" -> AuditAction.DASHBOARD_VIEW_LOADED;
+            case "VIEW_ERROR", "DASHBOARD_VIEW_ERROR" -> AuditAction.DASHBOARD_VIEW_ERROR;
+            case "EXPORT_TRIGGERED" -> AuditAction.EXPORT_TRIGGERED;
+            case "WIDGET_ACCESSED" -> AuditAction.WIDGET_ACCESSED;
+            default -> AuditAction.DASHBOARD_VIEW_LOADED;
+        };
+    }
+
+    private ResourceType mapResourceType(String resourceType) {
+        if (resourceType == null) {
+            return ResourceType.DASHBOARD;
+        }
+        return switch (resourceType.toUpperCase()) {
+            case "WIDGET" -> ResourceType.WIDGET;
+            case "ETL_JOB" -> ResourceType.ETL_JOB;
+            case "JWT" -> ResourceType.JWT;
+            case "EXPORT" -> ResourceType.EXPORT;
+            default -> ResourceType.DASHBOARD;
+        };
     }
 
     public record EmbedConfigResponse(
@@ -234,4 +324,10 @@ public class AnalyticsController {
             String name,
             String description,
             List<String> allowedRoles) {}
+
+    public record WidgetPermissionsResponse(
+            String scope,
+            List<String> allowedWidgets,
+            boolean canRefresh,
+            boolean canViewETLStatus) {}
 }
