@@ -107,7 +107,7 @@ development_status:
   epic-7-retrospective: optional
 
   epic-8: in-progress
-  8-0-metabase-integration-full: ready-for-dev
+  8-0-metabase-integration-full: done
   8-1-real-time-financial-dashboard-setup-data-pipeline: backlog
   8-2-widget-configuration-user-personalization: backlog
   8-3-drill-down-filtering-and-interactive-exploration: backlog

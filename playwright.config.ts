@@ -60,7 +60,7 @@ export default defineConfig({
     // Setup project - runs global authentication
     {
       name: 'setup',
-      testMatch: /global-setup\.ts/,
+      testMatch: /auth\.global-setup\.ts/,
     },
 
     // === Chromium projects for each role ===

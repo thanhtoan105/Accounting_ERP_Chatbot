@@ -75,13 +75,19 @@ services:
       MB_JWT_ATTRIBUTE_LASTNAME: last_name
       MB_JWT_ATTRIBUTE_GROUPS: groups
       MB_ENABLE_EMBEDDING: "true"
+      # Security hardening
       MB_ENABLE_PUBLIC_SHARING: "false"
       MB_NATIVE_QUERY_DISABLED: "true"
+      MB_SESSION_COOKIES: "lax"
+      MB_CHECK_FOR_UPDATES: "false"
       MB_PASSWORD_COMPLEXITY: strong
       MB_PASSWORD_LENGTH: 12
+      # Session timeout in minutes
       MB_SESSION_TIMEOUT: 30
-      MB_SESSION_COOKIES: "true"
+      # Query caching configuration
       MB_ENABLE_QUERY_CACHING: "true"
+      MB_QUERY_CACHING_TTL_RATIO: "10"
+      MB_QUERY_CACHING_MIN_TTL: "60"
       MB_QUERY_CACHING_MAX_TTL: 300
       JAVA_TIMEZONE: Asia/Ho_Chi_Minh
     depends_on:
