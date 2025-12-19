@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { SalesInvoiceLineGrid, type SalesInvoiceLine } from '../SalesInvoiceLineGrid'
-import type { AccountSummary } from '@/types/account'
+import type { AccountSummary } from '@/components/account/AccountPicker'
 
 describe('SalesInvoiceLineGrid - VAT Rate Override', () => {
   const mockAccounts: AccountSummary[] = [
@@ -36,7 +36,6 @@ describe('SalesInvoiceLineGrid - VAT Rate Override', () => {
 
   it('displays warning dialog when VAT rate is overridden', async () => {
     const onLinesChange = vi.fn()
-    const defaultVatRate: 'ZERO' | 'FIVE' | 'TEN' | 'EXEMPT' = 'TEN'
 
     render(
       <SalesInvoiceLineGrid
@@ -60,7 +59,7 @@ describe('SalesInvoiceLineGrid - VAT Rate Override', () => {
     // Change VAT rate to override (from default FIVE to TEN)
     // Note: The component should show a warning when the rate differs from default
     // Since the line already has TEN and default is FIVE, the warning icon should be visible
-    const warningIcon = screen.queryByRole('tooltip', { hidden: true })
+    screen.queryByRole('tooltip', { hidden: true })
     // The warning icon might be present if the component detects the override
   })
 

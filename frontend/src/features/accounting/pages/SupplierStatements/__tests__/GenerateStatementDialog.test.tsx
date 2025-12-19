@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { GenerateStatementDialog } from '../GenerateStatementDialog'
-import * as supplierStatementService from '@/services/supplierStatement'
+import { supplierStatementService } from '@/services/supplierStatement'
 
 const toast = vi.hoisted(() => ({
   success: vi.fn(),
@@ -14,7 +14,12 @@ vi.mock('sonner', () => ({
   toast,
 }))
 
-vi.mock('@/services/supplierStatement')
+vi.mock('@/services/supplierStatement', () => ({
+  supplierStatementService: {
+    generateStatement: vi.fn(),
+    exportStatement: vi.fn(),
+  },
+}))
 
 describe('GenerateStatementDialog', () => {
   const mockGenerateStatement = vi.mocked(supplierStatementService.generateStatement)
@@ -26,6 +31,11 @@ describe('GenerateStatementDialog', () => {
     supplierName: 'Test Supplier',
     supplierCode: 'SUP001',
     statementType: 'SUMMARY' as const,
+    startDate: '2024-01-01',
+    endDate: '2024-01-31',
+    generationDate: '2024-01-15T10:00:00Z',
+    generatedByName: 'Test User',
+    format: 'EXCEL' as const,
     openingBalance: 1000,
     closingBalance: 2000,
     totalDebits: 1500,

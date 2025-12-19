@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import VoucherList from '../VoucherList'
@@ -55,6 +55,7 @@ describe('VoucherList', () => {
           postedByName: null,
           arApEntity: 'Test Customer',
           hasReversal: false,
+          reversedByVoucherId: null,
           attachmentCount: 0,
           currency: 'VND',
         },
@@ -70,6 +71,7 @@ describe('VoucherList', () => {
           postedByName: 'Jane Smith',
           arApEntity: null,
           hasReversal: false,
+          reversedByVoucherId: null,
           attachmentCount: 1,
           currency: 'VND',
         },

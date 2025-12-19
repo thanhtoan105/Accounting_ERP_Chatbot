@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import userEvent from '@testing-library/user-event'
 
 import { DisputeLogTable } from '../DisputeLogTable'
-import * as supplierStatementService from '@/services/supplierStatement'
+import { supplierStatementService } from '@/services/supplierStatement'
 
 const toast = vi.hoisted(() => ({
   success: vi.fn(),
@@ -26,7 +26,12 @@ vi.mock('@/components/ui/select', () => {
   return { Select, SelectTrigger, SelectContent, SelectItem, SelectValue }
 })
 
-vi.mock('@/services/supplierStatement')
+vi.mock('@/services/supplierStatement', () => ({
+  supplierStatementService: {
+    listDisputes: vi.fn(),
+    updateDispute: vi.fn(),
+  },
+}))
 
 describe('DisputeLogTable', () => {
   const mockListDisputes = vi.mocked(supplierStatementService.listDisputes)
@@ -37,30 +42,28 @@ describe('DisputeLogTable', () => {
       id: '123e4567-e89b-12d3-a456-426614174000',
       supplierId: 1,
       supplierName: 'Test Supplier',
+      supplierCode: 'SUP001',
       billId: 'bill-123',
       billNumber: 'BILL001',
       disputeReason: 'Amount mismatch',
       status: 'OPEN' as const,
-      createdBy: 1,
       createdByName: 'Test User',
       createdAt: '2024-01-15T10:00:00Z',
-      resolvedBy: null,
-      resolvedByName: null,
-      resolvedAt: null,
-      resolutionNotes: null,
+      resolvedByName: undefined,
+      resolvedAt: undefined,
+      resolutionNotes: undefined,
     },
     {
       id: '223e4567-e89b-12d3-a456-426614174001',
       supplierId: 1,
       supplierName: 'Test Supplier',
+      supplierCode: 'SUP001',
       billId: 'bill-456',
       billNumber: 'BILL002',
       disputeReason: 'Missing bill',
       status: 'RESOLVED' as const,
-      createdBy: 1,
       createdByName: 'Test User',
       createdAt: '2024-01-14T10:00:00Z',
-      resolvedBy: 1,
       resolvedByName: 'Test User',
       resolvedAt: '2024-01-16T10:00:00Z',
       resolutionNotes: 'Resolved by adjusting amount',
@@ -76,10 +79,7 @@ describe('DisputeLogTable', () => {
 
   beforeEach(() => {
     mockListDisputes.mockResolvedValue(sampleResponse)
-    mockUpdateDispute.mockResolvedValue({
-      message: 'Dispute updated successfully',
-      status: 'RESOLVED',
-    })
+    mockUpdateDispute.mockResolvedValue(undefined)
     toast.error.mockReset()
     toast.success.mockReset()
   })

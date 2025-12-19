@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import CustomerFormSheet from '../CustomerFormSheet'
 import * as customerService from '../../services/customer'
 
@@ -9,7 +8,7 @@ vi.mock('../../services/customer')
 describe('CustomerFormSheet', () => {
   const mockCreateCustomer = vi.mocked(customerService.createCustomer)
   const mockUpdateCustomer = vi.mocked(customerService.updateCustomer)
-  const mockGetCustomerById = vi.mocked(customerService.getCustomerById)
+  vi.mocked(customerService.getCustomerById)
   const mockOnSuccess = vi.fn()
   const mockOnClose = vi.fn()
 

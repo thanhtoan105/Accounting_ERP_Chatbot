@@ -11,7 +11,6 @@ import {
   Save,
   ArrowLeft,
   FileText,
-  RotateCcw,
   Link as LinkIcon,
 } from 'lucide-react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
@@ -24,7 +23,6 @@ import {
 } from '@/components/sales/SalesInvoiceLineGrid'
 import { CustomerPicker } from '@/components/sales/CustomerPicker'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -71,12 +69,6 @@ type CreditNoteFormValues = z.infer<typeof formSchema>
 
 const DEFAULT_PAYMENT_TERMS_DAYS = 30
 const COMPANY_DEFAULT_VAT_RATE: VatRate = 'TEN'
-const VAT_RATE_MAP: Record<VatRate, number> = {
-  ZERO: 0,
-  FIVE: 0.05,
-  TEN: 0.1,
-  EXEMPT: 0,
-}
 
 function mapAccountsToSummaries(accounts: ChartOfAccount[]): AccountSummary[] {
   return accounts
@@ -138,10 +130,10 @@ function calculateDueDate(
 export default function CreditNoteForm() {
   const params = useParams<{ originalInvoiceId: string }>()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  useSearchParams()
   const originalInvoiceId = params.originalInvoiceId
-  const { user } = useAuth()
-  const companyId = getCompanyId()
+  useAuth()
+  getCompanyId()
   const [accounts, setAccounts] = useState<AccountSummary[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [originalInvoice, setOriginalInvoice] = useState<SalesInvoiceDTO | null>(null)
@@ -172,6 +164,7 @@ export default function CreditNoteForm() {
 
     let mounted = true
     async function loadOriginalInvoice() {
+      if (!originalInvoiceId) return
       try {
         setLoadingOriginal(true)
         const invoice = await getSalesInvoiceById(originalInvoiceId)
@@ -202,13 +195,13 @@ export default function CreditNoteForm() {
           setSelectedCustomer({
             id: invoice.customerId,
             name: invoice.customerName,
-            code: invoice.customerCode || null,
+            code: invoice.customerCode ?? '',
             companyId: invoice.companyId,
-            email: null,
-            phone: null,
-            address: null,
-            taxCode: null,
-            isActive: true,
+            email: undefined,
+            phone: undefined,
+            address: undefined,
+            taxCode: undefined,
+            active: true,
             createdAt: '',
             updatedAt: '',
           })
@@ -278,7 +271,7 @@ export default function CreditNoteForm() {
 
         // Find matching account from original invoice line
         const originalLine = originalInvoice.lines.find(
-          (ol, idx) => idx === (line.lineNumber ? line.lineNumber - 1 : 0),
+          (_ol, idx) => idx === (line.lineNumber ? line.lineNumber - 1 : 0),
         )
         if (originalLine) {
           const account = accounts.find((a) => a.id === String(originalLine.accountId))

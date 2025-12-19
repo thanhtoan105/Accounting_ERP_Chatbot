@@ -55,7 +55,9 @@ import type { ScheduleRunDTO } from '../../types/reportSchedule'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
-function getStatusBadge(status: string, t: (key: string, fallback?: string) => string) {
+type TranslateFunction = (key: string, fallback?: string) => string
+
+function getStatusBadge(status: string, t: TranslateFunction) {
   const config: Record<
     string,
     {
@@ -94,7 +96,7 @@ function getStatusBadge(status: string, t: (key: string, fallback?: string) => s
   return config[status] || { variant: 'outline' as const, label: status }
 }
 
-function getTriggerTypeBadge(triggerType: string, t: (key: string, fallback?: string) => string) {
+function getTriggerTypeBadge(triggerType: string, t: TranslateFunction) {
   const config: Record<string, { variant: 'default' | 'secondary' | 'outline'; label: string }> = {
     SCHEDULED: { variant: 'secondary', label: t('reportCenter.triggerType.scheduled', 'Tự động') },
     MANUAL: { variant: 'default', label: t('reportCenter.triggerType.manual', 'Thủ công') },
@@ -124,7 +126,11 @@ function formatDateTime(dateStr: string | null): string {
 }
 
 export function HistoryTab() {
-  const { t } = useTranslation()
+  const { t: tRaw } = useTranslation()
+  const t: TranslateFunction = (key, fallback) => {
+    const result = tRaw(key)
+    return typeof result === 'string' ? result : (fallback ?? key)
+  }
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(20)
   const [rerunDialogOpen, setRerunDialogOpen] = useState(false)
@@ -160,7 +166,7 @@ export function HistoryTab() {
   }, [selectedRun, runNowMutation, t, refetch])
 
   const handleViewDetails = useCallback(
-    (run: ScheduleRunDTO) => {
+    (_run: ScheduleRunDTO) => {
       toast.info(
         t('reportCenter.viewDetailsNotImplemented', 'Tính năng xem chi tiết sẽ được phát triển'),
       )

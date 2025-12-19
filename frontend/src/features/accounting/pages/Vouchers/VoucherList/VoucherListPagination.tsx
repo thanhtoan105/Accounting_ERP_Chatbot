@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 /**
  * VoucherListPagination - Footer pagination controls

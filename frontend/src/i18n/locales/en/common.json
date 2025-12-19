@@ -218,7 +218,78 @@
     "cashPosition": "Cash Position",
     "cashBankBalances": "Current cash and bank balances",
     "dashboardNotAvailable": "Dashboard URL not available. Please check your Metabase configuration.",
-    "loadError": "Failed to load analytics dashboard. Please ensure Metabase is running and configured correctly."
+    "loadError": "Failed to load analytics dashboard. Please ensure Metabase is running and configured correctly.",
+    "dashboardRegion": "Analytics Dashboard",
+    "limitedAccess": "You have limited access to analytics based on your role.",
+    "freshness": {
+      "loading": "Loading...",
+      "unknown": "Unknown",
+      "fresh": "Fresh",
+      "stale": "Stale",
+      "outdated": "Outdated",
+      "dataStatus": "Data freshness",
+      "lastUpdated": "Last updated",
+      "nextRefresh": "Next refresh"
+    },
+    "refresh": {
+      "label": "Refresh data",
+      "tooltip": "Refresh dashboard data",
+      "inProgress": "Refreshing data...",
+      "started": "Data refresh started",
+      "rateLimited": "Please wait before refreshing again"
+    },
+    "error": {
+      "title": "Dashboard Unavailable",
+      "unavailable": "The analytics dashboard is currently unavailable. This may be due to maintenance or connectivity issues.",
+      "tryAgainLater": "Please try again later or contact support if the issue persists.",
+      "retry": "Try Again"
+    },
+    "degraded": {
+      "title": "Performance Degraded",
+      "message": "The dashboard is experiencing slower than normal load times. Some data may be delayed."
+    },
+    "periodLock": {
+      "locked": "Period Locked",
+      "lockedTooltip": "This accounting period has been closed. Data is read-only.",
+      "warning": "The displayed data belongs to a locked accounting period. You cannot refresh data for this period.",
+      "warningTitle": "Period Locked",
+      "warningMessage": "The displayed data belongs to a locked accounting period. Data refresh is disabled.",
+      "cannotRefresh": "Cannot refresh - period is locked"
+    },
+    "kpi": {
+      "postedVouchers": "Posted Vouchers",
+      "draftVouchers": "Draft Vouchers",
+      "overdueAmount": "Overdue Amount",
+      "overdueInvoices": "{{count}} overdue invoices",
+      "overdueInvoices_one": "{{count}} overdue invoice",
+      "overdueInvoices_other": "{{count}} overdue invoices",
+      "noOverdue": "No overdue invoices"
+    },
+    "alerts": {
+      "title": "Notifications",
+      "viewDetails": "View details",
+      "reviewDrafts": "Review drafts",
+      "overdueInvoices": {
+        "title": "{{count}} overdue invoices",
+        "title_one": "{{count}} overdue invoice",
+        "title_other": "{{count}} overdue invoices",
+        "description": "Total overdue: {{amount}}"
+      },
+      "draftVouchers": {
+        "title": "{{count}} draft vouchers pending",
+        "title_one": "{{count}} draft voucher pending",
+        "title_other": "{{count}} draft vouchers pending",
+        "description": "Review and post draft vouchers before period close"
+      },
+      "periodClosed": {
+        "title": "Period Closed",
+        "description": "{{period}} is locked. Data is read-only."
+      },
+      "allGood": {
+        "title": "All Clear",
+        "description": "No pending items or alerts at this time."
+      }
+    }
   },
   "roles": {
     "admin": "Administrator",

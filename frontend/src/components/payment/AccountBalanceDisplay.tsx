@@ -1,8 +1,7 @@
 'use client'
 
-import * as React from 'react'
 import { useEffect, useState } from 'react'
-import { AlertTriangle, Loader2, TrendingDown, TrendingUp } from 'lucide-react'
+import { AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,7 +20,6 @@ export interface AccountBalanceDisplayProps {
 export function AccountBalanceDisplay({
   accountId,
   paymentAmount,
-  accountType,
   className,
 }: AccountBalanceDisplayProps) {
   const [balance, setBalance] = useState<BalanceTooltip | null>(null)
@@ -29,13 +27,14 @@ export function AccountBalanceDisplay({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!accountId) {
+    if (accountId === null) {
       setBalance(null)
       setError(null)
       return
     }
 
     async function fetchBalance() {
+      if (accountId === null) return
       setLoading(true)
       setError(null)
       try {
@@ -178,7 +177,7 @@ export function AccountBalanceDisplay({
         {balance && (
           <div className="text-xs text-muted-foreground pt-2 border-t">
             <p>Period: {balance.currentPeriod}</p>
-            <p>Prior Balance: {formatCurrency(balance.priorBalance)}</p>
+            <p>Prior Balance: {formatCurrency(balance.priorBalance ?? 0)}</p>
           </div>
         )}
       </CardContent>

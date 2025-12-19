@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen } from '@testing-library/react'
 import { VoucherLineGrid, type VoucherEntryLine } from '../VoucherLineGrid'
 import type { AccountSummary } from '@/components/account/AccountPicker'
 import type { VoucherValidationErrorMap } from '@/types/voucher'
@@ -112,9 +111,7 @@ describe('VoucherLineGrid', () => {
 
       // Find rows with errors - check for destructive class or error styling
       // The class might be transformed by Tailwind, so check for any destructive-related class
-      const errorRows = container.querySelectorAll(
-        'tr[class*="destructive"], tr[class*="bg-destructive"]',
-      )
+      container.querySelectorAll('tr[class*="destructive"], tr[class*="bg-destructive"]')
       // Alternative: check if error messages are present (which indicates error row exists)
       const errorMessages = screen.queryAllByText(/account is required/i)
 

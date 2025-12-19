@@ -1,123 +1,150 @@
-import { useEffect, useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, TrendingUp } from 'lucide-react'
-import { getEmbeddedDashboardUrl } from '../services/analytics'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TrendingUp, LayoutDashboard } from 'lucide-react'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import {
+  StaticDashboardEmbed,
+  FreshnessBadge,
+  RefreshButton,
+  DashboardSkeleton,
+  BiUnavailableFallback,
+  PeriodLockBadge,
+  PeriodLockWarning,
+  KPICards,
+  AlertsPanel,
+} from '../components'
+import { useDashboards, useWidgetPermissions, useDashboardConfig, useDashboardKPIs } from '../hooks'
 
-/**
- * Analytics Dashboard page with embedded Metabase dashboards.
- * Displays key financial metrics and KPIs in real-time.
- */
+const DEFAULT_DASHBOARD_KEY = 'financial-overview'
+
 export default function Dashboard() {
   const { t } = useTranslation()
-  const [dashboardUrl, setDashboardUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [activeDashboard, setActiveDashboard] = useState(DEFAULT_DASHBOARD_KEY)
 
-  // For MVP, we'll use a hardcoded dashboard ID
-  // In production, this would come from configuration or user preferences
-  const MAIN_DASHBOARD_ID = 1
+  const { data: dashboardConfig, isLoading: configLoading } = useDashboardConfig()
+  const { data: dashboards, isLoading: dashboardsLoading } = useDashboards()
+  const { data: permissions } = useWidgetPermissions()
+  const { kpis, alerts, isLoading: kpisLoading } = useDashboardKPIs()
 
-  useEffect(() => {
-    const loadDashboard = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const response = await getEmbeddedDashboardUrl(MAIN_DASHBOARD_ID)
-        setDashboardUrl(response.url)
-      } catch (err) {
-        console.error('Failed to load dashboard:', err)
-        setError(t('analytics.loadError'))
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadDashboard()
+  const handleDashboardChange = useCallback((value: string) => {
+    setActiveDashboard(value)
   }, [])
 
-  if (loading) {
+  const dashboardId = useMemo(() => {
+    if (dashboardConfig?.dashboardId) {
+      return dashboardConfig.dashboardId
+    }
+    const activeDashboardInfo = dashboards?.find((d) => d.key === activeDashboard)
+    return activeDashboardInfo?.metabaseDashboardId ?? 2
+  }, [dashboardConfig, dashboards, activeDashboard])
+
+  if (dashboardsLoading || configLoading) {
     return (
-      <div className="flex h-[600px] items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">{t('dashboard.loading')}</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title')}</h1>
+            <p className="text-muted-foreground">{t('analytics.subtitle')}</p>
+          </div>
         </div>
+        <DashboardSkeleton />
       </div>
     )
   }
 
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    )
-  }
+  const availableDashboards = dashboards ?? [
+    {
+      key: 'financial-overview',
+      name: t('analytics.financialOverview'),
+      description: '',
+      allowedRoles: [],
+      metabaseDashboardId: 2,
+    },
+  ]
+
+  const showTabs = availableDashboards.length > 1 && dashboardConfig?.isFullAccess
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title')}</h1>
-          <p className="text-muted-foreground">{t('analytics.subtitle')}</p>
+    <ErrorBoundary fallback={<BiUnavailableFallback />}>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <LayoutDashboard className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title')}</h1>
+              <p className="text-muted-foreground">{t('analytics.subtitle')}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <FreshnessBadge />
+            <PeriodLockBadge />
+            <RefreshButton />
+          </div>
         </div>
-        <TrendingUp className="h-8 w-8 text-primary" />
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('analytics.financialOverview')}</CardTitle>
-          <CardDescription>{t('analytics.financialOverviewDesc')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {dashboardUrl ? (
-            <iframe
-              src={dashboardUrl}
-              title="Metabase Dashboard"
-              className="h-[800px] w-full rounded-lg border"
-              style={{ border: 'none' }}
-              allowTransparency
-            />
-          ) : (
-            <Alert>
-              <AlertDescription>{t('analytics.dashboardNotAvailable')}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+        {permissions && !permissions.canViewETLStatus && (
+          <Alert>
+            <AlertDescription>{t('analytics.limitedAccess')}</AlertDescription>
+          </Alert>
+        )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">
-              {t('analytics.revenueVsExpenses')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              {t('analytics.currentPeriodComparison')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">{t('analytics.arApBalances')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">{t('analytics.arApSummary')}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">{t('analytics.cashPosition')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">{t('analytics.cashBankBalances')}</p>
-          </CardContent>
-        </Card>
+        <PeriodLockWarning />
+
+        {showTabs ? (
+          <Tabs value={activeDashboard} onValueChange={handleDashboardChange}>
+            <TabsList className="grid w-full grid-cols-4">
+              {availableDashboards.map((dashboard) => (
+                <TabsTrigger key={dashboard.key} value={dashboard.key} className="text-sm">
+                  {dashboard.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {availableDashboards.map((dashboard) => (
+              <TabsContent key={dashboard.key} value={dashboard.key}>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1">
+                    <h2 className="flex items-center gap-2 text-lg font-semibold">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      {dashboard.name}
+                    </h2>
+                    {dashboard.description && (
+                      <p className="text-sm text-muted-foreground">{dashboard.description}</p>
+                    )}
+                  </div>
+                  <StaticDashboardEmbed
+                    dashboardId={dashboard.metabaseDashboardId ?? 1}
+                    className="min-h-[600px]"
+                  />
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <h2 className="flex items-center gap-2 text-lg font-semibold">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                {t('analytics.financialOverview')}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t('analytics.financialOverviewDesc')}
+              </p>
+            </div>
+            <StaticDashboardEmbed dashboardId={dashboardId} className="min-h-[600px]" />
+          </div>
+        )}
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <KPICards kpis={kpis} isLoading={kpisLoading} />
+          </div>
+          <div className="lg:col-span-1">
+            <AlertsPanel alerts={alerts} isLoading={kpisLoading} />
+          </div>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   )
 }

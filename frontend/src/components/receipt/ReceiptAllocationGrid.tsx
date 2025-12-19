@@ -202,8 +202,8 @@ export function ReceiptAllocationGrid({
                         <div className="w-full">
                           <MoneyInput
                             value={allocation.allocatedAmount}
-                            onChange={(value: number) => {
-                              updateAllocation(index, { allocatedAmount: value })
+                            onChange={(value) => {
+                              updateAllocation(index, { allocatedAmount: value ?? 0 })
                             }}
                             className={cn('h-9 text-right', hasError && 'border-destructive')}
                             disabled={readOnly}

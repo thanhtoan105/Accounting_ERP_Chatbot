@@ -159,19 +159,35 @@ export interface ApplyTemplateResponse {
   }
 }
 
+export interface VoucherLineDTO {
+  id?: string
+  lineNumber?: number
+  accountCode: string
+  accountName: string
+  description?: string
+  debit?: number
+  credit?: number
+}
+
 export interface VoucherDTO {
   id: string
   companyId: number
   voucherNumber: string
   voucherDate: string
   periodId: number | null
+  periodName?: string
   description: string
   status: 'draft' | 'posted' | 'unposted'
+  statusDisplay?: string
+  voucherType?: string
+  voucherTypeName?: string
+  referenceNumber?: string
   currency: string
   totalDebit: number
   totalCredit: number
   enteredBy: number
   enteredByName: string
+  createdByName?: string
   postedBy: number | null
   postedByName: string | null
   postedAt: string | null
@@ -183,7 +199,7 @@ export interface VoucherDTO {
   updatedAt: string
   attachmentCount: number
   entryLines?: VoucherEntryLineRequest[]
-  lines?: VoucherLedgerLineDTO[]
+  lines?: VoucherLineDTO[]
 }
 
 export interface JournalEntryDTO {

@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/field'
 import { Loader2 } from 'lucide-react'
 import { createUser, type CreateUserRequest } from '@/services/user'
-import { getRoleDisplayName, getAssignableRoles, type Role } from '@/utils/roles'
+import { getRoleDisplayName, getAssignableRoles } from '@/utils/roles'
 import { useAuth } from '@/hooks/useAuth'
 
 interface CreateUserDialogProps {
@@ -53,10 +53,11 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
       .min(1, 'Full name is required')
       .min(2, 'Full name must be at least 2 characters'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
-    role: z.enum(['admin', 'accountant', 'chief_accountant', 'cfo'] as const),
+    role: z.enum(['admin', 'accountant', 'chief_accountant', 'cfo', 'super_admin'] as const),
   })
 
   type CreateUserFormValues = z.infer<typeof createUserSchema>
+  type FormRole = CreateUserFormValues['role']
 
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
@@ -64,7 +65,7 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
       email: '',
       fullName: '',
       password: '',
-      role: (assignableRoles[0] || 'accountant') as Role,
+      role: (assignableRoles[0] || 'accountant') as FormRole,
     },
     mode: 'onSubmit',
     reValidateMode: 'onBlur',
@@ -85,7 +86,7 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
-      const defaultRole = (assignableRoles[0] || 'accountant') as Role
+      const defaultRole = (assignableRoles[0] || 'accountant') as FormRole
       reset({
         email: '',
         fullName: '',
@@ -197,7 +198,7 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
                 <Select
                   value={selectedRole}
                   onValueChange={(value) =>
-                    setValue('role', value as Role, { shouldValidate: true })
+                    setValue('role', value as FormRole, { shouldValidate: true })
                   }
                   disabled={isSubmitting || assignableRoles.length === 0}
                 >

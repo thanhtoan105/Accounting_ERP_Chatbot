@@ -109,15 +109,6 @@ export interface PurgeResponseDTO {
 // API Response Wrappers
 // ============================================================================
 
-interface ApiResponse<T> {
-  data: T
-  meta?: Record<string, unknown>
-  error?: {
-    code: string
-    message: string
-  }
-}
-
 // ============================================================================
 // Helper Functions
 // ============================================================================

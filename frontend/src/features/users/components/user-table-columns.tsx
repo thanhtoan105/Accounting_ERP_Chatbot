@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown, Edit, Ban, CheckCircle2, LockKeyhole, MoreVertical } from 'lucide-react'
+import { ArrowUpDown, Edit, LockKeyhole, MoreVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { getRoleDisplayName, canManageRole, type Role } from '@/utils/roles'
+import { getRoleDisplayName } from '@/utils/roles'
 import type { User } from '@/services/auth'
 
 export type UserTableActions = {
@@ -27,27 +27,8 @@ export type UserTableActions = {
   isResettingPassword: (userId: number) => boolean
 }
 
-const getStatusColor = (
-  status?: string,
-): 'default' | 'secondary' | 'destructive' | 'success' | 'warning' => {
-  switch ((status || '').toUpperCase()) {
-    case 'ACTIVE':
-      return 'success'
-    case 'INACTIVE':
-      return 'destructive'
-    case 'LOCKED':
-      return 'warning'
-    default:
-      return 'default'
-  }
-}
-
-const getStatusDisplayName = (status?: string): string => {
-  return status?.toUpperCase() || 'UNKNOWN'
-}
-
 export function createUserTableColumns(
-  currentUserRole: string | null | undefined,
+  _currentUserRole: string | null | undefined,
   actions: UserTableActions,
 ): ColumnDef<User>[] {
   return [
@@ -99,7 +80,7 @@ export function createUserTableColumns(
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }) => {
-        const status = row.getValue('status') as string | undefined
+        row.getValue('status') as string | undefined
         const user = row.original
         const isInactive = actions.isInactive(user)
         const isDeactivating = actions.isDeactivating(user.id)

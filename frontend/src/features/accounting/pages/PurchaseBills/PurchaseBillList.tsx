@@ -317,16 +317,6 @@ export default function PurchaseBillList() {
     }
   }
 
-  const handleResetFilters = () => {
-    setStatus('all')
-    setSupplier(undefined)
-    setDateFrom('')
-    setDateTo('')
-    setSearch('')
-    setSorting([])
-    setPage(0)
-  }
-
   const columns = useMemo<ColumnDef<PurchaseBillListDTO>[]>(
     () => [
       {

@@ -456,7 +456,12 @@ export function VATReportList() {
             <SlidersHorizontal className="h-4 w-4" />
             Filters:
           </span>
-          <DatePickerWithRange value={formDateRange} onChange={setFormDateRange} />
+          <DatePickerWithRange
+            value={formDateRange}
+            onChange={(v) =>
+              setFormDateRange(v as { from: Date | undefined; to: Date | undefined })
+            }
+          />
           <select
             value={formVatClass}
             onChange={(e) => setFormVatClass(e.target.value as (typeof VAT_CLASS_OPTIONS)[number])}
@@ -934,7 +939,7 @@ export function VATReportList() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleExport(item.id, item.format)}
+                          onClick={() => handleExport(item.format)}
                         >
                           <Download className="mr-2 h-4 w-4" />
                           Download

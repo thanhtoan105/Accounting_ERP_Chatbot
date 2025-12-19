@@ -19,7 +19,6 @@ import {
   Eye,
   Edit,
   CheckCircle,
-  XCircle,
   AlertTriangle,
 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -68,7 +67,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
-import { getPayments, deletePayment, postPayment, cancelPayment } from '@/services/payment'
+import { getPayments, deletePayment, postPayment } from '@/services/payment'
 import type { APPaymentListDTO, PaymentQueryParams, PaymentStatus } from '@/types/payment'
 import { useDebounce } from '@/hooks/use-debounce'
 import { PaymentApprovalDialog } from '@/components/payment'
@@ -345,17 +344,6 @@ export default function PaymentList() {
     } finally {
       setPosting(false)
     }
-  }
-
-  const handleResetFilters = () => {
-    setStatus('all')
-    setSupplier(undefined)
-    setDateFrom('')
-    setDateTo('')
-    setSearch('')
-    setStandalone(undefined)
-    setSorting([])
-    setPage(0)
   }
 
   const columns = useMemo<ColumnDef<APPaymentListDTO>[]>(

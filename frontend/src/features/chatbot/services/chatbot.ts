@@ -43,7 +43,7 @@ export async function checkHealth(): Promise<{
  * @param sessionId Session ID to retrieve history for
  * @returns Promise resolving to array of past messages
  */
-export async function getHistory(sessionId: string): Promise<ChatbotQueryResponse[]> {
+export async function getHistory(_sessionId: string): Promise<ChatbotQueryResponse[]> {
   // Placeholder for future implementation
   // For MVP, history is maintained client-side only
   throw new Error('Session history API not implemented in MVP')

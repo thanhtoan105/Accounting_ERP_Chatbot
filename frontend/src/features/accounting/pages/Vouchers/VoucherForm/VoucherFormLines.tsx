@@ -1,6 +1,6 @@
 import { VoucherLineGrid, type VoucherEntryLine } from '@/components/voucher'
 import type { AccountSummary } from '@/components/account/AccountPicker'
-import { VoucherSkeleton } from '@/features/accounting/components/voucher-ui'
+import { VoucherLineGridSkeleton } from '@/features/accounting/components/voucher-ui'
 
 interface VoucherFormLinesProps {
   accounts: AccountSummary[]
@@ -38,7 +38,7 @@ export function VoucherFormLines({
       </div>
       <div className="p-5">
         {loadingAccounts ? (
-          <VoucherSkeleton variant="form" />
+          <VoucherLineGridSkeleton />
         ) : (
           <VoucherLineGrid
             accounts={accounts}

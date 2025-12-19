@@ -1,16 +1,7 @@
 'use client'
 
-import * as React from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
-import {
-  ArrowUpDown,
-  Copy,
-  GripVertical,
-  Plus,
-  Trash2,
-  AlertCircle,
-  AlertTriangle,
-} from 'lucide-react'
+import { Copy, GripVertical, Plus, Trash2, AlertCircle, AlertTriangle } from 'lucide-react'
 
 import { AccountPicker, type AccountSummary } from '@/components/account/AccountPicker'
 import { MoneyInput } from '@/components/inputs/MoneyInput'

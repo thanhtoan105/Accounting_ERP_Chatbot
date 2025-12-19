@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Plus, RefreshCw, Search, Eye, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, RefreshCw, Eye, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 
@@ -54,7 +54,6 @@ import {
   deleteReconciliation,
   type BankReconciliationListDTO,
   type ReconciliationStatus,
-  STATUS_COLORS,
 } from '../../services/bankReconciliation'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50]
@@ -101,8 +100,8 @@ export function ReconciliationListPage() {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
   const [selectedStatus, setSelectedStatus] = useState<ReconciliationStatus | ''>('')
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined)
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined)
+  const [dateFrom, setDateFrom] = useState<string | undefined>(undefined)
+  const [dateTo, setDateTo] = useState<string | undefined>(undefined)
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(20)
   const [data, setData] = useState<BankReconciliationListDTO[]>([])
@@ -114,8 +113,8 @@ export function ReconciliationListPage() {
   const [creating, setCreating] = useState(false)
   const [newReconciliation, setNewReconciliation] = useState({
     bankAccountId: '',
-    statementPeriodStart: undefined as Date | undefined,
-    statementPeriodEnd: undefined as Date | undefined,
+    statementPeriodStart: undefined as string | undefined,
+    statementPeriodEnd: undefined as string | undefined,
     statementBalance: '',
     notes: '',
   })
@@ -147,8 +146,8 @@ export function ReconciliationListPage() {
       const result = await listReconciliations({
         bankAccountId: selectedAccountId ? Number(selectedAccountId) : undefined,
         status: selectedStatus || undefined,
-        dateFrom: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
-        dateTo: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
         page,
         size: pageSize,
       })
@@ -188,8 +187,8 @@ export function ReconciliationListPage() {
       setCreating(true)
       const result = await createReconciliation({
         bankAccountId: Number(newReconciliation.bankAccountId),
-        statementPeriodStart: format(newReconciliation.statementPeriodStart, 'yyyy-MM-dd'),
-        statementPeriodEnd: format(newReconciliation.statementPeriodEnd, 'yyyy-MM-dd'),
+        statementPeriodStart: newReconciliation.statementPeriodStart,
+        statementPeriodEnd: newReconciliation.statementPeriodEnd,
         statementBalance: Number(newReconciliation.statementBalance),
         notes: newReconciliation.notes || undefined,
       })
@@ -311,9 +310,9 @@ export function ReconciliationListPage() {
             <div className="space-y-2">
               <Label>{t('bankReconciliation.periodStart')}</Label>
               <DatePicker
-                date={dateFrom}
-                onDateChange={(date) => {
-                  setDateFrom(date)
+                value={dateFrom}
+                onChange={(value) => {
+                  setDateFrom(value)
                   setPage(0)
                 }}
                 placeholder={t('bankReconciliation.periodStart')}
@@ -323,9 +322,9 @@ export function ReconciliationListPage() {
             <div className="space-y-2">
               <Label>{t('bankReconciliation.periodEnd')}</Label>
               <DatePicker
-                date={dateTo}
-                onDateChange={(date) => {
-                  setDateTo(date)
+                value={dateTo}
+                onChange={(value) => {
+                  setDateTo(value)
                   setPage(0)
                 }}
                 placeholder={t('bankReconciliation.periodEnd')}
@@ -561,9 +560,9 @@ export function ReconciliationListPage() {
               <div className="space-y-2">
                 <Label>{t('bankReconciliation.periodStart')} *</Label>
                 <DatePicker
-                  date={newReconciliation.statementPeriodStart}
-                  onDateChange={(date) =>
-                    setNewReconciliation((prev) => ({ ...prev, statementPeriodStart: date }))
+                  value={newReconciliation.statementPeriodStart}
+                  onChange={(value) =>
+                    setNewReconciliation((prev) => ({ ...prev, statementPeriodStart: value }))
                   }
                   placeholder={t('bankReconciliation.periodStart')}
                 />
@@ -571,9 +570,9 @@ export function ReconciliationListPage() {
               <div className="space-y-2">
                 <Label>{t('bankReconciliation.periodEnd')} *</Label>
                 <DatePicker
-                  date={newReconciliation.statementPeriodEnd}
-                  onDateChange={(date) =>
-                    setNewReconciliation((prev) => ({ ...prev, statementPeriodEnd: date }))
+                  value={newReconciliation.statementPeriodEnd}
+                  onChange={(value) =>
+                    setNewReconciliation((prev) => ({ ...prev, statementPeriodEnd: value }))
                   }
                   placeholder={t('bankReconciliation.periodEnd')}
                 />

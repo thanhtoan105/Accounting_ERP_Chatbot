@@ -321,7 +321,9 @@ export function PurchaseBillImportDialog({
           <Button
             type="button"
             onClick={handleImport}
-            disabled={!file || uploading || (importResult && importResult.errorCount === 0)}
+            disabled={
+              !file || uploading || (importResult && importResult.errorCount === 0) || undefined
+            }
           >
             {uploading ? (
               <>

@@ -200,7 +200,7 @@ export function StatutoryReportsPage() {
   }, [])
 
   const selectedPeriod = periods.find((p) => p.id === selectedPeriodId)
-  const comparisonPeriod = periods.find((p) => p.id === comparisonPeriodId)
+  periods.find((p) => p.id === comparisonPeriodId)
 
   // Tab icon mapping
   const tabIcons: Record<ReportType, React.ReactNode> = {

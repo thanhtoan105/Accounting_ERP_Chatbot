@@ -38,7 +38,7 @@ describe('BankAccounts', () => {
         companyId: 1,
         accountNumber: 'CASH-001',
         bankName: 'Cash Account',
-        branch: null,
+        branch: undefined,
         type: 'CASH' as const,
         openingBalance: 5000.0,
         active: false,

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useState, useEffect } from 'react'
-import { X, ExternalLink, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'

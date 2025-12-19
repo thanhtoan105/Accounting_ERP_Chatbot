@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { AlertTriangle, RefreshCw, Search, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 
@@ -53,8 +53,8 @@ export function DisputeManagement() {
   // Filters
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
   const [status, setStatus] = useState<DisputeStatus | 'all'>('all')
-  const [dateFrom, setDateFrom] = useState<Date | null>(null)
-  const [dateTo, setDateTo] = useState<Date | null>(null)
+  const [dateFrom, setDateFrom] = useState<string>('')
+  const [dateTo, setDateTo] = useState<string>('')
 
   // Dialog states
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false)
@@ -132,23 +132,25 @@ export function DisputeManagement() {
     }
   }
 
-  const getStatusBadgeVariant = (status: DisputeStatus) => {
+  const getStatusBadgeVariant = (
+    status: DisputeStatus,
+  ): 'destructive' | 'default' | 'secondary' | 'outline' => {
     switch (status) {
       case 'OPEN':
         return 'destructive'
       case 'IN_PROGRESS':
-        return 'warning'
+        return 'secondary'
       case 'RESOLVED':
         return 'default'
       case 'REJECTED':
-        return 'secondary'
+        return 'outline'
       default:
         return 'outline'
     }
   }
 
-  const getVarianceBadgeVariant = (varianceType?: string) => {
-    return varianceType === 'SIGNIFICANT' ? 'destructive' : 'warning'
+  const getVarianceBadgeVariant = (varianceType?: string): 'destructive' | 'secondary' => {
+    return varianceType === 'SIGNIFICANT' ? 'destructive' : 'secondary'
   }
 
   return (

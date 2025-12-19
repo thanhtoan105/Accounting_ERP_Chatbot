@@ -40,6 +40,8 @@ export interface BalanceTooltip {
   currentBalance: number
   lastTxDate?: string
   lastReconciledDate?: string
+  currentPeriod?: string
+  priorBalance?: number
 }
 
 export interface BankAccountQueryParams {

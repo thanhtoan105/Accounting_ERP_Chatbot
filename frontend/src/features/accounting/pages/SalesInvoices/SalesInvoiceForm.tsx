@@ -74,7 +74,6 @@ import {
 import { getPostableAccounts } from '@/services/chartOfAccounts'
 import type { ChartOfAccount } from '@/types/chartOfAccount'
 import type { Customer } from '@/types/customer'
-import { vatService } from '@/services/vat'
 import type { VATCorrectionDTO } from '@/types/vat'
 import { VATCorrectionDialog } from '../VATReports/VATCorrectionDialog'
 import { ApproveVATCorrectionDialog } from '../VATReports/ApproveVATCorrectionDialog'
@@ -298,14 +297,14 @@ export default function SalesInvoiceForm() {
   )
   const [loadingInvoice, setLoadingInvoice] = useState(false)
   const [editingInvoice, setEditingInvoice] = useState<SalesInvoiceDTO | null>(null)
-  const [autoSaveError, setAutoSaveError] = useState<string | null>(null)
+  const [_autoSaveError, setAutoSaveError] = useState<string | null>(null)
   const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null)
   const [approvalDialogAction, setApprovalDialogAction] = useState<'approve' | 'reject' | null>(
     null,
   )
   const [submittingForApproval, setSubmittingForApproval] = useState(false)
-  const [vatCorrections, setVatCorrections] = useState<VATCorrectionDTO[]>([])
-  const [vatCorrectionsLoading, setVatCorrectionsLoading] = useState(false)
+  const [vatCorrections, _setVatCorrections] = useState<VATCorrectionDTO[]>([])
+  const [vatCorrectionsLoading, _setVatCorrectionsLoading] = useState(false)
   const [correctionDialogOpen, setCorrectionDialogOpen] = useState(false)
   const [approveCorrectionDialogOpen, setApproveCorrectionDialogOpen] = useState(false)
   const [selectedCorrection, setSelectedCorrection] = useState<VATCorrectionDTO | null>(null)
@@ -674,7 +673,7 @@ export default function SalesInvoiceForm() {
     [invoiceId, form],
   )
 
-  async function handleValidate(values: SalesInvoiceFormValues) {
+  async function handleValidate(_values: SalesInvoiceFormValues) {
     await runServerValidation(false)
   }
 

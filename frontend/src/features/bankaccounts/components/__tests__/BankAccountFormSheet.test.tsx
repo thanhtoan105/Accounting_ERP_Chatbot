@@ -102,7 +102,7 @@ describe('BankAccountFormSheet', () => {
         companyId: 1,
         accountNumber: 'ACC-001',
         bankName: 'Test Bank',
-        branch: null,
+        branch: undefined,
         type: 'BANK' as const,
         openingBalance: 1000.0,
         active: true,

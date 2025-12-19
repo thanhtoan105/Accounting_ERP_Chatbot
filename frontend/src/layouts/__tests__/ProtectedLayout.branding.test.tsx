@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { BrowserRouter, MemoryRouter } from 'react-router-dom'
+import { BrowserRouter } from 'react-router-dom'
 import ProtectedLayout from '../ProtectedLayout'
 import * as authHook from '@/hooks/useAuth'
 import * as roleHook from '@/hooks/useRole'
@@ -27,6 +27,7 @@ describe('ProtectedLayout - Authenticated Layout (AC#2, AC#3)', () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       isAuthenticated: true,
       loading: false,
+      login: vi.fn(),
       logout: mockLogout,
       user: {
         id: 1,
@@ -37,9 +38,19 @@ describe('ProtectedLayout - Authenticated Layout (AC#2, AC#3)', () => {
       },
     })
     vi.mocked(roleHook.useRole).mockReturnValue({
+      role: 'admin',
       hasAnyRole: mockHasAnyRole,
       getRoleDisplayName: mockGetRoleDisplayName,
       hasRole: vi.fn(),
+      hasAllRoles: vi.fn(),
+      isAdmin: vi.fn().mockReturnValue(true),
+      isChiefAccountant: vi.fn().mockReturnValue(false),
+      canManageUsers: vi.fn().mockReturnValue(true),
+      canViewReports: vi.fn().mockReturnValue(true),
+      canCreateVouchers: vi.fn().mockReturnValue(true),
+      canApproveVouchers: vi.fn().mockReturnValue(true),
+      canChangeRoles: vi.fn().mockReturnValue(true),
+      isValidRole: vi.fn().mockReturnValue(true),
     })
     vi.mocked(companyHook.useCompany).mockReturnValue({
       company: {

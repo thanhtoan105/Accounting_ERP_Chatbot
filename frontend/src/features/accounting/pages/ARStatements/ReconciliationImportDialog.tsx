@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Upload, FileText, Download, AlertCircle } from 'lucide-react'
+import { Upload, Download, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Table,
@@ -188,7 +189,9 @@ export function ReconciliationImportDialog({
                           <TableCell>
                             <Badge
                               variant={
-                                mismatch.varianceType === 'SIGNIFICANT' ? 'destructive' : 'warning'
+                                mismatch.varianceType === 'SIGNIFICANT'
+                                  ? 'destructive'
+                                  : 'secondary'
                               }
                             >
                               {mismatch.varianceType}

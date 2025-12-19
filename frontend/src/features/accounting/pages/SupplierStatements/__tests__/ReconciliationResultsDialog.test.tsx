@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { ReconciliationResultsDialog } from '../ReconciliationResultsDialog'
-import * as supplierStatementService from '@/services/supplierStatement'
+import { supplierStatementService } from '@/services/supplierStatement'
 import type { ReconciliationResult } from '@/types/supplierStatement'
 
 const toast = vi.hoisted(() => ({
@@ -15,13 +15,20 @@ vi.mock('sonner', () => ({
   toast,
 }))
 
-vi.mock('@/services/supplierStatement')
+vi.mock('@/services/supplierStatement', () => ({
+  supplierStatementService: {
+    saveReconciliation: vi.fn(),
+  },
+}))
 
 describe('ReconciliationResultsDialog', () => {
   const mockSaveReconciliation = vi.mocked(supplierStatementService.saveReconciliation)
 
   const sampleReconciliationResult: ReconciliationResult = {
     supplierId: 1,
+    supplierName: 'Test Supplier',
+    reconciliationDate: '2024-01-15',
+    totalItems: 8,
     matchedCount: 5,
     mismatchedCount: 2,
     missingCount: 1,
@@ -58,7 +65,7 @@ describe('ReconciliationResultsDialog', () => {
   }
 
   beforeEach(() => {
-    mockSaveReconciliation.mockResolvedValue({ message: 'Reconciliation saved successfully' })
+    mockSaveReconciliation.mockResolvedValue(undefined)
     toast.error.mockReset()
     toast.success.mockReset()
   })
@@ -115,7 +122,7 @@ describe('ReconciliationResultsDialog', () => {
     )
 
     // Click on Matched tab
-    const matchedTab = screen.getByRole('tab', { name: /Matched/i })
+    screen.getByRole('tab', { name: /Matched/i })
     // Note: Tab interaction may need adjustment based on implementation
 
     expect(screen.getByText('BILL001')).toBeInTheDocument()
@@ -132,7 +139,7 @@ describe('ReconciliationResultsDialog', () => {
     )
 
     // Click on Mismatched tab
-    const mismatchedTab = screen.getByRole('tab', { name: /Mismatched/i })
+    screen.getByRole('tab', { name: /Mismatched/i })
 
     expect(screen.getByText('BILL002')).toBeInTheDocument()
     expect(screen.getByText(/Amount difference/i)).toBeInTheDocument()
@@ -149,7 +156,7 @@ describe('ReconciliationResultsDialog', () => {
     )
 
     // Click on Missing tab
-    const missingTab = screen.getByRole('tab', { name: /Missing/i })
+    screen.getByRole('tab', { name: /Missing/i })
 
     expect(screen.getByText('BILL999')).toBeInTheDocument()
     expect(screen.getByText(/Bill not found/i)).toBeInTheDocument()

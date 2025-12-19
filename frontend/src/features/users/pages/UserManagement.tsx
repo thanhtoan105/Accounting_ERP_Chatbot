@@ -161,7 +161,7 @@ export default function UserManagement() {
     setEditDialogOpen(true)
   }
 
-  const handleDeactivateClick = async (userId: number, email: string) => {
+  const handleDeactivateClick = async (userId: number, _email: string) => {
     try {
       setActionLoading((prev) => ({ ...prev, deactivate: userId }))
       setError(null)
@@ -181,7 +181,7 @@ export default function UserManagement() {
       setActionLoading((prev) => ({ ...prev, deactivate: null }))
     }
   }
-  const handleActivateClick = async (userId: number, email: string) => {
+  const handleActivateClick = async (userId: number, _email: string) => {
     try {
       setActionLoading((prev) => ({ ...prev, activate: userId }))
       setError(null)

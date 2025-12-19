@@ -47,7 +47,6 @@ import { getCustomers } from '@/features/customers/services/customer'
 import type { Customer } from '@/types/customer'
 import { formatCurrency } from '@/utils/format'
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]
 const BUCKET_OPTIONS: { value: string; label: string }[] = [
   { value: 'ALL', label: 'All Buckets' },
   { value: 'CURRENT', label: 'Current' },
@@ -64,13 +63,13 @@ export function ARAgingReport() {
   const [totalElements, setTotalElements] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [page, setPage] = useState(0)
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize] = useState(20)
   const [sorting, setSorting] = useState<SortingState>([])
 
   // Filters
   const [customerId, setCustomerId] = useState<number | undefined>(undefined)
   const [asOfDate, setAsOfDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
-  const [status, setStatus] = useState<string>('')
+  const [status] = useState<string>('')
   const [bucket, setBucket] = useState<string>('ALL')
   const [searchQuery, setSearchQuery] = useState<string>('')
 
@@ -90,7 +89,6 @@ export function ARAgingReport() {
   const sortParams = useMemo(() => {
     if (sorting.length === 0) return undefined
     const sort = sorting[0]
-    const direction = sort.desc ? 'desc' : 'asc'
     const fieldMap: Record<string, string> = {
       customerName: 'customerName',
       totalOutstanding: 'totalOutstanding',

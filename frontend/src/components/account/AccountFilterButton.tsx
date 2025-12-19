@@ -19,12 +19,10 @@ export default function AccountFilterButton({
   placeholder = 'Select accounts to filter...',
 }: AccountFilterButtonProps) {
   const [accounts, setAccounts] = useState<ChartOfAccount[]>([])
-  const [loading, setLoading] = useState(false)
 
   // Load accounts from API - show ALL accounts (no filtering)
   const loadAccounts = async (searchTerm: string = ''): Promise<Option[]> => {
     try {
-      setLoading(true)
       const response = await getChartOfAccounts({ active: true, search: searchTerm || undefined })
       const accountList = Array.isArray(response.data) ? (response.data as ChartOfAccount[]) : []
       // No filter - show all active accounts
@@ -40,7 +38,7 @@ export default function AccountFilterButton({
       setAccounts([])
       return []
     } finally {
-      setLoading(false)
+      // Loading state handled by React Query
     }
   }
 
@@ -56,7 +54,9 @@ export default function AccountFilterButton({
         // Load missing account details
         getChartOfAccounts({ active: true })
           .then((response) => {
-            const accountList = Array.isArray(response.data) ? response.data : []
+            const accountList = Array.isArray(response.data)
+              ? (response.data as ChartOfAccount[])
+              : []
             const found = accountList.filter((acc) => missingIds.includes(acc.id))
             setSelectedAccountDetails((prev) => {
               const existing = prev.filter((acc) => !missingIds.includes(acc.id))

@@ -7,7 +7,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -61,7 +60,7 @@ export function VoucherAttachmentManagementModal({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedAttachment, setSelectedAttachment] = useState<VoucherAttachmentDTO | null>(null)
   const [deleteReason, setDeleteReason] = useState('')
-  const [previewAttachment, setPreviewAttachment] = useState<VoucherAttachmentDTO | null>(null)
+  const [_previewAttachment, setPreviewAttachment] = useState<VoucherAttachmentDTO | null>(null)
 
   useEffect(() => {
     if (open && voucherId) {

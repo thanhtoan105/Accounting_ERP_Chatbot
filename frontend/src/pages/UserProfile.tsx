@@ -2,12 +2,10 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Box,
-  Paper,
   Typography,
   TextField,
   Button,
   Alert,
-  Divider,
   Chip,
   Card,
   CardContent,
@@ -227,7 +225,7 @@ export default function UserProfile() {
 
       <Grid container spacing={3}>
         {/* Profile Information */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -313,7 +311,7 @@ export default function UserProfile() {
         </Grid>
 
         {/* Change Password */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>

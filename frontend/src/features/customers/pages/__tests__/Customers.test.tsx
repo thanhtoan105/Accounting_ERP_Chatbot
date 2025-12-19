@@ -14,7 +14,7 @@ vi.mock('@/hooks/useAuth', () => ({
 
 describe('Customers', () => {
   const mockGetCustomers = vi.mocked(customerService.getCustomers)
-  const mockDeleteCustomer = vi.mocked(customerService.deleteCustomer)
+  vi.mocked(customerService.deleteCustomer)
   const mockActivateCustomer = vi.mocked(customerService.activateCustomer)
   const mockDeactivateCustomer = vi.mocked(customerService.deactivateCustomer)
   const mockExportCustomers = vi.mocked(customerService.exportCustomers)
@@ -48,6 +48,7 @@ describe('Customers', () => {
         updatedAt: '2025-01-02T00:00:00Z',
       },
     ],
+    total: 2,
     page: 0,
     size: 20,
     totalElements: 2,
@@ -196,10 +197,7 @@ describe('Customers', () => {
 
   it('deactivates customer', async () => {
     const user = userEvent.setup()
-    mockDeactivateCustomer.mockResolvedValue({
-      ...mockCustomersResponse.data[0],
-      active: false,
-    })
+    mockDeactivateCustomer.mockResolvedValue(undefined)
 
     render(
       <BrowserRouter>
@@ -237,10 +235,7 @@ describe('Customers', () => {
 
   it('activates inactive customer', async () => {
     const user = userEvent.setup()
-    mockActivateCustomer.mockResolvedValue({
-      ...mockCustomersResponse.data[1],
-      active: true,
-    })
+    mockActivateCustomer.mockResolvedValue(undefined)
 
     render(
       <BrowserRouter>

@@ -39,7 +39,6 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { ComparisonSettingsForm } from '@/features/settings'
 
 // Zod schema for NumberingConfig JSON structure
 const numberingConfigSchema = z.object({
