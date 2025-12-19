@@ -90,4 +90,26 @@ public interface AuditAlertService {
    * @param reason the rejection reason
    */
   void sendPurgeRejectionNotification(Long requesterId, Long rejectorId, String reason);
+
+  /**
+   * Notify about hash chain mismatch detected during daily verification.
+   *
+   * <p>Recipients: ADMIN, CHIEF_ACCOUNTANT
+   * <p>Escalation: Immediate (CRITICAL level)
+   *
+   * @param result the verification result containing mismatch details
+   */
+  void notifyHashMismatch(com.accounting.service.audit.dto.AuditChainVerificationResult result);
+
+  /**
+   * Notify about verification error during daily chain integrity check.
+   *
+   * <p>Recipients: ADMIN
+   * <p>Escalation: High priority
+   *
+   * @param companyId the company being verified
+   * @param date the date being verified
+   * @param e the exception that occurred
+   */
+  void notifyVerificationError(Long companyId, java.time.LocalDate date, Exception e);
 }

@@ -2,13 +2,18 @@ package com.accounting.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.accounting.config.DashboardProfileConfig;
+import com.accounting.dto.analytics.WidgetPermissionsDTO;
 import com.accounting.entity.User;
+import com.accounting.entity.analytics.WidgetPermissionConfig;
+import com.accounting.entity.analytics.WidgetType;
 import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
@@ -20,8 +25,11 @@ import com.accounting.service.analytics.AnalyticsAuthorizationService;
 import com.accounting.service.analytics.AnalyticsAuthorizationService.WidgetScope;
 import com.accounting.service.analytics.MetabaseEmbedService.MetabaseEmbedConfig;
 import com.accounting.service.analytics.MetabaseEmbedServiceImpl;
+import com.accounting.service.analytics.MetabaseProvisioningService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -30,26 +38,37 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 @RestController
 @RequestMapping("/api/v1/analytics")
-@Tag(name = "Analytics", description = "BI Dashboard and Analytics APIs")
+@Tag(name = "Analytics", description = "Dashboard analytics, Metabase embedding, and data freshness APIs")
 public class AnalyticsController {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AnalyticsController.class);
 
     private final MetabaseService metabaseService;
     private final MetabaseEmbedServiceImpl metabaseEmbedService;
+    private final MetabaseProvisioningService metabaseProvisioningService;
     private final UserRepository userRepository;
     private final AnalyticsAuditService auditService;
     private final AnalyticsAuthorizationService authorizationService;
+    private final WidgetPermissionConfig widgetPermissionConfig;
+    private final DashboardProfileConfig dashboardProfileConfig;
 
     public AnalyticsController(
             MetabaseService metabaseService,
             MetabaseEmbedServiceImpl metabaseEmbedService,
+            MetabaseProvisioningService metabaseProvisioningService,
             UserRepository userRepository,
             AnalyticsAuditService auditService,
-            AnalyticsAuthorizationService authorizationService) {
+            AnalyticsAuthorizationService authorizationService,
+            WidgetPermissionConfig widgetPermissionConfig,
+            DashboardProfileConfig dashboardProfileConfig) {
         this.metabaseService = metabaseService;
         this.metabaseEmbedService = metabaseEmbedService;
+        this.metabaseProvisioningService = metabaseProvisioningService;
         this.userRepository = userRepository;
         this.auditService = auditService;
         this.authorizationService = authorizationService;
+        this.widgetPermissionConfig = widgetPermissionConfig;
+        this.dashboardProfileConfig = dashboardProfileConfig;
     }
 
     /**
@@ -99,14 +118,28 @@ public class AnalyticsController {
      */
     @GetMapping("/metabase/embed/dashboard/{key}")
     @PreAuthorize("hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT', 'ACCOUNTANT_GENERAL', 'ACCOUNTANT_AR', 'ACCOUNTANT_AP', 'CASHIER', 'FINANCE', 'ACCOUNTANT')")
-    @Operation(summary = "Get Metabase embed configuration",
-               description = "Get configuration for Metabase SDK embedding with JWT SSO")
+    @Operation(
+            summary = "Get Metabase embed configuration",
+            description = "Returns signed embed URL and config for the specified dashboard. Uses locked company_id from JWT.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Embed config returned"),
+        @ApiResponse(responseCode = "403", description = "User not authorized for this dashboard"),
+        @ApiResponse(responseCode = "404", description = "Dashboard not found")
+    })
     public ResponseEntity<EmbedConfigResponse> getEmbedConfig(@PathVariable String key) {
         Long companyId = CompanyContext.getCompanyId();
         Long userId = SecurityUtils.getCurrentUserId();
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        try {
+            metabaseProvisioningService.provisionTenant(companyId);
+            metabaseProvisioningService.provisionUser(user, companyId);
+        } catch (Exception e) {
+            log.warn("Auto-provisioning failed for company {} user {}: {}",
+                    companyId, userId, e.getMessage());
+        }
 
         MetabaseEmbedConfig config = metabaseEmbedService.generateEmbedConfig(key, user, companyId);
 
@@ -134,6 +167,14 @@ public class AnalyticsController {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        try {
+            metabaseProvisioningService.provisionTenant(companyId);
+            metabaseProvisioningService.provisionUser(user, companyId);
+        } catch (Exception e) {
+            log.warn("Auto-provisioning failed for company {} user {}: {}",
+                    companyId, userId, e.getMessage());
+        }
 
         String token = metabaseEmbedService.generateJwtToken(user, companyId);
 
@@ -208,6 +249,35 @@ public class AnalyticsController {
     }
 
     /**
+     * Get widget permissions using WidgetType enum.
+     * Returns accessible widgets based on user's role per Vietnamese TT200 structure.
+     */
+    @GetMapping("/widgets/permissions")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT', 'ACCOUNTANT_GENERAL', 'ACCOUNTANT_AR', 'ACCOUNTANT_AP', 'CASHIER', 'FINANCE', 'ACCOUNTANT')")
+    @Operation(
+            summary = "Get widget permissions for current user",
+            description = "Returns the list of widgets the current user can access based on their role per Vietnamese TT200 structure.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Widget permissions returned")})
+    public ResponseEntity<WidgetPermissionsDTO> getWidgetPermissionsByType() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        Set<String> userRoles = Set.of(user.getRole());
+        var accessibleWidgets = widgetPermissionConfig.getAccessibleWidgets(userRoles);
+        boolean canRefresh = widgetPermissionConfig.canRefresh(userRoles);
+        boolean canExport = widgetPermissionConfig.canExport(userRoles);
+        boolean isFullAccess = widgetPermissionConfig.hasFullAccess(userRoles);
+
+        return ResponseEntity.ok(new WidgetPermissionsDTO(
+                accessibleWidgets,
+                canRefresh,
+                canExport,
+                isFullAccess
+        ));
+    }
+
+    /**
      * Check widget access for specific widget.
      */
     @GetMapping("/metabase/widgets/{widgetKey}/access")
@@ -243,36 +313,63 @@ public class AnalyticsController {
         ));
     }
 
+    /**
+     * Get the dashboard configuration for the current user based on their role.
+     * Returns the appropriate dashboard ID and accessible widget types.
+     */
+    @GetMapping("/metabase/dashboard-for-role")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT', 'ACCOUNTANT_GENERAL', 'ACCOUNTANT_AR', 'ACCOUNTANT_AP', 'CASHIER', 'FINANCE', 'ACCOUNTANT')")
+    @Operation(
+            summary = "Get dashboard configuration for user role",
+            description = "Returns the dashboard ID and accessible widgets based on the current user's role per AC 8.0.18")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Dashboard configuration returned"),
+        @ApiResponse(responseCode = "403", description = "User not authorized")
+    })
+    public ResponseEntity<DashboardConfigResponse> getDashboardForRole(HttpServletRequest request) {
+        Long companyId = CompanyContext.getCompanyId();
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        Integer dashboardId = dashboardProfileConfig.getDashboardIdForRole(user.getRole());
+        Set<String> userRoles = Set.of(user.getRole());
+        Set<WidgetType> accessibleWidgets = widgetPermissionConfig.getAccessibleWidgets(userRoles);
+        boolean isFullAccess = widgetPermissionConfig.hasFullAccess(userRoles);
+
+        auditService.logAction(companyId, userId, AuditAction.DASHBOARD_VIEW_LOADED,
+                ResourceType.DASHBOARD, String.valueOf(dashboardId), null, request);
+
+        return ResponseEntity.ok(new DashboardConfigResponse(
+                dashboardId,
+                accessibleWidgets.stream().map(WidgetType::name).toList(),
+                isFullAccess,
+                getDashboardKeyForId(dashboardId)
+        ));
+    }
+
+    private String getDashboardKeyForId(Integer dashboardId) {
+        // Dashboard IDs mapped to Metabase:
+        // ID 4 = Financial Overview (main dashboard for all roles)
+        return switch (dashboardId) {
+            case 4 -> "financial-overview";
+            default -> "financial-overview";
+        };
+    }
+
     private List<DashboardInfo> getDashboardsForRole(String role) {
+        // All roles use the same Financial Overview dashboard (ID 4) in Metabase
+        // Widget-level filtering is handled by WidgetPermissionConfig
         DashboardInfo financialOverview = new DashboardInfo(
                 "financial-overview",
                 "Financial Overview",
                 "Revenue, expenses, AR/AP, and cash position",
-                List.of("ADMIN", "CFO", "CHIEF_ACCOUNTANT", "ACCOUNTANT_GENERAL", "FINANCE", "ACCOUNTANT")
+                List.of("ADMIN", "CFO", "CHIEF_ACCOUNTANT", "ACCOUNTANT_GENERAL", "FINANCE", "ACCOUNTANT",
+                        "ACCOUNTANT_AR", "ACCOUNTANT_AP", "CASHIER"),
+                4
         );
 
-        DashboardInfo arDashboard = new DashboardInfo(
-                "ar-dashboard",
-                "Accounts Receivable",
-                "AR aging, top debtors, collections",
-                List.of("ADMIN", "CFO", "CHIEF_ACCOUNTANT", "ACCOUNTANT_AR")
-        );
-
-        DashboardInfo apDashboard = new DashboardInfo(
-                "ap-dashboard",
-                "Accounts Payable",
-                "AP aging, top creditors, payments",
-                List.of("ADMIN", "CFO", "CHIEF_ACCOUNTANT", "ACCOUNTANT_AP")
-        );
-
-        DashboardInfo cashDashboard = new DashboardInfo(
-                "cash-dashboard",
-                "Cash Position",
-                "Cash flow, bank balances, trends",
-                List.of("ADMIN", "CFO", "CHIEF_ACCOUNTANT", "CASHIER")
-        );
-
-        List<DashboardInfo> allDashboards = List.of(financialOverview, arDashboard, apDashboard, cashDashboard);
+        List<DashboardInfo> allDashboards = List.of(financialOverview);
 
         String normalizedRole = role != null ? role.toUpperCase() : "";
         return allDashboards.stream()
@@ -323,11 +420,18 @@ public class AnalyticsController {
             String key,
             String name,
             String description,
-            List<String> allowedRoles) {}
+            List<String> allowedRoles,
+            Integer metabaseDashboardId) {}
 
     public record WidgetPermissionsResponse(
             String scope,
             List<String> allowedWidgets,
             boolean canRefresh,
             boolean canViewETLStatus) {}
+
+    public record DashboardConfigResponse(
+            Integer dashboardId,
+            List<String> accessibleWidgets,
+            boolean isFullAccess,
+            String dashboardKey) {}
 }

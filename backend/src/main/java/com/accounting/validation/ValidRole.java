@@ -17,7 +17,7 @@ import jakarta.validation.Payload;
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidRole {
-  String message() default "Invalid role. Must be one of: admin, accountant, chief_accountant, cfo";
+  String message() default "Invalid role. Must be one of: admin, accountant, chief_accountant, cfo, accountant_general, accountant_ar, accountant_ap, cashier, finance";
 
   Class<?>[] groups() default {};
 

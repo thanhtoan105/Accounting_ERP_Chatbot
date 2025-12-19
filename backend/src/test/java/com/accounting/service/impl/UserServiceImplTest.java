@@ -42,6 +42,8 @@ class UserServiceImplTest {
 
   @Mock private HttpServletRequest httpRequest;
 
+  @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
   private PasswordEncoder passwordEncoder;
   private RoleService roleService;
   private UserServiceImpl userService;
@@ -50,7 +52,7 @@ class UserServiceImplTest {
   void setUp() {
     passwordEncoder = new PasswordEncoder();
     roleService = new RoleServiceImpl();
-    userService = new UserServiceImpl(userRepository, passwordEncoder, roleService, auditService, emailService);
+    userService = new UserServiceImpl(userRepository, passwordEncoder, roleService, auditService, emailService, eventPublisher);
     CompanyContext.setCompanyId(1L);
     
     // Set up SecurityContext for getCurrentUserIdFromContext()

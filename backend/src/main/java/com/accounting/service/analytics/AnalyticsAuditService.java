@@ -1,15 +1,19 @@
 package com.accounting.service.analytics;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.accounting.entity.dashboard.DashboardAuditLog;
-import com.accounting.repository.dashboard.DashboardAuditLogRepository;
+import com.accounting.entity.analytics.AnalyticsAuditLog;
+import com.accounting.repository.analytics.AnalyticsAuditLogRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -65,13 +69,16 @@ public class AnalyticsAuditService {
         EXPORT
     }
 
-    private final DashboardAuditLogRepository auditLogRepository;
+    private final AnalyticsAuditLogRepository analyticsAuditLogRepository;
+    private final TT200HashChainService hashChainService;
     private final ObjectMapper objectMapper;
 
     public AnalyticsAuditService(
-            DashboardAuditLogRepository auditLogRepository,
+            AnalyticsAuditLogRepository analyticsAuditLogRepository,
+            TT200HashChainService hashChainService,
             ObjectMapper objectMapper) {
-        this.auditLogRepository = auditLogRepository;
+        this.analyticsAuditLogRepository = analyticsAuditLogRepository;
+        this.hashChainService = hashChainService;
         this.objectMapper = objectMapper;
     }
 
@@ -94,6 +101,7 @@ public class AnalyticsAuditService {
         logAction(companyId, userId, action, resourceType, resourceId, metadata, null);
     }
 
+    @Transactional
     public void logAction(
             Long companyId,
             Long userId,
@@ -103,32 +111,73 @@ public class AnalyticsAuditService {
             Map<String, Object> metadata,
             HttpServletRequest request) {
         try {
-            DashboardAuditLog auditLog = DashboardAuditLog.create(
-                    companyId,
-                    userId,
-                    action.name(),
-                    resourceType.name());
+            Instant eventTime = Instant.now();
+            LocalDate eventDateUtc = LocalDate.now(ZoneOffset.UTC);
 
-            auditLog.setResourceId(resourceId);
+            String prevHash = analyticsAuditLogRepository
+                    .findTopByCompanyIdOrderBySequenceInCompanyDesc(companyId)
+                    .map(AnalyticsAuditLog::getRecordHash)
+                    .orElse(null);
+
+            Long maxSequenceInCompany = analyticsAuditLogRepository
+                    .findMaxSequenceInCompanyByCompanyId(companyId)
+                    .orElse(0L);
+            Long sequenceInCompany = maxSequenceInCompany + 1;
+
+            Long maxSequenceInDay = analyticsAuditLogRepository
+                    .findMaxSequenceInDayByCompanyIdAndEventDateUtc(companyId, eventDateUtc)
+                    .orElse(0L);
+            Long sequenceInDay = maxSequenceInDay + 1;
+
+            AnalyticsAuditLog auditLog = new AnalyticsAuditLog();
+            auditLog.setId(UUID.randomUUID());
+            auditLog.setCompanyId(companyId);
+            auditLog.setEventTime(eventTime);
+            auditLog.setEventDateUtc(eventDateUtc);
+            auditLog.setEventType(action.name());
+            auditLog.setEventSubtype(action.getDescription());
+            auditLog.setPrincipalId(userId);
+            auditLog.setPrincipalType("USER");
+            auditLog.setObjectType(resourceType.name());
+            auditLog.setObjectId(resourceId);
+            auditLog.setSequenceInCompany(sequenceInCompany);
+            auditLog.setSequenceInDay(sequenceInDay);
+            auditLog.setPrevHash(prevHash);
 
             if (request != null) {
                 auditLog.setIpAddress(extractIpAddress(request));
                 auditLog.setUserAgent(sanitizeUserAgent(request.getHeader("User-Agent")));
                 auditLog.setRequestPath(request.getRequestURI());
                 auditLog.setRequestMethod(request.getMethod());
+                String requestIdHeader = request.getHeader("X-Request-ID");
+                if (requestIdHeader != null) {
+                    try {
+                        auditLog.setRequestId(UUID.fromString(requestIdHeader));
+                    } catch (IllegalArgumentException e) {
+                        log.debug("Invalid X-Request-ID header: {}", requestIdHeader);
+                    }
+                }
             }
 
             if (metadata != null && !metadata.isEmpty()) {
                 auditLog.setMetadata(serializeMetadata(sanitizeMetadata(metadata)));
             }
 
-            auditLogRepository.save(auditLog);
+            String recordHash = hashChainService.computeRecordHash(auditLog);
+            auditLog.setRecordHash(recordHash);
 
-            log.debug("Audit log created: action={}, resource={}/{}, user={}, company={}",
-                    action.name(), resourceType.name(), resourceId, userId, companyId);
+            String merkleLeafHash = hashChainService.computeMerkleLeafHash(recordHash);
+            auditLog.setMerkleLeafHash(merkleLeafHash);
+
+            auditLog.setCreatedAt(Instant.now());
+
+            analyticsAuditLogRepository.save(auditLog);
+
+            log.debug("TT200 audit log created: action={}, resource={}/{}, user={}, company={}, seq={}",
+                    action.name(), resourceType.name(), resourceId, userId, companyId, sequenceInCompany);
 
         } catch (Exception e) {
-            log.error("Failed to create audit log: action={}, error={}", action.name(), e.getMessage());
+            log.error("Failed to create TT200 audit log: action={}, error={}", action.name(), e.getMessage());
         }
     }
 

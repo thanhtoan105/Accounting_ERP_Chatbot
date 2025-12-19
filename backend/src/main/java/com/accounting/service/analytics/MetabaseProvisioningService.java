@@ -19,6 +19,8 @@ public interface MetabaseProvisioningService {
 
     void assignUserGroups(User user, Long companyId, Set<String> roles);
 
+    void updateUserGroups(Long userId, Long companyId, Set<String> newRoles);
+
     boolean isTenantProvisioned(Long companyId);
 
     Optional<MetabaseUserResponse> findMetabaseUser(String email);

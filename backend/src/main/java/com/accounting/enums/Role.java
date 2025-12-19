@@ -9,7 +9,12 @@ public enum Role {
   ADMIN("admin"),
   ACCOUNTANT("accountant"),
   CHIEF_ACCOUNTANT("chief_accountant"),
-  CFO("cfo");
+  CFO("cfo"),
+  ACCOUNTANT_GENERAL("accountant_general"),
+  ACCOUNTANT_AR("accountant_ar"),
+  ACCOUNTANT_AP("accountant_ap"),
+  CASHIER("cashier"),
+  FINANCE("finance");
 
   private final String value;
 
@@ -96,10 +101,12 @@ public enum Role {
       return targetRole != SUPER_ADMIN; // ADMIN can manage everyone except SUPER_ADMIN
     }
     if (this == CHIEF_ACCOUNTANT) {
-      // CHIEF_ACCOUNTANT can only manage lower roles (ACCOUNTANT, CFO)
-      return targetRole == ACCOUNTANT || targetRole == CFO;
+      // CHIEF_ACCOUNTANT can only manage lower roles
+      return targetRole == ACCOUNTANT || targetRole == CFO || targetRole == ACCOUNTANT_GENERAL
+          || targetRole == ACCOUNTANT_AR || targetRole == ACCOUNTANT_AP
+          || targetRole == CASHIER || targetRole == FINANCE;
     }
-    return false; // ACCOUNTANT and CFO cannot manage anyone
+    return false; // Lower roles cannot manage anyone
   }
 
   /**
@@ -113,8 +120,8 @@ public enum Role {
       case SUPER_ADMIN -> 5;
       case ADMIN -> 4;
       case CHIEF_ACCOUNTANT -> 3;
-      case CFO -> 2;
-      case ACCOUNTANT -> 1;
+      case CFO, FINANCE -> 2;
+      case ACCOUNTANT, ACCOUNTANT_GENERAL, ACCOUNTANT_AR, ACCOUNTANT_AP, CASHIER -> 1;
     };
   }
 }

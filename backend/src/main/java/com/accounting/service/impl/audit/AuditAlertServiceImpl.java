@@ -16,6 +16,7 @@ import com.accounting.enums.CashBankAuditAction;
 import com.accounting.repository.AuditLogRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AuditAlertService;
+import com.accounting.service.audit.dto.AuditChainVerificationResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -184,6 +185,62 @@ public class AuditAlertServiceImpl implements AuditAlertService {
         return "MANAGER,CHIEF_ACCOUNTANT";
       default:
         return "ADMIN";
+    }
+  }
+
+  @Override
+  public void notifyHashMismatch(AuditChainVerificationResult result) {
+    logger.error("CRITICAL: Hash chain mismatch detected for company {} on date {}. Reason: {}",
+        result.getCompanyId(), result.getEventDateUtc(), result.getMismatchReason());
+
+    String message = String.format(
+        "Hash chain integrity verification FAILED for company %d on %s. Status: %s, Reason: %s",
+        result.getCompanyId(), result.getEventDateUtc(), result.getStatus(), result.getMismatchReason());
+
+    logAlertWithCompanyId("HASH_CHAIN_MISMATCH", "CRITICAL", "ADMIN,CHIEF_ACCOUNTANT",
+        message, null, result.getCompanyId());
+  }
+
+  @Override
+  public void notifyVerificationError(Long companyId, LocalDate date, Exception e) {
+    logger.error("Hash chain verification error for company {} on date {}: {}",
+        companyId, date, e.getMessage(), e);
+
+    String message = String.format(
+        "Hash chain verification encountered an error for company %d on %s. Error: %s",
+        companyId, date, e.getMessage());
+
+    logAlertWithCompanyId("VERIFICATION_ERROR", "HIGH", "ADMIN",
+        message, null, companyId);
+  }
+
+  // === Private Methods ===
+
+  private void logAlertWithCompanyId(String alertType, String alertLevel, String recipients,
+      String message, Long targetUserId, Long companyId) {
+    try {
+      ObjectNode metadata = objectMapper.createObjectNode();
+      metadata.put("alertType", alertType);
+      metadata.put("alertLevel", alertLevel);
+      metadata.put("recipients", recipients);
+      metadata.put("message", message);
+      if (targetUserId != null) {
+        metadata.put("targetUserId", targetUserId);
+      }
+
+      AuditLog log = new AuditLog();
+      log.setAction(CashBankAuditAction.ALERT_SENT.getValue());
+      log.setEventType("CASH_BANK_AUDIT");
+      log.setCompanyId(companyId != null ? companyId : CompanyContext.getCompanyId());
+      log.setMetadata(metadata);
+      log.setSuccess(true);
+      log.setCreatedAt(Instant.now());
+
+      auditLogRepository.save(log);
+
+      logger.debug("Logged ALERT_SENT: {} to {}", alertType, recipients);
+    } catch (Exception e) {
+      logger.error("Failed to log alert", e);
     }
   }
 
