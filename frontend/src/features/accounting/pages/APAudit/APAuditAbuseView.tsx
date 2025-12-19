@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ShieldAlert, RefreshCw, FileText } from 'lucide-react'
+import { ShieldAlert, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   Table,

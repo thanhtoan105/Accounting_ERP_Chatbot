@@ -69,7 +69,7 @@ export default function VoucherTypeList() {
 
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [totalElements, setTotalElements] = useState(0)
+  const [_totalElements, setTotalElements] = useState(0)
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)

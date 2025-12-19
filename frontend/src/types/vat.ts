@@ -55,6 +55,9 @@ export interface VATReportHistoryItem {
   supplierId?: number | null
   supplierName?: string | null
   supplierCode?: string | null
+  customerId?: number | null
+  customerName?: string | null
+  customerTaxCode?: string | null
   vatClass?: string | null
   downloadCount?: number
   viewCount?: number

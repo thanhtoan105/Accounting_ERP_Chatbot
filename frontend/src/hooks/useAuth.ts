@@ -36,7 +36,7 @@ export function useAuth() {
   // Initialize with stored user immediately to avoid flash of 403
   const storedUser = getStoredUser()
   const token = getAccessToken()
-  const hasStoredData = storedUser && token
+  const hasStoredData = !!(storedUser && token)
 
   const [state, setState] = useState<AuthState>({
     user: storedUser, // Use stored user immediately

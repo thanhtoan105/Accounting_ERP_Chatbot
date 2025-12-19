@@ -639,7 +639,19 @@ export default function AppRoutes() {
         path="/analytics"
         element={
           <ProtectedLayout>
-            <RoleGuard requiredRoles={['admin', 'cfo', 'chief_accountant']}>
+            <RoleGuard
+              requiredRoles={[
+                'admin',
+                'cfo',
+                'chief_accountant',
+                'accountant_general',
+                'accountant_ar',
+                'accountant_ap',
+                'cashier',
+                'accountant',
+                'finance',
+              ]}
+            >
               <AnalyticsDashboard />
             </RoleGuard>
           </ProtectedLayout>

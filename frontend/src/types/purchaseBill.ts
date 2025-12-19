@@ -25,6 +25,7 @@ export interface PurchaseBillListDTO {
 }
 
 export interface PurchaseBillLineDTO {
+  id?: string
   lineNumber?: number
   accountId: number
   description: string

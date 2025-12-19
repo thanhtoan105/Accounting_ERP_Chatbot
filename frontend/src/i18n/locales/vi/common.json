@@ -218,7 +218,78 @@
     "cashPosition": "Trạng thái Tiền mặt",
     "cashBankBalances": "Số dư tiền mặt và ngân hàng hiện tại",
     "dashboardNotAvailable": "URL bảng điều khiển không khả dụng. Vui lòng kiểm tra cấu hình Metabase.",
-    "loadError": "Không thể tải bảng điều khiển phân tích. Vui lòng đảm bảo Metabase đang chạy và được cấu hình đúng."
+    "loadError": "Không thể tải bảng điều khiển phân tích. Vui lòng đảm bảo Metabase đang chạy và được cấu hình đúng.",
+    "dashboardRegion": "Bảng phân tích",
+    "limitedAccess": "Bạn có quyền truy cập hạn chế vào phân tích dựa trên vai trò của bạn.",
+    "freshness": {
+      "loading": "Đang tải...",
+      "unknown": "Không xác định",
+      "fresh": "Mới nhất",
+      "stale": "Cũ",
+      "outdated": "Lỗi thời",
+      "dataStatus": "Độ mới của dữ liệu",
+      "lastUpdated": "Cập nhật lần cuối",
+      "nextRefresh": "Làm mới tiếp theo"
+    },
+    "refresh": {
+      "label": "Làm mới dữ liệu",
+      "tooltip": "Làm mới dữ liệu bảng điều khiển",
+      "inProgress": "Đang làm mới dữ liệu...",
+      "started": "Đã bắt đầu làm mới dữ liệu",
+      "rateLimited": "Vui lòng đợi trước khi làm mới lại"
+    },
+    "error": {
+      "title": "Bảng điều khiển không khả dụng",
+      "unavailable": "Bảng điều khiển phân tích hiện không khả dụng. Điều này có thể do bảo trì hoặc sự cố kết nối.",
+      "tryAgainLater": "Vui lòng thử lại sau hoặc liên hệ hỗ trợ nếu sự cố vẫn tiếp diễn.",
+      "retry": "Thử lại"
+    },
+    "degraded": {
+      "title": "Hiệu suất giảm",
+      "message": "Bảng điều khiển đang tải chậm hơn bình thường. Một số dữ liệu có thể bị trễ."
+    },
+    "periodLock": {
+      "locked": "Đã khóa sổ",
+      "lockedTooltip": "Kỳ kế toán này đã được đóng. Dữ liệu chỉ đọc.",
+      "warning": "Dữ liệu hiển thị thuộc kỳ đã khóa sổ. Bạn không thể làm mới dữ liệu cho kỳ này.",
+      "warningTitle": "Kỳ đã khóa sổ",
+      "warningMessage": "Dữ liệu hiển thị thuộc kỳ đã khóa sổ. Chức năng làm mới đã bị vô hiệu hóa.",
+      "cannotRefresh": "Không thể làm mới - kỳ đã khóa"
+    },
+    "kpi": {
+      "postedVouchers": "Chứng từ đã ghi sổ",
+      "draftVouchers": "Chứng từ nháp",
+      "overdueAmount": "Công nợ quá hạn",
+      "overdueInvoices": "{{count}} hóa đơn quá hạn",
+      "overdueInvoices_one": "{{count}} hóa đơn quá hạn",
+      "overdueInvoices_other": "{{count}} hóa đơn quá hạn",
+      "noOverdue": "Không có hóa đơn quá hạn"
+    },
+    "alerts": {
+      "title": "Thông báo",
+      "viewDetails": "Xem chi tiết",
+      "reviewDrafts": "Xem chứng từ nháp",
+      "overdueInvoices": {
+        "title": "{{count}} hóa đơn quá hạn",
+        "title_one": "{{count}} hóa đơn quá hạn",
+        "title_other": "{{count}} hóa đơn quá hạn",
+        "description": "Tổng quá hạn: {{amount}}"
+      },
+      "draftVouchers": {
+        "title": "{{count}} chứng từ nháp đang chờ",
+        "title_one": "{{count}} chứng từ nháp đang chờ",
+        "title_other": "{{count}} chứng từ nháp đang chờ",
+        "description": "Xem xét và ghi sổ chứng từ nháp trước khi đóng kỳ"
+      },
+      "periodClosed": {
+        "title": "Kỳ đã đóng",
+        "description": "{{period}} đã khóa sổ. Dữ liệu chỉ đọc."
+      },
+      "allGood": {
+        "title": "Mọi thứ ổn",
+        "description": "Không có mục chờ xử lý hoặc cảnh báo nào."
+      }
+    }
   },
   "roles": {
     "admin": "Quản trị viên",

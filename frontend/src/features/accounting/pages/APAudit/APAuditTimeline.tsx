@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ArrowUpDown,
   Calendar as CalendarIcon,
   Download,
   FileText,
   MoreVertical,
   RefreshCw,
   Search,
-  AlertTriangle,
   ShieldAlert,
   Archive,
-  Trash2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -41,7 +38,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   DropdownMenu,
   DropdownMenuContent,

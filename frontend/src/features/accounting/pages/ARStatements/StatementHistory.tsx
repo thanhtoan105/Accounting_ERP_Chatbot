@@ -1,12 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { History, RefreshCw, Download, Eye } from 'lucide-react'
+import { History, RefreshCw, Download } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -88,7 +87,7 @@ export function StatementHistory() {
     toast.success('History refreshed')
   }
 
-  const handleExport = async (statementId: string, format: ExportFormat) => {
+  const handleExport = async (_statementId: string, _format: ExportFormat) => {
     try {
       // Note: This would need the customerId - for now, we'll use the selected customer
       if (!selectedCustomerId) {

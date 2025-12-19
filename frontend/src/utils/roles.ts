@@ -3,7 +3,17 @@
  * Role values match backend: 'admin', 'accountant', 'chief_accountant', 'cfo'
  */
 
-export type Role = 'super_admin' | 'admin' | 'accountant' | 'chief_accountant' | 'cfo'
+export type Role =
+  | 'super_admin'
+  | 'admin'
+  | 'accountant'
+  | 'chief_accountant'
+  | 'cfo'
+  | 'accountant_general'
+  | 'accountant_ar'
+  | 'accountant_ap'
+  | 'cashier'
+  | 'finance'
 
 /**
  * Check if user has a specific role.
@@ -101,6 +111,16 @@ export function getRoleDisplayName(role: string | null | undefined): string {
       return 'Chief Accountant'
     case 'cfo':
       return 'CFO'
+    case 'accountant_general':
+      return 'General Accountant'
+    case 'accountant_ar':
+      return 'AR Accountant'
+    case 'accountant_ap':
+      return 'AP Accountant'
+    case 'cashier':
+      return 'Cashier'
+    case 'finance':
+      return 'Finance'
     default:
       return role
   }
@@ -111,7 +131,18 @@ export function getRoleDisplayName(role: string | null | undefined): string {
  */
 export function isValidRole(role: string | null | undefined): role is Role {
   if (!role) return false
-  const validRoles: Role[] = ['super_admin', 'admin', 'accountant', 'chief_accountant', 'cfo']
+  const validRoles: Role[] = [
+    'super_admin',
+    'admin',
+    'accountant',
+    'chief_accountant',
+    'cfo',
+    'accountant_general',
+    'accountant_ar',
+    'accountant_ap',
+    'cashier',
+    'finance',
+  ]
   return validRoles.includes(role.toLowerCase() as Role)
 }
 
@@ -130,6 +161,16 @@ function getRoleLevel(role: Role): number {
     case 'cfo':
       return 2
     case 'accountant':
+      return 1
+    case 'accountant_general':
+      return 1
+    case 'accountant_ar':
+      return 1
+    case 'accountant_ap':
+      return 1
+    case 'cashier':
+      return 1
+    case 'finance':
       return 1
     default:
       return 0

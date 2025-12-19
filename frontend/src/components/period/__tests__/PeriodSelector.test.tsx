@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import { PeriodSelector } from '../PeriodSelector'
 import type { AccountingPeriod, PeriodSummary } from '@/types/accountingPeriod'
+import { periodService } from '@/services/period'
 
 // Mock the period service
 vi.mock('@/services/period', () => ({
@@ -12,7 +13,8 @@ vi.mock('@/services/period', () => ({
   },
 }))
 
-const mockPeriodService = await import('@/services/period')
+// Create typed mock references
+const mockedPeriodService = vi.mocked(periodService)
 
 describe('PeriodSelector', () => {
   const mockPeriod: AccountingPeriod = {
@@ -53,23 +55,30 @@ describe('PeriodSelector', () => {
     isCurrentPeriod: true,
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockGetItem: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockSetItem: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockRemoveItem: any
+
   beforeEach(() => {
     vi.clearAllMocks()
-    // Mock localStorage
-    const localStorageMock = {
-      getItem: vi.fn(),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-      clear: vi.fn(),
-    }
-    Object.defineProperty(window, 'localStorage', {
-      value: localStorageMock,
-    })
+    // Mock localStorage using vi.spyOn
+    mockGetItem = vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null)
+    mockSetItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {})
+    mockRemoveItem = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    mockGetItem.mockRestore()
+    mockSetItem.mockRestore()
+    mockRemoveItem.mockRestore()
   })
 
   it('renders loading state initially', () => {
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue([])
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(null)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue([])
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(null)
 
     render(<PeriodSelector onPeriodChange={vi.fn()} />)
 
@@ -77,8 +86,8 @@ describe('PeriodSelector', () => {
   })
 
   it('renders period selector with periods', async () => {
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue([mockPeriod])
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue([mockPeriod])
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
 
     const onPeriodChange = vi.fn()
     render(<PeriodSelector onPeriodChange={onPeriodChange} />)
@@ -92,8 +101,8 @@ describe('PeriodSelector', () => {
   })
 
   it('auto-selects current period when no period is initially selected', async () => {
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue([mockPeriod])
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue([mockPeriod])
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
 
     const onPeriodChange = vi.fn()
     render(<PeriodSelector onPeriodChange={onPeriodChange} />)
@@ -105,8 +114,8 @@ describe('PeriodSelector', () => {
 
   it('handles period selection change', async () => {
     const periods = [mockPeriod, mockClosedPeriod]
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue(periods)
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue(periods)
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
 
     const onPeriodChange = vi.fn()
     render(<PeriodSelector onPeriodChange={onPeriodChange} />)
@@ -131,9 +140,9 @@ describe('PeriodSelector', () => {
   })
 
   it('displays period summary when showSummary is true', async () => {
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue([mockPeriod])
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
-    mockPeriodService.periodService.getPeriodSummary.mockResolvedValue(mockSummary)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue([mockPeriod])
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
+    mockedPeriodService.getPeriodSummary.mockResolvedValue(mockSummary)
 
     render(
       <PeriodSelector selectedPeriod={mockPeriod} onPeriodChange={vi.fn()} showSummary={true} />,
@@ -147,8 +156,8 @@ describe('PeriodSelector', () => {
   })
 
   it('displays error state when API call fails', async () => {
-    mockPeriodService.periodService.getOpenPeriods.mockRejectedValue(new Error('API Error'))
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(null)
+    mockedPeriodService.getOpenPeriods.mockRejectedValue(new Error('API Error'))
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(null)
 
     render(<PeriodSelector onPeriodChange={vi.fn()} />)
 
@@ -158,8 +167,8 @@ describe('PeriodSelector', () => {
   })
 
   it('displays "No periods available" when periods array is empty', async () => {
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue([])
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(null)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue([])
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(null)
 
     render(<PeriodSelector onPeriodChange={vi.fn()} />)
 
@@ -169,11 +178,10 @@ describe('PeriodSelector', () => {
   })
 
   it('persists selected period to localStorage', async () => {
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue([mockPeriod])
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(null)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue([mockPeriod])
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(null)
 
-    const localStorageMock = vi.mocked(localStorage)
-    localStorageMock.getItem.mockReturnValue(null)
+    mockGetItem.mockReturnValue(null)
 
     const onPeriodChange = vi.fn()
     render(<PeriodSelector onPeriodChange={onPeriodChange} />)
@@ -191,7 +199,7 @@ describe('PeriodSelector', () => {
 
     // Check if localStorage was called with the selected period
     await waitFor(() => {
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      expect(mockSetItem).toHaveBeenCalledWith(
         expect.stringContaining('selectedPeriod_'),
         expect.stringContaining('January 2025'),
       )
@@ -200,16 +208,15 @@ describe('PeriodSelector', () => {
 
   it('restores persisted period from localStorage', async () => {
     const persistedPeriod = JSON.stringify(mockPeriod)
-    const localStorageMock = vi.mocked(localStorage)
-    localStorageMock.getItem.mockImplementation((key) => {
+    mockGetItem.mockImplementation((key: string) => {
       if (key?.includes('selectedPeriod_')) {
         return persistedPeriod
       }
       return null
     })
 
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue([mockPeriod])
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(null)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue([mockPeriod])
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(null)
 
     const onPeriodChange = vi.fn()
     render(<PeriodSelector onPeriodChange={onPeriodChange} />)
@@ -222,8 +229,8 @@ describe('PeriodSelector', () => {
 
   it('displays period status badges correctly', async () => {
     const periods = [mockPeriod, mockClosedPeriod]
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue(periods)
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue(periods)
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
 
     render(<PeriodSelector onPeriodChange={vi.fn()} />)
 
@@ -242,8 +249,8 @@ describe('PeriodSelector', () => {
   })
 
   it('disables selector when disabled prop is true', async () => {
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue([mockPeriod])
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue([mockPeriod])
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
 
     render(<PeriodSelector onPeriodChange={vi.fn()} disabled={true} />)
 
@@ -254,8 +261,8 @@ describe('PeriodSelector', () => {
   })
 
   it('shows custom placeholder when provided', async () => {
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue([mockPeriod])
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(null)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue([mockPeriod])
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(null)
 
     render(<PeriodSelector onPeriodChange={vi.fn()} placeholder="Choose accounting period" />)
 
@@ -265,8 +272,8 @@ describe('PeriodSelector', () => {
   })
 
   it('applies custom className when provided', async () => {
-    mockPeriodService.periodService.getOpenPeriods.mockResolvedValue([mockPeriod])
-    mockPeriodService.periodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
+    mockedPeriodService.getOpenPeriods.mockResolvedValue([mockPeriod])
+    mockedPeriodService.getCurrentPeriod.mockResolvedValue(mockPeriod)
 
     render(<PeriodSelector onPeriodChange={vi.fn()} className="custom-period-selector" />)
 

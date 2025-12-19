@@ -45,7 +45,6 @@ import {
   type ColumnMappingSuggestion,
   type StatementImportRequest,
   type StatementImportResult,
-  type ImportError,
 } from '../../services/bankReconciliation'
 
 // ============================================================================

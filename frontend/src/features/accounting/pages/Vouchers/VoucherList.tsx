@@ -14,7 +14,6 @@ import {
   Trash2,
   MoreVertical,
   Copy,
-  X,
   Plus,
 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -55,7 +54,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
 import {
@@ -179,7 +177,7 @@ export default function VoucherList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [voucherToDelete, setVoucherToDelete] = useState<VoucherListDTO | null>(null)
   const [deleteReason, setDeleteReason] = useState('')
-  const [deleting, setDeleting] = useState(false)
+  const [_deleting, _setDeleting] = useState(false)
   // Attachment modal
   const [attachmentModalOpen, setAttachmentModalOpen] = useState(false)
   const [selectedVoucherForAttachments, setSelectedVoucherForAttachments] = useState<string | null>(

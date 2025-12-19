@@ -163,9 +163,7 @@ export default function ReceiptList() {
   const [dateFrom, setDateFrom] = useState<string>(() => loadFromStorage('dateFrom', ''))
   const [dateTo, setDateTo] = useState<string>(() => loadFromStorage('dateTo', ''))
   const [search, setSearch] = useState<string>(() => loadFromStorage('search', ''))
-  const [standalone, setStandalone] = useState<boolean | undefined>(() =>
-    loadFromStorage('standalone', undefined),
-  )
+  const [standalone] = useState<boolean | undefined>(() => loadFromStorage('standalone', undefined))
   const debouncedSearch = useDebounce(search, 300)
   const [sorting, setSorting] = useState<SortingState>(() =>
     loadFromStorage('sorting', [] as SortingState),

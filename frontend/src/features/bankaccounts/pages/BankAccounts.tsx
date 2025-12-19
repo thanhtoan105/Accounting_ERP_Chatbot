@@ -9,7 +9,6 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Ban,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -39,7 +38,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,7 +63,6 @@ import {
   downloadImportTemplate,
 } from '@/features/bankaccounts/services/bankAccount'
 import type { BankAccount, BankAccountQueryParams, AccountType } from '@/types/bankAccount'
-import { getStatusLabel, getTypeLabel } from '@/types/bankAccount'
 import BankAccountFormSheet from '@/features/bankaccounts/components/BankAccountFormSheet'
 import DeleteBankAccountDialog from '@/features/bankaccounts/components/DeleteBankAccountDialog'
 

@@ -13,25 +13,14 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Settings2,
-  RefreshCw,
-  History,
-  RotateCcw,
-  Save,
-  X,
-  Edit2,
-  ChevronRight,
-  AlertCircle,
-} from 'lucide-react'
+import { Settings2, RefreshCw, History, RotateCcw, Save, Edit2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   Table,

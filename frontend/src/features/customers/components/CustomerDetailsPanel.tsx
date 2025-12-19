@@ -2,16 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Loader2,
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  ToggleLeft,
-  Receipt,
-  Calendar,
-} from 'lucide-react'
+import { Building2, Mail, Phone, MapPin, Receipt, Calendar } from 'lucide-react'
 import {
   Dialog,
   DialogContent,

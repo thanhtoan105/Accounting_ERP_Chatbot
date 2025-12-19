@@ -7,6 +7,8 @@ export interface VoucherAttachmentDTO {
   uploadedAt: string
   uploadedBy: number | null
   uploadedByName: string | null
+  downloadUrl?: string
+  signedUrl?: string
 }
 
 export interface AttachmentListResponse {

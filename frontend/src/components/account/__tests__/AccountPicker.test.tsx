@@ -99,8 +99,12 @@ describe('AccountPicker', () => {
         .getByText(/411.*Revenue - Parent Account/i)
         .closest('[role="option"]')
 
-      expect(within(parentAccount111!).getByText(/không hạch toán/i)).toBeInTheDocument()
-      expect(within(parentAccount411!).getByText(/không hạch toán/i)).toBeInTheDocument()
+      expect(
+        within(parentAccount111 as HTMLElement).getByText(/không hạch toán/i),
+      ).toBeInTheDocument()
+      expect(
+        within(parentAccount411 as HTMLElement).getByText(/không hạch toán/i),
+      ).toBeInTheDocument()
     })
 
     it('should not allow selection of non-leaf accounts', async () => {

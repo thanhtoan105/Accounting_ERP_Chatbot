@@ -37,7 +37,13 @@ describe('useRole', () => {
 
   it('should handle missing role', () => {
     mockUseAuth.mockReturnValue({
-      user: { id: 1, email: 'test@example.com', fullName: 'Test', role: null, companyId: 1 },
+      user: {
+        id: 1,
+        email: 'test@example.com',
+        fullName: 'Test',
+        role: undefined as unknown as string,
+        companyId: 1,
+      },
       isAuthenticated: true,
       loading: false,
       login: vi.fn(),

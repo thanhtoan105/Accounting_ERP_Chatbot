@@ -73,7 +73,7 @@ describe('useChatbot', () => {
       answer: 'Tổng công nợ là 5,000,000 VND',
       citations: [
         {
-          entityType: 'voucher',
+          entityType: 'voucher' as const,
           entityId: 'voucher-123',
           voucherNumber: 'V001',
           excerpt: 'Công nợ phải trả',
@@ -82,7 +82,7 @@ describe('useChatbot', () => {
         },
       ],
       confidenceScore: 0.85,
-      confidenceLevel: 'HIGH',
+      confidenceLevel: 'HIGH' as const,
       responseTimeMs: 1500,
     }
 
@@ -145,7 +145,7 @@ describe('useChatbot', () => {
       answer: 'Test answer',
       citations: [],
       confidenceScore: 0.8,
-      confidenceLevel: 'HIGH',
+      confidenceLevel: 'HIGH' as const,
       responseTimeMs: 1000,
     }
 
@@ -227,7 +227,7 @@ describe('useChatbot', () => {
       answer: 'Test answer',
       citations: [],
       confidenceScore: 0.8,
-      confidenceLevel: 'HIGH',
+      confidenceLevel: 'HIGH' as const,
       responseTimeMs: 1000,
     }
 

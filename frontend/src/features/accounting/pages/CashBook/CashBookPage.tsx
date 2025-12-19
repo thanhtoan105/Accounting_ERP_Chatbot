@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Download, RefreshCw, Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -65,8 +65,8 @@ export function CashBookPage() {
   const [loading, setLoading] = useState(false)
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined)
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined)
+  const [dateFrom, setDateFrom] = useState<string | undefined>(undefined)
+  const [dateTo, setDateTo] = useState<string | undefined>(undefined)
   const [transactionType, setTransactionType] = useState<'all' | 'receipt' | 'payment'>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(0)
@@ -104,8 +104,8 @@ export function CashBookPage() {
     try {
       setLoading(true)
       const result = await getCashBook(Number(selectedAccountId), {
-        dateFrom: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
-        dateTo: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
         type: transactionType,
         reference: searchTerm || undefined,
         page,
@@ -231,9 +231,9 @@ export function CashBookPage() {
             <div className="space-y-2">
               <Label>Date From</Label>
               <DatePicker
-                date={dateFrom}
-                onDateChange={(date) => {
-                  setDateFrom(date)
+                value={dateFrom}
+                onChange={(value) => {
+                  setDateFrom(value)
                   setPage(0)
                 }}
                 placeholder="Start date"
@@ -243,9 +243,9 @@ export function CashBookPage() {
             <div className="space-y-2">
               <Label>Date To</Label>
               <DatePicker
-                date={dateTo}
-                onDateChange={(date) => {
-                  setDateTo(date)
+                value={dateTo}
+                onChange={(value) => {
+                  setDateTo(value)
                   setPage(0)
                 }}
                 placeholder="End date"

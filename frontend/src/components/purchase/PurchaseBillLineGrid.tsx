@@ -1,8 +1,7 @@
 'use client'
 
-import * as React from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { ArrowUpDown, Copy, GripVertical, Plus, Trash2, AlertCircle } from 'lucide-react'
+import { Copy, GripVertical, Plus, Trash2, AlertCircle } from 'lucide-react'
 
 import { AccountPicker, type AccountSummary } from '@/components/account/AccountPicker'
 import { MoneyInput } from '@/components/inputs/MoneyInput'
@@ -34,7 +33,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils'
 import { DimensionPicker } from '@/components/voucher/DimensionPicker'
 import type { VoucherDimensionOption } from '@/types/voucher'
-import type { VatRate, PurchaseBillLineDTO } from '@/types/purchaseBill'
+import type { VatRate } from '@/types/purchaseBill'
 
 export interface PurchaseBillLine {
   id: string

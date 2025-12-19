@@ -5,7 +5,7 @@ import api from '@/utils/axios'
 // Mock the API module
 vi.mock('@/utils/axios')
 
-const mockApi = vi.mocked(api)
+const mockApi = vi.mocked(api, { deep: true })
 
 describe('PeriodService', () => {
   beforeEach(() => {

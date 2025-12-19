@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { BrowserRouter } from 'react-router-dom'
-import CompanySettings from '../Admin/CompanySettingsEdit'
+import { CompanySettings } from '../../features/company'
 import * as useAuthHook from '../../hooks/useAuth'
 
 vi.mock('../../hooks/useAuth')

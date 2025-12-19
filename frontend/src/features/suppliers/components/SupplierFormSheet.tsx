@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -23,11 +23,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
-import {
-  createSupplier,
-  updateSupplier,
-  getSupplierById,
-} from '@/features/suppliers/services/supplier'
+import { createSupplier, updateSupplier } from '@/features/suppliers/services/supplier'
 import type { Supplier, SupplierCreateRequest, SupplierUpdateRequest } from '@/types/supplier'
 
 interface SupplierFormSheetProps {
@@ -73,7 +69,7 @@ const createSupplierFormSchema = (isEditMode: boolean) =>
         message: 'Invalid phone number format',
       }),
     address: z.string().optional(),
-    active: z.boolean().default(true),
+    active: z.boolean().optional().default(true),
   })
 
 export default function SupplierFormSheet({
@@ -89,10 +85,19 @@ export default function SupplierFormSheet({
 
   // Create schema based on edit mode
   const supplierFormSchema = useMemo(() => createSupplierFormSchema(isEditMode), [isEditMode])
-  type SupplierFormValues = z.infer<typeof supplierFormSchema>
+
+  type SupplierFormValues = {
+    code: string | undefined
+    name: string
+    taxCode?: string
+    email?: string
+    phone?: string
+    address?: string
+    active: boolean
+  }
 
   const form = useForm<SupplierFormValues>({
-    resolver: zodResolver(supplierFormSchema),
+    resolver: zodResolver(supplierFormSchema) as any,
     defaultValues: {
       code: '',
       name: '',
@@ -144,29 +149,7 @@ export default function SupplierFormSheet({
     }
   }, [open, isEditMode, supplier])
 
-  const loadSupplier = async () => {
-    if (!supplier) return
-    try {
-      const supplierData = await getSupplierById(supplier.id)
-      reset({
-        code: supplierData.code,
-        name: supplierData.name,
-        taxCode: supplierData.taxCode || '',
-        email: supplierData.email || '',
-        phone: supplierData.phone || '',
-        address: supplierData.address || '',
-        active: supplierData.active,
-      })
-      setFormError(null)
-      setDuplicateError(null)
-    } catch (err: any) {
-      const errorMessage = err?.error?.message || err?.message || 'Failed to load supplier'
-      setFormError(errorMessage)
-      toast.error('Failed to load supplier', { description: errorMessage })
-    }
-  }
-
-  const onSubmit = async (values: SupplierFormValues) => {
+  const onSubmit: SubmitHandler<SupplierFormValues> = async (values) => {
     setFormError(null)
     setDuplicateError(null)
     try {
@@ -175,7 +158,7 @@ export default function SupplierFormSheet({
         const request: SupplierUpdateRequest = {}
 
         const dirty: any = form.formState.dirtyFields
-        if (dirty?.code) request.code = values.code.trim()
+        if (dirty?.code && values.code) request.code = values.code.trim()
         if (dirty?.name) request.name = values.name.trim()
         if (dirty?.taxCode) request.taxCode = values.taxCode?.trim() || undefined
         if (dirty?.email) request.email = values.email?.trim() || undefined

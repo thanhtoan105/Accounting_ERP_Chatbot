@@ -714,7 +714,10 @@ export function useVoucherFormState() {
         const appliedTemplate = payload?.data?.template ?? template
         const voucherLines = payload?.data?.voucher?.lines ?? []
         if (voucherLines.length > 0) {
-          const mappedEntries = convertLedgerLinesToEntries(voucherLines, accounts)
+          const mappedEntries = convertLedgerLinesToEntries(
+            voucherLines as unknown as VoucherLedgerLineDTO[],
+            accounts,
+          )
           applyTemplateLines(appliedTemplate, mappedEntries)
         } else {
           applyTemplateLines(appliedTemplate)
@@ -835,7 +838,12 @@ export function useVoucherFormState() {
           voucherDate: voucher.voucherDate,
           description: voucher.description ?? '',
         })
-        resetLines(convertLedgerLinesToEntries(voucher.lines, accounts))
+        resetLines(
+          convertLedgerLinesToEntries(
+            voucher.lines as VoucherLedgerLineDTO[] | undefined,
+            accounts,
+          ),
+        )
         setEditingVoucher(voucher)
         setValidationMap({})
         setLockedAccountIds([])

@@ -1,6 +1,5 @@
 'use client'
 
-import * as React from 'react'
 import { useCallback, useMemo, useState, useEffect } from 'react'
 import { AlertCircle, Trash2 } from 'lucide-react'
 
@@ -17,7 +16,6 @@ import {
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import type { PaymentAllocationDTO, PaymentAllocationRequest } from '@/types/payment'
 import { format } from 'date-fns'
 
 export interface PaymentAllocation {

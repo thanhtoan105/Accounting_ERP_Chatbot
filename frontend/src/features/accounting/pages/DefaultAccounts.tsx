@@ -32,7 +32,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,11 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  getDefaultAccounts,
-  deleteDefaultAccount,
-  duplicateDefaultAccount,
-} from '@/services/defaultAccount'
+import { getDefaultAccounts, deleteDefaultAccount } from '@/services/defaultAccount'
 import type { DefaultAccount, DefaultAccountQueryParams } from '@/types/defaultAccount'
 import DefaultAccountDialog from './DefaultAccounts/DefaultAccountDialog'
 
@@ -65,7 +60,7 @@ export default function DefaultAccounts() {
 
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [totalElements, setTotalElements] = useState(0)
+  const [_totalElements, setTotalElements] = useState(0)
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -430,9 +425,19 @@ export default function DefaultAccounts() {
         initialData={
           selectedDefaultAccount
             ? {
-                voucherType: selectedDefaultAccount.voucherType,
+                voucherType: selectedDefaultAccount.voucherType as
+                  | 'Cash Payment'
+                  | 'Bank Payment'
+                  | 'Cash Receipt'
+                  | 'Bank Receipt'
+                  | 'Other Business Voucher',
                 entryName: selectedDefaultAccount.entryName,
-                accountDefaults: selectedDefaultAccount.accountDefaults,
+                accountDefaults: selectedDefaultAccount.accountDefaults
+                  .filter((ad) => ad.defaultAccountId != null)
+                  .map((ad) => ({
+                    columnName: ad.columnName,
+                    defaultAccountId: ad.defaultAccountId!,
+                  })),
               }
             : undefined
         }

@@ -5,7 +5,7 @@ import { AlertTriangle, Download, RefreshCw, Search, FileText } from 'lucide-rea
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Alert, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -63,7 +63,7 @@ export function TrialBalance() {
   const [data, setData] = useState<TrialBalanceResponseDTO | null>(null)
   const [periods, setPeriods] = useState<AccountingPeriod[]>([])
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>('')
-  const [currentPeriodId, setCurrentPeriodId] = useState<string>('')
+  const [_currentPeriodId, setCurrentPeriodId] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(50)
@@ -143,7 +143,7 @@ export function TrialBalance() {
 
         // Priority: saved period > current period > first available
         let selectedId = ''
-        if (savedPeriodInList) {
+        if (savedPeriodInList && savedPeriod) {
           selectedId = savedPeriod
         } else if (current && limitedPeriods.find((p) => p.id === current.id)) {
           selectedId = current.id
@@ -294,7 +294,9 @@ export function TrialBalance() {
                     <SelectItem
                       key={period.id}
                       value={period.id}
-                      disabled={period.startDate && new Date(period.startDate) > new Date()}
+                      disabled={Boolean(
+                        period.startDate && new Date(period.startDate) > new Date(),
+                      )}
                     >
                       {period.periodName} ({period.fiscalYear})
                     </SelectItem>

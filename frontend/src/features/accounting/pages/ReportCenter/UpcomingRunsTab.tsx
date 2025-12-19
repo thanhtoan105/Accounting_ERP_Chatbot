@@ -11,7 +11,9 @@ import { Progress } from '@/components/ui/progress'
 import { useUpcomingRuns } from '../../services/reportSchedules'
 import type { ScheduleRunDTO } from '../../types/reportSchedule'
 
-function getStatusBadge(status: string, t: (key: string, fallback?: string) => string) {
+type TranslateFunction = (key: string, fallback?: string) => string
+
+function getStatusBadge(status: string, t: TranslateFunction) {
   const config: Record<
     string,
     {
@@ -65,7 +67,7 @@ function formatRelativeTime(dateStr: string, locale: string): string {
 interface UpcomingRunCardProps {
   run: ScheduleRunDTO
   locale: string
-  t: (key: string, fallback?: string) => string
+  t: TranslateFunction
 }
 
 function UpcomingRunCard({ run, locale, t }: UpcomingRunCardProps) {
@@ -116,7 +118,11 @@ function UpcomingRunCard({ run, locale, t }: UpcomingRunCardProps) {
 }
 
 export function UpcomingRunsTab() {
-  const { t, i18n } = useTranslation()
+  const { t: tRaw, i18n } = useTranslation()
+  const t: TranslateFunction = (key, fallback) => {
+    const result = tRaw(key)
+    return typeof result === 'string' ? result : (fallback ?? key)
+  }
   const { data: runs, isLoading, error } = useUpcomingRuns()
   const locale = i18n.language || 'vi'
 
