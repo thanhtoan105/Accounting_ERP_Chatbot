@@ -5,8 +5,6 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -21,8 +19,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.stereotype.Component;
+
+/**
+ * Filter that establishes the company context for each request.
+ * This filter runs AFTER JwtAuthenticationFilter in the Spring Security filter chain
+ * to ensure the user is authenticated before we try to set the company context.
+ */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class CompanyContextFilter extends OncePerRequestFilter {
 
   private static final Logger log = LoggerFactory.getLogger(CompanyContextFilter.class);
@@ -30,7 +34,7 @@ public class CompanyContextFilter extends OncePerRequestFilter {
   public static final String COMPANY_HEADER = "X-Company-Id";
 
   private static final List<String> PUBLIC_PATHS =
-      List.of("/api/v1/auth/**", "/api/v1/invitations/**", "/api/v1/admin/**");
+      List.of("/api/v1/auth/**", "/api/v1/invitations/**");
 
   private static final AntPathMatcher pathMatcher = new AntPathMatcher();
 

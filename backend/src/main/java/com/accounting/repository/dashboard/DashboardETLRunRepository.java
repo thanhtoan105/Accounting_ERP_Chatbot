@@ -42,4 +42,7 @@ public interface DashboardETLRunRepository extends JpaRepository<DashboardETLRun
 
     @Query("SELECT e FROM DashboardETLRun e WHERE e.status = 'RUNNING' AND e.startedAt < :staleThreshold")
     List<DashboardETLRun> findStaleRunningJobs(@Param("staleThreshold") Instant staleThreshold);
+
+    @Query("SELECT COUNT(e) FROM DashboardETLRun e WHERE (:companyId IS NULL OR e.companyId = :companyId) AND e.status = 'FAILED' AND e.startedAt >= :since")
+    long countRecentFailedJobs(@Param("companyId") Long companyId, @Param("since") Instant since);
 }

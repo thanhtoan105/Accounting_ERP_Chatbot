@@ -41,7 +41,7 @@ spring:
   cache:
     type: redis
     redis:
-      time-to-live: 300000  # 5 minutes in milliseconds (default, can be overridden per cache)
+      time-to-live: 300000 # 5 minutes in milliseconds (default, can be overridden per cache)
 
 springdoc:
   swagger-ui:
@@ -114,7 +114,7 @@ chatbot:
     webhook-url: ${N8N_WEBHOOK_URL:http://localhost:5678/webhook/voucher-embedding}
     webhook-secret: ${N8N_WEBHOOK_SECRET:}
     retry-attempts: 3
-    retry-delays: 1000,5000,15000  # milliseconds: 1s, 5s, 15s
+    retry-delays: 1000,5000,15000 # milliseconds: 1s, 5s, 15s
     timeout-seconds: 10
 
   # Query Configuration
@@ -133,20 +133,40 @@ chatbot:
 reporting:
   schedule:
     check:
-      cron: "0 */5 * * * *"  # Every 5 minutes
+      cron: "0 */5 * * * *" # Every 5 minutes
   orphan:
     check:
-      cron: "0 0 1 * * *"    # Daily at 1 AM
+      cron: "0 0 1 * * *" # Daily at 1 AM
 
 # Dashboard ETL Configuration (Epic 8.0)
 dashboard:
   etl:
     enabled: ${DASHBOARD_ETL_ENABLED:true}
-    cron: ${DASHBOARD_ETL_CRON:0 */5 * * * *}  # Every 5 minutes
-    lock-ttl-seconds: ${DASHBOARD_ETL_LOCK_TTL:300}  # 5 minutes lock timeout
+    cron: ${DASHBOARD_ETL_CRON:0 */5 * * * *} # Every 5 minutes
+    lock-ttl-seconds: ${DASHBOARD_ETL_LOCK_TTL:300} # 5 minutes lock timeout
     business-hours:
       enabled: ${DASHBOARD_ETL_BUSINESS_HOURS_ENABLED:false}
       start: ${DASHBOARD_ETL_BUSINESS_HOURS_START:8}
       end: ${DASHBOARD_ETL_BUSINESS_HOURS_END:18}
   refresh:
-    rate-limit-seconds: ${DASHBOARD_REFRESH_RATE_LIMIT:60}  # 1 refresh per minute per user
+    rate-limit-seconds: ${DASHBOARD_REFRESH_RATE_LIMIT:60} # 1 refresh per minute per user
+
+# Role-Based Dashboard Profiles (Epic 8.0.18)
+analytics:
+  export:
+    large-export-threshold: ${ANALYTICS_LARGE_EXPORT_THRESHOLD:10000}
+    download-expiry-hours: ${ANALYTICS_DOWNLOAD_EXPIRY_HOURS:24}
+  dashboards:
+    # IMPORTANT: Dashboard ID 4 is "Financial Overview" in Metabase
+    # Dashboard ID 1 is the demo "E-commerce insights" dashboard
+    default-dashboard-id: 4
+    role-profiles:
+      ADMIN: 4 # Full dashboard - Financial Overview with all widgets
+      CFO: 4
+      CHIEF_ACCOUNTANT: 4
+      ACCOUNTANT_GENERAL: 4 # Financial Overview
+      ACCOUNTANT_AR: 4 # Financial Overview (filtered by role permissions)
+      ACCOUNTANT_AP: 4 # Financial Overview (filtered by role permissions)
+      CASHIER: 4 # Financial Overview (filtered by role permissions)
+      FINANCE: 4
+      ACCOUNTANT: 4

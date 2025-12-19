@@ -120,11 +120,23 @@ public class CacheConfig implements CachingConfigurer {
                                                                 redisSerializer))
                                 .disableCachingNullValues();
 
+                // Analytics widget cache configuration (5 minutes TTL for widget queries)
+                RedisCacheConfiguration analyticsWidgetConfig = RedisCacheConfiguration.defaultCacheConfig()
+                                .entryTtl(Duration.ofMinutes(5))
+                                .serializeKeysWith(
+                                                RedisSerializationContext.SerializationPair.fromSerializer(
+                                                                new StringRedisSerializer()))
+                                .serializeValuesWith(
+                                                RedisSerializationContext.SerializationPair.fromSerializer(
+                                                                redisSerializer))
+                                .disableCachingNullValues();
+
                 return RedisCacheManager.builder(connectionFactory)
                                 .cacheDefaults(defaultConfig)
                                 .withCacheConfiguration("ap-aging", apAgingConfig)
                                 .withCacheConfiguration("ar-aging", arAgingConfig)
                                 .withCacheConfiguration("ar-dashboard", arDashboardConfig)
+                                .withCacheConfiguration("analytics-widget", analyticsWidgetConfig)
                                 .build();
         }
 

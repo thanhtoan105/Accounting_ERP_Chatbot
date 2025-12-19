@@ -4,6 +4,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -14,24 +17,35 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.accounting.dto.analytics.DashboardReconciliationReport;
+import com.accounting.entity.AccountingPeriod;
 import com.accounting.entity.dashboard.DashboardETLRun;
 import com.accounting.entity.dashboard.DashboardFreshness;
 import com.accounting.entity.dashboard.ETLJobStatus;
 import com.accounting.entity.dashboard.ETLTriggerType;
+import com.accounting.repository.AccountingPeriodRepository;
 import com.accounting.repository.dashboard.DashboardETLRunRepository;
 import com.accounting.repository.dashboard.DashboardFreshnessRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class ETLPipelineServiceImpl implements ETLPipelineService {
 
     private static final Logger logger = LoggerFactory.getLogger(ETLPipelineServiceImpl.class);
-    private static final String LOCK_KEY_PREFIX = "etl:lock:company:";
     private static final String JOB_NAME = "DASHBOARD_MV_REFRESH";
 
     private final JdbcTemplate jdbcTemplate;
     private final StringRedisTemplate redisTemplate;
     private final DashboardETLRunRepository etlRunRepository;
     private final DashboardFreshnessRepository freshnessRepository;
+    private final AccountingPeriodRepository periodRepository;
+    private final AnalyticsCacheService analyticsCacheService;
+    private final ETLAlertService etlAlertService;
+    private final MaterializedViewRefreshService materializedViewRefreshService;
+    private final DashboardReconciliationService reconciliationService;
+    private final ObjectMapper objectMapper;
+    private final AnalyticsCacheKeyGenerator cacheKeyGenerator;
 
     @Value("${dashboard.etl.lock-ttl-seconds:300}")
     private int lockTtlSeconds;
@@ -40,11 +54,25 @@ public class ETLPipelineServiceImpl implements ETLPipelineService {
             JdbcTemplate jdbcTemplate,
             StringRedisTemplate redisTemplate,
             DashboardETLRunRepository etlRunRepository,
-            DashboardFreshnessRepository freshnessRepository) {
+            DashboardFreshnessRepository freshnessRepository,
+            AccountingPeriodRepository periodRepository,
+            AnalyticsCacheService analyticsCacheService,
+            ETLAlertService etlAlertService,
+            MaterializedViewRefreshService materializedViewRefreshService,
+            DashboardReconciliationService reconciliationService,
+            ObjectMapper objectMapper,
+            AnalyticsCacheKeyGenerator cacheKeyGenerator) {
         this.jdbcTemplate = jdbcTemplate;
         this.redisTemplate = redisTemplate;
         this.etlRunRepository = etlRunRepository;
         this.freshnessRepository = freshnessRepository;
+        this.periodRepository = periodRepository;
+        this.analyticsCacheService = analyticsCacheService;
+        this.etlAlertService = etlAlertService;
+        this.materializedViewRefreshService = materializedViewRefreshService;
+        this.reconciliationService = reconciliationService;
+        this.objectMapper = objectMapper;
+        this.cacheKeyGenerator = cacheKeyGenerator;
     }
 
     @Override
@@ -60,86 +88,82 @@ public class ETLPipelineServiceImpl implements ETLPipelineService {
     }
 
     private DashboardETLRun executeRefresh(Long companyId, ETLTriggerType triggerType, Long userId) {
-        return executeRefreshWithRetry(companyId, triggerType, userId, 3);
-    }
-
-    private DashboardETLRun executeRefreshWithRetry(Long companyId, ETLTriggerType triggerType, Long userId, int maxRetries) {
-        String instanceId = getInstanceId();
         DashboardETLRun etlRun = createETLRun(companyId, triggerType, userId);
-
         logger.info("Starting ETL refresh for company {} (job: {})", companyId, etlRun.getId());
 
-        Exception lastException = null;
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                etlRun.setStatus(ETLJobStatus.RUNNING);
-                etlRun.setRetryCount(attempt - 1);
+        try {
+            UUID currentMaxPostedVoucherId = getMaxPostedVoucherId(companyId);
+            DashboardFreshness freshness = freshnessRepository.findByCompanyId(companyId).orElse(null);
+            UUID previousLastPostingId = freshness != null ? freshness.getLastPostedVoucherId() : null;
+
+            if (currentMaxPostedVoucherId != null
+                    && previousLastPostingId != null
+                    && Objects.equals(currentMaxPostedVoucherId, previousLastPostingId)) {
+                logger.info("Skipping ETL refresh for company {} - no new posted entries (last_posting_id: {})",
+                        companyId, currentMaxPostedVoucherId);
+
+                etlRun.setStatus(ETLJobStatus.SKIPPED);
+                etlRun.setCompletedAt(Instant.now());
+                etlRun.setDurationMs(Duration.between(etlRun.getStartedAt(), Instant.now()).toMillis());
+                etlRun.setMetadata(buildMetadataJson(currentMaxPostedVoucherId, previousLastPostingId, true));
                 etlRunRepository.save(etlRun);
-
-                int rowsProcessed = refreshAllMaterializedViews();
-
-                IntegrityCheckResult integrityResult = runIntegrityChecks(companyId);
-                if (!integrityResult.passed()) {
-                    logger.warn("Integrity check failed for company {}: {}", companyId, integrityResult.errorMessage());
-                }
-
-                etlRun.markCompleted(rowsProcessed);
-                etlRunRepository.save(etlRun);
-
-                updateFreshnessStatus(companyId, etlRun.getId(), true);
-
-                logger.info("ETL refresh completed for company {} in {}ms, {} rows processed",
-                        companyId, etlRun.getDurationMs(), rowsProcessed);
 
                 return etlRun;
-
-            } catch (Exception e) {
-                lastException = e;
-                logger.warn("ETL refresh attempt {} failed for company {}: {}", attempt, companyId, e.getMessage());
-
-                if (attempt < maxRetries) {
-                    try {
-                        long backoffMs = (long) (1000 * Math.pow(2, attempt - 1));
-                        Thread.sleep(backoffMs);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
             }
+
+            etlRun.setStatus(ETLJobStatus.RUNNING);
+            etlRunRepository.save(etlRun);
+
+            int rowsProcessed = materializedViewRefreshService.refreshAllMaterializedViews(companyId);
+
+            IntegrityCheckResult integrityResult = runIntegrityChecks(companyId);
+            if (!integrityResult.passed()) {
+                logger.warn("Integrity check failed for company {}: {}", companyId, integrityResult.errorMessage());
+            }
+
+            ReconciliationCheckResult reconciliationResult = runReconciliationChecks(companyId);
+            
+            if (!reconciliationResult.passed() && !reconciliationResult.skipped()) {
+                etlRun.setStatus(ETLJobStatus.COMPLETED_WITH_WARNINGS);
+                etlRun.setCompletedAt(Instant.now());
+                etlRun.setDurationMs(Duration.between(etlRun.getStartedAt(), Instant.now()).toMillis());
+                etlRun.setRowsProcessed(rowsProcessed);
+                etlRun.setErrorMessage("Reconciliation failed: " + reconciliationResult.message());
+                etlRun.setMetadata(buildMetadataJson(currentMaxPostedVoucherId, previousLastPostingId, false));
+                etlRunRepository.save(etlRun);
+                
+                updateFreshnessStatus(companyId, etlRun.getId(), true, currentMaxPostedVoucherId);
+                analyticsCacheService.invalidateCompanyWidgetCaches(companyId);
+                
+                logger.warn("ETL refresh completed with reconciliation warnings for company {} in {}ms",
+                        companyId, etlRun.getDurationMs());
+                
+                return etlRun;
+            }
+
+            etlRun.markCompleted(rowsProcessed);
+            etlRun.setMetadata(buildMetadataJson(currentMaxPostedVoucherId, previousLastPostingId, false));
+            etlRunRepository.save(etlRun);
+
+            updateFreshnessStatus(companyId, etlRun.getId(), true, currentMaxPostedVoucherId);
+            analyticsCacheService.invalidateCompanyWidgetCaches(companyId);
+
+            logger.info("ETL refresh completed for company {} in {}ms, {} rows processed",
+                    companyId, etlRun.getDurationMs(), rowsProcessed);
+
+            return etlRun;
+
+        } catch (Exception e) {
+            logger.error("ETL refresh failed for company {}: {}", companyId, e.getMessage());
+
+            etlRun.markFailed(e.getMessage(), getStackTrace(e));
+            etlRunRepository.save(etlRun);
+
+            updateFreshnessStatus(companyId, etlRun.getId(), false, null);
+            etlAlertService.alertOnJobFailure(etlRun);
+
+            return etlRun;
         }
-
-        logger.error("ETL refresh failed for company {} after {} attempts: {}", 
-                companyId, maxRetries, lastException != null ? lastException.getMessage() : "unknown error");
-
-        etlRun.markFailed(
-                lastException != null ? lastException.getMessage() : "Unknown error",
-                lastException != null ? getStackTrace(lastException) : null);
-        etlRunRepository.save(etlRun);
-
-        updateFreshnessStatus(companyId, etlRun.getId(), false);
-
-        return etlRun;
-    }
-
-    private int refreshAllMaterializedViews() {
-        logger.debug("Refreshing materialized views...");
-
-        jdbcTemplate.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_revenue_expense");
-        jdbcTemplate.execute("REFRESH MATERIALIZED VIEW mv_ar_ap_aging");
-        jdbcTemplate.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_cash_flow_summary");
-        jdbcTemplate.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_period_summary");
-        jdbcTemplate.execute("REFRESH MATERIALIZED VIEW mv_top_debtors_creditors");
-
-        Integer totalRows = jdbcTemplate.queryForObject(
-                "SELECT (SELECT COUNT(*) FROM mv_daily_revenue_expense) + " +
-                        "(SELECT COUNT(*) FROM mv_ar_ap_aging) + " +
-                        "(SELECT COUNT(*) FROM mv_cash_flow_summary) + " +
-                        "(SELECT COUNT(*) FROM mv_period_summary) + " +
-                        "(SELECT COUNT(*) FROM mv_top_debtors_creditors)",
-                Integer.class);
-
-        return totalRows != null ? totalRows : 0;
     }
 
     @Override
@@ -182,9 +206,70 @@ public class ETLPipelineServiceImpl implements ETLPipelineService {
         }
     }
 
+    private ReconciliationCheckResult runReconciliationChecks(Long companyId) {
+        try {
+            AccountingPeriod currentPeriod = periodRepository.findCurrentPeriodByCompanyId(companyId)
+                    .orElse(null);
+
+            if (currentPeriod == null) {
+                logger.debug("No current period found for company {}, skipping reconciliation checks", companyId);
+                return ReconciliationCheckResult.skipped("No current period found");
+            }
+
+            UUID periodId = currentPeriod.getId();
+            DashboardReconciliationReport report = reconciliationService.runFullReconciliation(companyId, periodId);
+
+            if (!report.allPassed()) {
+                String failedChecks = report.results().stream()
+                        .filter(r -> !r.passed())
+                        .map(r -> r.checkType() + " variance=" + r.variance())
+                        .toList()
+                        .toString();
+                
+                logger.warn("Dashboard reconciliation {} for company {} period {}: {}",
+                        report.overallStatus(), companyId, periodId, failedChecks);
+                
+                etlAlertService.alertOnReconciliationFailure(companyId, periodId, report);
+                
+                return ReconciliationCheckResult.failed(failedChecks, report);
+            }
+            
+            logger.info("Dashboard reconciliation PASSED for company {} period {}", companyId, periodId);
+            return ReconciliationCheckResult.passed(report);
+            
+        } catch (Exception e) {
+            logger.warn("Reconciliation check failed for company {} (error): {}",
+                    companyId, e.getMessage());
+            return ReconciliationCheckResult.error(e.getMessage());
+        }
+    }
+    
+    public record ReconciliationCheckResult(
+            boolean passed,
+            boolean skipped,
+            String message,
+            DashboardReconciliationReport report
+    ) {
+        public static ReconciliationCheckResult passed(DashboardReconciliationReport report) {
+            return new ReconciliationCheckResult(true, false, "All reconciliation checks passed", report);
+        }
+        
+        public static ReconciliationCheckResult failed(String message, DashboardReconciliationReport report) {
+            return new ReconciliationCheckResult(false, false, message, report);
+        }
+        
+        public static ReconciliationCheckResult skipped(String reason) {
+            return new ReconciliationCheckResult(true, true, reason, null);
+        }
+        
+        public static ReconciliationCheckResult error(String errorMessage) {
+            return new ReconciliationCheckResult(false, false, "Error: " + errorMessage, null);
+        }
+    }
+
     @Override
     @Transactional
-    public void updateFreshnessStatus(Long companyId, UUID etlRunId, boolean success) {
+    public void updateFreshnessStatus(Long companyId, UUID etlRunId, boolean success, UUID lastPostedVoucherId) {
         DashboardFreshness freshness = freshnessRepository.findByCompanyId(companyId)
                 .orElseGet(() -> {
                     DashboardFreshness newFreshness = new DashboardFreshness();
@@ -194,6 +279,9 @@ public class ETLPipelineServiceImpl implements ETLPipelineService {
 
         if (success) {
             freshness.recordSuccess(etlRunId, Instant.now());
+            if (lastPostedVoucherId != null) {
+                freshness.setLastPostedVoucherId(lastPostedVoucherId);
+            }
         } else {
             freshness.recordFailure();
         }
@@ -208,7 +296,7 @@ public class ETLPipelineServiceImpl implements ETLPipelineService {
 
     @Override
     public boolean acquireLock(Long companyId, String instanceId) {
-        String lockKey = LOCK_KEY_PREFIX + companyId;
+        String lockKey = cacheKeyGenerator.etlLock(companyId);
         Boolean acquired = redisTemplate.opsForValue()
                 .setIfAbsent(lockKey, instanceId, Duration.ofSeconds(lockTtlSeconds));
 
@@ -224,7 +312,7 @@ public class ETLPipelineServiceImpl implements ETLPipelineService {
 
     @Override
     public void releaseLock(Long companyId, String instanceId) {
-        String lockKey = LOCK_KEY_PREFIX + companyId;
+        String lockKey = cacheKeyGenerator.etlLock(companyId);
         String currentHolder = redisTemplate.opsForValue().get(lockKey);
 
         if (instanceId.equals(currentHolder)) {
@@ -244,14 +332,37 @@ public class ETLPipelineServiceImpl implements ETLPipelineService {
         return etlRunRepository.save(etlRun);
     }
 
-    private String getInstanceId() {
-        return System.getenv().getOrDefault("HOSTNAME", "local-" + ProcessHandle.current().pid());
-    }
-
     private String getStackTrace(Exception e) {
         StringWriter sw = new StringWriter();
         e.printStackTrace(new PrintWriter(sw));
         String trace = sw.toString();
         return trace.length() > 4000 ? trace.substring(0, 4000) : trace;
+    }
+
+    private UUID getMaxPostedVoucherId(Long companyId) {
+        return jdbcTemplate.queryForObject(
+                """
+                SELECT max(id) FROM vouchers v
+                WHERE v.company_id = ?
+                  AND v.status = 'posted'
+                  AND v.reversal_of IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM vouchers rv WHERE rv.reversal_of = v.id)
+                """,
+                UUID.class,
+                companyId);
+    }
+
+    private String buildMetadataJson(UUID currentMaxPostedVoucherId, UUID previousLastPostingId, boolean skipped) {
+        try {
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("last_posting_id", currentMaxPostedVoucherId != null ? currentMaxPostedVoucherId.toString() : null);
+            metadata.put("as_of_timestamp", Instant.now().toString());
+            metadata.put("previous_last_posting_id", previousLastPostingId != null ? previousLastPostingId.toString() : null);
+            metadata.put("skipped_due_to_no_changes", skipped);
+            return objectMapper.writeValueAsString(metadata);
+        } catch (JsonProcessingException e) {
+            logger.error("Failed to build metadata JSON: {}", e.getMessage());
+            return null;
+        }
     }
 }

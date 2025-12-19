@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,6 +25,10 @@ import com.accounting.dto.UpdateProfileRequest;
 import com.accounting.dto.UpdateUserRequest;
 import com.accounting.entity.User;
 import com.accounting.enums.Role;
+import com.accounting.event.UserCreatedEvent;
+import com.accounting.event.UserDeactivatedEvent;
+import com.accounting.event.UserRoleChangedEvent;
+import com.accounting.event.UserUpdatedEvent;
 import com.accounting.repository.ScopedSpecifications;
 import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
@@ -47,18 +53,21 @@ public class UserServiceImpl implements UserService {
   private final RoleService roleService;
   private final AuditService auditService;
   private final EmailService emailService;
+  private final ApplicationEventPublisher eventPublisher;
 
   public UserServiceImpl(
       UserRepository userRepository,
       PasswordEncoder passwordEncoder,
       RoleService roleService,
       AuditService auditService,
-      EmailService emailService) {
+      EmailService emailService,
+      ApplicationEventPublisher eventPublisher) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.roleService = roleService;
     this.auditService = auditService;
     this.emailService = emailService;
+    this.eventPublisher = eventPublisher;
   }
 
   @Override
@@ -186,6 +195,9 @@ public class UserServiceImpl implements UserService {
     // Log user creation in audit trail
     auditService.logUserCreated(savedUser, currentUserId, httpRequest);
 
+    // Publish event for Metabase sync
+    eventPublisher.publishEvent(new UserCreatedEvent(savedUser, savedUser.getCompanyId()));
+
     return savedUser;
   }
 
@@ -278,6 +290,13 @@ public class UserServiceImpl implements UserService {
     targetUser.setRole(newRole.toLowerCase());
     targetUser.setUpdatedAt(Instant.now());
     User updatedUser = userRepository.save(targetUser);
+
+    // Publish event for Metabase sync
+    eventPublisher.publishEvent(new UserRoleChangedEvent(
+        updatedUser, 
+        updatedUser.getCompanyId(),
+        Set.of(oldRole),
+        Set.of(newRole.toLowerCase())));
 
     return updatedUser;
   }
@@ -396,6 +415,8 @@ public class UserServiceImpl implements UserService {
     // Log update if any changes were made
     if (!oldValues.isEmpty()) {
       auditService.logUserUpdated(updatedUser, currentUserId, oldValues, newValues, httpRequest);
+      // Publish event for Metabase sync
+      eventPublisher.publishEvent(new UserUpdatedEvent(updatedUser, updatedUser.getCompanyId()));
     }
 
     return updatedUser;
@@ -429,6 +450,9 @@ public class UserServiceImpl implements UserService {
     User deactivatedUser = userRepository.save(user);
 
     auditService.logUserDeactivated(deactivatedUser, currentUserId, httpRequest);
+
+    // Publish event for Metabase sync
+    eventPublisher.publishEvent(new UserDeactivatedEvent(deactivatedUser, deactivatedUser.getCompanyId()));
 
     return deactivatedUser;
   }

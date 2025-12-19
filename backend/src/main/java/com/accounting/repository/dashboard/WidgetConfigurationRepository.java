@@ -20,10 +20,18 @@ public interface WidgetConfigurationRepository extends JpaRepository<WidgetConfi
 
     Optional<WidgetConfiguration> findByCompanyIdAndWidgetCode(Long companyId, String widgetCode);
 
-    @Query("SELECT w FROM WidgetConfiguration w WHERE w.companyId = :companyId AND w.isEnabled = true AND (w.requiredRoles IS NULL OR :role MEMBER OF w.requiredRoles) ORDER BY w.displayOrder")
-    List<WidgetConfiguration> findAccessibleByRole(
-            @Param("companyId") Long companyId,
-            @Param("role") String role);
+    @Query("SELECT w FROM WidgetConfiguration w WHERE w.companyId = :companyId AND w.isEnabled = true ORDER BY w.displayOrder")
+    List<WidgetConfiguration> findEnabledByCompanyId(@Param("companyId") Long companyId);
+    
+    /**
+     * Find widgets accessible by role. Since requiredRoles is stored as JSON,
+     * filtering by role is done in the service layer.
+     */
+    default List<WidgetConfiguration> findAccessibleByRole(Long companyId, String role) {
+        return findEnabledByCompanyId(companyId).stream()
+                .filter(w -> w.isAccessibleByRole(role))
+                .toList();
+    }
 
     boolean existsByCompanyId(Long companyId);
 }

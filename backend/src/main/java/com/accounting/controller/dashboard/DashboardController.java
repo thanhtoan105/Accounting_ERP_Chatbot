@@ -18,10 +18,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.accounting.entity.AccountingPeriod;
+import com.accounting.entity.PeriodStatus;
 import com.accounting.entity.dashboard.DashboardAuditLog;
 import com.accounting.entity.dashboard.DashboardETLRun;
 import com.accounting.entity.dashboard.DashboardFreshness;
 import com.accounting.entity.dashboard.FreshnessLevel;
+import com.accounting.repository.AccountingPeriodRepository;
 import com.accounting.repository.dashboard.DashboardAuditLogRepository;
 import com.accounting.repository.dashboard.DashboardFreshnessRepository;
 import com.accounting.security.CompanyContext;
@@ -38,6 +41,7 @@ public class DashboardController {
     private final ETLPipelineService etlPipelineService;
     private final DashboardFreshnessRepository freshnessRepository;
     private final DashboardAuditLogRepository auditLogRepository;
+    private final AccountingPeriodRepository accountingPeriodRepository;
     private final StringRedisTemplate redisTemplate;
 
     @Value("${dashboard.refresh.rate-limit-seconds:60}")
@@ -47,10 +51,12 @@ public class DashboardController {
             ETLPipelineService etlPipelineService,
             DashboardFreshnessRepository freshnessRepository,
             DashboardAuditLogRepository auditLogRepository,
+            AccountingPeriodRepository accountingPeriodRepository,
             StringRedisTemplate redisTemplate) {
         this.etlPipelineService = etlPipelineService;
         this.freshnessRepository = freshnessRepository;
         this.auditLogRepository = auditLogRepository;
+        this.accountingPeriodRepository = accountingPeriodRepository;
         this.redisTemplate = redisTemplate;
     }
 
@@ -120,15 +126,34 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT', 'ACCOUNTANT_GENERAL', 'ACCOUNTANT_AR', 'ACCOUNTANT_AP', 'CASHIER', 'FINANCE', 'ACCOUNTANT')")
     public ResponseEntity<FreshnessResponse> getFreshness() {
         Long companyId = CompanyContext.getCompanyId();
+        return buildFreshnessResponse(companyId);
+    }
 
+    @GetMapping("/freshness/{companyId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<FreshnessResponse> getFreshnessForCompany(@PathVariable Long companyId) {
+        return buildFreshnessResponse(companyId);
+    }
+
+    private ResponseEntity<FreshnessResponse> buildFreshnessResponse(Long companyId) {
         Optional<DashboardFreshness> freshnessOpt = freshnessRepository.findByCompanyId(companyId);
+        
+        Optional<AccountingPeriod> currentPeriodOpt = accountingPeriodRepository.findCurrentPeriodByCompanyId(companyId);
+        boolean periodLocked = currentPeriodOpt.map(p -> p.getStatus() == PeriodStatus.CLOSED).orElse(false);
+        String currentPeriodId = currentPeriodOpt.map(p -> p.getId().toString()).orElse(null);
+        boolean canManualRefresh = !periodLocked;
 
         if (freshnessOpt.isEmpty()) {
             return ResponseEntity.ok(new FreshnessResponse(
                     FreshnessLevel.RED,
                     null,
                     "No data available. Dashboard has never been refreshed.",
-                    0));
+                    0,
+                    periodLocked,
+                    currentPeriodId,
+                    null,
+                    false,
+                    canManualRefresh));
         }
 
         DashboardFreshness freshness = freshnessOpt.get();
@@ -142,7 +167,12 @@ public class DashboardController {
                 freshness.getFreshnessLevel(),
                 freshness.getLastSuccessfulRefresh(),
                 getFreshnessMessage(freshness.getFreshnessLevel(), minutesSinceRefresh),
-                freshness.getConsecutiveFailures()));
+                freshness.getConsecutiveFailures(),
+                periodLocked,
+                currentPeriodId,
+                null,
+                periodLocked,
+                canManualRefresh));
     }
 
     private boolean checkRateLimit(Long userId) {
@@ -191,5 +221,10 @@ public class DashboardController {
             FreshnessLevel level,
             Instant lastRefresh,
             String message,
-            Integer consecutiveFailures) {}
+            Integer consecutiveFailures,
+            Boolean periodLocked,
+            String currentPeriodId,
+            String dataAsOfPeriodId,
+            Boolean dataAsOfPeriodLocked,
+            Boolean canManualRefresh) {}
 }

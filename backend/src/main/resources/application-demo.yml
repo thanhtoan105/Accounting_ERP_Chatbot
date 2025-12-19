@@ -1,0 +1,74 @@
+# =============================================================================
+# Demo Profile Configuration - Data Seeding
+# =============================================================================
+#
+# This profile enables demo data seeding for development and testing purposes.
+#
+# Usage:
+#   mvnd spring-boot:run -Dspring-boot.run.profiles=demo
+#   java -jar backend.jar --spring.profiles.active=demo
+#
+# The seeder will populate the database with realistic demo data including
+# companies, users, customers, suppliers, invoices, payments, and more.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Data Seeding Configuration
+# -----------------------------------------------------------------------------
+app:
+  seed:
+    # Enable/disable demo data seeding on startup
+    enabled: true
+
+    # Random seed for reproducible data generation
+    # Using the same seed produces identical demo data
+    seed: 42
+
+    # Seeding profile: SMALL, MEDIUM, LARGE, or CUSTOM
+    # - SMALL: Minimal data for quick testing
+    # - MEDIUM: Moderate data for development
+    # - LARGE: Substantial data for realistic demos
+    # - CUSTOM: Use the override values below
+    profile: LARGE
+
+    # Date range for generated transactions
+    # startDate: 18 months ago for realistic historical data
+    # endDate: current date
+    startDate: 2024-06-16
+    endDate: 2025-12-16
+
+    # -----------------------------------------------------------------------------
+    # Optional Overrides (uncomment to customize)
+    # These only apply when profile is set to CUSTOM
+    # -----------------------------------------------------------------------------
+    # companyCount: 3
+    # usersPerCompany: 5
+    # customersPerCompany: 50
+    # suppliersPerCompany: 30
+    # bankAccountsPerCompany: 3
+    # vouchersPerCompany: 200
+    # salesInvoicesPerCompany: 500
+    # purchaseBillsPerCompany: 300
+    # paymentsPerCompany: 400
+
+# -----------------------------------------------------------------------------
+# Database Configuration (Demo Environment)
+# -----------------------------------------------------------------------------
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/accounting_dev
+    username: accounting
+    password: accounting
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+logging:
+  level:
+    # Enable DEBUG logging for seed package to monitor seeding progress
+    com.accounting.seed: DEBUG
+
+# -----------------------------------------------------------------------------
+# JPA/Hibernate Configuration
+# -----------------------------------------------------------------------------
+spring.jpa.hibernate.ddl-auto: none

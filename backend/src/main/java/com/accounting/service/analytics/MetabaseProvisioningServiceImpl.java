@@ -29,11 +29,16 @@ public class MetabaseProvisioningServiceImpl implements MetabaseProvisioningServ
     private static final String TENANT_GROUP_PREFIX = "company_";
     private static final String REDIS_KEY_PREFIX = "metabase:tenant:";
 
-    private static final Map<String, String> ROLE_TO_METABASE_GROUP = Map.of(
-            "admin", "Analytics Admins",
-            "chief_accountant", "Analytics Power Users",
-            "cfo", "Analytics Viewers",
-            "accountant", "Analytics Basic"
+    private static final Map<String, String> ROLE_TO_METABASE_GROUP = Map.ofEntries(
+            Map.entry("admin", "Analytics Admins"),
+            Map.entry("chief_accountant", "Analytics Power Users"),
+            Map.entry("cfo", "Analytics Viewers"),
+            Map.entry("accountant", "Analytics Basic"),
+            Map.entry("finance", "Analytics Basic"),
+            Map.entry("accountant_general", "Analytics Basic"),
+            Map.entry("accountant_ar", "Analytics AR Only"),
+            Map.entry("accountant_ap", "Analytics AP Only"),
+            Map.entry("cashier", "Analytics Cash Only")
     );
 
     private final MetabaseApiClient metabaseApiClient;
@@ -220,6 +225,26 @@ public class MetabaseProvisioningServiceImpl implements MetabaseProvisioningServ
     public boolean isTenantProvisioned(Long companyId) {
         String key = REDIS_KEY_PREFIX + companyId + ":database_id";
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    @Override
+    public void updateUserGroups(Long userId, Long companyId, Set<String> newRoles) {
+        log.info("Updating Metabase groups for userId {} with roles {}", userId, newRoles);
+
+        try {
+            metabaseApiClient.authenticate();
+
+            if (!isTenantProvisioned(companyId)) {
+                log.warn("Tenant {} not provisioned in Metabase, skipping group update", companyId);
+                return;
+            }
+
+            assignUserToGroups(userId, companyId, newRoles);
+            log.info("Successfully updated Metabase groups for userId {}", userId);
+
+        } catch (Exception e) {
+            log.error("Error updating groups for userId {}: {}", userId, e.getMessage(), e);
+        }
     }
 
     @Override

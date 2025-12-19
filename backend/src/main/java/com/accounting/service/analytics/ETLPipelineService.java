@@ -12,7 +12,7 @@ public interface ETLPipelineService {
 
     IntegrityCheckResult runIntegrityChecks(Long companyId);
 
-    void updateFreshnessStatus(Long companyId, UUID etlRunId, boolean success);
+    void updateFreshnessStatus(Long companyId, UUID etlRunId, boolean success, UUID lastPostedVoucherId);
 
     DashboardETLRun getETLRunStatus(UUID jobId);
 
