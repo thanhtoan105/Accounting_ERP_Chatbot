@@ -1,5 +1,6 @@
 package com.accounting.controller.dashboard;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -8,6 +9,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +31,8 @@ import com.accounting.repository.dashboard.DashboardAuditLogRepository;
 import com.accounting.repository.dashboard.DashboardFreshnessRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
+import com.accounting.service.analytics.AnalyticsWidgetService;
+import com.accounting.service.analytics.AnalyticsWidgetService.PeriodSummaryData;
 import com.accounting.service.analytics.ETLPipelineService;
 
 @RestController
@@ -43,6 +47,7 @@ public class DashboardController {
     private final DashboardAuditLogRepository auditLogRepository;
     private final AccountingPeriodRepository accountingPeriodRepository;
     private final StringRedisTemplate redisTemplate;
+    private final AnalyticsWidgetService analyticsWidgetService;
 
     @Value("${dashboard.refresh.rate-limit-seconds:60}")
     private int rateLimitSeconds;
@@ -52,12 +57,14 @@ public class DashboardController {
             DashboardFreshnessRepository freshnessRepository,
             DashboardAuditLogRepository auditLogRepository,
             AccountingPeriodRepository accountingPeriodRepository,
-            StringRedisTemplate redisTemplate) {
+            StringRedisTemplate redisTemplate,
+            AnalyticsWidgetService analyticsWidgetService) {
         this.etlPipelineService = etlPipelineService;
         this.freshnessRepository = freshnessRepository;
         this.auditLogRepository = auditLogRepository;
         this.accountingPeriodRepository = accountingPeriodRepository;
         this.redisTemplate = redisTemplate;
+        this.analyticsWidgetService = analyticsWidgetService;
     }
 
     @PostMapping("/refresh")
@@ -206,6 +213,27 @@ public class DashboardController {
         return System.getenv().getOrDefault("HOSTNAME", "local-" + ProcessHandle.current().pid());
     }
 
+    @GetMapping("/period-summary/{periodId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT', 'ACCOUNTANT_GENERAL', 'ACCOUNTANT_AR', 'ACCOUNTANT_AP', 'CASHIER', 'FINANCE', 'ACCOUNTANT')")
+    public ResponseEntity<PeriodSummaryResponse> getPeriodSummary(@PathVariable Long periodId) {
+        try {
+            PeriodSummaryData data = analyticsWidgetService.getPeriodSummary(periodId);
+            return ResponseEntity.ok(new PeriodSummaryResponse(
+                    data.periodId(),
+                    data.totalRevenue(),
+                    data.totalExpense(),
+                    data.totalRevenue().subtract(data.totalExpense()),
+                    data.arBalance(),
+                    data.apBalance(),
+                    data.cashBalance(),
+                    data.voucherCount(),
+                    data.periodStart(),
+                    data.periodEnd()));
+        } catch (EmptyResultDataAccessException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     public record RefreshResponse(UUID jobId, String status, String message) {}
 
     public record ETLStatusResponse(
@@ -227,4 +255,16 @@ public class DashboardController {
             String dataAsOfPeriodId,
             Boolean dataAsOfPeriodLocked,
             Boolean canManualRefresh) {}
+
+    public record PeriodSummaryResponse(
+            Long periodId,
+            BigDecimal totalRevenue,
+            BigDecimal totalExpense,
+            BigDecimal netIncome,
+            BigDecimal arBalance,
+            BigDecimal apBalance,
+            BigDecimal cashBalance,
+            Integer voucherCount,
+            java.time.LocalDate periodStart,
+            java.time.LocalDate periodEnd) {}
 }

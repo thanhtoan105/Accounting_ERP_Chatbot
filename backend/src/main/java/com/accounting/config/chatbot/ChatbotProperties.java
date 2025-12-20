@@ -134,7 +134,7 @@ public class ChatbotProperties {
     public static class N8n {
         /**
          * n8n webhook URL for voucher embedding automation.
-         * Example: http://localhost:5678/webhook/voucher-embedding
+         * Example: http://localhost:5678/webhook/voucher-embedding-v2
          */
         private String webhookUrl;
 

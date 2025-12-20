@@ -1,7 +1,7 @@
 {
     "name": "Voucher Embedding Automation - Accounting RAG",
     "description": "Receives voucher data from backend webhook and stores embeddings in Pinecone using Azure OpenAI for the accounting RAG chatbot. Uses n8n langchain nodes for better integration.",
-    "n8n_workflow_id": "Cf26BZwsq8r9wuPB",
+    "n8n_workflow_id": "T91oQREOzfnKQVxm",
     "nodes": [
         {
             "id": "webhook-trigger",
@@ -9,18 +9,18 @@
             "parameters": {
                 "httpMethod": "POST",
                 "options": {
-                    "rawBody": false
+                    "rawBody": false,
+                    "responseCode": 200,
+                    "responseData": "allEntries"
                 },
-                "path": "voucher-embedding",
-                "responseMode": "onReceived"
+                "path": "voucher-embedding-v2",
+                "responseMode": "responseNode"
             },
-            "position": [
-                240,
-                300
-            ],
+            "position": [240, 300],
             "type": "n8n-nodes-base.webhook",
-            "typeVersion": 2,
-            "webhookId": "voucher-embedding"
+            "typeVersion": 2.1,
+            "webhookId": "voucher-embedding",
+            "onError": "continueRegularOutput"
         },
         {
             "id": "validate-payload",
@@ -51,29 +51,26 @@
                     "options": {
                         "caseSensitive": true,
                         "leftValue": "",
-                        "typeValidation": "strict"
+                        "typeValidation": "strict",
+                        "version": 3
                     }
                 }
             },
-            "position": [
-                460,
-                300
-            ],
+            "position": [460, 300],
             "type": "n8n-nodes-base.if",
-            "typeVersion": 2
+            "typeVersion": 2.3,
+            "onError": "continueErrorOutput"
         },
         {
             "id": "prepare-document",
             "name": "Prepare Document for Embedding",
             "parameters": {
-                "jsCode": "const payload = $input.first().json.body;\nconst header = payload.header;\nconst lines = payload.lines || [];\nconst summary = payload.summary;\n\nconst lineTexts = lines.map((line, idx) => {\n  const debit = line.debit_amount ? `Nợ: ${line.debit_amount.toLocaleString('vi-VN')} VND` : '';\n  const credit = line.credit_amount ? `Có: ${line.credit_amount.toLocaleString('vi-VN')} VND` : '';\n  return `  - ${line.account_code} (${line.account_name}): ${debit} ${credit} - ${line.description || ''}`;\n}).join('\\n');\n\nconst embeddingText = `\nPhiếu kế toán số: ${header.voucher_number}\nLoại chứng từ: ${header.voucher_type || 'Phiếu kế toán'}\nNgày lập: ${header.voucher_date}\nMô tả: ${header.description || 'Không có mô tả'}\n\nChi tiết bút toán:\n${lineTexts}\n\nTổng hợp:\n- Tổng Nợ: ${summary.total_debit?.toLocaleString('vi-VN') || 0} VND\n- Tổng Có: ${summary.total_credit?.toLocaleString('vi-VN') || 0} VND\n${payload.related_entity ? `Đối tượng liên quan: ${payload.related_entity.name} (${payload.related_entity.type})` : ''}\n`.trim();\n\nconst metadata = {\n  voucher_id: payload.voucher_id,\n  voucher_number: header.voucher_number,\n  voucher_type: header.voucher_type || 'GENERAL',\n  voucher_date: header.voucher_date,\n  company_id: payload.company_id,\n  total_debit: summary.total_debit || 0,\n  total_credit: summary.total_credit || 0,\n  account_codes: lines.map(l => l.account_code).join(','),\n  description: header.description || '',\n  created_at: new Date().toISOString()\n};\n\nreturn {\n  json: {\n    text: embeddingText,\n    metadata: metadata,\n    id: `voucher_${payload.voucher_id}`,\n    namespace: `company_${payload.company_id}`\n  }\n};"
+                "jsCode": "const payload = $input.first().json.body;\nconst header = payload.header;\nconst lines = payload.lines || [];\nconst summary = payload.summary;\n\nconst lineTexts = lines.map((line, idx) => {\n  const debit = line.debit_amount ? `Nợ: ${line.debit_amount.toLocaleString('vi-VN')} VND` : '';\n  const credit = line.credit_amount ? `Có: ${line.credit_amount.toLocaleString('vi-VN')} VND` : '';\n  return `  - ${line.account_code} (${line.account_name}): ${debit} ${credit} - ${line.description || ''}`;\n}).join('\\n');\n\nconst embeddingText = `\nPhiếu kế toán số: ${header.voucher_number}\nLoại chứng từ: ${header.voucher_type || 'Phiếu kế toán'}\nNgày lập: ${header.voucher_date}\nMô tả: ${header.description || 'Không có mô tả'}\n\nChi tiết bút toán:\n${lineTexts}\n\nTổng hợp:\n- Tổng Nợ: ${summary.total_debit?.toLocaleString('vi-VN') || 0} VND\n- Tổng Có: ${summary.total_credit?.toLocaleString('vi-VN') || 0} VND\n${payload.related_entity ? `Đối tượng liên quan: ${payload.related_entity.name} (${payload.related_entity.type})` : ''}\n`.trim();\n\nconst metadata = {\n  voucher_id: payload.voucher_id,\n  voucher_number: header.voucher_number,\n  voucher_type: header.voucher_type || 'GENERAL',\n  voucher_date: header.voucher_date,\n  company_id: payload.company_id,\n  total_debit: summary.total_debit || 0,\n  total_credit: summary.total_credit || 0,\n  account_codes: lines.map(l => l.account_code).join(','),\n  description: header.description || '',\n  created_at: new Date().toISOString()\n};\n\nreturn [{\n  json: {\n    text: embeddingText,\n    metadata: metadata,\n    id: `voucher_${payload.voucher_id}`,\n    namespace: `company_${payload.company_id}`\n  }\n}];"
             },
-            "position": [
-                680,
-                200
-            ],
+            "position": [680, 200],
             "type": "n8n-nodes-base.code",
-            "typeVersion": 2
+            "typeVersion": 2,
+            "onError": "continueRegularOutput"
         },
         {
             "credentials": {
@@ -91,12 +88,10 @@
                     "dimensions": 1536
                 }
             },
-            "position": [
-                900,
-                200
-            ],
+            "position": [900, 200],
             "type": "@n8n/n8n-nodes-langchain.embeddingsAzureOpenAi",
-            "typeVersion": 1
+            "typeVersion": 1,
+            "onError": "continueRegularOutput"
         },
         {
             "credentials": {
@@ -119,74 +114,110 @@
                     "value": "accounting-embeddings"
                 }
             },
-            "position": [
-                1120,
-                200
-            ],
+            "position": [1120, 200],
             "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
-            "typeVersion": 1
+            "typeVersion": 1.3,
+            "onError": "continueRegularOutput"
         },
         {
             "id": "success-response",
             "name": "Success Response",
             "parameters": {
-                "fields": {
-                    "values": [
+                "assignments": {
+                    "assignments": [
                         {
+                            "id": "status",
                             "name": "status",
-                            "stringValue": "success"
+                            "type": "string",
+                            "value": "success"
                         },
                         {
+                            "id": "message",
                             "name": "message",
-                            "stringValue": "Voucher embedded successfully"
+                            "type": "string",
+                            "value": "Voucher embedded successfully"
                         },
                         {
+                            "id": "voucher_id",
                             "name": "voucher_id",
-                            "stringValue": "={{ $('Prepare Document for Embedding').item.json.metadata.voucher_id }}"
+                            "type": "string",
+                            "value": "={{ $('Prepare Document for Embedding').item.json.metadata.voucher_id }}"
                         },
                         {
+                            "id": "timestamp",
                             "name": "timestamp",
-                            "stringValue": "={{ new Date().toISOString() }}"
+                            "type": "string",
+                            "value": "={{ new Date().toISOString() }}"
                         }
                     ]
                 },
                 "mode": "manual"
             },
-            "position": [
-                1340,
-                200
-            ],
+            "position": [1340, 200],
             "type": "n8n-nodes-base.set",
-            "typeVersion": 3.4
+            "typeVersion": 3.4,
+            "onError": "continueRegularOutput"
         },
         {
             "id": "error-handler",
             "name": "Error Handler",
             "parameters": {
-                "fields": {
-                    "values": [
+                "assignments": {
+                    "assignments": [
                         {
+                            "id": "status",
                             "name": "status",
-                            "stringValue": "error"
+                            "type": "string",
+                            "value": "error"
                         },
                         {
+                            "id": "message",
                             "name": "message",
-                            "stringValue": "Invalid payload: missing company_id or voucher_id"
+                            "type": "string",
+                            "value": "Invalid payload: missing company_id or voucher_id"
                         },
                         {
+                            "id": "timestamp",
                             "name": "timestamp",
-                            "stringValue": "={{ new Date().toISOString() }}"
+                            "type": "string",
+                            "value": "={{ new Date().toISOString() }}"
                         }
                     ]
                 },
                 "mode": "manual"
             },
-            "position": [
-                680,
-                400
-            ],
+            "position": [680, 400],
             "type": "n8n-nodes-base.set",
-            "typeVersion": 3.4
+            "typeVersion": 3.4,
+            "onError": "continueRegularOutput"
+        },
+        {
+            "id": "respond-success",
+            "name": "Respond Success",
+            "parameters": {
+                "options": {
+                    "responseCode": 200
+                },
+                "respondWith": "json"
+            },
+            "position": [1560, 200],
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "onError": "continueRegularOutput"
+        },
+        {
+            "id": "respond-error",
+            "name": "Respond Error",
+            "parameters": {
+                "options": {
+                    "responseCode": 400
+                },
+                "respondWith": "json"
+            },
+            "position": [900, 400],
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "onError": "continueRegularOutput"
         }
     ],
     "connections": {
@@ -251,6 +282,28 @@
                     }
                 ]
             ]
+        },
+        "Success Response": {
+            "main": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Respond Success",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Error Handler": {
+            "main": [
+                [
+                    {
+                        "index": 0,
+                        "node": "Respond Error",
+                        "type": "main"
+                    }
+                ]
+            ]
         }
     },
     "settings": {
@@ -261,23 +314,11 @@
         "saveExecutionProgress": true
     },
     "tags": [
-        {
-            "name": "chatbot"
-        },
-        {
-            "name": "embedding"
-        },
-        {
-            "name": "voucher"
-        },
-        {
-            "name": "rag"
-        },
-        {
-            "name": "azure-openai"
-        },
-        {
-            "name": "pinecone"
-        }
+        { "name": "chatbot" },
+        { "name": "embedding" },
+        { "name": "voucher" },
+        { "name": "rag" },
+        { "name": "azure-openai" },
+        { "name": "pinecone" }
     ]
 }

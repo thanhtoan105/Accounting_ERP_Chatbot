@@ -19,6 +19,8 @@ public interface AnalyticsWidgetService {
 
     PeriodSummaryData getPeriodSummary(Long periodId);
 
+    List<CashPositionTrend> getCashPositionTrend(LocalDate startDate, LocalDate endDate);
+
     AnalyticsCacheService.CacheMetrics getCacheMetrics();
 
     AnalyticsCacheService.CacheMetrics getCacheMetricsForWidget(String widgetType);
@@ -64,4 +66,9 @@ public interface AnalyticsWidgetService {
             int voucherCount,
             LocalDate periodStart,
             LocalDate periodEnd) {}
+
+    record CashPositionTrend(
+            LocalDate date,
+            BigDecimal dailyCashFlow,
+            BigDecimal runningBalance) {}
 }

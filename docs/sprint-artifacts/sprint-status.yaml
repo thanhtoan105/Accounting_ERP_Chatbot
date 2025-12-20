@@ -108,11 +108,11 @@ development_status:
 
   epic-8: in-progress
   8-0-metabase-integration-full: done
-  8-1-real-time-financial-dashboard-setup-data-pipeline: backlog
-  8-2-widget-configuration-user-personalization: backlog
-  8-3-drill-down-filtering-and-interactive-exploration: backlog
-  8-4-trends-forecasts-and-predictive-analytics: backlog
-  8-5-data-quality-integrity-and-bi-security: backlog
+  8-1-real-time-financial-dashboard-setup-data-pipeline: deferred
+  8-2-widget-configuration-user-personalization: deferred
+  8-3-drill-down-filtering-and-interactive-exploration: deferred
+  8-4-trends-forecasts-and-predictive-analytics: deferred
+  8-5-data-quality-integrity-and-bi-security: deferred
   epic-8-retrospective: optional
 
   epic-9: contexted

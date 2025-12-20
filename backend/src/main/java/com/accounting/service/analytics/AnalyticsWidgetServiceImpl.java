@@ -232,6 +232,32 @@ public class AnalyticsWidgetServiceImpl implements AnalyticsWidgetService {
     }
 
     @Override
+    @Cacheable(value = "analytics-widget",
+            key = "'widget:' + T(com.accounting.security.CompanyContext).getCompanyId() + ':cash-trend:' + #startDate + ':' + #endDate")
+    public List<CashPositionTrend> getCashPositionTrend(LocalDate startDate, LocalDate endDate) {
+        Long companyId = CompanyContext.getCompanyId();
+        logger.debug("Fetching cash position trend for company {} from {} to {}", companyId, startDate, endDate);
+
+        analyticsCacheService.recordCacheMiss("cash-trend");
+
+        return jdbcTemplate.query(
+                """
+                SELECT transaction_date,
+                       SUM(net_cash_flow) as daily_cash_flow,
+                       SUM(SUM(net_cash_flow)) OVER (ORDER BY transaction_date) as running_balance
+                FROM mv_cash_flow_summary
+                WHERE company_id = ? AND transaction_date BETWEEN ? AND ?
+                GROUP BY transaction_date
+                ORDER BY transaction_date
+                """,
+                (rs, rowNum) -> new CashPositionTrend(
+                        rs.getDate("transaction_date").toLocalDate(),
+                        rs.getBigDecimal("daily_cash_flow"),
+                        rs.getBigDecimal("running_balance")),
+                companyId, startDate, endDate);
+    }
+
+    @Override
     public AnalyticsCacheService.CacheMetrics getCacheMetrics() {
         return analyticsCacheService.getCacheMetrics();
     }

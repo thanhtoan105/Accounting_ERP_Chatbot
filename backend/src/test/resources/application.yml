@@ -53,7 +53,7 @@ chatbot:
     top-k: 10
     score-threshold: 0.7
   n8n:
-    webhook-url: http://localhost:5678/webhook/voucher-embedding
+    webhook-url: http://localhost:5678/webhook/voucher-embedding-v2
     webhook-secret: test-secret
     retry-attempts: 3
     timeout-seconds: 10
