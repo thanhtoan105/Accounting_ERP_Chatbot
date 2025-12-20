@@ -1,11 +1,12 @@
 package com.accounting.service;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 import com.accounting.dto.VATValidationResultDTO;
 import com.accounting.dto.VoucherEntryLineRequest;
 import com.accounting.entity.SalesInvoice;
 import com.accounting.entity.VatRate;
-import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * Service interface for AR (Accounts Receivable) VAT validation, calculation, and GL split generation.
@@ -59,4 +60,3 @@ public interface ARVATService {
   List<VoucherEntryLineRequest> generateCreditNoteGLSplit(
       SalesInvoice creditNote, SalesInvoice originalInvoice);
 }
-

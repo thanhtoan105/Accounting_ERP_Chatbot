@@ -39,8 +39,8 @@ function formatCurrency(value: number): string {
 export function CashBookSummaryPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined)
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined)
+  const [dateFrom, setDateFrom] = useState<string | undefined>(undefined)
+  const [dateTo, setDateTo] = useState<string | undefined>(undefined)
   const [data, setData] = useState<CashBookSummary | null>(null)
   const [exporting, setExporting] = useState(false)
 
@@ -48,8 +48,8 @@ export function CashBookSummaryPage() {
     try {
       setLoading(true)
       const result = await getCashBookSummary({
-        dateFrom: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
-        dateTo: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
       })
       setData(result)
     } catch (error) {
@@ -110,12 +110,12 @@ export function CashBookSummaryPage() {
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-2">
               <Label>Date From</Label>
-              <DatePicker date={dateFrom} onDateChange={setDateFrom} placeholder="Start date" />
+              <DatePicker value={dateFrom} onChange={setDateFrom} placeholder="Start date" />
             </div>
 
             <div className="space-y-2">
               <Label>Date To</Label>
-              <DatePicker date={dateTo} onDateChange={setDateTo} placeholder="End date" />
+              <DatePicker value={dateTo} onChange={setDateTo} placeholder="End date" />
             </div>
 
             <div className="flex gap-2">

@@ -1,11 +1,13 @@
 package com.accounting.security;
 
-import com.accounting.repository.CompanyScopedEntity;
 import java.util.Collection;
+
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.stereotype.Component;
+
+import com.accounting.repository.CompanyScopedEntity;
 
 @Aspect
 @Component
@@ -31,5 +33,3 @@ public class CompanyScopeAspect {
     }
   }
 }
-
-

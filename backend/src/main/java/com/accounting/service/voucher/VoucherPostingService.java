@@ -1,8 +1,10 @@
 package com.accounting.service.voucher;
 
-import com.accounting.dto.PostVoucherResponse;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
+
+import com.accounting.dto.PostVoucherResponse;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Service for posting vouchers with atomic transaction support.
@@ -23,4 +25,3 @@ public interface VoucherPostingService {
    */
   PostVoucherResponse postVoucher(UUID voucherId, HttpServletRequest request);
 }
-

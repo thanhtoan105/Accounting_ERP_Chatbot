@@ -263,7 +263,7 @@ Another Company,9876543210,info@another.com,0987654321,456 Second Street,true`
           <Button
             type="button"
             onClick={handleImport}
-            disabled={!file || uploading || (importResult && importResult.errorCount === 0)}
+            disabled={!file || uploading || !!(importResult && importResult.errorCount === 0)}
           >
             {uploading ? (
               <>

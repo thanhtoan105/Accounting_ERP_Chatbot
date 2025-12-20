@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import { useCompany } from '../hooks/useCompany'
@@ -64,6 +64,12 @@ const navItems: (NavItem & { labelKey: string })[] = [
     requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
   },
   {
+    path: '/accounting/reports/comparison',
+    label: 'Multi-Period Comparison',
+    labelKey: 'nav.multiPeriodComparison',
+    requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+  },
+  {
     path: '/vouchers',
     label: 'Vouchers',
     labelKey: 'nav.vouchers',
@@ -117,6 +123,12 @@ const navItems: (NavItem & { labelKey: string })[] = [
     labelKey: 'nav.auditLogs',
     requiredRoles: ['admin', 'chief_accountant'],
   },
+  {
+    path: '/admin/tenants',
+    label: 'Tenant Management',
+    labelKey: 'nav.tenantManagement',
+    requiredRoles: ['super_admin'],
+  },
 ]
 
 interface ProtectedLayoutProps {
@@ -128,13 +140,27 @@ interface ProtectedLayoutProps {
  * Enforces authentication and hides menu items based on user role.
  */
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const [, setLanguageKey] = useState(i18n.language)
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated, loading, logout, user } = useAuth()
   const { hasAnyRole, getRoleDisplayName } = useRole()
   const { company, currentPeriod } = useCompany()
   const { resolvedTheme, toggleTheme } = useTheme()
+
+  // Listen for language changes and trigger re-render
+  useEffect(() => {
+    const handleLanguageChange = (lng: string) => {
+      setLanguageKey(lng)
+    }
+
+    i18n.on('languageChanged', handleLanguageChange)
+
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange)
+    }
+  }, [i18n])
 
   const handleLogout = async () => {
     try {
@@ -213,6 +239,11 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       url: '/voucher-types',
       requiredRoles: ['admin', 'chief_accountant'],
     },
+    {
+      titleKey: 'nav.reportMappings',
+      url: '/accounting/report-mappings',
+      requiredRoles: ['admin'],
+    },
   ]
 
   // Reports items for sidebar menu (with translation keys)
@@ -247,6 +278,11 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       requiredRoles: ['admin', 'chief_accountant', 'cfo'],
     },
     {
+      titleKey: 'nav.statutoryReports',
+      url: '/accounting/statutory-reports',
+      requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+    },
+    {
       titleKey: 'nav.cashBook',
       url: '/accounting/cash-book',
       requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
@@ -255,6 +291,26 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       titleKey: 'nav.cashBookSummary',
       url: '/accounting/cash-book/summary',
       requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.bankReconciliation',
+      url: '/accounting/bank-reconciliation',
+      requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.reportSchedules',
+      url: '/reports/schedules',
+      requiredRoles: ['admin', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.reportCenter',
+      url: '/reports/center',
+      requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo'],
+    },
+    {
+      titleKey: 'nav.multiPeriodComparison',
+      url: '/accounting/reports/comparison',
+      requiredRoles: ['admin', 'chief_accountant', 'cfo'],
     },
   ]
 
@@ -403,14 +459,16 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       </SidebarInset>
 
       {/* Chatbot Widget - Floating on all pages with error boundary */}
-      <ChatbotErrorBoundary
-        onError={(error, errorInfo) => {
-          console.error('Chatbot crashed:', error, errorInfo)
-          // TODO: Send to error tracking service (Sentry, etc.)
-        }}
-      >
-        <ChatbotWidget enabled={true} />
-      </ChatbotErrorBoundary>
+      {import.meta.env.VITE_CHATBOT_ENABLED !== 'false' && (
+        <ChatbotErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('Chatbot crashed:', error, errorInfo)
+            // TODO: Send to error tracking service (Sentry, etc.)
+          }}
+        >
+          <ChatbotWidget />
+        </ChatbotErrorBoundary>
+      )}
     </SidebarProvider>
   )
 }

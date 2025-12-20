@@ -1,17 +1,11 @@
 package com.accounting.controller.sales;
 
-import com.accounting.dto.ARVATCorrectionCreateRequest;
-import com.accounting.dto.ARVATCorrectionDTO;
-import com.accounting.dto.OutputVATReportDTO;
-import com.accounting.entity.ARVATCorrection;
-import com.accounting.service.ARVATCorrectionService;
-import com.accounting.service.ARVATReportService;
-import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,6 +18,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.accounting.dto.ARVATCorrectionCreateRequest;
+import com.accounting.dto.ARVATCorrectionDTO;
+import com.accounting.dto.OutputVATReportDTO;
+import com.accounting.entity.ARVATCorrection;
+import com.accounting.service.ARVATCorrectionService;
+import com.accounting.service.ARVATReportService;
+
+import jakarta.validation.Valid;
 
 /**
  * REST controller for AR (Accounts Receivable) VAT reporting and corrections.
@@ -150,4 +153,3 @@ public class ARVATController {
     return ResponseEntity.ok(correction);
   }
 }
-

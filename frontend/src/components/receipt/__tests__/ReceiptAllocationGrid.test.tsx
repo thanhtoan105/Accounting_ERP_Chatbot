@@ -37,11 +37,11 @@ const mockOpenInvoices = [
 
 test.describe('ReceiptAllocationGrid Component', () => {
   const defaultProps = {
-    customerId: 'customer-001',
-    receiptAmount: 15000000,
     allocations: [],
     onAllocationsChange: () => {},
-    isLoading: false,
+    totalReceiptAmount: 15000000,
+    readOnly: false,
+    loading: false,
   }
 
   test('AC2: should display open invoices with allocation inputs', async ({ mount, page }) => {
@@ -88,7 +88,7 @@ test.describe('ReceiptAllocationGrid Component', () => {
       <QueryClientProvider client={queryClient}>
         <ReceiptAllocationGrid
           {...defaultProps}
-          onAllocationsChange={(allocs) => {
+          onAllocationsChange={() => {
             allocationsUpdated = true
           }}
         />
@@ -123,7 +123,7 @@ test.describe('ReceiptAllocationGrid Component', () => {
 
     const component = await mount(
       <QueryClientProvider client={queryClient}>
-        <ReceiptAllocationGrid {...defaultProps} receiptAmount={15000000} />
+        <ReceiptAllocationGrid {...defaultProps} totalReceiptAmount={15000000} />
       </QueryClientProvider>,
     )
 
@@ -150,7 +150,7 @@ test.describe('ReceiptAllocationGrid Component', () => {
 
     const component = await mount(
       <QueryClientProvider client={queryClient}>
-        <ReceiptAllocationGrid {...defaultProps} receiptAmount={18000000} />
+        <ReceiptAllocationGrid {...defaultProps} totalReceiptAmount={18000000} />
       </QueryClientProvider>,
     )
 
@@ -183,7 +183,7 @@ test.describe('ReceiptAllocationGrid Component', () => {
 
     const component = await mount(
       <QueryClientProvider client={queryClient}>
-        <ReceiptAllocationGrid {...defaultProps} receiptAmount={15000000} />
+        <ReceiptAllocationGrid {...defaultProps} totalReceiptAmount={15000000} />
       </QueryClientProvider>,
     )
 
@@ -212,7 +212,7 @@ test.describe('ReceiptAllocationGrid Component', () => {
 
     const component = await mount(
       <QueryClientProvider client={queryClient}>
-        <ReceiptAllocationGrid {...defaultProps} receiptAmount={10000000} />
+        <ReceiptAllocationGrid {...defaultProps} totalReceiptAmount={10000000} />
       </QueryClientProvider>,
     )
 

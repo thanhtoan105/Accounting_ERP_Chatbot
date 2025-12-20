@@ -1,11 +1,13 @@
 package com.accounting.repository;
 
+import org.springframework.data.jpa.domain.Specification;
+
 import com.accounting.security.CompanyContext;
+
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.springframework.data.jpa.domain.Specification;
 
 public final class ScopedSpecifications {
 
@@ -26,5 +28,3 @@ public final class ScopedSpecifications {
     };
   }
 }
-
-

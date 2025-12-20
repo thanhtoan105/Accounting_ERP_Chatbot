@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.ARVATCorrection.Status;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+
+import com.accounting.entity.ARVATCorrection.Status;
 
 public class ARVATCorrectionDTO {
 
@@ -134,4 +135,3 @@ public class ARVATCorrectionDTO {
     this.approvedAt = approvedAt;
   }
 }
-

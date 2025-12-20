@@ -1,11 +1,12 @@
 package com.accounting.entity;
 
+import java.math.BigDecimal;
+import java.util.UUID;
+
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import java.math.BigDecimal;
-import java.util.UUID;
 
 /**
  * ARStatementDispute entity for tracking discrepancies found during customer

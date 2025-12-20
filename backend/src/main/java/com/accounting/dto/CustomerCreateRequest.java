@@ -93,4 +93,3 @@ public class CustomerCreateRequest {
     this.active = active;
   }
 }
-

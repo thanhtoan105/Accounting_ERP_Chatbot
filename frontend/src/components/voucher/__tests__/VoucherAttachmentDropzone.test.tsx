@@ -192,7 +192,7 @@ describe('VoucherAttachmentDropzone', () => {
 
     // Mock progress callback
     let progressCallback: ((progress: number) => void) | undefined
-    mockUploadVoucherAttachment.mockImplementation((voucherId, file, onProgress) => {
+    mockUploadVoucherAttachment.mockImplementation((_voucherId, _file, onProgress) => {
       progressCallback = onProgress
       return new Promise((resolve) => {
         setTimeout(() => {

@@ -4,3 +4,61 @@ spring:
       ddl-auto: none
   flyway:
     enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cache:
+    type: simple
+
+# Metabase test configuration
+metabase:
+  site-url: http://localhost:3000
+  embedding-secret: test-secret-key-for-testing
+  api-key: test-api-key
+  admin-email: test@example.com
+  admin-password: testpass
+  db:
+    host: localhost
+    port: 5432
+    name: accounting_test
+
+# JWT configuration
+jwt:
+  secret: test-jwt-secret-key-for-integration-tests-minimum-256-bits
+  access-token-validity-minutes: 30
+  refresh-token-validity-days: 7
+
+# App configuration
+app:
+  frontend-url: http://localhost:5173
+
+# Chatbot configuration (disabled for tests)
+chatbot:
+  enabled: false
+  azure-openai:
+    endpoint: https://test.openai.azure.com/
+    api-key: test-key
+    api-version: "2023-05-15"
+    embedding-deployment: embedding-ada-002
+    completion-deployment: gpt-35-turbo
+    max-tokens: 500
+    temperature: 0.3
+    timeout-seconds: 30
+  pinecone:
+    api-key: test-key
+    environment: us-east-1-aws
+    index-name: accounting-embeddings
+    namespace-prefix: "company-"
+    top-k: 10
+    score-threshold: 0.7
+  n8n:
+    webhook-url: http://localhost:5678/webhook/voucher-embedding-v2
+    webhook-secret: test-secret
+    retry-attempts: 3
+    timeout-seconds: 10
+
+# Resend (email)
+resend:
+  api-key: test-key
+  from-email: test@example.com

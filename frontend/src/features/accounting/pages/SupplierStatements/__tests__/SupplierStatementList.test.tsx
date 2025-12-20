@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
 import userEvent from '@testing-library/user-event'
 
 import { SupplierStatementList } from '../SupplierStatementList'
-import * as supplierStatementService from '@/services/supplierStatement'
+import { supplierStatementService } from '@/services/supplierStatement'
 
 const toast = vi.hoisted(() => ({
   success: vi.fn(),
@@ -72,7 +71,12 @@ vi.mock('@/components/supplier-statements', () => ({
   ),
 }))
 
-vi.mock('@/services/supplierStatement')
+vi.mock('@/services/supplierStatement', () => ({
+  supplierStatementService: {
+    listStatements: vi.fn(),
+    exportStatement: vi.fn(),
+  },
+}))
 
 describe('SupplierStatementList', () => {
   const mockListStatements = vi.mocked(supplierStatementService.listStatements)
@@ -86,11 +90,11 @@ describe('SupplierStatementList', () => {
       supplierCode: 'SUP001',
       statementType: 'SUMMARY' as const,
       generationDate: '2024-01-15T10:00:00Z',
-      generatedBy: 1,
       generatedByName: 'Test User',
       format: 'EXCEL' as const,
-      sentDate: null,
-      sentTo: null,
+      hash: 'abc123',
+      sentDate: undefined,
+      sentTo: undefined,
       viewCount: 0,
       downloadCount: 0,
       startDate: '2024-01-01',
@@ -103,9 +107,9 @@ describe('SupplierStatementList', () => {
       supplierCode: 'SUP002',
       statementType: 'DETAILED' as const,
       generationDate: '2024-01-16T10:00:00Z',
-      generatedBy: 1,
       generatedByName: 'Test User',
       format: 'PDF' as const,
+      hash: 'def456',
       sentDate: '2024-01-16T11:00:00Z',
       sentTo: ['supplier@example.com'],
       viewCount: 5,
@@ -221,7 +225,6 @@ describe('SupplierStatementList', () => {
   })
 
   it('handles pagination correctly', async () => {
-    const user = userEvent.setup()
     const paginatedResponse = {
       ...sampleResponse,
       totalItems: 50,

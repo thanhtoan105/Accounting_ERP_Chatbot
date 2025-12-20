@@ -32,10 +32,12 @@ Before starting, ensure you have:
 ### 1.1 Create Azure OpenAI Resource
 
 1. **Login to Azure Portal**
+
    - Navigate to https://portal.azure.com
    - Sign in with your Azure account
 
 2. **Create Resource Group** (if not exists)
+
    ```
    Portal → Resource Groups → Create
    - Name: rg-accounting-ai-prod
@@ -43,6 +45,7 @@ Before starting, ensure you have:
    ```
 
 3. **Create Azure OpenAI Service**
+
    ```
    Portal → Create a resource → Search "Azure OpenAI"
    - Resource group: rg-accounting-ai-prod
@@ -56,11 +59,13 @@ Before starting, ensure you have:
 ### 1.2 Deploy Embedding Model
 
 1. **Navigate to Azure OpenAI Studio**
+
    ```
    Resource → Overview → Azure OpenAI Studio (button)
    ```
 
 2. **Deploy Embedding Model**
+
    ```
    Studio → Deployments → Create new deployment
    - Model: text-embedding-ada-002
@@ -80,6 +85,7 @@ Before starting, ensure you have:
 ### 1.3 Deploy Chat Completion Model
 
 1. **Create Second Deployment**
+
    ```
    Studio → Deployments → Create new deployment
    - Model: gpt-35-turbo (or gpt-4 for better quality)
@@ -98,11 +104,13 @@ Before starting, ensure you have:
 ### 1.4 Get API Keys
 
 1. **Navigate to Keys and Endpoint**
+
    ```
    Resource → Keys and Endpoint (left menu under Resource Management)
    ```
 
 2. **Copy Configuration Details**
+
    ```
    Endpoint: https://openai-accounting-chatbot.openai.azure.com/
    Key 1: [COPY THIS - 32 character key]
@@ -117,11 +125,13 @@ Before starting, ensure you have:
 ### 1.5 Cost Estimation
 
 **Typical Monthly Costs (MVP with 50 users):**
+
 - Embeddings (text-embedding-ada-002): ~500,000 tokens/month = **$0.05**
 - Completions (gpt-35-turbo): ~2M tokens/month = **$4.00**
 - **Total: ~$4-5/month**
 
 **Cost Optimization Tips:**
+
 - Use Redis caching for repeated questions (reduces LLM calls by 40-60%)
 - Set max_tokens=500 for answers (prevents long responses)
 - Monitor usage via Azure Cost Management dashboard
@@ -133,6 +143,7 @@ Before starting, ensure you have:
 ### 2.1 Create Pinecone Account
 
 1. **Sign Up**
+
    - Navigate to https://www.pinecone.io
    - Click "Start Free" or "Sign Up"
    - Use work email: [your-email@company.com]
@@ -149,6 +160,7 @@ Before starting, ensure you have:
 ### 2.2 Create Index
 
 1. **Create New Index**
+
    ```
    Dashboard → Indexes → Create Index
 
@@ -172,17 +184,20 @@ Before starting, ensure you have:
 ### 2.3 Get API Key
 
 1. **Navigate to API Keys**
+
    ```
    Dashboard → API Keys (left menu)
    ```
 
 2. **Copy Details**
+
    ```
    Environment: us-east-1-aws
    API Key: [COPY THIS - starts with pc-xxx]
    ```
 
 3. **Test Connection** (optional, via curl)
+
    ```bash
    curl -X GET https://controller.us-east-1-aws.pinecone.io/actions/indexes \
      -H "Api-Key: YOUR_API_KEY"
@@ -193,12 +208,14 @@ Before starting, ensure you have:
 ### 2.4 Understanding Namespaces
 
 **Multi-Tenancy Design:**
+
 - Each company gets a dedicated namespace: `company-{companyId}`
 - Example:
   - Company A (UUID: 123e4567-...): `company-123e4567-e89b-12d3-a456-426614174000`
   - Company B (UUID: 789abcde-...): `company-789abcde-f012-34d5-b678-901234567890`
 
 **Benefits:**
+
 - Complete data isolation between companies
 - No risk of cross-company data leakage
 - Easy to delete all data for a specific company (delete namespace)
@@ -210,6 +227,7 @@ Before starting, ensure you have:
 ### 3.1 Deploy n8n Docker Container
 
 1. **Create n8n Directory**
+
    ```bash
    cd /home/thanhtoan/code/accounting
    mkdir -p docker/n8n
@@ -225,7 +243,7 @@ Before starting, ensure you have:
      container_name: accounting-n8n
      restart: unless-stopped
      ports:
-       - "5678:5678"
+       - '5678:5678'
      environment:
        - N8N_HOST=localhost
        - N8N_PORT=5678
@@ -241,6 +259,7 @@ Before starting, ensure you have:
    ```
 
 3. **Generate Encryption Key**
+
    ```bash
    # Generate random 32-character key
    openssl rand -hex 16
@@ -250,6 +269,7 @@ Before starting, ensure you have:
    ```
 
 4. **Start n8n**
+
    ```bash
    docker-compose up -d n8n
    ```
@@ -265,26 +285,29 @@ Before starting, ensure you have:
 Pre-built workflow JSON files are available in `docs/n8n-workflows/`:
 
 1. **Import Workflows**
+
    ```
    n8n UI → Workflows → Import from File
    ```
-   
+
    Import these files:
+
    - `voucher-embedding-automation.json` - Embeds vouchers into Pinecone
    - `rag-query-processing.json` - Processes chatbot queries with RAG
 
 2. **Configure Credentials After Import**
-   
+
    Create two HTTP Header Auth credentials:
-   
-   | Credential Name | Header Name | Header Value |
-   |-----------------|-------------|--------------|
-   | Azure OpenAI API Key | `api-key` | Your Azure OpenAI key |
-   | Pinecone API Key | `Api-Key` | Your Pinecone key |
+
+   | Credential Name      | Header Name | Header Value          |
+   | -------------------- | ----------- | --------------------- |
+   | Azure OpenAI API Key | `api-key`   | Your Azure OpenAI key |
+   | Pinecone API Key     | `Api-Key`   | Your Pinecone key     |
 
 3. **Set Environment Variables**
-   
+
    Go to **Settings** → **Variables** and add:
+
    ```
    AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
    AZURE_OPENAI_EMBEDDING_DEPLOYMENT=embedding-ada-002
@@ -304,6 +327,7 @@ Pre-built workflow JSON files are available in `docs/n8n-workflows/`:
 If you prefer to create workflows manually, follow these steps:
 
 1. **Create New Workflow**
+
    ```
    n8n UI → Workflows → Add Workflow
    - Name: Voucher Embedding Automation
@@ -311,6 +335,7 @@ If you prefer to create workflows manually, follow these steps:
    ```
 
 2. **Add Webhook Trigger Node**
+
    ```
    Add Node → Trigger → Webhook
 
@@ -325,12 +350,14 @@ If you prefer to create workflows manually, follow these steps:
    ```
 
    **Generate Webhook Secret:**
+
    ```bash
    openssl rand -base64 32
    # Save this as N8N_WEBHOOK_SECRET in .env
    ```
 
 3. **Add Function Node - Format Voucher Text**
+
    ```
    Add Node → Function
    Name: Format Voucher for Embedding
@@ -379,6 +406,7 @@ If you prefer to create workflows manually, follow these steps:
    ```
 
 4. **Add HTTP Request Node - Azure OpenAI Embeddings**
+
    ```
    Add Node → HTTP Request
    Name: Generate Embedding (Azure OpenAI)
@@ -399,6 +427,7 @@ If you prefer to create workflows manually, follow these steps:
    ```
 
 5. **Add Function Node - Prepare Pinecone Upsert**
+
    ```
    Add Node → Function
    Name: Prepare Pinecone Upsert
@@ -422,6 +451,7 @@ If you prefer to create workflows manually, follow these steps:
    ```
 
 6. **Add HTTP Request Node - Pinecone Upsert**
+
    ```
    Add Node → HTTP Request
    Name: Upsert to Pinecone
@@ -444,6 +474,7 @@ If you prefer to create workflows manually, follow these steps:
    ```
 
 7. **Add Error Handling**
+
    ```
    For each HTTP Request node:
    - Go to Settings → Error Handling
@@ -462,6 +493,7 @@ If you prefer to create workflows manually, follow these steps:
 ### 3.3 Test Webhook
 
 1. **Test with curl**
+
    ```bash
    curl -X POST http://localhost:5678/webhook/voucher-embedding \
      -H "Content-Type: application/json" \
@@ -498,6 +530,7 @@ If you prefer to create workflows manually, follow these steps:
    ```
 
 2. **Verify in n8n Executions**
+
    ```
    n8n UI → Executions → Check latest execution
    - Status should be "Success"
@@ -528,7 +561,7 @@ chatbot:
   azure-openai:
     endpoint: ${AZURE_OPENAI_ENDPOINT:https://openai-accounting-chatbot.openai.azure.com/}
     api-key: ${AZURE_OPENAI_API_KEY}
-    api-version: "2023-05-15"
+    api-version: '2023-05-15'
     embedding-deployment: ${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:embedding-ada-002}
     completion-deployment: ${AZURE_OPENAI_COMPLETION_DEPLOYMENT:gpt-35-turbo}
     max-tokens: ${AZURE_OPENAI_MAX_TOKENS:500}
@@ -540,7 +573,7 @@ chatbot:
     api-key: ${PINECONE_API_KEY}
     environment: ${PINECONE_ENVIRONMENT:us-east-1-aws}
     index-name: ${PINECONE_INDEX_NAME:accounting-embeddings}
-    namespace-prefix: "company-"
+    namespace-prefix: 'company-'
     top-k: 10
     score-threshold: 0.7
 
@@ -549,7 +582,7 @@ chatbot:
     webhook-url: ${N8N_WEBHOOK_URL:http://localhost:5678/webhook/voucher-embedding}
     webhook-secret: ${N8N_WEBHOOK_SECRET}
     retry-attempts: 3
-    retry-delays: 1000,5000,15000  # milliseconds: 1s, 5s, 15s
+    retry-delays: 1000,5000,15000 # milliseconds: 1s, 5s, 15s
     timeout-seconds: 10
 
   # Query Configuration
@@ -597,6 +630,7 @@ N8N_ENCRYPTION_KEY=your-generated-encryption-key-here
 ```
 
 **Security Notes:**
+
 - ⚠️ **NEVER commit .env file to Git**
 - Add `.env` to `.gitignore`
 - Use Azure Key Vault or AWS Secrets Manager for production
@@ -657,7 +691,7 @@ N8N_ENCRYPTION_KEY=generate-with-openssl-rand-hex-16
 - [ ] application.yml updated with chatbot configuration
 - [ ] .env file created with all required variables
 - [ ] .env added to .gitignore
-- [ ] Backend compiles without errors (mvn clean compile)
+- [ ] Backend compiles without errors (mvnd clean compile)
 - [ ] Logs show "Chatbot feature enabled" on startup
 
 ---
@@ -669,6 +703,7 @@ N8N_ENCRYPTION_KEY=generate-with-openssl-rand-hex-16
 **Symptoms:** HTTP 401 error when calling embeddings/completions API
 
 **Solutions:**
+
 1. Verify API key is correct (Keys and Endpoint section in Azure)
 2. Check endpoint URL matches your resource (no trailing slash)
 3. Ensure api-version parameter is included (2023-05-15)
@@ -679,6 +714,7 @@ N8N_ENCRYPTION_KEY=generate-with-openssl-rand-hex-16
 **Symptoms:** Timeout when connecting to Pinecone index
 
 **Solutions:**
+
 1. Check API key is correct and not expired
 2. Verify index name exactly matches (case-sensitive: "accounting-embeddings")
 3. Ensure environment matches (us-east-1-aws)
@@ -690,6 +726,7 @@ N8N_ENCRYPTION_KEY=generate-with-openssl-rand-hex-16
 **Symptoms:** Voucher post succeeds but no embedding created
 
 **Solutions:**
+
 1. Check n8n container is running: `docker ps | grep n8n`
 2. Verify workflow is "Active" (toggle switch in n8n UI)
 3. Check webhook secret matches in both n8n and backend .env
@@ -702,6 +739,7 @@ N8N_ENCRYPTION_KEY=generate-with-openssl-rand-hex-16
 **Symptoms:** Pinecone error "vector dimension mismatch"
 
 **Solutions:**
+
 1. Verify Pinecone index dimensions: 1536 (for Azure OpenAI ada-002)
 2. If wrong, delete and recreate index with correct dimensions
 3. Note: Cannot change dimensions of existing index
@@ -711,6 +749,7 @@ N8N_ENCRYPTION_KEY=generate-with-openssl-rand-hex-16
 **Symptoms:** Unexpected high charges
 
 **Solutions:**
+
 1. Enable Redis caching to reduce duplicate calls
 2. Reduce max_tokens from 500 to 300
 3. Set up Azure Cost Management alerts ($10 threshold)
@@ -723,7 +762,7 @@ N8N_ENCRYPTION_KEY=generate-with-openssl-rand-hex-16
 
 After completing this setup:
 
-1. **Run Backend**: `cd backend && mvn spring-boot:run`
+1. **Run Backend**: `cd backend && mvnd spring-boot:run`
 2. **Check Logs**: Verify "Chatbot feature enabled" message
 3. **Run Frontend**: `cd frontend && pnpm dev`
 4. **Test Integration**: Post a test voucher and verify embedding created
@@ -744,29 +783,32 @@ See [Integration Testing Guide](./chatbot-integration-testing.md) for detailed t
 
 ### Expected Costs (100 active users)
 
-| Service | Usage | Cost/Month |
-|---------|-------|------------|
-| Azure OpenAI Embeddings | 1M tokens | $0.10 |
-| Azure OpenAI Completions | 5M tokens | $10.00 |
-| Pinecone (Free Tier) | 100K vectors | $0.00 |
-| n8n (Self-hosted) | Docker container | $0.00 |
-| **Total** | | **~$10.10** |
+| Service                  | Usage            | Cost/Month  |
+| ------------------------ | ---------------- | ----------- |
+| Azure OpenAI Embeddings  | 1M tokens        | $0.10       |
+| Azure OpenAI Completions | 5M tokens        | $10.00      |
+| Pinecone (Free Tier)     | 100K vectors     | $0.00       |
+| n8n (Self-hosted)        | Docker container | $0.00       |
+| **Total**                |                  | **~$10.10** |
 
 ---
 
 ## Appendix B: Security Best Practices
 
 1. **API Key Rotation**
+
    - Rotate Azure OpenAI keys quarterly
    - Rotate Pinecone keys quarterly
    - Update n8n webhook secret after any security incident
 
 2. **Network Security**
+
    - Use Azure Private Endpoint for production (removes public internet access)
    - Restrict n8n webhook to internal network only
    - Enable Azure OpenAI virtual network integration
 
 3. **Monitoring**
+
    - Enable Azure Application Insights for API call logging
    - Set up alerts for failed authentication attempts
    - Monitor for unusual query patterns (potential abuse)
@@ -781,6 +823,7 @@ See [Integration Testing Guide](./chatbot-integration-testing.md) for detailed t
 ## Support
 
 For issues or questions:
+
 - Backend issues: Check `backend/logs/application.log`
 - n8n issues: Check n8n execution logs in UI
 - Azure issues: Use Azure Support portal

@@ -15,4 +15,3 @@ public class VoucherTemplateDTO extends VoucherTemplateSummaryDTO {
     this.lines = lines;
   }
 }
-

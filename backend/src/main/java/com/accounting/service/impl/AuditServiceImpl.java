@@ -1,31 +1,34 @@
 package com.accounting.service.impl;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
 import com.accounting.entity.AuditLog;
 import com.accounting.entity.ImportAuditEntry;
 import com.accounting.entity.User;
 import com.accounting.imports.ImportType;
 import com.accounting.repository.AuditLogRepository;
 import com.accounting.repository.ImportAuditEntryRepository;
-import com.accounting.service.AuditService;
 import com.accounting.repository.UserRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
+import com.accounting.service.AuditService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import jakarta.servlet.http.HttpServletRequest;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.util.StringUtils;
 
 @Service
 @Transactional
@@ -2745,6 +2748,109 @@ public class AuditServiceImpl implements AuditService {
             persist(log);
         } catch (Exception e) {
             logger.error("Failed to log cash book operation: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logReconciliationOperation(
+            String action,
+            java.util.UUID reconciliationId,
+            String details,
+            String clientIp) {
+        try {
+            Long companyId = com.accounting.security.CompanyContext.getCompanyId();
+            Long userId = com.accounting.security.SecurityUtils.getCurrentUserId();
+
+            AuditLog log = new AuditLog();
+            log.setEventType("BANK_RECONCILIATION");
+            log.setAction(action);
+            log.setCompanyId(companyId);
+            log.setUserId(userId);
+            log.setIpAddress(clientIp);
+            log.setCreatedAt(Instant.now());
+
+            if (reconciliationId != null) {
+                log.setEntityType("BANK_RECONCILIATION");
+                log.setEntityId(reconciliationId.toString());
+            }
+
+            ObjectNode metadata = buildMetadata();
+            if (details != null) {
+                metadata.put("details", details);
+            }
+            if (reconciliationId != null) {
+                metadata.put("reconciliationId", reconciliationId.toString());
+            }
+            log.setMetadata(metadata);
+            log.setSuccess(Boolean.TRUE);
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log reconciliation operation: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logReportScheduleEvent(String action, java.util.UUID scheduleId, String scheduleName) {
+        try {
+            Long companyId = CompanyContext.getCompanyId();
+            Long userId = getCurrentUserId();
+
+            AuditLog log = new AuditLog();
+            log.setEventType("COMPLIANCE");
+            log.setAction(action);
+            log.setCompanyId(companyId);
+            log.setUserId(userId);
+            log.setCreatedAt(Instant.now());
+            log.setEntityType("REPORT_SCHEDULE");
+            log.setEntityId(scheduleId != null ? scheduleId.toString() : null);
+            log.setEntityDisplay(scheduleName);
+
+            ObjectNode metadata = buildMetadata();
+            if (scheduleId != null) {
+                metadata.put("scheduleId", scheduleId.toString());
+            }
+            if (scheduleName != null) {
+                metadata.put("scheduleName", scheduleName);
+            }
+            log.setMetadata(metadata);
+            log.setSuccess(Boolean.TRUE);
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log report schedule event: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void logReportScheduleRunEvent(String action, java.util.UUID runId, String scheduleName, String triggerType) {
+        try {
+            Long companyId = CompanyContext.getCompanyId();
+            Long userId = getCurrentUserId();
+
+            AuditLog log = new AuditLog();
+            log.setEventType("COMPLIANCE");
+            log.setAction(action);
+            log.setCompanyId(companyId);
+            log.setUserId(userId);
+            log.setCreatedAt(Instant.now());
+            log.setEntityType("REPORT_SCHEDULE_RUN");
+            log.setEntityId(runId != null ? runId.toString() : null);
+            log.setEntityDisplay(scheduleName);
+
+            ObjectNode metadata = buildMetadata();
+            if (runId != null) {
+                metadata.put("runId", runId.toString());
+            }
+            if (scheduleName != null) {
+                metadata.put("scheduleName", scheduleName);
+            }
+            if (triggerType != null) {
+                metadata.put("triggerType", triggerType);
+            }
+            log.setMetadata(metadata);
+            log.setSuccess(Boolean.TRUE);
+            persist(log);
+        } catch (Exception e) {
+            logger.error("Failed to log report schedule run event: {}", e.getMessage(), e);
         }
     }
 }

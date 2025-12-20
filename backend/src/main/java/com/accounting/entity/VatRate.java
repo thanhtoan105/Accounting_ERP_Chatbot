@@ -17,6 +17,11 @@ public enum VatRate {
   FIVE("5%", new BigDecimal("0.05")),
 
   /**
+   * 8% VAT rate (Vietnam temporary reduction periods).
+   */
+  EIGHT("8%", new BigDecimal("0.08")),
+
+  /**
    * 10% VAT rate.
    */
   TEN("10%", new BigDecimal("0.10")),
@@ -42,4 +47,3 @@ public enum VatRate {
     return rate;
   }
 }
-

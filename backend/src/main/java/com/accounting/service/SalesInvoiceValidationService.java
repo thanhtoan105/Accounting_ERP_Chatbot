@@ -1,11 +1,12 @@
 package com.accounting.service;
 
-import com.accounting.dto.SalesInvoiceCreateRequest;
-import com.accounting.dto.SalesInvoiceLineDTO;
-import com.accounting.dto.SalesInvoiceValidationResult;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.dto.SalesInvoiceCreateRequest;
+import com.accounting.dto.SalesInvoiceLineDTO;
+import com.accounting.dto.SalesInvoiceValidationResult;
 
 /**
  * Service for validating sales invoices before creation or update.

@@ -1,15 +1,17 @@
 package com.accounting.repository;
 
-import com.accounting.entity.PurchaseBill;
-import com.accounting.entity.PurchaseBillStatus;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.accounting.entity.PurchaseBill;
+import com.accounting.entity.PurchaseBillStatus;
 
 public interface PurchaseBillRepository
     extends JpaRepository<PurchaseBill, UUID>, JpaSpecificationExecutor<PurchaseBill> {
@@ -117,4 +119,3 @@ public interface PurchaseBillRepository
       @Param("companyId") Long companyId, @Param("searchTerm") String searchTerm);
 
 }
-

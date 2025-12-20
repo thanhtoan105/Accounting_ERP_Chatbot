@@ -12,12 +12,15 @@ const basePayment: APPaymentListDTO = {
   supplierName: 'Supplier 1',
   supplierCode: 'SUP-1',
   amount: 1_000_000,
+  cashAccountId: 1,
   cashAccountName: 'Cash',
+  bankAccountId: null,
   bankAccountName: null,
   paymentMethod: 'CASH',
   status: 'PENDING_APPROVAL',
   isStandalone: false,
   allocationCount: 1,
+  linkedVoucherId: null,
 }
 
 describe('PaymentApprovalDialog', () => {
@@ -41,9 +44,8 @@ describe('PaymentApprovalDialog', () => {
 
   it('does not render when payment is null', () => {
     const { queryByText } = render(
-      // @ts-expect-error testing null payment scenario
       <PaymentApprovalDialog
-        payment={null}
+        payment={null as any}
         open={true}
         onOpenChange={() => {}}
         onApproved={() => {}}

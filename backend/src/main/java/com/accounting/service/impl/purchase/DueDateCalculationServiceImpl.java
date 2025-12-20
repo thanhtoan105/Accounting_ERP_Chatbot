@@ -1,15 +1,17 @@
 package com.accounting.service.impl.purchase;
 
-import com.accounting.repository.SupplierRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.purchase.DueDateCalculationService;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import com.accounting.repository.SupplierRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.purchase.DueDateCalculationService;
 
 /**
  * Implementation of DueDateCalculationService for purchase bills.
@@ -181,4 +183,3 @@ public class DueDateCalculationServiceImpl implements DueDateCalculationService 
     return new HashSet<>();
   }
 }
-

@@ -1,12 +1,13 @@
 package com.accounting.dto;
 
-import com.accounting.entity.PaymentMethod;
-import com.accounting.entity.ReceiptStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.entity.PaymentMethod;
+import com.accounting.entity.ReceiptStatus;
 
 /**
  * DTO for full ARPayment (receipt) details. Used for single receipt retrieval.

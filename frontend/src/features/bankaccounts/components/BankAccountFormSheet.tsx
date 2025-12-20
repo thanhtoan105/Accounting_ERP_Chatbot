@@ -31,7 +31,6 @@ import type {
   BankAccount,
   BankAccountCreateRequest,
   BankAccountUpdateRequest,
-  AccountType,
 } from '@/types/bankAccount'
 
 interface BankAccountFormSheetProps {
@@ -91,7 +90,7 @@ export default function BankAccountFormSheet({
   onSuccess,
   bankAccount,
 }: BankAccountFormSheetProps) {
-  const { t } = useTranslation()
+  const { t: _t } = useTranslation()
   const isEditMode = !!bankAccount
   const [formError, setFormError] = useState<string | null>(null)
   const [duplicateError, setDuplicateError] = useState<string | null>(null)

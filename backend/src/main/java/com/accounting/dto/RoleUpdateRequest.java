@@ -1,6 +1,7 @@
 package com.accounting.dto;
 
 import com.accounting.validation.ValidRole;
+
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -26,4 +27,3 @@ public class RoleUpdateRequest {
     this.role = role;
   }
 }
-

@@ -1,6 +1,7 @@
 package com.accounting.validation;
 
 import com.accounting.enums.Role;
+
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -23,4 +24,3 @@ public class RoleValidator implements ConstraintValidator<ValidRole, String> {
     return Role.isValid(value);
   }
 }
-

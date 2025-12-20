@@ -1,21 +1,10 @@
 package com.accounting.controller.admin;
 
-import com.accounting.dto.AuthResponse;
-import com.accounting.dto.ChangePasswordRequest;
-import com.accounting.dto.CreateUserRequest;
-import com.accounting.dto.RoleUpdateRequest;
-import com.accounting.dto.UpdateProfileRequest;
-import com.accounting.dto.UpdateUserRequest;
-import com.accounting.dto.UserDTO;
-import com.accounting.entity.User;
-import com.accounting.security.JwtTokenProvider;
-import com.accounting.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +20,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.accounting.dto.AuthResponse;
+import com.accounting.dto.ChangePasswordRequest;
+import com.accounting.dto.CreateUserRequest;
+import com.accounting.dto.RoleUpdateRequest;
+import com.accounting.dto.UpdateProfileRequest;
+import com.accounting.dto.UpdateUserRequest;
+import com.accounting.dto.UserDTO;
+import com.accounting.entity.User;
+import com.accounting.security.JwtTokenProvider;
+import com.accounting.service.UserService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 /**
  * REST controller for user management operations.
@@ -375,4 +378,3 @@ public class UserController {
     return null;
   }
 }
-

@@ -93,9 +93,9 @@ describe('UserProfile', () => {
     const changePasswordButton = screen.getByRole('button', { name: /change password/i })
     fireEvent.click(changePasswordButton)
 
-    const currentPasswordInput = screen.getByLabelText(/current password/i)
-    const newPasswordInput = screen.getByLabelText(/new password/i)
-    const confirmPasswordInput = screen.getByLabelText(/confirm new password/i)
+    screen.getByLabelText(/current password/i)
+    screen.getByLabelText(/new password/i)
+    screen.getByLabelText(/confirm new password/i)
     const submitButton = screen.getByRole('button', { name: /change password/i })
 
     // Try to submit with empty fields

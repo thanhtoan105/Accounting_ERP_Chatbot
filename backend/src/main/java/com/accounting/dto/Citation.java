@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 /**
  * Citation DTO representing a reference to a voucher or document.
  *
@@ -18,11 +16,11 @@ import java.util.UUID;
  * <pre>
  * Citation citation = Citation.builder()
  *     .entityType("voucher")
- *     .entityId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
+ *     .entityId("12345")
  *     .voucherNumber("PC-2023-001")
  *     .excerpt("Thanh toán nhà cung cấp ABC - 50,000,000 VND")
  *     .relevanceScore(0.92)
- *     .link("/vouchers/550e8400-e29b-41d4-a716-446655440001")
+ *     .link("/vouchers/12345")
  *     .build();
  * </pre>
  *
@@ -53,13 +51,13 @@ public class Citation {
     private String entityType;
 
     /**
-     * Unique identifier of the entity (UUID).
+     * Unique identifier of the entity (database ID).
      */
     @Schema(
-        description = "Unique entity ID (UUID) for the referenced voucher/document",
-        example = "550e8400-e29b-41d4-a716-446655440001"
+        description = "Unique entity ID for the referenced voucher/document",
+        example = "12345"
     )
-    private UUID entityId;
+    private String entityId;
 
     /**
      * Voucher number for display (human-readable).

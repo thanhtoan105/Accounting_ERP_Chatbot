@@ -45,4 +45,3 @@ public class CustomerARSummaryDTO {
     this.averagePaymentDays = averagePaymentDays;
   }
 }
-

@@ -1,23 +1,25 @@
 package com.accounting.service.impl;
 
-import com.accounting.dto.VoucherEmbeddingPayload;
-import com.accounting.service.N8nWebhookService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import com.accounting.dto.VoucherEmbeddingPayload;
+import com.accounting.service.N8nWebhookService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 /**
  * Implementation of N8nWebhookService with exponential backoff retry logic.
@@ -111,7 +113,7 @@ public class N8nWebhookServiceImpl implements N8nWebhookService {
             Request request = new Request.Builder()
                 .url(webhookUrl)
                 .head()
-                .addHeader("X-N8N-Secret", webhookSecret)
+                .addHeader("X-Webhook-Secret", webhookSecret)
                 .build();
 
             try (Response response = httpClient.newCall(request).execute()) {
@@ -163,7 +165,7 @@ public class N8nWebhookServiceImpl implements N8nWebhookService {
             .url(webhookUrl)
             .post(body)
             .addHeader("Content-Type", "application/json")
-            .addHeader("X-N8N-Secret", webhookSecret)
+            .addHeader("X-Webhook-Secret", webhookSecret)
             .addHeader("X-Request-ID", requestId)
             .build();
 

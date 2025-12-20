@@ -103,4 +103,3 @@ public class PurchaseBillAttachmentDTO {
     this.uploadedByName = uploadedByName;
   }
 }
-

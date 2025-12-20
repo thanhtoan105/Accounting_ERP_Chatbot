@@ -59,7 +59,7 @@ export default function ImportWizard() {
   const uploadInputId = useId()
   const [errorResult, setErrorResult] = useState<ImportResult | null>(null)
 
-  const { data: templateLoadingKey, refetch: refetchTemplate } = useQuery({
+  const { refetch: refetchTemplate } = useQuery({
     queryKey: ['template-metadata', type],
     queryFn: async () => {
       // Placeholder to align with pattern; backend generates on demand.

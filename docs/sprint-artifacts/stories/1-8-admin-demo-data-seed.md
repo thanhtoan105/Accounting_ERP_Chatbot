@@ -31,7 +31,7 @@ so that everyone can develop, demo, and QA flows instantly.
   - [x] Script targets only demo company data (by code 'DEMO' or name pattern '%[DEMO]') and does not affect other tenants.
 - [x] **Documentation: Update README** (AC: #5)
   - [x] Added "Development" section to main `README.md`.
-  - [x] Documented CLI command to run seed: `mvn spring-boot:run -Dspring-boot.run.arguments=--seedDemo=true`.
+  - [x] Documented CLI command to run seed: `mvndd spring-boot:run -Dspring-boot.run.arguments=--seedDemo=true`.
   - [x] Documented rollback command and demo user credentials (password: `Demo@12345`).
 - [x] **Testing: Verify Seed Data** (AC: #1, #2, #3, #4, #5, #6)
   - [x] (AC: #1) Tests confirm bootstrap service creates company, users, and COA subset.
@@ -183,7 +183,7 @@ The implementation successfully delivers a CLI-based demo data seeding mechanism
 | - Script targets only demo data | Complete | **VERIFIED COMPLETE** | `R__remove_demo_data.sql:6` (WHERE clause: code = 'DEMO' OR name LIKE '%[DEMO]'), test verifies multi-tenant isolation |
 | Documentation: Update README | Complete | **VERIFIED COMPLETE** | `README.md:27-42` (Development section with seed/rollback commands and demo credentials) |
 | - Added "Development" section | Complete | **VERIFIED COMPLETE** | `README.md:27` (section header exists) |
-| - Documented CLI command | Complete | **VERIFIED COMPLETE** | `README.md:32` (mvn spring-boot:run command documented) |
+| - Documented CLI command | Complete | **VERIFIED COMPLETE** | `README.md:32` (mvndd spring-boot:run command documented) |
 | - Documented rollback command and credentials | Complete | **VERIFIED COMPLETE** | `README.md:34-35` (rollback command), `README.md:38-42` (demo user credentials) |
 | Testing: Verify Seed Data | Complete | **VERIFIED COMPLETE** | `DemoBootstrapServiceTest.java:21-193` (5 comprehensive test methods covering all ACs) |
 | - (AC: #1) Tests confirm bootstrap creates company, users, COA | Complete | **VERIFIED COMPLETE** | `DemoBootstrapServiceTest.java:43-65` (bootstrapIsIdempotent) |

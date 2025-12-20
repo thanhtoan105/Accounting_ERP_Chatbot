@@ -1,8 +1,10 @@
 package com.accounting.service;
 
+import java.util.UUID;
+
 import com.accounting.dto.integrity.DataIntegrityJobResponse;
 import com.accounting.dto.integrity.DataIntegrityRequest;
-import java.util.UUID;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface DataIntegrityService {
@@ -11,6 +13,3 @@ public interface DataIntegrityService {
 
   DataIntegrityJobResponse getResults(UUID jobId);
 }
-
-
-

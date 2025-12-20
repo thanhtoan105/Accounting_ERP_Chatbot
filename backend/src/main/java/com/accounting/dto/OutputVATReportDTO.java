@@ -1,7 +1,5 @@
 package com.accounting.dto;
 
-import com.accounting.entity.VATReportHistory;
-import com.accounting.entity.VatRate;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -10,6 +8,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import com.accounting.entity.VATReportHistory;
+import com.accounting.entity.VatRate;
 
 /**
  * DTO for Output VAT report (AR module). Contains report metadata, line items by invoice, and summary totals by VAT rate.
@@ -345,4 +346,3 @@ public class OutputVATReportDTO {
     }
   }
 }
-

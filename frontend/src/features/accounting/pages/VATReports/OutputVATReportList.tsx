@@ -37,9 +37,7 @@ import type {
   OutputVATReportRequest,
   VATExportFormat,
   VATReportHistoryItem,
-  VATRate,
 } from '@/types/vat'
-import { cn } from '@/lib/utils'
 import {
   Select,
   SelectContent,
@@ -92,9 +90,9 @@ export function OutputVATReportList() {
   const [historyPageSize, setHistoryPageSize] = useState(20)
   const [historyTotalItems, setHistoryTotalItems] = useState(0)
   const [historyTotalPages, setHistoryTotalPages] = useState(1)
-  const [historySortColumn, setHistorySortColumn] = useState<string | null>(null)
-  const [historySortDirection, setHistorySortDirection] = useState<'asc' | 'desc'>('asc')
-  const [historyFilter, setHistoryFilter] = useState<{
+  const [_historySortColumn, _setHistorySortColumn] = useState<string | null>(null)
+  const [_historySortDirection, _setHistorySortDirection] = useState<'asc' | 'desc'>('asc')
+  const [historyFilter, _setHistoryFilter] = useState<{
     reportType: 'ALL' | 'INPUT_VAT' | 'OUTPUT_VAT'
     customerId: string
     vatClass: string
@@ -373,7 +371,12 @@ export function OutputVATReportList() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="flex flex-col gap-2">
               <Label>Date Range</Label>
-              <DatePickerWithRange value={formDateRange} onChange={setFormDateRange} />
+              <DatePickerWithRange
+                value={formDateRange}
+                onChange={(v) =>
+                  setFormDateRange(v as { from: Date | undefined; to: Date | undefined })
+                }
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label>Customer ID (optional)</Label>
@@ -852,7 +855,12 @@ export function OutputVATReportList() {
               </div>
               <div className="space-y-2">
                 <Label>Invoice Date Range *</Label>
-                <DatePickerWithRange value={formDateRange} onChange={setFormDateRange} />
+                <DatePickerWithRange
+                  value={formDateRange}
+                  onChange={(v) =>
+                    setFormDateRange(v as { from: Date | undefined; to: Date | undefined })
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label>Customer ID (optional)</Label>

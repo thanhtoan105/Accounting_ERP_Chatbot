@@ -1,8 +1,9 @@
 package com.accounting.service.gl;
 
+import java.util.List;
+
 import com.accounting.entity.JournalEntry;
 import com.accounting.entity.Voucher;
-import java.util.List;
 
 /**
  * Service for generating journal entries from vouchers.
@@ -19,4 +20,3 @@ public interface JournalEntryService {
    */
   List<JournalEntry> generateJournalEntries(Voucher voucher);
 }
-

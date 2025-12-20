@@ -1,8 +1,9 @@
 package com.accounting.dto;
 
+import java.math.BigDecimal;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.math.BigDecimal;
 
 /**
  * DTO for a voucher line item.
@@ -128,4 +129,3 @@ public class VoucherLineDTO {
     this.itemId = itemId;
   }
 }
-

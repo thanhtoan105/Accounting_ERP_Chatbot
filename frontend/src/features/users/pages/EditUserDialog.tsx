@@ -5,7 +5,6 @@ import { z } from 'zod'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -20,30 +19,38 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '@/components/ui/field'
+import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Loader2 } from 'lucide-react'
 import { updateUser, type UpdateUserRequest, getUserById } from '@/services/user'
-import { getRoleDisplayName, getAssignableRoles, canManageRole, type Role } from '@/utils/roles'
+import { getRoleDisplayName, getAssignableRoles, canManageRole } from '@/utils/roles'
 import { useAuth } from '@/hooks/useAuth'
 import { useRole } from '@/hooks/useRole'
 import type { User } from '@/services/auth'
 
 const STATUSES = ['ACTIVE', 'INACTIVE', 'LOCKED']
 
+const FORM_ROLES = [
+  'admin',
+  'accountant',
+  'chief_accountant',
+  'cfo',
+  'super_admin',
+  'accountant_general',
+  'accountant_ar',
+  'accountant_ap',
+  'cashier',
+  'finance',
+] as const
+
+type FormRole = (typeof FORM_ROLES)[number]
+
 const editUserSchema = z.object({
   fullName: z
     .string()
     .min(1, 'Full name is required')
     .min(2, 'Full name must be at least 2 characters'),
-  role: z.enum(['admin', 'accountant', 'chief_accountant', 'cfo'] as const),
+  role: z.enum(FORM_ROLES),
   status: z.enum(['ACTIVE', 'INACTIVE', 'LOCKED'] as const),
 })
 
@@ -107,7 +114,7 @@ export default function EditUserDialog({ open, onClose, onSuccess, user }: EditU
         // User data is complete, set form values
         reset({
           fullName: user.fullName || '',
-          role: (user.role?.toLowerCase() || 'accountant') as Role,
+          role: (user.role?.toLowerCase() || 'accountant') as FormRole,
           status: (user.status?.toUpperCase() || 'ACTIVE') as 'ACTIVE' | 'INACTIVE' | 'LOCKED',
         })
         setFormError(null)
@@ -120,7 +127,7 @@ export default function EditUserDialog({ open, onClose, onSuccess, user }: EditU
             setUserData(freshUser)
             reset({
               fullName: freshUser.fullName || '',
-              role: (freshUser.role?.toLowerCase() || 'accountant') as Role,
+              role: (freshUser.role?.toLowerCase() || 'accountant') as FormRole,
               status: (freshUser.status?.toUpperCase() || 'ACTIVE') as
                 | 'ACTIVE'
                 | 'INACTIVE'
@@ -245,7 +252,7 @@ export default function EditUserDialog({ open, onClose, onSuccess, user }: EditU
                     <Select
                       value={selectedRole}
                       onValueChange={(value) =>
-                        setValue('role', value as Role, { shouldValidate: true })
+                        setValue('role', value as FormRole, { shouldValidate: true })
                       }
                       disabled={isSubmitting || fetching || !canEditRole || !canManageTargetUser}
                     >

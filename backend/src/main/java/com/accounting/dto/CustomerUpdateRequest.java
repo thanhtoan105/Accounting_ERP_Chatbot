@@ -91,4 +91,3 @@ public class CustomerUpdateRequest {
     this.active = active;
   }
 }
-

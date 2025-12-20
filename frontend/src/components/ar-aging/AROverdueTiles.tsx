@@ -12,7 +12,7 @@ import { formatCurrency } from '@/utils/format'
 
 export function AROverdueTiles() {
   const navigate = useNavigate()
-  const { data: metrics, isLoading, refetch, isRefetching, error } = useARDashboardMetrics()
+  const { data: metrics, isLoading, refetch, isRefetching } = useARDashboardMetrics()
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
   useEffect(() => {

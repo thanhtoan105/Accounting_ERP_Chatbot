@@ -15,6 +15,7 @@ import {
 import { validateInvitation, acceptInvitation } from '../services/invitation'
 import type { InvitationDetails } from '../services/invitation'
 import { getRoleDisplayName } from '../utils/roles'
+import { setAccessToken, setCompanyId } from '../utils/axios'
 
 /**
  * Public page for accepting user invitations.
@@ -89,15 +90,18 @@ export default function AcceptInvitation() {
 
     try {
       setSubmitting(true)
-      await acceptInvitation(token, {
+      const response = await acceptInvitation(token, {
         password,
         confirmPassword,
         fullName: fullName.trim(),
       })
 
-      // Don't set access token - redirect to login page so user can log in manually
-      // This ensures user explicitly logs in with their new credentials
-      navigate('/login?accountCreated=true', { replace: true })
+      // Auto-login with the returned access token
+      setAccessToken(response.accessToken)
+      if (response.user?.companyId) {
+        setCompanyId(response.user.companyId)
+      }
+      navigate('/', { replace: true })
     } catch (err) {
       const errorMessage =
         err instanceof Error

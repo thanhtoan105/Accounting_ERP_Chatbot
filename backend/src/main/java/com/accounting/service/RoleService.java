@@ -38,4 +38,3 @@ public interface RoleService {
    */
   String toAuthority(Role role);
 }
-

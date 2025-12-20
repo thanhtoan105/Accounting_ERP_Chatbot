@@ -1,10 +1,11 @@
 package com.accounting.dto;
 
-import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import jakarta.validation.constraints.Size;
 
 /**
  * Request payload for generating input VAT reports.
@@ -70,4 +71,3 @@ public class InputVATReportRequest {
     this.filters = filters != null ? filters : new HashMap<>();
   }
 }
-

@@ -32,7 +32,6 @@ const MAX_ROWS = 5
 
 export default function AccountDefaultsTable({
   rows,
-  voucherType,
   isAdmin,
   onRowChange,
   onAddRow,

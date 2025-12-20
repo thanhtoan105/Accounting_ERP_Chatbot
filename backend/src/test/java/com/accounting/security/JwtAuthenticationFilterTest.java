@@ -6,20 +6,23 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.accounting.entity.User;
-import com.accounting.repository.UserRepository;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.accounting.entity.User;
+import com.accounting.repository.UserRepository;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 
 /**
  * Integration tests for JWT authentication filter role handling.
@@ -97,4 +100,3 @@ class JwtAuthenticationFilterTest extends com.accounting.test.IntegrationTest {
                 .value(org.hamcrest.Matchers.containsStringIgnoringCase("role")));
   }
 }
-

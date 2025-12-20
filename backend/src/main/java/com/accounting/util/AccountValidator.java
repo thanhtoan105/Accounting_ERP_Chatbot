@@ -1,8 +1,9 @@
 package com.accounting.util;
 
+import org.springframework.stereotype.Component;
+
 import com.accounting.entity.ChartOfAccount;
 import com.accounting.repository.ChartOfAccountsRepository;
-import org.springframework.stereotype.Component;
 
 /**
  * Validator utility for account operations.

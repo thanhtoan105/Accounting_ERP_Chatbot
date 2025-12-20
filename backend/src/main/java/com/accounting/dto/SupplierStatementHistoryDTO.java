@@ -1,10 +1,11 @@
 package com.accounting.dto;
 
-import com.accounting.entity.SupplierStatementHistory;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.entity.SupplierStatementHistory;
 
 /**
  * DTO for supplier statement history listing.
@@ -148,4 +149,3 @@ public class SupplierStatementHistoryDTO {
     this.endDate = endDate;
   }
 }
-

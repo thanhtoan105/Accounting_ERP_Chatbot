@@ -53,4 +53,3 @@ public class InvitationResponse {
     this.expiresAt = expiresAt;
   }
 }
-

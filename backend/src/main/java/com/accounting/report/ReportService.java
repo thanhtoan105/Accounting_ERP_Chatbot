@@ -1,10 +1,14 @@
 package com.accounting.report;
 
-import com.accounting.entity.Company;
-import com.accounting.service.CompanyService;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
+import com.accounting.entity.Company;
+import com.accounting.service.CompanyService;
+
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperExportManager;
@@ -14,7 +18,6 @@ import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
 import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
-import org.springframework.stereotype.Service;
 
 @Service
 public class ReportService {
@@ -71,5 +74,3 @@ public class ReportService {
         }
     }
 }
-
-

@@ -1,5 +1,22 @@
 package com.accounting.service.impl.sales;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.accounting.dto.VATValidationResultDTO;
 import com.accounting.dto.VoucherEntryLineRequest;
 import com.accounting.entity.ChartOfAccount;
@@ -11,22 +28,8 @@ import com.accounting.repository.SalesInvoiceLineRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.ARVATService;
 import com.accounting.service.AuditService;
+
 import jakarta.servlet.http.HttpServletRequest;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Implementation of ARVATService for AR (Accounts Receivable) VAT validation,

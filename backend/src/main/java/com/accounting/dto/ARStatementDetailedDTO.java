@@ -127,4 +127,3 @@ public class ARStatementDetailedDTO extends ARStatementSummaryDTO {
     }
   }
 }
-

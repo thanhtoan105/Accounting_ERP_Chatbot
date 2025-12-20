@@ -67,7 +67,8 @@ This story implements comprehensive audit trail and compliance functionality for
 
 **Audit Log Infrastructure**: Leverage existing `AuditService` interface and `AuditLog` entity from Epic 1. Extend with AP-specific audit methods if needed. All audit entries must include user, timestamp, IP address, action type, before/after snapshots, and cryptographic hash. [Source: docs/sprint-artifacts/tech-spec-epic-4.md#story-47-audit-trail-and-compliance-for-all-ap-activities]
 
-**Database Design**: 
+**Database Design**:
+
 - Extend existing `audit_logs` table with AP-specific metadata fields if needed (bill_id, payment_id, supplier_id, amount, action_type)
 - Create `APAuditBackup` entity to track DR backup archives (backup_date, archive_path, hash, record_count, company_id)
 - Create indexes on audit_logs for efficient filtering (company_id, action_type, user_id, timestamp, entity_id)
@@ -95,6 +96,7 @@ This story implements comprehensive audit trail and compliance functionality for
 ## Tasks / Subtasks
 
 - [x] Backend: Ensure comprehensive audit logging for all AP activities (AC: #1)
+
   - [x] Verify all bill operations are logged via `AuditService.logPurchaseBillEvent()`:
     - [x] Bill create, edit, draft save, delete attempt, import, submit for approval, approve, reject, auto-approve
     - [x] All events include before/after snapshots, diff hash, user, timestamp, IP address
@@ -109,6 +111,7 @@ This story implements comprehensive audit trail and compliance functionality for
   - [x] Ensure all audit entries include company_id for multi-tenancy filtering
 
 - [x] Backend: Create APAuditService for audit timeline and filtering (AC: #2, #5)
+
   - [x] Create `APAuditService` interface and `APAuditServiceImpl`
   - [x] Implement `getAuditTimeline(filters)` method:
     - [x] Query audit_logs table filtered by company_id, action_type (AP-related), date range
@@ -126,6 +129,7 @@ This story implements comprehensive audit trail and compliance functionality for
   - [x] Add RBAC: All authenticated users can view timeline (company-filtered)
 
 - [x] Backend: Abuse detection and unauthorized access monitoring (AC: #3)
+
   - [x] Implement `detectAbusePatterns(companyId, userId, timeWindow)` method:
     - [x] Detect repeated failed delete attempts
     - [x] Detect unauthorized access attempts (403 errors)
@@ -143,6 +147,7 @@ This story implements comprehensive audit trail and compliance functionality for
     - [x] Requires Chief Accountant/CFO/Admin permissions
 
 - [x] Backend: DR backup and archive functionality (AC: #4)
+
   - [x] Create `APAuditBackup` entity:
     - [x] Fields: id, company_id, backup_date, archive_path, hash, record_count, status, created_by
     - [x] Extends `CompanyScopedEntity`
@@ -168,6 +173,7 @@ This story implements comprehensive audit trail and compliance functionality for
     - [x] Log download event via `AuditService`
 
 - [x] Backend: Cryptographic chain hashing and retention management (AC: #6)
+
   - [x] Implement `calculateChainHash(previousHash, currentEvent)` method:
     - [x] Calculate SHA-256 hash of (previous_hash + current_event_hash)
     - [x] Ensures tamper detection (any modification breaks chain)
@@ -187,6 +193,7 @@ This story implements comprehensive audit trail and compliance functionality for
     - [x] Return purge summary (count of purged records)
 
 - [x] Backend: AP audit controller and API (AC: #1-#6)
+
   - [x] Create `APAuditController` with REST endpoints:
     - [x] `GET /api/v1/ap-audit/timeline` (get audit timeline with filters)
     - [x] `GET /api/v1/ap-audit/events/{eventId}` (get audit event details)
@@ -201,6 +208,7 @@ This story implements comprehensive audit trail and compliance functionality for
   - [x] Log all audit view/export/backup/purge events via `AuditService`
 
 - [x] Database: Flyway migrations for audit enhancements (AC: #1, #4, #6)
+
   - [x] Create migration to add AP-specific indexes on audit_logs:
     - [x] Index on (company_id, action_type, timestamp) for timeline queries
     - [x] Index on (company_id, user_id, timestamp) for user filtering
@@ -213,6 +221,7 @@ This story implements comprehensive audit trail and compliance functionality for
     - [x] chain_hash VARCHAR(64) for cryptographic chain hashing
 
 - [x] Frontend: AP audit timeline view component (AC: #2, #5)
+
   - [x] Create `APAuditTimeline` page with timeline visualization:
     - [x] Chronological list of audit events, colored by action type
     - [x] Display: action type, user, timestamp, entity (bill/payment), summary
@@ -224,6 +233,7 @@ This story implements comprehensive audit trail and compliance functionality for
   - [x] Display export dialog with options: Date Range, Filters, Format (PDF)
 
 - [x] Frontend: AP audit abuse detection view (AC: #3)
+
   - [x] Create `APAuditAbuseView` component:
     - [x] Display abuse patterns table: user, pattern type, severity, count, date range
     - [x] Display unauthorized attempts table: user, action, entity, timestamp, reason
@@ -234,6 +244,7 @@ This story implements comprehensive audit trail and compliance functionality for
   - [x] Require Chief Accountant/CFO/Admin role to access
 
 - [x] Frontend: DR backup management interface (AC: #4)
+
   - [x] Create `APAuditBackupList` component:
     - [x] Display backup archives table: Backup Date, Archive Size, Hash, Record Count, Status, Actions
     - [x] Add filters: date range, status
@@ -243,6 +254,7 @@ This story implements comprehensive audit trail and compliance functionality for
   - [x] Require Chief Accountant/CFO/Admin role to access
 
 - [x] Frontend: GDPR purge interface (AC: #6)
+
   - [x] Create `APAuditPurgeDialog` component:
     - [x] Select purge scope: company-wide, user-specific, date range, entity-specific
     - [x] Display preview of records to be purged (count, date range)
@@ -426,7 +438,7 @@ BMad Agent (Oracle)
 - backend/src/main/java/com/accounting/dto/APAuditEventDTO.java
 - backend/src/main/java/com/accounting/dto/AbuseDetectionResultDTO.java
 - backend/src/main/java/com/accounting/scheduled/APAuditBackupScheduler.java
-- backend/src/main/resources/db/migration/V20251213__enhance_audit_and_add_backups.sql
+- backend/src/main/resources/db/migration/V20251213\_\_enhance_audit_and_add_backups.sql
 - backend/src/test/java/com/accounting/integration/APAuditIntegrationTest.java
 - frontend/src/types/apAudit.ts
 - frontend/src/types/common.ts
@@ -461,14 +473,14 @@ The implementation successfully centralizes AP audit logging, provides timeline 
 
 ### Acceptance Criteria Coverage
 
-| AC # | Description | Status | Evidence |
-|------|-------------|--------|----------|
+| AC #      | Description                                                                                                                                       | Status             | Evidence                                                                                                                                                                                                                                                                                                                                             |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **AC #1** | Every bill/payment create, edit, post, approve, import, fail, delete-attempt produces detailed audit log (user, time, action, payload diff, hash) | ✅ **IMPLEMENTED** | `AuditServiceImpl.logPurchaseBillEvent()` and `logPaymentEvent()` called in service implementations; all events include before/after JSON snapshots, SHA-256 diff hash, user/timestamp/IP metadata; chain hash calculation via `calculateSha256()`. Migration `V20251213__enhance_audit_and_add_backups.sql` adds necessary audit_logs enhancements. |
-| **AC #2** | Timeline view: colored by action type, exportable as PDF with legal appendix/hash | ✅ **IMPLEMENTED** | `APAuditTimeline.tsx` displays chronological events with filtering; `APAuditService.exportAuditTimeline()` generates PDF with SHA-256 hash header; controller endpoint `/api/v1/ap-audit/timeline/export` returns PDF attachment |
-| **AC #3** | Unauthorized/deletion attempts/abuse visible in admin/audit view; notification for abuse/repeat blocked operations | ✅ **IMPLEMENTED** | `APAuditService.detectAbusePatterns()` scans for repeated failed operations and suspicious patterns; `APAuditAbuseView.tsx` displays abuse table with severity; notifications logged via `AuditService` |
-| **AC #4** | DR plan: scheduled weekly backup/export of AP audits to external/secure/compressed archive | ✅ **IMPLEMENTED** | `APAuditBackupService.createBackup()` compresses to ZIP with SHA-256 hash; `APAuditBackupScheduler` executes weekly job; `APAuditBackupList.tsx` provides backup management UI; controller endpoints manage backups |
-| **AC #5** | Reviewer filter/export: by user, action, amount, supplier, attachment, or outcome | ✅ **IMPLEMENTED** | `APAuditService.getAuditTimeline()` supports Map<String, Object> filters; frontend `APAuditTimeline.tsx` implements all filter controls; pagination via Pageable |
-| **AC #6** | All actions have cryptographic chain hash; 10+ years retention, GDPR purge on demand | ✅ **IMPLEMENTED** | Chain hash calculation via `AuditServiceImpl.calculateChainHash()` (SHA-256); `retention_until` field set to created_at + 10 years; GDPR purge via `/api/v1/ap-audit/purge` (Admin-only) with immutable audit entries |
+| **AC #2** | Timeline view: colored by action type, exportable as PDF with legal appendix/hash                                                                 | ✅ **IMPLEMENTED** | `APAuditTimeline.tsx` displays chronological events with filtering; `APAuditService.exportAuditTimeline()` generates PDF with SHA-256 hash header; controller endpoint `/api/v1/ap-audit/timeline/export` returns PDF attachment                                                                                                                     |
+| **AC #3** | Unauthorized/deletion attempts/abuse visible in admin/audit view; notification for abuse/repeat blocked operations                                | ✅ **IMPLEMENTED** | `APAuditService.detectAbusePatterns()` scans for repeated failed operations and suspicious patterns; `APAuditAbuseView.tsx` displays abuse table with severity; notifications logged via `AuditService`                                                                                                                                              |
+| **AC #4** | DR plan: scheduled weekly backup/export of AP audits to external/secure/compressed archive                                                        | ✅ **IMPLEMENTED** | `APAuditBackupService.createBackup()` compresses to ZIP with SHA-256 hash; `APAuditBackupScheduler` executes weekly job; `APAuditBackupList.tsx` provides backup management UI; controller endpoints manage backups                                                                                                                                  |
+| **AC #5** | Reviewer filter/export: by user, action, amount, supplier, attachment, or outcome                                                                 | ✅ **IMPLEMENTED** | `APAuditService.getAuditTimeline()` supports Map<String, Object> filters; frontend `APAuditTimeline.tsx` implements all filter controls; pagination via Pageable                                                                                                                                                                                     |
+| **AC #6** | All actions have cryptographic chain hash; 10+ years retention, GDPR purge on demand                                                              | ✅ **IMPLEMENTED** | Chain hash calculation via `AuditServiceImpl.calculateChainHash()` (SHA-256); `retention_until` field set to created_at + 10 years; GDPR purge via `/api/v1/ap-audit/purge` (Admin-only) with immutable audit entries                                                                                                                                |
 
 **Summary:** 6 of 6 ACs fully implemented with evidence. ✅
 
@@ -494,6 +506,7 @@ All 12 tasks marked complete ([x]) were verified against implementation:
 ### Code Quality & Risk Review
 
 **Strengths** ✅
+
 - Comprehensive audit logging coverage across all AP operations (bills, payments, VAT, statements)
 - Solid RBAC enforcement: timeline for all users, sensitive ops (abuse/backups/purge) properly restricted
 - Efficient database indexing: (company_id, action_type, timestamp), (company_id, user_id, timestamp), (company_id, entity_id, entity_type)
@@ -501,6 +514,7 @@ All 12 tasks marked complete ([x]) were verified against implementation:
 - Integration tests comprehensive and passing (100%)
 
 **Minor Advisory Findings** (Non-Blocking)
+
 - PDF export "legal appendix" content not explicitly verified (acceptable—functional implementation covers requirement)
 - Abuse detection 60-minute time window hardcoded (suitable for MVP; document if future changes needed)
 - Archive storage uses local/mock for MVP (document S3/Supabase migration as post-MVP technical debt)
@@ -508,6 +522,7 @@ All 12 tasks marked complete ([x]) were verified against implementation:
 ### Security Review
 
 ✅ **No security issues detected.**
+
 - All endpoints require isAuthenticated() or role-based @PreAuthorize guards
 - RBAC properly enforced; admin-only operations gated correctly
 - Company scoping enforced via CompanyContext; no cross-tenant leaks
@@ -516,6 +531,7 @@ All 12 tasks marked complete ([x]) were verified against implementation:
 ### Architectural Alignment
 
 ✅ **Perfectly aligned with established patterns.**
+
 - Multi-tenancy: CompanyScopedEntity extended to APAuditBackup; all queries company-filtered
 - Service layer: APAuditService follows pagination, filtering, error handling patterns
 - REST API: `/api/v1/ap-audit` endpoints with proper HTTP status codes
@@ -525,6 +541,7 @@ All 12 tasks marked complete ([x]) were verified against implementation:
 ### Test Coverage
 
 Integration tests comprehensive and passing:
+
 - Timeline Fetch: ✅ PASS
 - Abuse Detection: ✅ PASS
 - Backup Creation: ✅ PASS
@@ -535,8 +552,8 @@ Frontend component tests deferred to future sprint (acceptable per Story 4.6 pat
 
 ### Build & Verification
 
-✅ Backend: `mvn clean compile` (SUCCESS)  
-✅ Backend: `mvn test -Dtest=APAuditIntegrationTest` (5/5 PASS)  
+✅ Backend: `mvndd clean compile` (SUCCESS)  
+✅ Backend: `mvndd test -Dtest=APAuditIntegrationTest` (5/5 PASS)  
 ✅ Frontend: `pnpm lint` (0 errors in APAudit files)
 
 ### Action Items
@@ -550,6 +567,7 @@ Frontend component tests deferred to future sprint (acceptable per Story 4.6 pat
 ---
 
 ✅ **Story 4.7 is APPROVED for deployment to production.**
+
 - All ACs implemented (6/6)
 - All tasks verified complete (12/12)
 - No false completions
@@ -558,4 +576,3 @@ Frontend component tests deferred to future sprint (acceptable per Story 4.6 pat
 - Integration tests passing 100%
 
 **Status:** Ready for merge to main branch. No further work required before release.
-

@@ -4,15 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.accounting.dto.ARReconciliationImportDTO;
-import com.accounting.entity.SalesInvoice;
-import com.accounting.entity.SalesInvoiceStatus;
-import com.accounting.repository.ARStatementDisputeRepository;
-import com.accounting.repository.SalesInvoiceRepository;
-import com.accounting.security.CompanyContext;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +19,13 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.accounting.dto.ARReconciliationImportDTO;
+import com.accounting.entity.SalesInvoice;
+import com.accounting.entity.SalesInvoiceStatus;
+import com.accounting.repository.ARStatementDisputeRepository;
+import com.accounting.repository.SalesInvoiceRepository;
+import com.accounting.security.CompanyContext;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -52,9 +54,10 @@ class ARReconciliationImportServiceImplTest {
     // Arrange
     UUID invoiceId = UUID.randomUUID();
     SalesInvoice invoice = createMockInvoice(invoiceId, "INV-001", new BigDecimal("100000"));
-    
-    when(invoiceRepository.findByCompanyId(COMPANY_ID))
-        .thenReturn(Arrays.asList(invoice));
+
+    when(invoiceRepository.findByCompanyIdAndCustomerIdAndInvoiceNumberIgnoreCase(
+        eq(COMPANY_ID), eq(CUSTOMER_ID), eq("INV-001")))
+        .thenReturn(Optional.of(invoice));
 
     String csvContent = "InvoiceNumber,CustomerAmount,CustomerPayment,Notes\n"
         + "INV-001,95000,30000,Discrepancy noted\n";
@@ -68,7 +71,7 @@ class ARReconciliationImportServiceImplTest {
     assertEquals(1, result.getMatchedCount());
     assertEquals(1, result.getMismatchCount());
     assertEquals(1, result.getMismatches().size());
-    
+
     ARReconciliationImportDTO.ReconciliationMismatchDTO mismatch = result.getMismatches().get(0);
     assertEquals(invoiceId, mismatch.getInvoiceId());
     assertEquals("INV-001", mismatch.getInvoiceNumber());
@@ -81,10 +84,10 @@ class ARReconciliationImportServiceImplTest {
     ArgumentCaptor<com.accounting.entity.ARStatementDispute> disputeCaptor =
         ArgumentCaptor.forClass(com.accounting.entity.ARStatementDispute.class);
     verify(disputeRepository, times(1)).save(disputeCaptor.capture());
-    
+
     com.accounting.entity.ARStatementDispute savedDispute = disputeCaptor.getValue();
     assertEquals(invoiceId, savedDispute.getInvoiceId());
-    assertEquals(com.accounting.entity.ARStatementDispute.DisputeStatus.OPEN, savedDispute.getStatus());
+    assertEquals("OPEN", savedDispute.getStatus()); // String representation
   }
 
   @Test
@@ -92,9 +95,10 @@ class ARReconciliationImportServiceImplTest {
     // Arrange
     UUID invoiceId = UUID.randomUUID();
     SalesInvoice invoice = createMockInvoice(invoiceId, "INV-001", new BigDecimal("100000"));
-    
-    when(invoiceRepository.findByCompanyId(COMPANY_ID))
-        .thenReturn(Arrays.asList(invoice));
+
+    when(invoiceRepository.findByCompanyIdAndCustomerIdAndInvoiceNumberIgnoreCase(
+        eq(COMPANY_ID), eq(CUSTOMER_ID), eq("INV-001")))
+        .thenReturn(Optional.of(invoice));
 
     String csvContent = "InvoiceNumber,CustomerAmount,CustomerPayment,Notes\n"
         + "INV-001,80000,30000,Large discrepancy\n";
@@ -114,9 +118,10 @@ class ARReconciliationImportServiceImplTest {
     // Arrange
     UUID invoiceId = UUID.randomUUID();
     SalesInvoice invoice = createMockInvoice(invoiceId, "INV-001", new BigDecimal("100000"));
-    
-    when(invoiceRepository.findByCompanyId(COMPANY_ID))
-        .thenReturn(Arrays.asList(invoice));
+
+    when(invoiceRepository.findByCompanyIdAndCustomerIdAndInvoiceNumberIgnoreCase(
+        eq(COMPANY_ID), eq(CUSTOMER_ID), eq("INV-001")))
+        .thenReturn(Optional.of(invoice));
 
     String csvContent = "InvoiceNumber,CustomerAmount,CustomerPayment,Notes\n"
         + "INV-001,100000,30000,Matches\n";
@@ -160,4 +165,3 @@ class ARReconciliationImportServiceImplTest {
     return invoice;
   }
 }
-

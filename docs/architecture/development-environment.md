@@ -15,8 +15,8 @@
 
 ```bash
 cd backend
-mvn clean install
-mvn spring-boot:run
+mvnd clean install
+mvnd spring-boot:run
 ```
 
 **Frontend:**

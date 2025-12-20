@@ -71,7 +71,7 @@ export function DisputeLogTable({ supplierId }: DisputeLogTableProps) {
         page,
         size: pageSize,
         supplier: supplierId,
-        status: statusFilter || undefined,
+        status: statusFilter ? (statusFilter as DisputeStatus) : undefined,
       }
       const response = await supplierStatementService.listDisputes(params)
       setDisputes(response.disputes)

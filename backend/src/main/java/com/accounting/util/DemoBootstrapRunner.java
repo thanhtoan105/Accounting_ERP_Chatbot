@@ -1,16 +1,18 @@
 package com.accounting.util;
 
-import com.accounting.service.DemoBootstrapService;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import com.accounting.service.DemoBootstrapService;
+
 /**
  * CLI trigger to bootstrap demo data.
- * Run with: mvn spring-boot:run -Dspring-boot.run.arguments=--seedDemo=true
+ * Run with: mvnd spring-boot:run -Dspring-boot.run.arguments=--seedDemo=true
  */
 @Component
 public class DemoBootstrapRunner implements CommandLineRunner {
@@ -35,5 +37,3 @@ public class DemoBootstrapRunner implements CommandLineRunner {
     log.info("[DEMO] Bootstrap executed. created={}, companyId={}, code={}", out.get("created"), out.get("companyId"), out.get("code"));
   }
 }
-
-

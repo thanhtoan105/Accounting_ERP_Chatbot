@@ -75,7 +75,6 @@ describe('EditUserDialog', () => {
   })
 
   it('prevents editing own role', () => {
-    const currentUser = { id: 1, email: 'admin@example.com', role: 'admin' }
     const mockUserOwn = { ...mockUser, id: 1 }
 
     render(

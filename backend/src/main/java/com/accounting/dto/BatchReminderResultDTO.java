@@ -54,4 +54,3 @@ public class BatchReminderResultDTO {
     this.failedTo = failedTo;
   }
 }
-

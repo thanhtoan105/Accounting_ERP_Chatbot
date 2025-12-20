@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { ImportStatementDialog } from '../ImportStatementDialog'
-import * as supplierStatementService from '@/services/supplierStatement'
+import { supplierStatementService } from '@/services/supplierStatement'
 import * as supplierService from '@/features/suppliers/services/supplier'
 
 const toast = vi.hoisted(() => ({
@@ -15,7 +15,11 @@ vi.mock('sonner', () => ({
   toast,
 }))
 
-vi.mock('@/services/supplierStatement')
+vi.mock('@/services/supplierStatement', () => ({
+  supplierStatementService: {
+    importStatement: vi.fn(),
+  },
+}))
 vi.mock('@/features/suppliers/services/supplier')
 
 describe('ImportStatementDialog', () => {
@@ -23,12 +27,31 @@ describe('ImportStatementDialog', () => {
   const mockGetSuppliers = vi.mocked(supplierService.getSuppliers)
 
   const sampleSuppliers = [
-    { id: 1, name: 'Test Supplier', code: 'SUP001' },
-    { id: 2, name: 'Another Supplier', code: 'SUP002' },
+    {
+      id: 1,
+      companyId: 1,
+      code: 'SUP001',
+      name: 'Test Supplier',
+      active: true,
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    },
+    {
+      id: 2,
+      companyId: 1,
+      code: 'SUP002',
+      name: 'Another Supplier',
+      active: true,
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    },
   ]
 
   const sampleReconciliationResult = {
     supplierId: 1,
+    supplierName: 'Test Supplier',
+    reconciliationDate: '2024-01-15',
+    totalItems: 8,
     matchedCount: 5,
     mismatchedCount: 2,
     missingCount: 1,
@@ -40,7 +63,13 @@ describe('ImportStatementDialog', () => {
   }
 
   beforeEach(() => {
-    mockGetSuppliers.mockResolvedValue({ data: sampleSuppliers, total: 2 })
+    mockGetSuppliers.mockResolvedValue({
+      data: sampleSuppliers,
+      total: 2,
+      page: 0,
+      size: 20,
+      totalPages: 1,
+    })
     mockImportStatement.mockResolvedValue(sampleReconciliationResult)
     toast.error.mockReset()
     toast.success.mockReset()

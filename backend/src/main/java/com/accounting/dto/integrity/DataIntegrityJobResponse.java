@@ -1,10 +1,11 @@
 package com.accounting.dto.integrity;
 
-import com.accounting.entity.DataIntegrityJobStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import com.accounting.entity.DataIntegrityJobStatus;
 
 public record DataIntegrityJobResponse(
     UUID jobId,
@@ -16,6 +17,3 @@ public record DataIntegrityJobResponse(
     String summary,
     Map<String, Object> warnings,
     List<DataIntegrityFindingDTO> findings) {}
-
-
-

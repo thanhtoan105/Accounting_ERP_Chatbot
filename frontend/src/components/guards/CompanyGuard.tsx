@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useRole } from '../../hooks/useRole'
 import Forbidden403 from '../../pages/Forbidden403'
@@ -8,22 +9,28 @@ interface CompanyGuardProps {
   children: ReactNode
   requiredRoles?: roles.Role[]
   fallback?: ReactNode
+  allowNoCompany?: boolean
 }
 
-// <CHANGE> moved CompanyGuard into components/guards and fixed relative imports
-export default function CompanyGuard({ children, requiredRoles, fallback }: CompanyGuardProps) {
+export default function CompanyGuard({
+  children,
+  requiredRoles,
+  fallback,
+  allowNoCompany = false,
+}: CompanyGuardProps) {
   const { user, loading } = useAuth()
-  const { hasAnyRole } = useRole()
-  const { role } = useRole()
+  const { hasAnyRole, role } = useRole()
+  const location = useLocation()
 
   if (loading && !user) {
     return null
   }
 
   const hasNoCompany = user?.companyId == null || user?.companyId === undefined
+  const isSuperAdmin = roles.isSuperAdmin(role)
 
-  if (hasNoCompany) {
-    return <>{children}</>
+  if (hasNoCompany && !isSuperAdmin && !allowNoCompany) {
+    return <Navigate to="/awaiting-company" state={{ from: location }} replace />
   }
 
   if (!role || !roles.isValidRole(role)) {

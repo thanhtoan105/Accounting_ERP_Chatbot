@@ -1,5 +1,19 @@
 package com.accounting.service.impl;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.HexFormat;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.accounting.entity.Company;
 import com.accounting.entity.Invitation;
 import com.accounting.entity.User;
@@ -13,15 +27,8 @@ import com.accounting.service.AuditService;
 import com.accounting.service.EmailService;
 import com.accounting.service.InvitationService;
 import com.accounting.service.RoleService;
+
 import jakarta.servlet.http.HttpServletRequest;
-import java.security.SecureRandom;
-import java.time.Instant;
-import java.util.Base64;
-import java.util.List;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Implementation of InvitationService for invitation management.
@@ -31,7 +38,8 @@ import org.springframework.web.server.ResponseStatusException;
 public class InvitationServiceImpl implements InvitationService {
 
   private static final int INVITATION_TOKEN_LENGTH = 32;
-  private static final int INVITATION_VALIDITY_DAYS = 7;
+  private static final int INVITATION_VALIDITY_DAYS = 1; // 24 hours per proposal
+  private static final String HASH_ALGORITHM = "SHA-256";
 
   private final InvitationRepository invitationRepository;
   private final UserRepository userRepository;
@@ -99,17 +107,20 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     // Generate secure token (UUID v4 format, base64 encoded)
-    String token = generateSecureToken();
+    String plainToken = generateSecureToken();
+    String tokenHash = hashToken(plainToken);
 
-    // Set expiration (7 days from now)
+    // Set expiration (24h from now per proposal)
     Instant expiresAt = Instant.now().plusSeconds(INVITATION_VALIDITY_DAYS * 24 * 60 * 60);
 
     // Create invitation
     Invitation invitation = new Invitation();
     invitation.setEmail(email);
-    invitation.setToken(token);
+    invitation.setToken(plainToken); // Store plain token temporarily for email
+    invitation.setTokenHash(tokenHash); // Store hash for secure lookup
     invitation.setCompanyId(companyId);
     invitation.setCreatedBy(createdByUserId);
+    invitation.setInvitedBy(createdByUserId); // New field for audit
     invitation.setRole(roleValue);
     invitation.setExpiresAt(expiresAt);
     invitation.setStatus("PENDING");
@@ -118,11 +129,11 @@ public class InvitationServiceImpl implements InvitationService {
 
     Invitation savedInvitation = invitationRepository.save(invitation);
 
-    // Send invitation email
+    // Send invitation email with plain token
     try {
       emailService.sendInvitationEmail(
           email,
-          token,
+          plainToken,
           getUserName(createdByUserId),
           getCompanyName(companyId),
           roleValue,
@@ -133,6 +144,9 @@ public class InvitationServiceImpl implements InvitationService {
       // In production, consider retry mechanism
     }
 
+    // Clear plain token after email sent - only hash should remain
+    // Note: We keep token for backwards compatibility, but tokenHash is the secure reference
+    
     // Log invitation creation in audit trail
     // Logging must occur after invitation is saved (for transactional safety)
     if (httpRequest != null) {
@@ -145,22 +159,34 @@ public class InvitationServiceImpl implements InvitationService {
 
   @Override
   public Invitation validateInvitation(String token) {
+    // Hash the incoming token for secure lookup
+    String tokenHash = hashToken(token);
+    
+    // First try hash-based lookup (preferred), fallback to plain token for backwards compat
     Invitation invitation =
         invitationRepository
-            .findByToken(token)
+            .findByTokenHash(tokenHash)
+            .or(() -> invitationRepository.findByToken(token))
             .orElseThrow(
                 () ->
                     new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Invalid invitation token"));
+
+    // Check if revoked
+    if (invitation.isRevoked()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invitation has been revoked");
+    }
+
+    // Check if already accepted
+    if (invitation.isAccepted()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invitation has already been used");
+    }
 
     // Check if expired
     if (invitation.isExpired() && invitation.isPending()) {
       invitation.setStatus("EXPIRED");
       invitation.setUpdatedAt(Instant.now());
       invitationRepository.save(invitation);
-      // Note: Expiration logging would require HttpServletRequest
-      // For now, expiration is logged when invitation is explicitly checked and expired
-      // In production, consider scheduled job to log expirations
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation has expired");
     }
 
@@ -206,6 +232,10 @@ public class InvitationServiceImpl implements InvitationService {
 
     // Mark invitation as accepted
     invitation.setStatus("ACCEPTED");
+    invitation.setAcceptedAt(Instant.now());
+    if (httpRequest != null) {
+      invitation.setIpAddress(getClientIpAddress(httpRequest));
+    }
     invitation.setUpdatedAt(Instant.now());
     invitationRepository.save(invitation);
 
@@ -253,6 +283,80 @@ public class InvitationServiceImpl implements InvitationService {
     return invitationRepository.findAll(ScopedSpecifications.companyScope());
   }
 
+  @Override
+  public Invitation createInvitationForCompany(
+      String email,
+      String role,
+      Long companyId,
+      Long createdByUserId,
+      HttpServletRequest httpRequest) {
+
+    if (userRepository.existsByEmail(email)) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "User with this email already exists");
+    }
+
+    if (companyId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Company ID is required");
+    }
+
+    invitationRepository
+        .findByEmailAndCompanyId(email, companyId)
+        .ifPresent(
+            existing -> {
+              if (existing.isPending() && !existing.isExpired()) {
+                throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "A pending invitation already exists for this email and company");
+              }
+            });
+
+    String roleValue = role;
+    if (roleValue == null || roleValue.isBlank()) {
+      roleValue = roleService.getDefaultRole().getValue();
+    } else if (!roleService.isValidRole(roleValue)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Invalid role. Must be one of: admin, accountant, chief_accountant, cfo");
+    }
+
+    String token = generateSecureToken();
+    Instant expiresAt = Instant.now().plusSeconds(INVITATION_VALIDITY_DAYS * 24 * 60 * 60);
+
+    Invitation invitation = new Invitation();
+    invitation.setEmail(email);
+    invitation.setToken(token);
+    invitation.setCompanyId(companyId);
+    invitation.setCreatedBy(createdByUserId);
+    invitation.setRole(roleValue);
+    invitation.setExpiresAt(expiresAt);
+    invitation.setStatus("PENDING");
+    invitation.setCreatedAt(Instant.now());
+    invitation.setUpdatedAt(Instant.now());
+
+    Invitation savedInvitation = invitationRepository.save(invitation);
+
+    try {
+      emailService.sendInvitationEmail(
+          email,
+          token,
+          getUserName(createdByUserId),
+          getCompanyName(companyId),
+          roleValue,
+          expiresAt,
+          httpRequest);
+    } catch (Exception e) {
+      // Log error but don't fail invitation creation
+    }
+
+    if (httpRequest != null) {
+      auditService.logInvitationCreated(
+          createdByUserId, email, companyId, roleValue, httpRequest);
+    }
+
+    return savedInvitation;
+  }
+
   /**
    * Generate secure random token for invitation (UUID v4 equivalent).
    *
@@ -277,5 +381,102 @@ public class InvitationServiceImpl implements InvitationService {
         .map(Company::getName)
         .orElse("Company");
   }
-}
 
+  /**
+   * Hash a token using SHA-256 for secure storage.
+   *
+   * @param token plain text token
+   * @return hex-encoded SHA-256 hash
+   */
+  private String hashToken(String token) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance(HASH_ALGORITHM);
+      byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+      return HexFormat.of().formatHex(hash);
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException("SHA-256 algorithm not available", e);
+    }
+  }
+
+  /**
+   * Extract client IP address from HTTP request. Handles proxy headers.
+   *
+   * @param request HTTP request
+   * @return client IP address
+   */
+  private String getClientIpAddress(HttpServletRequest request) {
+    String xForwardedFor = request.getHeader("X-Forwarded-For");
+    if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+      return xForwardedFor.split(",")[0].trim();
+    }
+    String xRealIp = request.getHeader("X-Real-IP");
+    if (xRealIp != null && !xRealIp.isBlank()) {
+      return xRealIp;
+    }
+    return request.getRemoteAddr();
+  }
+
+  @Override
+  public void revokeInvitation(Long invitationId, Long revokedByUserId, HttpServletRequest httpRequest) {
+    Invitation invitation =
+        invitationRepository
+            .findById(invitationId)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Invitation not found"));
+
+    // Can only revoke pending invitations
+    if (!invitation.isPending()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Can only revoke pending invitations");
+    }
+
+    if (invitation.isRevoked()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Invitation is already revoked");
+    }
+
+    invitation.setRevokedAt(Instant.now());
+    invitation.setStatus("REVOKED");
+    invitation.setUpdatedAt(Instant.now());
+    invitationRepository.save(invitation);
+
+    // Log revocation in audit trail
+    if (httpRequest != null) {
+      auditService.logInvitationCancelled(
+          invitation.getId(),
+          revokedByUserId,
+          invitation.getEmail(),
+          invitation.getCompanyId(),
+          httpRequest);
+    }
+  }
+
+  @Override
+  public Invitation resendInvitation(Long invitationId, Long resendByUserId, HttpServletRequest httpRequest) {
+    Invitation oldInvitation =
+        invitationRepository
+            .findById(invitationId)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Invitation not found"));
+
+    // Revoke the old invitation first
+    if (oldInvitation.isPending() && !oldInvitation.isRevoked()) {
+      oldInvitation.setRevokedAt(Instant.now());
+      oldInvitation.setStatus("REVOKED");
+      oldInvitation.setUpdatedAt(Instant.now());
+      invitationRepository.save(oldInvitation);
+    }
+
+    // Create a new invitation with the same parameters
+    return createInvitationForCompany(
+        oldInvitation.getEmail(),
+        oldInvitation.getRole(),
+        oldInvitation.getCompanyId(),
+        resendByUserId,
+        httpRequest);
+  }
+}

@@ -104,4 +104,3 @@ public class ChartOfAccountCreateRequest {
     this.orderingPosition = orderingPosition;
   }
 }
-

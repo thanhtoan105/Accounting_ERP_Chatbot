@@ -1,8 +1,10 @@
 package com.accounting.service.voucher;
 
-import com.accounting.dto.VoucherDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
+
+import com.accounting.dto.VoucherDTO;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Service for reversing vouchers with auto-posting.
@@ -46,4 +48,3 @@ public interface VoucherReversalService {
     }
   }
 }
-

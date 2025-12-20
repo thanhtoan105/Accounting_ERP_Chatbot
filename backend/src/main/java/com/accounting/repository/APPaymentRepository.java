@@ -1,15 +1,17 @@
 package com.accounting.repository;
 
-import com.accounting.entity.APPayment;
-import com.accounting.entity.PaymentStatus;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.accounting.entity.APPayment;
+import com.accounting.entity.PaymentStatus;
 
 public interface APPaymentRepository
     extends JpaRepository<APPayment, UUID>, JpaSpecificationExecutor<APPayment> {
@@ -99,4 +101,3 @@ public interface APPaymentRepository
   List<UUID> findIdsByCompanyIdAndSearchTerm(
       @Param("companyId") Long companyId, @Param("searchTerm") String searchTerm);
 }
-

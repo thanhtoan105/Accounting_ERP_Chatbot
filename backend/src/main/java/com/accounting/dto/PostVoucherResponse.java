@@ -53,4 +53,3 @@ public class PostVoucherResponse {
     this.validationErrors = validationErrors;
   }
 }
-

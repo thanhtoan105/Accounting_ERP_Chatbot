@@ -4,7 +4,9 @@ import { Dashboard as AnalyticsDashboard } from '@/features/analytics'
 import { CompanySettings } from '@/features/company'
 import { Login, ForgotPassword, ResetPassword } from '@/features/auth'
 import { UserManagement } from '@/features/users'
+import { TenantManagementPage } from '@/features/admin'
 import UserProfile from '@/pages/UserProfile'
+import AwaitingCompanyPage from '@/pages/AwaitingCompanyPage'
 import {
   VoucherTypeList,
   ChartOfAccounts,
@@ -37,6 +39,15 @@ import {
   TrialBalance,
   CashBookPage,
   CashBookSummaryPage,
+  ReconciliationListPage,
+  ReconciliationDetailPage,
+  AuditExplorerPage,
+  IntegrityDashboardPage,
+  StatutoryReportsPage,
+  ReportMappingsPage,
+  ScheduleManagementPage,
+  ReportCenterPage,
+  MultiPeriodComparisonPage,
 } from '@/features/accounting'
 import { Customers } from '@/features/customers'
 import { Suppliers } from '@/features/suppliers'
@@ -56,6 +67,28 @@ export default function AppRoutes() {
 
       {/* Public invitation route */}
       <Route path="/invite/:token" element={<AcceptInvitation />} />
+
+      {/* Protected - Awaiting company (for users without company assignment) */}
+      <Route
+        path="/awaiting-company"
+        element={
+          <ProtectedLayout>
+            <AwaitingCompanyPage />
+          </ProtectedLayout>
+        }
+      />
+
+      {/* Super Admin routes */}
+      <Route
+        path="/admin/tenants"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['super_admin']}>
+              <TenantManagementPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
 
       {/* Protected */}
       <Route
@@ -395,6 +428,26 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/accounting/bank-reconciliation"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <ReconciliationListPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/bank-reconciliation/:id"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <ReconciliationDetailPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
         path="/accounting/ap-audit/timeline"
         element={
           <ProtectedLayout>
@@ -420,6 +473,76 @@ export default function AppRoutes() {
           <ProtectedLayout>
             <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
               <APAuditBackupList />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/audit"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <AuditExplorerPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/audit/integrity"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant']}>
+              <IntegrityDashboardPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/statutory-reports"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
+              <StatutoryReportsPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/reports/comparison"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
+              <MultiPeriodComparisonPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/accounting/report-mappings"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin']}>
+              <ReportMappingsPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/reports/schedules"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
+              <ScheduleManagementPage />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/reports/center"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'accountant', 'chief_accountant', 'cfo']}>
+              <ReportCenterPage />
             </RoleGuard>
           </ProtectedLayout>
         }
@@ -516,7 +639,19 @@ export default function AppRoutes() {
         path="/analytics"
         element={
           <ProtectedLayout>
-            <RoleGuard requiredRoles={['admin', 'cfo', 'chief_accountant']}>
+            <RoleGuard
+              requiredRoles={[
+                'admin',
+                'cfo',
+                'chief_accountant',
+                'accountant_general',
+                'accountant_ar',
+                'accountant_ap',
+                'cashier',
+                'accountant',
+                'finance',
+              ]}
+            >
               <AnalyticsDashboard />
             </RoleGuard>
           </ProtectedLayout>

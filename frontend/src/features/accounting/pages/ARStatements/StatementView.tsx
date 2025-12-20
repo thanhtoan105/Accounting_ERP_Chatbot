@@ -1,12 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { FileText, RefreshCw, Download, Mail, Upload, Calendar } from 'lucide-react'
-import { format } from 'date-fns'
+import { FileText, RefreshCw, Download, Mail, Upload } from 'lucide-react'
+import { format as formatDate } from 'date-fns'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -80,7 +79,7 @@ export function StatementView() {
       const result = await arStatementService.getStatement({
         customerId: selectedCustomerId,
         format,
-        asOfDate: format(asOfDate, 'yyyy-MM-dd'),
+        asOfDate: formatDate(asOfDate, 'yyyy-MM-dd'),
       })
       setStatement(result)
     } catch (err: any) {
@@ -114,7 +113,7 @@ export function StatementView() {
         customerId: selectedCustomerId,
         format: exportFormat,
         statementFormat: format,
-        asOfDate: format(asOfDate, 'yyyy-MM-dd'),
+        asOfDate: formatDate(asOfDate, 'yyyy-MM-dd'),
       })
 
       const url = URL.createObjectURL(blob)
@@ -122,7 +121,7 @@ export function StatementView() {
       a.href = url
       const customer = customers.find((c) => c.id === selectedCustomerId)
       const customerCode = customer?.code || `CUST${selectedCustomerId}`
-      const dateStr = format(asOfDate, 'yyyy-MM-dd')
+      const dateStr = formatDate(asOfDate, 'yyyy-MM-dd')
       a.download = `Statement_${customerCode}_${dateStr}.${exportFormat === 'EXCEL' ? 'xlsx' : 'pdf'}`
       document.body.appendChild(a)
       a.click()
@@ -227,7 +226,7 @@ export function StatementView() {
           </SelectContent>
         </Select>
         <DatePicker
-          value={format(asOfDate, 'yyyy-MM-dd')}
+          value={formatDate(asOfDate, 'yyyy-MM-dd')}
           onChange={(value) => value && setAsOfDate(new Date(value))}
           placeholder="As of Date"
         />
@@ -310,13 +309,13 @@ export function StatementView() {
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">As of Date</p>
                 <p className="font-semibold">
-                  {format(new Date(statement.asOfDate), 'dd/MM/yyyy')}
+                  {formatDate(new Date(statement.asOfDate), 'dd/MM/yyyy')}
                 </p>
                 {statement.generatedAt && (
                   <>
                     <p className="text-sm text-muted-foreground mt-2">Generated</p>
                     <p className="text-sm">
-                      {format(new Date(statement.generatedAt), 'dd/MM/yyyy HH:mm')}
+                      {formatDate(new Date(statement.generatedAt), 'dd/MM/yyyy HH:mm')}
                     </p>
                     {statement.generatedByName && (
                       <p className="text-xs text-muted-foreground">
@@ -358,7 +357,7 @@ export function StatementView() {
                             {invoice.invoiceNumber}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(invoice.invoiceDate), 'dd/MM/yyyy')}
+                            {formatDate(new Date(invoice.invoiceDate), 'dd/MM/yyyy')}
                           </TableCell>
                           <TableCell className="text-right" data-testid="statement-invoice-amount">
                             {invoice.invoiceAmount.toLocaleString('vi-VN')}₫
@@ -432,7 +431,7 @@ export function StatementView() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            {format(new Date(tx.transactionDate), 'dd/MM/yyyy')}
+                            {formatDate(new Date(tx.transactionDate), 'dd/MM/yyyy')}
                           </TableCell>
                           <TableCell>{tx.reference || '-'}</TableCell>
                           <TableCell>{tx.description || '-'}</TableCell>

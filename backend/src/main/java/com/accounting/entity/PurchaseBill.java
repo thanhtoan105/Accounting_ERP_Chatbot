@@ -1,6 +1,12 @@
 package com.accounting.entity;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,10 +23,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.UUID;
 
 /**
  * PurchaseBill entity representing supplier bills in the accounts payable module.
@@ -297,4 +299,3 @@ public class PurchaseBill implements CompanyScopedEntity {
     this.approvedBy = approvedBy;
   }
 }
-

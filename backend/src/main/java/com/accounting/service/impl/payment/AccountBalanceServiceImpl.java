@@ -1,16 +1,18 @@
 package com.accounting.service.impl.payment;
 
+import java.math.BigDecimal;
+import java.util.Optional;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.accounting.entity.BankAccount;
 import com.accounting.repository.BankAccountRepository;
 import com.accounting.repository.JournalEntryRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AccountBalanceService;
-import java.math.BigDecimal;
-import java.util.Optional;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Implementation of AccountBalanceService.
@@ -128,4 +130,3 @@ public class AccountBalanceServiceImpl implements AccountBalanceService {
         .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 }
-

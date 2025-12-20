@@ -21,4 +21,3 @@ public class OverdueCountDTO {
     this.count = count;
   }
 }
-

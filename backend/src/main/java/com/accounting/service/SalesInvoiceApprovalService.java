@@ -1,9 +1,10 @@
 package com.accounting.service;
 
-import com.accounting.dto.ApprovalWorkflowDTO;
-import com.accounting.entity.SalesInvoice;
 import java.util.List;
 import java.util.UUID;
+
+import com.accounting.dto.ApprovalWorkflowDTO;
+import com.accounting.entity.SalesInvoice;
 
 /**
  * Service interface for sales invoice approval workflows (AR module).

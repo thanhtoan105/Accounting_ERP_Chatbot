@@ -1,11 +1,24 @@
 package com.accounting.controller;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+import com.accounting.config.chatbot.ChatbotProperties;
 import com.accounting.dto.ChatbotQueryRequest;
 import com.accounting.dto.ChatbotQueryResponse;
 import com.accounting.dto.Citation;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.service.ChatbotService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,18 +29,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * REST Controller for chatbot query processing.
@@ -54,12 +55,12 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/chatbot")
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "chatbot", name = "enabled", havingValue = "true")
 @PreAuthorize("isAuthenticated()")
 @Tag(name = "Chatbot", description = "AI-powered chatbot for voucher queries with RAG")
 public class ChatbotController {
 
     private final ChatbotService chatbotService;
+    private final ChatbotProperties chatbotProperties;
 
     /**
      * Process a natural language query about voucher transactions.
@@ -96,6 +97,11 @@ public class ChatbotController {
     })
     public ResponseEntity<ChatbotQueryResponse> query(
             @Parameter(description = "Chatbot query request with query text and optional filters", required = true) @Valid @RequestBody ChatbotQueryRequest request) {
+        if (!chatbotProperties.isEnabled()) {
+            log.warn("Chatbot query rejected - feature is disabled");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+        }
+
         log.info("Received chatbot query request - sessionId: {}, language: {}",
                 request.getSessionId(), request.getLanguage());
 
@@ -149,6 +155,14 @@ public class ChatbotController {
     })
     public ResponseEntity<Map<String, Object>> health() {
         log.debug("Chatbot health check requested");
+
+        if (!chatbotProperties.isEnabled()) {
+            Map<String, Object> health = Map.of(
+                    "status", "DISABLED",
+                    "service", "chatbot",
+                    "message", "Chatbot feature is disabled");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(health);
+        }
 
         try {
             boolean isHealthy = chatbotService.isAvailable();
@@ -225,7 +239,8 @@ public class ChatbotController {
         String confidenceLevel = ChatbotQueryResponse.calculateConfidenceLevel(confidenceScore);
 
         return ChatbotQueryResponse.builder()
-                .queryId(UUID.randomUUID()) // Generate UUID from Long ID (placeholder logic)
+                .queryId(serviceResponse.getQueryId() != null ?
+                    String.valueOf(serviceResponse.getQueryId()) : null)
                 .answer(serviceResponse.getAnswerText())
                 .citations(apiCitations)
                 .confidenceScore(confidenceScore)
@@ -243,7 +258,7 @@ public class ChatbotController {
     private Citation convertCitation(ChatbotService.CitationDTO serviceCitation) {
         return Citation.builder()
                 .entityType(serviceCitation.getEntityType())
-                .entityId(UUID.fromString(serviceCitation.getEntityId()))
+                .entityId(serviceCitation.getEntityId())
                 .voucherNumber(serviceCitation.getVoucherNumber())
                 .excerpt(serviceCitation.getExcerpt())
                 .relevanceScore((float) serviceCitation.getRelevanceScore())

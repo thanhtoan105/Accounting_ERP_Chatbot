@@ -109,4 +109,3 @@ public class AccountControlDTO {
     this.updatedAt = updatedAt;
   }
 }
-

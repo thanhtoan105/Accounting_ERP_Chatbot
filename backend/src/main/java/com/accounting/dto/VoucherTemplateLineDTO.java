@@ -120,4 +120,3 @@ public class VoucherTemplateLineDTO {
     this.lockAccounts = lockAccounts;
   }
 }
-

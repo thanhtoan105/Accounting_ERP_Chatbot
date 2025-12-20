@@ -1,10 +1,11 @@
 package com.accounting.dto;
 
-import com.accounting.entity.PaymentMethod;
-import com.accounting.entity.PaymentStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
+
+import com.accounting.entity.PaymentMethod;
+import com.accounting.entity.PaymentStatus;
 
 /**
  * DTO for payment list view (summary information).
@@ -168,4 +169,3 @@ public class APPaymentListDTO {
     this.linkedVoucherNumber = linkedVoucherNumber;
   }
 }
-

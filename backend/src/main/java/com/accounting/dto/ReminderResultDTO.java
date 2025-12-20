@@ -45,4 +45,3 @@ public class ReminderResultDTO {
     this.failedTo = failedTo;
   }
 }
-

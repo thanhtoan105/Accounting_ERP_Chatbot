@@ -126,7 +126,11 @@ export default function AccountComboboxFiltered({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
-          disabled={disabled || (parentAccountIds && parentAccountIds.length === 0)}
+          disabled={
+            (disabled ?? undefined) ||
+            (parentAccountIds && parentAccountIds.length === 0) ||
+            undefined
+          }
           aria-label="Account combobox"
         >
           {displayValue}

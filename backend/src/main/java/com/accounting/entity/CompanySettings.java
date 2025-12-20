@@ -1,6 +1,12 @@
 package com.accounting.entity;
 
+import java.time.Instant;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,9 +19,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.time.Instant;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 /**
  * CompanySettings entity for advanced company configuration.
@@ -119,6 +122,11 @@ public class CompanySettings implements CompanyScopedEntity {
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "numbering_config", columnDefinition = "JSONB")
   private String numberingConfig; // JSON: { "voucher": { "prefix": "VC", "sequence": 1 }, ... }
+
+  // Comparison settings section (stored as JSON)
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "comparison_settings", columnDefinition = "JSONB")
+  private String comparisonSettings; // JSON: { "varianceThresholdPercent": 10.0, "defaultComparisonMode": "YOY", ... }
 
   // Integrations section
   @Column(name = "bank_reconciliation_enabled", nullable = false)
@@ -322,6 +330,14 @@ public class CompanySettings implements CompanyScopedEntity {
 
   public void setNumberingConfig(String numberingConfig) {
     this.numberingConfig = numberingConfig;
+  }
+
+  public String getComparisonSettings() {
+    return comparisonSettings;
+  }
+
+  public void setComparisonSettings(String comparisonSettings) {
+    this.comparisonSettings = comparisonSettings;
   }
 
   public Boolean getBankReconciliationEnabled() {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
@@ -12,6 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Sheet,
   SheetContent,
@@ -31,15 +38,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import {
   activateVoucherTemplate,
@@ -58,17 +58,18 @@ import type {
 import { RoleGuard } from '@/components'
 import AccountCombobox from '@/components/account/AccountCombobox'
 import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Copy,
+  Edit,
   Loader2,
-  Lock,
-  Pencil,
+  MoreVertical,
   Plus,
   RefreshCw,
   Search,
-  ShieldCheck,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -78,7 +79,7 @@ const STATUS_FILTERS = [
   { label: 'Inactive', value: 'inactive' },
 ]
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]
+const PAGE_SIZE_OPTIONS = [8, 12, 16, 24, 48]
 
 type TemplateFormMode = 'create' | 'edit' | 'duplicate'
 
@@ -159,31 +160,15 @@ type DeleteState = {
   template: VoucherTemplateSummaryDTO | null
 }
 
-function TemplateStatusBadge({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return (
-      <Badge variant="default" className="gap-1">
-        <ShieldCheck className="h-3.5 w-3.5" />
-        Active
-      </Badge>
-    )
-  }
-  return (
-    <Badge variant="outline" className="gap-1 text-muted-foreground">
-      Inactive
-    </Badge>
-  )
-}
-
 export default function VoucherTemplateManagementPage() {
   const [templates, setTemplates] = useState<VoucherTemplateSummaryDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
-  const [page, setPage] = useState(0)
-  const [pageSize, setPageSize] = useState(20)
-  const [refreshing, setRefreshing] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(12)
 
   const [formOpen, setFormOpen] = useState(false)
   const [formMode, setFormMode] = useState<TemplateFormMode>('create')
@@ -194,27 +179,34 @@ export default function VoucherTemplateManagementPage() {
 
   const [deleteState, setDeleteState] = useState<DeleteState>({ open: false, template: null })
   const [deleteLoading, setDeleteLoading] = useState(false)
-  const [rowActionId, setRowActionId] = useState<string | null>(null)
+  const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
 
   const filteredTemplates = useMemo(() => {
     return templates.filter((template) => {
       const matchesSearch =
-        !search.trim() ||
-        template.name.toLowerCase().includes(search.toLowerCase()) ||
-        template.description?.toLowerCase().includes(search.toLowerCase())
+        !debouncedSearch.trim() ||
+        template.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        template.description?.toLowerCase().includes(debouncedSearch.toLowerCase())
       const matchesStatus =
         statusFilter === 'all' ||
         (statusFilter === 'active' ? template.isActive : !template.isActive)
       return matchesSearch && matchesStatus
     })
-  }, [templates, search, statusFilter])
+  }, [templates, debouncedSearch, statusFilter])
 
-  const paginatedTemplates = useMemo(() => {
-    const start = page * pageSize
-    return filteredTemplates.slice(start, start + pageSize)
-  }, [filteredTemplates, page, pageSize])
-
-  const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / pageSize))
+  const totalFiltered = filteredTemplates.length
+  const pagedTemplates = useMemo(
+    () => filteredTemplates.slice((page - 1) * pageSize, page * pageSize),
+    [filteredTemplates, page, pageSize],
+  )
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize))
 
   const loadTemplates = useCallback(async () => {
     setLoading(true)
@@ -235,14 +227,15 @@ export default function VoucherTemplateManagementPage() {
     loadTemplates()
   }, [loadTemplates])
 
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    await loadTemplates()
-    setRefreshing(false)
-    toast.success('Refreshed voucher template list')
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, statusFilter, pageSize])
+
+  const handleRefresh = () => {
+    loadTemplates()
   }
 
-  const openCreateDialog = () => {
+  const openCreateSheet = () => {
     setFormMode('create')
     setFormState(initialFormState)
     setFormError(null)
@@ -250,7 +243,7 @@ export default function VoucherTemplateManagementPage() {
     setFormOpen(true)
   }
 
-  const openEditDialog = async (templateId: string, mode: TemplateFormMode = 'edit') => {
+  const openEditSheet = async (templateId: string, mode: TemplateFormMode = 'edit') => {
     setFormMode(mode)
     setFormError(null)
     setFormOpen(true)
@@ -338,7 +331,7 @@ export default function VoucherTemplateManagementPage() {
   }
 
   const handleToggleStatus = async (template: VoucherTemplateSummaryDTO) => {
-    setRowActionId(template.id)
+    setTogglingIds((prev) => new Set(prev).add(template.id))
     try {
       if (template.isActive) {
         await deactivateVoucherTemplate(template.id)
@@ -352,144 +345,20 @@ export default function VoucherTemplateManagementPage() {
       const message = err?.message || 'Cannot update status'
       toast.error('Update status failed', { description: message })
     } finally {
-      setRowActionId(null)
+      setTogglingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(template.id)
+        return next
+      })
     }
   }
 
   const handleDuplicate = (template: VoucherTemplateSummaryDTO) => {
-    openEditDialog(template.id, 'duplicate')
+    openEditSheet(template.id, 'duplicate')
   }
 
   const handleEdit = (template: VoucherTemplateSummaryDTO) => {
-    openEditDialog(template.id, 'edit')
-  }
-
-  const handlePageChange = (direction: 'prev' | 'next') => {
-    setPage((prev) => {
-      if (direction === 'prev') {
-        return Math.max(0, prev - 1)
-      }
-      return Math.min(totalPages - 1, prev + 1)
-    })
-  }
-
-  useEffect(() => {
-    setPage(0)
-  }, [search, statusFilter, pageSize])
-
-  const renderTableBody = () => {
-    if (loading) {
-      return (
-        <TableRow>
-          <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-            <Loader2 className="mx-auto mb-3 h-5 w-5 animate-spin" />
-            Loading voucher template list...
-          </TableCell>
-        </TableRow>
-      )
-    }
-
-    if (error) {
-      return (
-        <TableRow>
-          <TableCell colSpan={6} className="py-10 text-center">
-            <p className="text-sm text-destructive">{error}</p>
-            <Button variant="outline" size="sm" className="mt-3" onClick={loadTemplates}>
-              Try again
-            </Button>
-          </TableCell>
-        </TableRow>
-      )
-    }
-
-    if (!paginatedTemplates.length) {
-      return (
-        <TableRow>
-          <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-            No template matches the current filter.
-          </TableCell>
-        </TableRow>
-      )
-    }
-
-    return paginatedTemplates.map((template, index) => (
-      <TableRow key={template.id}>
-        <TableCell className="font-medium">{page * pageSize + index + 1}</TableCell>
-        <TableCell>
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm">{template.name}</span>
-              <TemplateStatusBadge isActive={template.isActive} />
-            </div>
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {template.description || 'No description'}
-            </p>
-          </div>
-        </TableCell>
-        <TableCell>
-          {template.firstLineDebitAccount ? (
-            <Badge variant="outline" className="text-xs">
-              Debit {template.firstLineDebitAccount.code}
-            </Badge>
-          ) : (
-            '—'
-          )}
-        </TableCell>
-        <TableCell>
-          {template.firstLineCreditAccount ? (
-            <Badge variant="outline" className="text-xs">
-              Credit {template.firstLineCreditAccount.code}
-            </Badge>
-          ) : (
-            '—'
-          )}
-        </TableCell>
-        <TableCell>{template.createdBy || '—'}</TableCell>
-        <TableCell className="w-[1%] whitespace-nowrap">
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Edit"
-              onClick={() => handleEdit(template)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Duplicate"
-              onClick={() => handleDuplicate(template)}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={template.isActive ? 'Deactivate' : 'Activate'}
-              onClick={() => handleToggleStatus(template)}
-              disabled={rowActionId === template.id}
-            >
-              {rowActionId === template.id ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : template.isActive ? (
-                <Lock className="h-4 w-4" />
-              ) : (
-                <ShieldCheck className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Delete"
-              onClick={() => setDeleteState({ open: true, template })}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
-        </TableCell>
-      </TableRow>
-    ))
+    openEditSheet(template.id, 'edit')
   }
 
   const updateLine = (lineId: string, patch: Partial<TemplateLineForm>) => {
@@ -513,127 +382,303 @@ export default function VoucherTemplateManagementPage() {
     })
   }
 
+  const renderCardGrid = () => {
+    if (loading && templates.length === 0) {
+      return (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-40 w-full rounded-xl" />
+          ))}
+        </div>
+      )
+    }
+
+    if (error) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-sm text-destructive mb-3">{error}</p>
+          <Button variant="outline" size="sm" onClick={loadTemplates}>
+            Try again
+          </Button>
+        </div>
+      )
+    }
+
+    if (!pagedTemplates.length) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="text-lg font-medium">No templates found</p>
+          <p className="text-sm">
+            {debouncedSearch
+              ? 'Try adjusting your search criteria.'
+              : 'Get started by creating your first voucher template.'}
+          </p>
+        </div>
+      )
+    }
+
+    return (
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 voucher-stagger">
+        {pagedTemplates.map((template) => (
+          <Card
+            key={template.id}
+            className="voucher-card-interactive voucher-row-animate cursor-pointer group relative py-4"
+            onClick={() => handleEdit(template)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base font-semibold truncate">{template.name}</span>
+                    <Badge
+                      className={
+                        template.isActive
+                          ? 'rounded-full border-none bg-green-600/10 text-green-600 dark:bg-green-400/10 dark:text-green-400'
+                          : 'bg-destructive/10 text-destructive rounded-full border-none'
+                      }
+                    >
+                      <span
+                        className={`size-1.5 rounded-full mr-1 ${
+                          template.isActive ? 'bg-green-600 dark:bg-green-400' : 'bg-destructive'
+                        }`}
+                        aria-hidden="true"
+                      />
+                      {template.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                  <p
+                    className="text-xs text-muted-foreground line-clamp-2"
+                    title={template.description || 'No description'}
+                  >
+                    {template.description || 'No description'}
+                  </p>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEdit(template)
+                      }}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDuplicate(template)
+                      }}
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Duplicate
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDeleteState({ open: true, template })
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="mt-3 space-y-1.5">
+                {template.firstLineDebitAccount && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs font-mono">
+                      Dr: {template.firstLineDebitAccount.code}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground truncate">
+                      {template.firstLineDebitAccount.name}
+                    </span>
+                  </div>
+                )}
+                {template.firstLineCreditAccount && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs font-mono">
+                      Cr: {template.firstLineCreditAccount.code}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground truncate">
+                      {template.firstLineCreditAccount.name}
+                    </span>
+                  </div>
+                )}
+                {!template.firstLineDebitAccount && !template.firstLineCreditAccount && (
+                  <p className="text-xs text-muted-foreground italic">No accounts configured</p>
+                )}
+              </div>
+
+              <div
+                className="mt-4 flex items-center justify-between border-t pt-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Label
+                  htmlFor={`toggle-${template.id}`}
+                  className="text-xs text-muted-foreground cursor-pointer"
+                >
+                  {template.isActive ? 'Active' : 'Inactive'}
+                </Label>
+                <Switch
+                  id={`toggle-${template.id}`}
+                  checked={template.isActive}
+                  disabled={togglingIds.has(template.id)}
+                  onCheckedChange={() => handleToggleStatus(template)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <RoleGuard requiredRoles={['admin', 'chief_accountant', 'cfo']}>
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Voucher Templates</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Voucher Templates</h1>
             <p className="text-sm text-muted-foreground">
               Manage voucher template library to apply quickly for accounting vouchers.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
-              {refreshing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Refreshing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh
-                </>
-              )}
-            </Button>
-            <Button onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create new template
-            </Button>
-          </div>
+          <Button onClick={openCreateSheet}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Template
+          </Button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[240px]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by name or description..."
-              className="pl-9"
+              className="pl-8"
             />
           </div>
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_FILTERS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[60px] text-center">#</TableHead>
-                <TableHead>Template Name</TableHead>
-                <TableHead className="w-[160px]">Debit Account (Line 1)</TableHead>
-                <TableHead className="w-[160px]">Credit Account (Line 1)</TableHead>
-                <TableHead className="w-[160px]">Created By</TableHead>
-                <TableHead className="w-[140px] text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>{renderTableBody()}</TableBody>
-          </Table>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-          <div>
-            Display {paginatedTemplates.length ? page * pageSize + 1 : 0}-
-            {page * pageSize + paginatedTemplates.length} / {filteredTemplates.length} templates
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2">
-              <span>Page size</span>
-              <Select
-                value={String(pageSize)}
-                onValueChange={(value) => setPageSize(Number(value))}
-              >
-                <SelectTrigger className="w-[90px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_SIZE_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={String(option)}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={page === 0}
-                onClick={() => handlePageChange('prev')}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span>
-                Page {page + 1}/{totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={page + 1 >= totalPages}
-                onClick={() => handlePageChange('next')}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+            >
+              <SelectTrigger aria-label="Filter status" className="w-28">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent side="bottom" align="end">
+                {STATUS_FILTERS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={loading}
+              className="h-9 w-9 p-0"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </div>
+
+        {renderCardGrid()}
+
+        {!loading && !error && pagedTemplates.length > 0 && (
+          <div className="flex items-center justify-between border-t px-4 py-4">
+            <div className="text-sm text-muted-foreground">
+              Total: <strong className="text-foreground">{totalFiltered}</strong> templates
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="hidden items-center gap-2 lg:flex">
+                <Label htmlFor="cards-per-page" className="text-sm font-medium">
+                  Cards per page
+                </Label>
+                <Select
+                  value={`${pageSize}`}
+                  onValueChange={(value) => {
+                    setPageSize(Number(value))
+                    setPage(1)
+                  }}
+                  disabled={loading}
+                >
+                  <SelectTrigger size="sm" className="w-20" id="cards-per-page">
+                    <SelectValue placeholder={pageSize} />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {PAGE_SIZE_OPTIONS.map((size) => (
+                      <SelectItem key={size} value={`${size}`}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-center text-sm font-medium">
+                Page {page} / {totalPages}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="hidden h-8 w-8 p-0 lg:flex"
+                  onClick={() => setPage(1)}
+                  disabled={page === 1 || loading}
+                >
+                  <span className="sr-only">First page</span>
+                  <ChevronsLeft className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-8 w-8"
+                  size="icon"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1 || loading}
+                >
+                  <span className="sr-only">Previous page</span>
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-8 w-8"
+                  size="icon"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages || loading}
+                >
+                  <span className="sr-only">Next page</span>
+                  <ChevronRight className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="hidden h-8 w-8 lg:flex"
+                  size="icon"
+                  onClick={() => setPage(totalPages)}
+                  disabled={page >= totalPages || loading}
+                >
+                  <span className="sr-only">Last page</span>
+                  <ChevronsRight className="size-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <Sheet open={formOpen} onOpenChange={setFormOpen}>
@@ -832,9 +877,9 @@ export default function VoucherTemplateManagementPage() {
           <DialogHeader>
             <DialogTitle>Delete Voucher Template</DialogTitle>
             <DialogDescription>
-              Bạn chắc chắn muốn xoá mẫu{' '}
-              <span className="font-semibold">{deleteState.template?.name}</span>? Hành động này
-              không thể hoàn tác.
+              Are you sure you want to delete template{' '}
+              <span className="font-semibold">{deleteState.template?.name}</span>? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

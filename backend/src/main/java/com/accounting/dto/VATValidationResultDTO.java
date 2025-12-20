@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.VatRate;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.accounting.entity.VatRate;
 
 /**
  * DTO for VAT validation results.
@@ -102,4 +103,3 @@ public class VATValidationResultDTO {
     this.vatRatio = vatRatio;
   }
 }
-

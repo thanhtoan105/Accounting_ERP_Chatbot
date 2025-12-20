@@ -1,7 +1,12 @@
 package com.accounting.service;
 
+import java.util.List;
+
+import com.accounting.dto.report.ReportDownloadLink;
+import com.accounting.entity.report.ReportSchedule;
+import com.accounting.entity.report.ReportScheduleRun;
+
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 
 public interface EmailService {
     void sendPasswordResetEmail(String toEmail, String resetToken);
@@ -67,4 +72,30 @@ public interface EmailService {
             String companyName,
             byte[] statementPdf,
             String fileName);
+
+    /**
+     * Send scheduled report email to recipient with download links and optional PDF attachment.
+     *
+     * @param recipientEmail recipient email address
+     * @param schedule       the report schedule
+     * @param run            the schedule run instance
+     * @param downloadLinks  list of download links for each export format
+     * @param pdfAttachment  optional password-protected PDF attachment (can be null)
+     */
+    void sendScheduledReportEmail(
+            String recipientEmail,
+            ReportSchedule schedule,
+            ReportScheduleRun run,
+            List<ReportDownloadLink> downloadLinks,
+            byte[] pdfAttachment);
+
+    /**
+     * Send failure notification to schedule owner when a run fails.
+     *
+     * @param schedule the report schedule that failed
+     * @param run      the failed run instance
+     */
+    void sendScheduleFailureNotification(
+            ReportSchedule schedule,
+            ReportScheduleRun run);
 }

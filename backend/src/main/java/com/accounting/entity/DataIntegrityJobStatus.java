@@ -6,6 +6,3 @@ public enum DataIntegrityJobStatus {
   FAILED,
   THROTTLED
 }
-
-
-

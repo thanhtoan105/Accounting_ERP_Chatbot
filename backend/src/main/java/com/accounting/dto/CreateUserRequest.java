@@ -1,6 +1,7 @@
 package com.accounting.dto;
 
 import com.accounting.validation.ValidRole;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -64,4 +65,3 @@ public class CreateUserRequest {
     this.role = role;
   }
 }
-

@@ -1,26 +1,15 @@
 package com.accounting.integration;
 
-import com.accounting.dto.AccountingPeriodDTO;
-import com.accounting.dto.PeriodCloseRequest;
-import com.accounting.dto.PeriodReopenRequest;
-import com.accounting.dto.PeriodSummaryDTO;
-import com.accounting.entity.AccountingPeriod;
-import com.accounting.entity.PeriodStatus;
-import com.accounting.security.PasswordEncoder;
-import com.accounting.entity.Voucher;
-import com.accounting.repository.AccountingPeriodRepository;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.repository.VoucherRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.PeriodManagementService;
-import com.accounting.test.IntegrationTest;
+import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
 import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,8 +19,21 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import com.accounting.dto.AccountingPeriodDTO;
+import com.accounting.dto.PeriodCloseRequest;
+import com.accounting.dto.PeriodReopenRequest;
+import com.accounting.dto.PeriodSummaryDTO;
+import com.accounting.entity.AccountingPeriod;
+import com.accounting.entity.PeriodStatus;
+import com.accounting.entity.Voucher;
+import com.accounting.repository.AccountingPeriodRepository;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.repository.VoucherRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.PasswordEncoder;
+import com.accounting.service.PeriodManagementService;
+import com.accounting.test.IntegrationTest;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -365,4 +367,3 @@ class PeriodManagementIntegrationTest extends IntegrationTest {
     });
   }
 }
-

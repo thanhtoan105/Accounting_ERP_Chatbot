@@ -22,4 +22,3 @@ public class PasswordEncoder implements org.springframework.security.crypto.pass
     return bcryptEncoder.matches(rawPassword, encodedPassword);
   }
 }
-

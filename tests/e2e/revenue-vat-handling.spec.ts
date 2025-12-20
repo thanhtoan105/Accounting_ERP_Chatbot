@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { TEST_USERS } from '../auth.global-setup';
 
 /**
  * Epic 5 - Story 5.6: Revenue & VAT Handling
@@ -13,8 +14,8 @@ test.describe('Story 5.6: Revenue & VAT Handling - E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Setup: Login as accountant
     await page.goto('/login');
-    await page.fill('[data-testid="email-input"]', 'accountant@test.example.com');
-    await page.fill('[data-testid="password-input"]', 'Test@123456');
+    await page.fill('[data-testid="email-input"]', TEST_USERS.accountant.email);
+    await page.fill('[data-testid="password-input"]', TEST_USERS.accountant.password);
     await page.click('[data-testid="login-button"]');
     await page.waitForURL('/dashboard');
   });

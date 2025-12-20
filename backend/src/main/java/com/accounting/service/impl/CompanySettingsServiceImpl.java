@@ -1,16 +1,8 @@
 package com.accounting.service.impl;
 
-import com.accounting.dto.CompanySettingsDto;
-import com.accounting.dto.UpdateCompanySettingsRequest;
-import com.accounting.entity.CompanySettings;
-import com.accounting.repository.CompanySettingsRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.AuditService;
-import com.accounting.service.CompanySettingsService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ValidationException;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +11,17 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.CompanySettingsDto;
+import com.accounting.dto.UpdateCompanySettingsRequest;
+import com.accounting.entity.CompanySettings;
+import com.accounting.repository.CompanySettingsRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.service.AuditService;
+import com.accounting.service.CompanySettingsService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ValidationException;
 
 /**
  * Implementation of CompanySettingsService for advanced company settings

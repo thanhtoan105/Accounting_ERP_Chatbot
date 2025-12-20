@@ -1,12 +1,14 @@
 package com.accounting.repository;
 
-import com.accounting.entity.BankAccount;
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.accounting.entity.BankAccount;
 
 /**
  * Repository for BankAccount entities with company scoping and search

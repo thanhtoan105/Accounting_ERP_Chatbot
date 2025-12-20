@@ -1,18 +1,5 @@
 package com.accounting.service.impl;
 
-import com.accounting.dto.ARReminderConfigDTO;
-import com.accounting.entity.ARReminderConfiguration;
-import com.accounting.entity.Customer;
-import com.accounting.entity.SalesInvoice;
-import com.accounting.repository.ARReminderConfigurationRepository;
-import com.accounting.repository.CustomerRepository;
-import com.accounting.repository.SalesInvoiceRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.service.ARReminderService;
-import com.accounting.service.AuditService;
-import com.accounting.service.EmailService;
-import com.accounting.security.SecurityUtils;
-import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -21,12 +8,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.dto.ARReminderConfigDTO;
+import com.accounting.entity.ARReminderConfiguration;
+import com.accounting.entity.Customer;
+import com.accounting.entity.SalesInvoice;
+import com.accounting.repository.ARReminderConfigurationRepository;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.repository.SalesInvoiceRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.SecurityUtils;
+import com.accounting.service.ARReminderService;
+import com.accounting.service.AuditService;
+import com.accounting.service.EmailService;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Implementation of ARReminderService.

@@ -39,6 +39,7 @@ Customer payment receipts enable accountants to record incoming customer payment
 **File:** `tests/api/ar-receipt-api.spec.ts` (380 lines)
 
 **Test List:**
+
 - ✅ **AC1.1**: POST /receipts - should create receipt with required fields (DRAFT status, amount)
 - ✅ **AC1.2**: POST /receipts - should validate customer has open invoices
 - ✅ **AC1.3**: POST /receipts - should auto-generate receipt number per customer/period (unique)
@@ -110,20 +111,16 @@ Customer payment receipts enable accountants to record incoming customer payment
   - Allow allocation < remaining balance
   - Reject allocation > remaining balance
   - Prevent overpayment across multiple invoices
-  
 - ✅ **AC1**: Customer Open Invoices (3 test cases)
   - Allow receipt for customer with open invoices
   - Reject linked receipt for customer without open invoices
   - Allow standalone receipt without open invoices
-  
 - ✅ Account Balance Validation (2 test cases)
   - Allow receipt if sufficient balance
   - Reject receipt if insufficient balance
-  
 - ✅ **AC3**: Standalone Receipt (2 test cases)
   - Flag standalone receipts as advances
   - Require admin role
-  
 - ✅ Multiple Invoice Allocation (2 test cases)
   - Support allocation to multiple invoices
   - Partial allocation to first, full to second
@@ -139,33 +136,27 @@ Customer payment receipts enable accountants to record incoming customer payment
   - PUT /receipts/{id} - update DRAFT only
   - PUT /receipts/{id} - reject update of POSTED
   - DELETE /receipts/{id} - delete DRAFT only
-  
 - ✅ **AC2**: Receipt Allocation (2 test cases)
   - Allocate to invoices
   - Prevent overpayment
-  
 - ✅ **AC4-5**: Receipt Posting (4 test cases)
   - Generate GL voucher (Dr/Cr)
   - Include dimensions
   - Update invoice status
   - Reject posting to closed period
-  
 - ✅ **AC6-7**: Receipt Reversal (3 test cases)
   - Generate linked reversal voucher
   - Require mandatory reason
   - Audit log reversal
-  
 - ✅ **AC8-9**: Batch Import (3 test cases)
   - Atomic import
   - Error handling with error map
   - Import template generation
-  
 - ✅ **RBAC**: Authorization (4 test cases)
   - Require authentication
   - Reject unauthenticated
   - Accountant can create/post
   - Admin required for standalone
-  
 - ✅ **AC10-11**: Audit Logging (2 test cases)
   - Create audit log
   - Allocation audit with invoice balance deltas
@@ -179,14 +170,16 @@ Customer payment receipts enable accountants to record incoming customer payment
 **File:** `tests/support/factories/receipt.factory.ts` (planned)
 
 **Exports:**
+
 - `createReceipt(overrides?)` - Create single receipt with optional overrides
 - `createReceipts(count)` - Create array of receipts
 
 **Example Usage:**
+
 ```typescript
-const receipt = createReceipt({ 
-  customerId: 'customer-001', 
-  amount: 5000000 
+const receipt = createReceipt({
+	customerId: 'customer-001',
+	amount: 5000000,
 });
 const receipts = createReceipts(5);
 ```
@@ -196,6 +189,7 @@ const receipts = createReceipts(5);
 **File:** `tests/support/factories/receipt-allocation.factory.ts` (planned)
 
 **Exports:**
+
 - `createAllocation(overrides?)` - Create allocation with override support
 - `createAllocations(count)` - Bulk creation
 
@@ -204,6 +198,7 @@ const receipts = createReceipts(5);
 **Existing:** `tests/support/factories/sales-invoice.factory.ts` (to be extended)
 
 **Extensions:**
+
 - `createOpenInvoice(overrides?)` - Create POSTED invoice with remaining balance
 - `createPartiallyPaidInvoice(overrides?)` - POSTED with partial allocation
 
@@ -216,6 +211,7 @@ const receipts = createReceipts(5);
 **File:** `tests/support/fixtures/receipt.fixture.ts` (planned)
 
 **Fixtures:**
+
 - `authenticatedAccountant` - Accountant user logged in
 - `authenticatedAdmin` - Admin user logged in
 - `customerWithOpenInvoices` - Customer with 2 open invoices
@@ -223,11 +219,15 @@ const receipts = createReceipts(5);
 - `postedReceipt` - POSTED receipt with allocations
 
 **Example Usage:**
+
 ```typescript
 import { test } from './fixtures/receipt.fixture';
 
-test('should post receipt', async ({ authenticatedAccountant, draftReceipt }) => {
-  // authenticatedAccountant and draftReceipt ready with auto-cleanup
+test('should post receipt', async ({
+	authenticatedAccountant,
+	draftReceipt,
+}) => {
+	// authenticatedAccountant and draftReceipt ready with auto-cleanup
 });
 ```
 
@@ -236,76 +236,84 @@ test('should post receipt', async ({ authenticatedAccountant, draftReceipt }) =>
 ## Mock Requirements
 
 ### Customer API Mock
+
 **Endpoint:** `GET /api/v1/ar/customers` / `GET /api/v1/ar/customers/{id}/open-invoices`
 
 **Success Response:**
+
 ```json
 {
-  "data": [
-    {
-      "id": "customer-001",
-      "name": "Test Customer AR",
-      "arAccount": "131"
-    }
-  ]
+	"data": [
+		{
+			"id": "customer-001",
+			"name": "Test Customer AR",
+			"arAccount": "131"
+		}
+	]
 }
 ```
 
 ### Bank Account API Mock
+
 **Endpoint:** `GET /api/v1/bank-accounts`
 
 **Success Response:**
+
 ```json
 {
-  "data": [
-    {
-      "id": "bank-001",
-      "accountCode": "111",
-      "name": "Test Bank Account",
-      "balance": 50000000
-    }
-  ]
+	"data": [
+		{
+			"id": "bank-001",
+			"accountCode": "111",
+			"name": "Test Bank Account",
+			"balance": 50000000
+		}
+	]
 }
 ```
 
 ### Invoice API Mock
+
 **Endpoint:** `GET /api/v1/sales-invoices` / `GET /api/v1/sales-invoices/{id}`
 
 **Success Response:**
+
 ```json
 {
-  "data": {
-    "id": "invoice-001",
-    "number": "INV-2025-001",
-    "customerId": "customer-001",
-    "amount": 10000000,
-    "remainingBalance": 10000000,
-    "status": "POSTED"
-  }
+	"data": {
+		"id": "invoice-001",
+		"number": "INV-2025-001",
+		"customerId": "customer-001",
+		"amount": 10000000,
+		"remainingBalance": 10000000,
+		"status": "POSTED"
+	}
 }
 ```
 
 ### Voucher API Mock
+
 **Endpoint:** `POST /api/v1/vouchers` (for GL posting)
 
 **Success Response:**
+
 ```json
 {
-  "data": {
-    "id": "voucher-001",
-    "lines": [
-      {
-        "accountCode": "111",
-        "amount": 5000000,
-        "type": "DEBIT"
-      },
-      {
-        "accountCode": "131",
-        "amount": 5000000,
-        "type": "CREDIT"
-      }
-    ]
-  }
+	"data": {
+		"id": "voucher-001",
+		"lines": [
+			{
+				"accountCode": "111",
+				"amount": 5000000,
+				"type": "DEBIT"
+			},
+			{
+				"accountCode": "131",
+				"amount": 5000000,
+				"type": "CREDIT"
+			}
+		]
+	}
 }
 ```
 
@@ -709,10 +717,10 @@ test('should post receipt', async ({ authenticatedAccountant, draftReceipt }) =>
 - [ ] Example response:
   ```json
   {
-    "errors": [
-      { "row": 2, "field": "customerId", "error": "Customer not found" },
-      { "row": 5, "field": "amount", "error": "Amount must be positive" }
-    ]
+  	"errors": [
+  		{ "row": 2, "field": "customerId", "error": "Customer not found" },
+  		{ "row": 5, "field": "amount", "error": "Amount must be positive" }
+  	]
   }
   ```
 - [ ] Provide downloadable error report (optional)
@@ -842,7 +850,7 @@ test('should post receipt', async ({ authenticatedAccountant, draftReceipt }) =>
   - [ ] `validateAccountBalance()`
   - [ ] `validateStandaloneReceipt()`
 - [ ] Mock repositories and services
-- [ ] Run tests: `cd backend && mvn test -Dtest=ReceiptValidationServiceImplTest`
+- [ ] Run tests: `cd backend && mvnd test -Dtest=ReceiptValidationServiceImplTest`
 - [ ] ✅ All unit tests pass (green phase)
 
 **Estimated Effort:** 3 hours
@@ -861,7 +869,7 @@ test('should post receipt', async ({ authenticatedAccountant, draftReceipt }) =>
 - [ ] Fully implement `ReceiptImportService` for batch import
 - [ ] Integrate with `AuditService` for all audit logging
 - [ ] Integrate with voucher engine for GL posting
-- [ ] Run tests: `cd backend && mvn test -Dtest=ReceiptControllerIntegrationTest`
+- [ ] Run tests: `cd backend && mvnd test -Dtest=ReceiptControllerIntegrationTest`
 - [ ] ✅ All integration tests pass (green phase)
 
 **Estimated Effort:** 8 hours
@@ -881,14 +889,14 @@ npm run test:e2e -- ar-receipt-workflow.spec.ts
 pnpm test -- receipt/
 
 # Run backend unit tests
-cd backend && mvn test -Dtest=ReceiptValidationServiceImplTest
+cd backend && mvnd test -Dtest=ReceiptValidationServiceImplTest
 
 # Run backend integration tests
-cd backend && mvn test -Dtest=ReceiptControllerIntegrationTest
+cd backend && mvnd test -Dtest=ReceiptControllerIntegrationTest
 
 # Run all tests with coverage
 npm run test:coverage
-cd backend && mvn clean test jacoco:report
+cd backend && mvnd clean test jacoco:report
 ```
 
 ---
@@ -922,12 +930,14 @@ cd backend && mvn clean test jacoco:report
 **DEV Agent Responsibilities:**
 
 1. **Start with Backend Entities & Validation** (foundation for all other layers):
+
    - Implement `ARPayment` entity and `ReceiptAllocation` entity
    - Create repositories and Flyway migrations
    - Implement `ReceiptValidationService` (unit tests will guide)
    - Implement `ReceiptService` core methods
 
 2. **Implement Backend API Layer**:
+
    - Create `ReceiptController` endpoints
    - Implement receipt CRUD operations
    - Implement allocation and posting endpoints
@@ -935,6 +945,7 @@ cd backend && mvn clean test jacoco:report
    - Integrate with `AuditService`
 
 3. **Implement Frontend Components** (in parallel with backend):
+
    - Create `ReceiptForm.tsx` component
    - Create `ReceiptAllocationGrid.tsx` component
    - Create `ReceiptReversalDialog.tsx` component
@@ -968,12 +979,14 @@ cd backend && mvn clean test jacoco:report
 **DEV Agent Responsibilities:**
 
 1. **Code Quality**:
+
    - Improve readability and maintainability
    - Extract duplications (DRY principle)
    - Apply design patterns
    - Optimize performance
 
 2. **Test Quality**:
+
    - Verify all tests still pass after refactoring
    - Improve test performance
    - Add edge case test coverage if needed
@@ -1005,11 +1018,11 @@ cd backend && mvn clean test jacoco:report
 ## Next Steps
 
 1. **Review this checklist** with team in standup or planning session
-2. **Run failing tests** to confirm RED phase: 
+2. **Run failing tests** to confirm RED phase:
    - `npm run test:api -- ar-receipt-api.spec.ts`
    - `npm run test:e2e -- ar-receipt-workflow.spec.ts`
    - `pnpm test -- receipt/`
-   - `cd backend && mvn test -Dtest=ReceiptValidationServiceImplTest`
+   - `cd backend && mvnd test -Dtest=ReceiptValidationServiceImplTest`
 3. **Begin implementation** using implementation checklist as detailed guide
 4. **Work one test at a time** (RED → GREEN for each test)
 5. **Start with backend** (entities, validation, services) for maximum parallelization
@@ -1052,6 +1065,7 @@ Total: 78 failing tests (RED phase)
 ```
 
 **Expected Behavior:** All tests will fail with:
+
 - Missing endpoints (404)
 - Missing methods/services (500)
 - Missing components (undefined is not a function)

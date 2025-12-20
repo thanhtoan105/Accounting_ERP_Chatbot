@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Mail, Send } from 'lucide-react'
+import { Send } from 'lucide-react'
+import { format as formatDate } from 'date-fns'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -16,7 +17,6 @@ import {
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { arStatementService } from '@/services/arStatement'
-import { format } from 'date-fns'
 
 interface SendStatementDialogProps {
   open: boolean
@@ -59,7 +59,7 @@ export function SendStatementDialog({
         customerId,
         email: email.trim(),
         statementFormat: format,
-        asOfDate: format(asOfDate, 'yyyy-MM-dd'),
+        asOfDate: formatDate(asOfDate, 'yyyy-MM-dd'),
       })
       toast.success('Statement sent successfully', {
         description: `Email sent to ${email}`,
@@ -99,7 +99,9 @@ export function SendStatementDialog({
           <div className="rounded-md bg-muted p-3 text-sm">
             <p className="font-medium mb-1">Statement Details:</p>
             <p className="text-muted-foreground">Format: {format}</p>
-            <p className="text-muted-foreground">As of Date: {format(asOfDate, 'dd/MM/yyyy')}</p>
+            <p className="text-muted-foreground">
+              As of Date: {formatDate(asOfDate, 'dd/MM/yyyy')}
+            </p>
           </div>
         </div>
         <DialogFooter>

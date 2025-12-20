@@ -1,8 +1,9 @@
 package com.accounting.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class VoucherTemplateSummaryDTO {
 
@@ -111,4 +112,3 @@ public class VoucherTemplateSummaryDTO {
     }
   }
 }
-

@@ -95,4 +95,3 @@ public class VoucherValidationResult {
     return lineErrors != null && lineErrors.values().stream().anyMatch(list -> list != null && !list.isEmpty());
   }
 }
-

@@ -1,6 +1,7 @@
 package com.accounting.service;
 
 import com.accounting.entity.Invitation;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -54,5 +55,42 @@ public interface InvitationService {
    * @return list of invitations
    */
   java.util.List<Invitation> listInvitations();
-}
 
+  /**
+   * Create invitation for a specific company. Used by Super Admin when provisioning tenants,
+   * bypassing the current company context.
+   *
+   * @param email invitee email address
+   * @param role role to assign
+   * @param companyId target company ID
+   * @param createdByUserId ID of user creating the invitation
+   * @param httpRequest HTTP request for audit logging
+   * @return created invitation
+   */
+  Invitation createInvitationForCompany(
+      String email,
+      String role,
+      Long companyId,
+      Long createdByUserId,
+      HttpServletRequest httpRequest);
+
+  /**
+   * Revoke invitation. Marks invitation as REVOKED with timestamp.
+   * Revoked invitations cannot be used.
+   *
+   * @param invitationId invitation ID
+   * @param revokedByUserId ID of user revoking the invitation
+   * @param httpRequest HTTP request for audit logging
+   */
+  void revokeInvitation(Long invitationId, Long revokedByUserId, HttpServletRequest httpRequest);
+
+  /**
+   * Resend invitation. Revokes old invitation and creates a new one with fresh token and expiry.
+   *
+   * @param invitationId invitation ID to resend
+   * @param resendByUserId ID of user resending the invitation
+   * @param httpRequest HTTP request for audit logging
+   * @return new invitation
+   */
+  Invitation resendInvitation(Long invitationId, Long resendByUserId, HttpServletRequest httpRequest);
+}

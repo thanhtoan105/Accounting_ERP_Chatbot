@@ -19,6 +19,3 @@ public record AuditLogListItemDTO(
     String ipAddress,
     String userAgent,
     String traceId) {}
-
-
-

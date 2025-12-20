@@ -1,6 +1,25 @@
-# CLAUDE.md
+<!-- OPENSPEC:START -->
+# OpenSpec Instructions
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+These instructions are for AI assistants working in this project.
+
+Always open `@/openspec/AGENTS.md` when the request:
+- Mentions planning or proposals (words like proposal, spec, change, plan)
+- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
+- Sounds ambiguous and you need the authoritative spec before coding
+
+Use `@/openspec/AGENTS.md` to learn:
+- How to create and apply change proposals
+- Spec format and conventions
+- Project structure and guidelines
+
+Keep this managed block so 'openspec update' can refresh the instructions.
+
+<!-- OPENSPEC:END -->
+
+Note: This project uses bd (beads) for issue tracking. Use `bd` commands instead of markdown TODOs. See AGENTS.md for workflow details.
+
+This file provides guidance when working with this repository.
 
 ## Development Commands
 
@@ -12,12 +31,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Backend (Java 21 + Spring Boot 3.5.7)
 
-- Run development server: `cd backend && mvn spring-boot:run`
-- Run tests: `cd backend && mvn test`
-- Build: `cd backend && mvn clean package`
-- Compile: `cd backend && mvn clean compile`
-- Format code: `cd backend && mvn spotless:apply`
-- Run specific test: `cd backend && mvn test -Dtest=ClassName`
+- Run development server: `cd backend && mvnd spring-boot:run`
+- Run tests: `cd backend && mvnd test`
+- Build: `cd backend && mvnd clean package`
+- Compile: `cd backend && mvnd clean compile`
+- Format code: `cd backend && mvnd spotless:apply`
+
+### Flyway Migration Naming Convention
+
+**Pattern**: `V<TIMESTAMP>__<description>.sql`
+
+**Format**: `VYYYYMMDDNNN__snake_case_description.sql`
+
+- `YYYY` = Year (4 digits)
+- `MM` = Month (2 digits)
+- `DD` = Day (2 digits)
+- `NNN` = Sequence number for same day (001, 002, 003...)
+
+**Examples**:
+```
+V20251208001__create_users_table.sql
+V20251208002__add_email_index.sql
+V20251209001__create_orders_table.sql
+```
+
+**Rules**:
+1. **Always use timestamp format** for new migrations (avoids conflicts)
+2. **Use snake_case** for description (underscores, not spaces)
+3. **Double underscore** `__` separates version from description
+4. **Never rename** migrations after they've been applied to any environment
+5. **Repeatable migrations** use `R__` prefix (e.g., `R__refresh_views.sql`)
+
+**If you need to fix an applied migration**:
+- Create a NEW migration with the fix, don't modify the old one
+- Run `flyway repair` if checksum validation fails
 
 ### Frontend (React + TypeScript + Vite)
 
@@ -25,177 +72,126 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run development server: `cd frontend && pnpm dev`
 - Build for production: `cd frontend && pnpm build`
 - Run tests: `cd frontend && pnpm test`
-- Run tests in watch mode: `cd frontend && pnpm test:watch`
 - Format code: `cd frontend && pnpm format:fix`
-- Lint code: `cd frontend && pnpm lint`
 - Shadcn UI: `cd frontend && pnpm dlx shadcn@latest add [component]`
 
 ## Architecture Overview
 
-This is a multi-tenant accounting system built as a monorepo with clear separation between backend and frontend.
+This is a multi-tenant accounting system built as a monorepo.
 
-### Backend Architecture (Spring Boot)
+### Backend (Spring Boot)
 
-**Multi-tenancy Pattern**: The system uses row-level security through a company-scoped architecture:
+- **Multi-tenancy**: `CompanyScopedEntity` + `CompanyContext` (ThreadLocal) + `CompanyScopeAspect`.
+- **Security**: JWT, RBAC, Spring Security.
+- **Data**: PostgreSQL (Flyway), JPA/Hibernate.
 
-- Every business entity extends `CompanyScopedEntity` interface (gets `companyId` field)
-- `CompanyContext` manages the current company ID in ThreadLocal storage
-- `CompanyContextFilter` extracts company from JWT and sets context
-- `CompanyScopeAspect` and `CompanyScopeEnforcer` automatically apply company filtering
+### Frontend (React)
 
-**Security Stack**:
+- **UI**: shadcn/ui, Tailwind.
+- **Structure**: Feature-based (`src/features/`).
+- **State**: React Query + Context API.
 
-- JWT-based authentication with access/refresh tokens
-- Spring Security with custom filter chain
-- Password encoding with BCrypt
-- Role-based access control (RBAC) foundation
+# Beads Village MCP - Quick Reference
 
-**Database Layer**:
+## Workflow
 
-- PostgreSQL with Flyway migrations
-- JPA/Hibernate with validation
-- Automatic audit trails via `AuditLog` entity
-
-**Key Packages**:
-
-- `entity/`: JPA entities (Company, User, Customer, AuditLog)
-- `repository/`: JPA repositories with company-scoped specifications
-- `security/`: JWT, password encoding, company context management
-- `service/`: Business logic layer
-- `controller/`: REST API endpoints with OpenAPI documentation
-
-**Configuration**:
-
-- Main config: `application.yml`
-- Security: `SecurityConfig` class
-- Database migrations in `src/main/resources/db/migration/`
-
-### Frontend Architecture (React + TypeScript)
-
-**UI Framework**: shadcn/ui (Tailwind + Radix)
-**Routing**: React Router với protected layout
-**State Management**: React hooks and context
-**API Communication**: Axios + typed services
-**Build Tool**: Vite (proxy `/api` → backend)
-
-**Cấu trúc thư mục (feature-first)**:
-
-- `src/features/`
-
-  - `auth/`
-    - `pages/` → `Login.tsx`, `ForgotPassword.tsx`, `ResetPassword.tsx`
-    - `components/` → `LoginForm.tsx` (re-export from `@/components/auth/LoginForm`)
-    - `services/` → `auth.ts`
-    - `index.ts` → barrel exports (re-exports pages, services, and components)
-  - `dashboard/`
-    - `pages/Dashboard.tsx`
-    - `index.ts` → barrel exports
-  - `company/`
-    - `pages/CompanySettings.tsx`
-    - `index.ts` → barrel exports
-  - `users/`
-    - `pages/UserManagement.tsx`
-    - `components/` → tables, columns, etc.
-    - `index.ts` → barrel exports (re-exports pages and components)
-  - `accounting/`
-    - `pages/ChartOfAccounts.tsx`
-    - `pages/Vouchers/` → `VoucherList.tsx`, `VoucherForm.tsx`, `index.ts`
-    - `index.ts` → barrel exports
-
-- `src/components/`
-
-  - `app/` → `index.ts`, `app-sidebar.tsx`, `nav-main.tsx`
-  - `guards/` → `RoleGuard.tsx`, `CompanyGuard.tsx` (barrel: `index.ts`)
-  - `voucher/` → `DeleteVoucherDialog.tsx`, `VoucherLineItemGrid.tsx`, `index.ts`
-  - `ui/` → shadcn primitives (button, card, input, sidebar, breadcrumb, avatar, ...)
-  - `index.ts` → barrel (re-exports from `guards` and other shared components)
-
-- `src/layouts/` → `ProtectedLayout.tsx` (shadcn sidebar-06)
-- `src/routes/` → `AppRoutes.tsx` (toàn bộ route map)
-- `src/hooks/` → hooks dùng chung (vd. `useAuth`, `useRole`, `use-mobile`)
-- `src/services/` → services dùng chung khác (voucher, chartOfAccounts, ...)
-- `src/utils/` → helpers (axios token, date, cn, ...)
-
-> Note:
->
-> - The `index.ts` (barrel) files provide easy import aliases such as `@/features/auth`, `@/features/users`, `@/features/accounting`, `@/components`, `@/components/app`, `@/components/voucher`.
-> - Pages within a feature should import components via the feature’s barrel file (for example: `import { LoginForm } from '@/features/auth'`) to maintain clear feature boundaries and make refactoring easier.
-
-**Layout Pattern**:
-
-- `ProtectedLayout`: tích hợp `SidebarProvider` + `AppSidebar` (block sidebar-06) + `SidebarInset` + breadcrumb header.
-
-### Development Services
-
-- **PostgreSQL**: Primary database (localhost:5432)
-- **pgAdmin**: Database management UI (localhost:5050)
-- **Redis**: Caching and session storage (localhost:6379)
-- **Maildev**: Email testing UI (localhost:1080)
-
-### Project Structure & Workflows
-
-**BMAD Framework**: The project uses a structured development workflow with epic-based planning:
-
-- Epic definitions in `docs/stories/`
-- Sprint status tracking in `docs/sprint-status.yaml`
-- Context XML files for technical specifications
-
-**API Documentation**: Available at `http://localhost:8080/api/docs` (Swagger UI)
-
-**Testing Strategy**:
-
-- Backend: JUnit 5 + TestContainers for integration tests
-- Frontend: Vitest + Testing Library + jsdom
-- Coverage reporting configured for both
-
-**Code Quality**:
-
-- Backend: Spotless for code formatting
-- Frontend: ESLint + Prettier
-- Husky for pre-commit hooks
-- TypeScript for type safety
-
-## Key Development Patterns
-
-**Company Scoping**: When working with repositories, always use the company context:
-
-```java
-// Automatic filtering through CompanyScopedEntity
-List<Customer> customers = customerRepository.findAll(); // Automatically filtered by current company
+### Leader Agent
+```
+init(team, leader=true) → add(tags=["role"]) → assign(id,role) → monitor
 ```
 
-**API Endpoints**: Follow the pattern `/api/v1/[resource]` with proper authentication:
-
-```java
-@GetMapping("/api/v1/customers")
-public ResponseEntity<List<Customer>> getCustomers() // Requires JWT
+### Worker Agent
+```
+init(team, role="fe/be/mobile") → claim() → reserve(paths) → work → done(id,msg) → restart
 ```
 
-**Frontend Routes**: Tất cả routes được khai báo tại `src/routes/AppRoutes.tsx`:
+## Core Tools
 
-```tsx
-import { BrowserRouter } from "react-router-dom";
-import AppRoutes from "@/routes/AppRoutes";
+| Tool | Use | Key Args |
+|------|-----|----------|
+| `init` | Join workspace (FIRST) | `ws`, `team`, `role`, `leader` |
+| `claim` | Get next task (filtered by role) | - |
+| `done` | Complete task | `id`, `msg` |
+| `add` | Create issue | `title`, `desc`, `typ`, `pri`, `tags` |
+| `assign` | Assign to role (leader only) | `id`, `role` |
 
-// App.tsx
-<BrowserRouter>
-  <AppRoutes />
-</BrowserRouter>;
+## Query Tools
+
+| Tool | Use |
+|------|-----|
+| `ls` | List issues (status=open/closed/all) |
+| `ready` | Get claimable tasks |
+| `show` | Get issue details (id) |
+
+## File Locking
+
+| Tool | Use |
+|------|-----|
+| `reserve` | Lock files (paths[], ttl, reason) |
+| `release` | Unlock files |
+| `reservations` | Check locks |
+
+## Messaging
+
+| Tool | Use |
+|------|-----|
+| `msg` | Send message (subj, to, global) |
+| `inbox` | Get messages |
+| `broadcast` | Team-wide announcement |
+| `discover` | Find agents in team |
+
+## Maintenance
+
+| Tool | Use |
+|------|-----|
+| `sync` | Git sync |
+| `cleanup` | Remove old issues (days) |
+| `doctor` | Fix database |
+| `status` | Workspace overview |
+
+## Response Fields
+
+`id`=ID, `t`=title, `p`=priority(0-4), `s`=status, `f`=from, `b`=body, `tags`=role tags
+
+## Priority
+
+0=critical, 1=high, 2=normal, 3=low, 4=backlog
+
+## Types
+
+task, bug, feature, epic, chore
+
+## Role Tags
+
+`fe`=frontend, `be`=backend, `mobile`, `devops`, `qa`
+
+## Rules
+
+1. Always `init()` first
+2. Leader: `init(leader=true)` to assign tasks
+3. Worker: `init(role="fe/be/...")` to auto-filter tasks
+4. Always `reserve()` before editing files
+5. Create issues for work >2min
+6. Restart session after `done()`
+
+## Example: Multi-Agent Setup
+
+```python
+# Leader creates tasks
+init(team="proj", leader=true)
+add(title="Login API", tags=["be"])
+add(title="Login form", tags=["fe"])
+
+# BE agent claims BE tasks
+init(team="proj", role="be")
+claim()  # Gets "Login API"
+
+# FE agent claims FE tasks
+init(team="proj", role="fe")
+claim()  # Gets "Login form"
 ```
 
-**Database Migrations**: Use Flyway with numbered versions (V1**, V2**, etc.) and descriptive names.
-
-Do not create markdown files unless explicitly requested by the user
-Using gkg mcp to find codebase structure and code, relevant files, functions, classes, variables, and code snippets.
-
-When designing user interfaces with tables using shadcn components, always ensure the following key features are included:
-
-- **Search Functionality**: Add a search input above or within the table to allow users to quickly filter records based on keywords or relevant fields.
-- **Refresh Button**: Include a refresh button near the search bar or table header to enable users to reload the table data with a single click, ensuring access to the most up-to-date records.
-- **Record Count and Page Size Selector**: At the bottom of the table, display the total number of records currently shown as well as the overall record count. Provide a dropdown for users to select how many records to display per page, with the following default options: 10, 20, 30, 50, and 100 records per page.
-- **Pagination**: Implement pagination controls at the bottom of the table to allow users to navigate between pages of data efficiently.
-
-Including these standard features improves usability, performance, and consistency across the application’s data tables.
-Always use gkg mcp to find codebase structure and code, relevant files, functions, classes, variables, and code snippets.
-Always read serena instruction before do task.
-Always using the frontend skills to design UI for frontend
+From now on, please do not add 'Co-authored-by' or any attribution footer to the git commit messages.
+Before do any task, read bd skills and use nia deep search first. use frontend skills when design frontend
+Do not auto create markdown (.md) file if user not requested.
+Always spawn subagents when needed.

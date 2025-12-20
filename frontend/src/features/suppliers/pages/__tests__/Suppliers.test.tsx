@@ -14,7 +14,7 @@ vi.mock('@/hooks/useAuth', () => ({
 
 describe('Suppliers', () => {
   const mockGetSuppliers = vi.mocked(supplierService.getSuppliers)
-  const mockDeleteSupplier = vi.mocked(supplierService.deleteSupplier)
+  vi.mocked(supplierService.deleteSupplier)
   const mockActivateSupplier = vi.mocked(supplierService.activateSupplier)
   const mockDeactivateSupplier = vi.mocked(supplierService.deactivateSupplier)
   const mockExportSuppliers = vi.mocked(supplierService.exportSuppliers)
@@ -207,10 +207,7 @@ describe('Suppliers', () => {
 
   it('deactivates supplier', async () => {
     const user = userEvent.setup()
-    mockDeactivateSupplier.mockResolvedValue({
-      ...mockSuppliersResponse.data[0],
-      active: false,
-    })
+    mockDeactivateSupplier.mockResolvedValue(undefined)
 
     render(
       <BrowserRouter>
@@ -248,10 +245,7 @@ describe('Suppliers', () => {
 
   it('activates inactive supplier', async () => {
     const user = userEvent.setup()
-    mockActivateSupplier.mockResolvedValue({
-      ...mockSuppliersResponse.data[1],
-      active: true,
-    })
+    mockActivateSupplier.mockResolvedValue(undefined)
 
     render(
       <BrowserRouter>

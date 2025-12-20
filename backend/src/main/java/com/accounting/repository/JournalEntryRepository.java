@@ -1,12 +1,14 @@
 package com.accounting.repository;
 
-import com.accounting.entity.JournalEntry;
 import java.util.List;
 import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import com.accounting.entity.JournalEntry;
 
 /**
  * Repository for JournalEntry entities.
@@ -54,4 +56,3 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
       @Param("accountId") Long accountId,
       @Param("companyId") Long companyId);
 }
-

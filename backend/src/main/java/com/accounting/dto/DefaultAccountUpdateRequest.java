@@ -1,8 +1,9 @@
 package com.accounting.dto;
 
+import java.util.List;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
-import java.util.List;
 
 /**
  * Request DTO for updating an existing Default Account.
@@ -74,4 +75,3 @@ public class DefaultAccountUpdateRequest {
     }
   }
 }
-

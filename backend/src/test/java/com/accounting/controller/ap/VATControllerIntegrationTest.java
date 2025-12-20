@@ -9,6 +9,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
 import com.accounting.dto.InputVATReportDTO;
 import com.accounting.entity.AccountingPeriod;
 import com.accounting.entity.ChartOfAccount;
@@ -19,11 +40,10 @@ import com.accounting.entity.PurchaseBill;
 import com.accounting.entity.PurchaseBillLine;
 import com.accounting.entity.PurchaseBillStatus;
 import com.accounting.entity.Supplier;
+import com.accounting.entity.User;
 import com.accounting.entity.VATCorrection;
 import com.accounting.entity.VATReportHistory;
 import com.accounting.entity.VatRate;
-import com.accounting.entity.User;
-import com.accounting.service.impl.purchase.VATServiceImpl;
 import com.accounting.repository.AccountingPeriodRepository;
 import com.accounting.repository.ChartOfAccountsRepository;
 import com.accounting.repository.CompanyRepository;
@@ -38,27 +58,6 @@ import com.accounting.security.CompanyContext;
 import com.accounting.security.JwtTokenProvider;
 import com.accounting.security.PasswordEncoder;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 
 @SpringBootTest(classes = VATControllerIntegrationTest.TestApplication.class)
 @AutoConfigureMockMvc

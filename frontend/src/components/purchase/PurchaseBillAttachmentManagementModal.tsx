@@ -7,7 +7,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -63,7 +62,7 @@ export function PurchaseBillAttachmentManagementModal({
     null,
   )
   const [deleteReason, setDeleteReason] = useState('')
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [, setPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (open && billId) {

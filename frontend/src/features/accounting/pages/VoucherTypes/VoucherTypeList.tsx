@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Plus,
@@ -7,7 +7,6 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Ban,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -16,14 +15,8 @@ import {
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Card, CardContent } from '@/components/ui/card'
+import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
@@ -50,14 +43,6 @@ import {
 import type { VoucherType, VoucherTypeQueryParams } from '@/types/voucherType'
 import VoucherTypeDialog from './VoucherTypeDialog'
 import DeleteVoucherTypeDialog from '@/components/voucher-type/DeleteVoucherTypeDialog'
-// <CHANGE> integrate tanstack table (data-table-04 pattern)
-import type { ColumnDef, ColumnFiltersState } from '@tanstack/react-table'
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  useReactTable,
-} from '@tanstack/react-table'
 
 export default function VoucherTypeList() {
   const { t } = useTranslation()
@@ -66,16 +51,17 @@ export default function VoucherTypeList() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [debouncedSearch, setDebouncedSearch] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
 
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [totalElements, setTotalElements] = useState(0)
+  const [pageSize, setPageSize] = useState(12)
+  const [_totalElements, setTotalElements] = useState(0)
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedVoucherType, setSelectedVoucherType] = useState<VoucherType | null>(null)
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -106,7 +92,7 @@ export default function VoucherTypeList() {
 
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, pageSize])
+  }, [debouncedSearch, pageSize, statusFilter])
 
   useEffect(() => {
     loadVoucherTypes()
@@ -131,26 +117,26 @@ export default function VoucherTypeList() {
     }
   }
 
-  const handleDeactivateClick = async (voucherType: VoucherType) => {
+  const handleToggleStatus = async (voucherType: VoucherType) => {
+    setTogglingIds((prev) => new Set(prev).add(voucherType.id))
     try {
-      await deactivateVoucherType(voucherType.id)
-      toast.success('Voucher type deactivated successfully')
+      if (voucherType.status === 'ACTIVE') {
+        await deactivateVoucherType(voucherType.id)
+        toast.success('Voucher type deactivated successfully')
+      } else {
+        await activateVoucherType(voucherType.id)
+        toast.success('Voucher type activated successfully')
+      }
       await loadVoucherTypes()
     } catch (err: any) {
-      const errorMessage =
-        err?.error?.message || err?.message || 'Failed to deactivate voucher type'
-      toast.error('Failed to deactivate voucher type', { description: errorMessage })
-    }
-  }
-
-  const handleActivateClick = async (voucherType: VoucherType) => {
-    try {
-      await activateVoucherType(voucherType.id)
-      toast.success('Voucher type activated successfully')
-      await loadVoucherTypes()
-    } catch (err: any) {
-      const errorMessage = err?.error?.message || err?.message || 'Failed to activate voucher type'
-      toast.error('Failed to activate voucher type', { description: errorMessage })
+      const errorMessage = err?.error?.message || err?.message || 'Failed to update voucher type'
+      toast.error('Failed to update voucher type', { description: errorMessage })
+    } finally {
+      setTogglingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(voucherType.id)
+        return next
+      })
     }
   }
 
@@ -163,99 +149,19 @@ export default function VoucherTypeList() {
     loadVoucherTypes()
   }
 
-  // <CHANGE> columns for tanstack table (data-table-04 style)
-  const columns = useMemo<ColumnDef<VoucherType>[]>(
-    () => [
-      {
-        header: 'Type Code',
-        accessorKey: 'typeCode',
-        cell: ({ row }) => <div className="font-medium">{row.getValue<string>('typeCode')}</div>,
-      },
-      {
-        header: 'Type Name',
-        accessorKey: 'typeName',
-      },
-      {
-        header: 'Status',
-        accessorKey: 'status',
-        cell: ({ row }) => {
-          const status = row.getValue<string>('status')
-          return status === 'ACTIVE' ? (
-            <Badge className="rounded-full border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5">
-              <span
-                className="size-1.5 rounded-full bg-green-600 dark:bg-green-400"
-                aria-hidden="true"
-              />
-              Active
-            </Badge>
-          ) : (
-            <Badge className="bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive rounded-full border-none focus-visible:outline-none">
-              <span className="bg-destructive size-1.5 rounded-full" aria-hidden="true" />
-              Inactive
-            </Badge>
-          )
-        },
-      },
-      {
-        id: 'actions',
-        header: () => <div className="text-right">Actions</div>,
-        cell: ({ row }) => {
-          const vt = row.original
-          return (
-            <div className="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleEditClick(vt)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  {vt.status === 'ACTIVE' ? (
-                    <DropdownMenuItem onClick={() => handleDeactivateClick(vt)}>
-                      <Ban className="mr-2 h-4 w-4" />
-                      Deactivate
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={() => handleActivateClick(vt)}>
-                      <Ban className="mr-2 h-4 w-4 rotate-180" />
-                      Activate
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem variant="destructive" onClick={() => handleDeleteClick(vt)}>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )
-        },
-      },
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  )
+  const filteredVoucherTypes = useMemo(() => {
+    return voucherTypes.filter((vt) => {
+      if (statusFilter === 'all') return true
+      return vt.status === statusFilter
+    })
+  }, [voucherTypes, statusFilter])
 
-  const table = useReactTable({
-    data: voucherTypes,
-    columns,
-    state: { columnFilters },
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-  })
-
-  // <CHANGE> filter first, then paginate rows from tanstack
-  const filteredRows = table.getFilteredRowModel().rows
-  const totalFiltered = filteredRows.length
-  const pagedRows = useMemo(
-    () => filteredRows.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize),
-    [filteredRows, page, pageSize],
+  const totalFiltered = filteredVoucherTypes.length
+  const pagedVoucherTypes = useMemo(
+    () => filteredVoucherTypes.slice((page - 1) * pageSize, page * pageSize),
+    [filteredVoucherTypes, page, pageSize],
   )
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize))
 
   return (
     <div className="space-y-4">
@@ -277,12 +183,11 @@ export default function VoucherTypeList() {
             className="pl-8"
           />
         </div>
-        {/* <CHANGE> Group Status filter and Refresh so they stay adjacent */}
         <div className="flex items-center gap-2 shrink-0">
           <Select
-            value={(table.getColumn('status')?.getFilterValue() as string) ?? 'all'}
+            value={statusFilter}
             onValueChange={(value) => {
-              table.getColumn('status')?.setFilterValue(value === 'all' ? undefined : value)
+              setStatusFilter(value)
               setPage(1)
             }}
           >
@@ -313,9 +218,9 @@ export default function VoucherTypeList() {
       )}
 
       {loading && voucherTypes.length === 0 ? (
-        <div className="space-y-2">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-12 w-full" />
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-32 w-full rounded-xl" />
           ))}
         </div>
       ) : voucherTypes.length === 0 ? (
@@ -328,42 +233,86 @@ export default function VoucherTypeList() {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-md border">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="bg-muted/50">
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="relative h-10 select-none">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {pagedRows?.length ? (
-                pagedRows.map((row) => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          {/* Footer controls: total, page size, pagination */}
+        <>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 voucher-stagger">
+            {pagedVoucherTypes.map((vt) => (
+              <Card
+                key={vt.id}
+                className="voucher-card-interactive voucher-row-animate cursor-pointer group relative py-4"
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-bold text-primary font-mono tracking-wide">
+                          {vt.typeCode}
+                        </span>
+                        <Badge
+                          className={
+                            vt.status === 'ACTIVE'
+                              ? 'rounded-full border-none bg-green-600/10 text-green-600 dark:bg-green-400/10 dark:text-green-400'
+                              : 'bg-destructive/10 text-destructive rounded-full border-none'
+                          }
+                        >
+                          <span
+                            className={`size-1.5 rounded-full mr-1 ${
+                              vt.status === 'ACTIVE'
+                                ? 'bg-green-600 dark:bg-green-400'
+                                : 'bg-destructive'
+                            }`}
+                            aria-hidden="true"
+                          />
+                          {vt.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate" title={vt.typeName}>
+                        {vt.typeName}
+                      </p>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditClick(vt)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => handleDeleteClick(vt)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t pt-3">
+                    <Label
+                      htmlFor={`toggle-${vt.id}`}
+                      className="text-xs text-muted-foreground cursor-pointer"
+                    >
+                      {vt.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                    </Label>
+                    <Switch
+                      id={`toggle-${vt.id}`}
+                      checked={vt.status === 'ACTIVE'}
+                      disabled={togglingIds.has(vt.id)}
+                      onCheckedChange={() => handleToggleStatus(vt)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
           <div className="flex items-center justify-between border-t px-4 py-4">
             <div className="text-sm text-muted-foreground">
               Total: <strong className="text-foreground">{totalFiltered}</strong> records
@@ -371,7 +320,7 @@ export default function VoucherTypeList() {
             <div className="flex items-center gap-6">
               <div className="hidden items-center gap-2 lg:flex">
                 <Label htmlFor="rows-per-page" className="text-sm font-medium">
-                  Number of records per page
+                  Cards per page
                 </Label>
                 <Select
                   value={`${pageSize}`}
@@ -385,7 +334,7 @@ export default function VoucherTypeList() {
                     <SelectValue placeholder={pageSize} />
                   </SelectTrigger>
                   <SelectContent side="top">
-                    {[10, 20, 30, 50, 100].map((size) => (
+                    {[8, 12, 16, 24, 48].map((size) => (
                       <SelectItem key={size} value={`${size}`}>
                         {size}
                       </SelectItem>
@@ -394,7 +343,7 @@ export default function VoucherTypeList() {
                 </Select>
               </div>
               <div className="flex items-center justify-center text-sm font-medium">
-                Page {page} / {Math.max(1, Math.ceil(totalFiltered / pageSize))}
+                Page {page} / {totalPages}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -420,12 +369,8 @@ export default function VoucherTypeList() {
                   variant="outline"
                   className="h-8 w-8"
                   size="icon"
-                  onClick={() =>
-                    setPage((p) =>
-                      Math.min(Math.max(1, Math.ceil(totalFiltered / pageSize)), p + 1),
-                    )
-                  }
-                  disabled={page >= Math.max(1, Math.ceil(totalFiltered / pageSize)) || loading}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages || loading}
                 >
                   <span className="sr-only">Next page</span>
                   <ChevronRight className="size-4" />
@@ -434,8 +379,8 @@ export default function VoucherTypeList() {
                   variant="outline"
                   className="hidden h-8 w-8 lg:flex"
                   size="icon"
-                  onClick={() => setPage(Math.max(1, Math.ceil(totalFiltered / pageSize)))}
-                  disabled={page >= Math.max(1, Math.ceil(totalFiltered / pageSize)) || loading}
+                  onClick={() => setPage(totalPages)}
+                  disabled={page >= totalPages || loading}
                 >
                   <span className="sr-only">Last page</span>
                   <ChevronsRight className="size-4" />
@@ -443,7 +388,7 @@ export default function VoucherTypeList() {
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       <VoucherTypeDialog
@@ -481,5 +426,3 @@ export default function VoucherTypeList() {
     </div>
   )
 }
-
-//

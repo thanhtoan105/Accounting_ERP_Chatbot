@@ -1,18 +1,22 @@
 package com.accounting.service.impl;
 
-import com.accounting.security.CompanyContext;
-import com.accounting.service.MetabaseService;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.crypto.SecretKey;
+
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
+
+import com.accounting.security.CompanyContext;
+import com.accounting.service.MetabaseService;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 
 /**
  * Implementation of MetabaseService for JWT token generation and embedding.
@@ -45,8 +49,12 @@ public class MetabaseServiceImpl implements MetabaseService {
         Map<String, Object> resource = new HashMap<>();
         resource.put("dashboard", dashboardId);
 
-        // Build the params map with company_id filter
-        Map<String, Object> embeddingParams = new HashMap<>(params);
+        // Start with any additional params (e.g., date range) but enforce company_id
+        Map<String, Object> embeddingParams = new HashMap<>(params != null ? params : Map.of());
+
+        // Enforce tenant isolation: company_id is always set from CompanyContext
+        // IMPORTANT: The dashboard must have a filter parameter named "company_id"
+        // set to "Locked" in Metabase's embedding settings
         embeddingParams.put("company_id", companyId);
 
         // Build the JWT payload

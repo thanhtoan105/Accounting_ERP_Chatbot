@@ -60,4 +60,3 @@ class PasswordEncoderTest {
     assertFalse(passwordEncoder.matches(password2, hashed1));
   }
 }
-

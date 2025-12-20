@@ -14,7 +14,6 @@ import {
   CheckCircle,
   XCircle,
   RotateCcw,
-  Plus,
   Send,
   RefreshCw,
 } from 'lucide-react'
@@ -51,7 +50,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Calendar } from '@/components/ui/calendar'
-import { Separator } from '@/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -66,19 +64,12 @@ import type { AccountSummary } from '@/components/account/AccountPicker'
 import useUndoRedo from '@/hooks/useUndoRedo'
 import { useAuth } from '@/hooks/useAuth'
 import { getCompanyId } from '@/utils/axios'
-import type {
-  PurchaseBillDTO,
-  PurchaseBillCreateRequest,
-  PurchaseBillStatus,
-  PurchaseBillValidationResult,
-  VatRate,
-} from '@/types/purchaseBill'
+import type { PurchaseBillDTO, PurchaseBillCreateRequest, VatRate } from '@/types/purchaseBill'
 import {
   createPurchaseBill,
   validatePurchaseBill,
   updatePurchaseBill,
   getPurchaseBillById,
-  saveDraft,
   submitForApproval,
 } from '@/services/purchaseBill'
 import { getPostableAccounts } from '@/services/chartOfAccounts'
@@ -90,10 +81,10 @@ import { VATCorrectionDialog } from '../VATReports/VATCorrectionDialog'
 import { ApproveVATCorrectionDialog } from '../VATReports/ApproveVATCorrectionDialog'
 
 const formSchema = z.object({
-  supplierId: z.number({ required_error: 'Supplier is required' }),
+  supplierId: z.number({ message: 'Supplier is required' }),
   billNumber: z.string().min(1, 'Bill number is required'),
-  billDate: z.string({ required_error: 'Bill date is required' }),
-  dueDate: z.string({ required_error: 'Due date is required' }),
+  billDate: z.string({ message: 'Bill date is required' }),
+  dueDate: z.string({ message: 'Due date is required' }),
   reference: z
     .string()
     .min(1, 'Reference is required')
@@ -307,7 +298,7 @@ export default function PurchaseBillForm() {
   )
   const [loadingBill, setLoadingBill] = useState(false)
   const [editingBill, setEditingBill] = useState<PurchaseBillDTO | null>(null)
-  const [autoSaveError, setAutoSaveError] = useState<string | null>(null)
+  const [_autoSaveError, setAutoSaveError] = useState<string | null>(null)
   const [attachmentCount, setAttachmentCount] = useState(0)
   const [attachmentModalOpen, setAttachmentModalOpen] = useState(false)
   const [approvalDialogAction, setApprovalDialogAction] = useState<'approve' | 'reject' | null>(
@@ -621,7 +612,7 @@ export default function PurchaseBillForm() {
     [billId, form],
   )
 
-  async function handleValidate(values: PurchaseBillFormValues) {
+  async function handleValidate(_values: PurchaseBillFormValues) {
     await runServerValidation(false)
   }
 
@@ -1147,7 +1138,7 @@ export default function PurchaseBillForm() {
                     setAttachmentCount((prev) => prev + 1)
                     toast.success('Attachment uploaded successfully')
                   }}
-                  onUploadError={(file, error) => {
+                  onUploadError={(_file, error) => {
                     toast.error('Upload failed', { description: error })
                   }}
                 />

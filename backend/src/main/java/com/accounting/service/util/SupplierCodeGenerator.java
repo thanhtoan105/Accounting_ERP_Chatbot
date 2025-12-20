@@ -1,11 +1,13 @@
 package com.accounting.service.util;
 
+import java.time.Year;
+
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import java.time.Year;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Utility class for generating unique supplier codes in format SUP-YYYY-NNNN.
@@ -40,4 +42,3 @@ public class SupplierCodeGenerator {
         return code;
     }
 }
-

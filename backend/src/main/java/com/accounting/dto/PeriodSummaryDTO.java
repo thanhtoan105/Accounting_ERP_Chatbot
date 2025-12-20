@@ -1,7 +1,8 @@
 package com.accounting.dto;
 
-import com.accounting.entity.PeriodStatus;
 import java.time.LocalDate;
+
+import com.accounting.entity.PeriodStatus;
 
 /**
  * DTO for period summary information used in dashboard badges.

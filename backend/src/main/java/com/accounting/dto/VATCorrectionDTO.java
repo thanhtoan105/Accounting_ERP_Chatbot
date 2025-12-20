@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.VATCorrection.Status;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+
+import com.accounting.entity.VATCorrection.Status;
 
 public class VATCorrectionDTO {
 
@@ -134,4 +135,3 @@ public class VATCorrectionDTO {
     this.approvedAt = approvedAt;
   }
 }
-

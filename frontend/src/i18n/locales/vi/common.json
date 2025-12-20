@@ -29,8 +29,15 @@
     "inputVat": "Báo cáo Thuế GTGT Đầu vào",
     "outputVat": "Báo cáo Thuế GTGT Đầu ra",
     "trialBalance": "Bảng Cân đối Phát sinh",
+    "bankReconciliation": "Đối chiếu Ngân hàng",
     "cashBook": "Sổ quỹ tiền mặt/ngân hàng",
-    "cashBookSummary": "Tổng hợp Sổ quỹ tiền mặt/ngân hàng"
+    "cashBookSummary": "Tổng hợp Sổ quỹ tiền mặt/ngân hàng",
+    "statutoryReports": "Báo cáo Tài chính",
+    "reportMappings": "Cấu hình Ánh xạ",
+    "reportSchedules": "Lịch chạy báo cáo",
+    "reportCenter": "Trung tâm báo cáo",
+    "multiPeriodComparison": "So sánh đa kỳ",
+    "tenantManagement": "Quản lý Tenant"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -88,6 +95,7 @@
     "search": "Tìm kiếm...",
     "filter": "Lọc",
     "export": "Xuất",
+    "exporting": "Đang xuất...",
     "import": "Nhập",
     "refresh": "Làm mới",
     "close": "Đóng",
@@ -113,7 +121,20 @@
     "language": "Ngôn ngữ",
     "settings": "Cài đặt",
     "profile": "Hồ sơ",
-    "period": "Kỳ kế toán"
+    "period": "Kỳ kế toán",
+    "noResults": "Không có kết quả",
+    "showing": "Đang hiển thị",
+    "of": "của",
+    "items": "mục",
+    "rowsPerPage": "Dòng mỗi trang",
+    "open": "Mở",
+    "closed": "Đã khóa",
+    "page": "Trang",
+    "account": "Tài khoản",
+    "debit": "Nợ",
+    "credit": "Có",
+    "type": "Loại",
+    "createdBy": "Người tạo"
   },
   "table": {
     "noResults": "Không có kết quả",
@@ -197,7 +218,78 @@
     "cashPosition": "Trạng thái Tiền mặt",
     "cashBankBalances": "Số dư tiền mặt và ngân hàng hiện tại",
     "dashboardNotAvailable": "URL bảng điều khiển không khả dụng. Vui lòng kiểm tra cấu hình Metabase.",
-    "loadError": "Không thể tải bảng điều khiển phân tích. Vui lòng đảm bảo Metabase đang chạy và được cấu hình đúng."
+    "loadError": "Không thể tải bảng điều khiển phân tích. Vui lòng đảm bảo Metabase đang chạy và được cấu hình đúng.",
+    "dashboardRegion": "Bảng phân tích",
+    "limitedAccess": "Bạn có quyền truy cập hạn chế vào phân tích dựa trên vai trò của bạn.",
+    "freshness": {
+      "loading": "Đang tải...",
+      "unknown": "Không xác định",
+      "fresh": "Mới nhất",
+      "stale": "Cũ",
+      "outdated": "Lỗi thời",
+      "dataStatus": "Độ mới của dữ liệu",
+      "lastUpdated": "Cập nhật lần cuối",
+      "nextRefresh": "Làm mới tiếp theo"
+    },
+    "refresh": {
+      "label": "Làm mới dữ liệu",
+      "tooltip": "Làm mới dữ liệu bảng điều khiển",
+      "inProgress": "Đang làm mới dữ liệu...",
+      "started": "Đã bắt đầu làm mới dữ liệu",
+      "rateLimited": "Vui lòng đợi trước khi làm mới lại"
+    },
+    "error": {
+      "title": "Bảng điều khiển không khả dụng",
+      "unavailable": "Bảng điều khiển phân tích hiện không khả dụng. Điều này có thể do bảo trì hoặc sự cố kết nối.",
+      "tryAgainLater": "Vui lòng thử lại sau hoặc liên hệ hỗ trợ nếu sự cố vẫn tiếp diễn.",
+      "retry": "Thử lại"
+    },
+    "degraded": {
+      "title": "Hiệu suất giảm",
+      "message": "Bảng điều khiển đang tải chậm hơn bình thường. Một số dữ liệu có thể bị trễ."
+    },
+    "periodLock": {
+      "locked": "Đã khóa sổ",
+      "lockedTooltip": "Kỳ kế toán này đã được đóng. Dữ liệu chỉ đọc.",
+      "warning": "Dữ liệu hiển thị thuộc kỳ đã khóa sổ. Bạn không thể làm mới dữ liệu cho kỳ này.",
+      "warningTitle": "Kỳ đã khóa sổ",
+      "warningMessage": "Dữ liệu hiển thị thuộc kỳ đã khóa sổ. Chức năng làm mới đã bị vô hiệu hóa.",
+      "cannotRefresh": "Không thể làm mới - kỳ đã khóa"
+    },
+    "kpi": {
+      "postedVouchers": "Chứng từ đã ghi sổ",
+      "draftVouchers": "Chứng từ nháp",
+      "overdueAmount": "Công nợ quá hạn",
+      "overdueInvoices": "{{count}} hóa đơn quá hạn",
+      "overdueInvoices_one": "{{count}} hóa đơn quá hạn",
+      "overdueInvoices_other": "{{count}} hóa đơn quá hạn",
+      "noOverdue": "Không có hóa đơn quá hạn"
+    },
+    "alerts": {
+      "title": "Thông báo",
+      "viewDetails": "Xem chi tiết",
+      "reviewDrafts": "Xem chứng từ nháp",
+      "overdueInvoices": {
+        "title": "{{count}} hóa đơn quá hạn",
+        "title_one": "{{count}} hóa đơn quá hạn",
+        "title_other": "{{count}} hóa đơn quá hạn",
+        "description": "Tổng quá hạn: {{amount}}"
+      },
+      "draftVouchers": {
+        "title": "{{count}} chứng từ nháp đang chờ",
+        "title_one": "{{count}} chứng từ nháp đang chờ",
+        "title_other": "{{count}} chứng từ nháp đang chờ",
+        "description": "Xem xét và ghi sổ chứng từ nháp trước khi đóng kỳ"
+      },
+      "periodClosed": {
+        "title": "Kỳ đã đóng",
+        "description": "{{period}} đã khóa sổ. Dữ liệu chỉ đọc."
+      },
+      "allGood": {
+        "title": "Mọi thứ ổn",
+        "description": "Không có mục chờ xử lý hoặc cảnh báo nào."
+      }
+    }
   },
   "roles": {
     "admin": "Quản trị viên",
@@ -588,5 +680,624 @@
     "failedToPost": "Không thể ghi sổ phiếu chi",
     "unableToLoad": "Không thể tải phiếu chi",
     "importDialogPlaceholder": "Chức năng nhập từ file sẽ được triển khai tại đây. Hiện tại vui lòng sử dụng API."
+  },
+  "bankReconciliation": {
+    "title": "Đối chiếu Ngân hàng",
+    "subtitle": "Đối chiếu sao kê ngân hàng với sổ cái",
+    "newReconciliation": "Tạo mới",
+    "importStatement": "Nhập sao kê",
+    "autoMatch": "Khớp tự động",
+    "manualMatch": "Khớp thủ công",
+    "unmatch": "Hủy khớp",
+    "complete": "Hoàn thành đối chiếu",
+    "reopen": "Mở lại",
+    "exportExcel": "Xuất Excel",
+    "exportPdf": "Xuất PDF",
+    "statementLines": "Dòng sao kê",
+    "ledgerTransactions": "Giao dịch sổ cái",
+    "adjustments": "Điều chỉnh",
+    "createAdjustment": "Tạo điều chỉnh",
+    "summary": "Tóm tắt đối chiếu",
+    "statementBalance": "Số dư sao kê",
+    "ledgerBalance": "Số dư sổ cái",
+    "reconciledBalance": "Số dư đã đối chiếu",
+    "difference": "Chênh lệch",
+    "matchedTotal": "Tổng đã khớp",
+    "unmatchedTotal": "Tổng chưa khớp",
+    "bankAccount": "Tài khoản ngân hàng",
+    "periodStart": "Ngày bắt đầu",
+    "periodEnd": "Ngày kết thúc",
+    "period": "Kỳ",
+    "lastUpdated": "Cập nhật lần cuối",
+    "completedAt": "Hoàn thành lúc",
+    "completedBy": "Người hoàn thành",
+    "matchConfidence": "Độ tin cậy",
+    "matchReason": "Lý do khớp",
+    "transactionDate": "Ngày giao dịch",
+    "reference": "Tham chiếu",
+    "debit": "Nợ",
+    "credit": "Có",
+    "balance": "Số dư",
+    "voucherNumber": "Số chứng từ",
+    "voucherType": "Loại chứng từ",
+    "lineNumber": "STT",
+    "alreadyMatched": "Đã khớp",
+    "selectBankAccount": "Chọn tài khoản ngân hàng",
+    "selectStatus": "Chọn trạng thái",
+    "allBankAccounts": "Tất cả tài khoản",
+    "allStatuses": "Tất cả trạng thái",
+    "noReconciliationsFound": "Không tìm thấy bản đối chiếu nào",
+    "noStatementLines": "Không có dòng sao kê",
+    "noLedgerTransactions": "Không có giao dịch sổ cái",
+    "noAdjustments": "Không có điều chỉnh",
+    "status": {
+      "notStarted": "Chưa bắt đầu",
+      "inProgress": "Đang thực hiện",
+      "completed": "Hoàn thành"
+    },
+    "matchStatus": {
+      "unmatched": "Chưa khớp",
+      "matched": "Đã khớp",
+      "adjustmentRequired": "Cần điều chỉnh"
+    },
+    "adjustmentType": {
+      "bankFee": "Phí ngân hàng",
+      "interestIncome": "Lãi thu được",
+      "interestExpense": "Lãi phải trả",
+      "other": "Khác"
+    },
+    "adjustmentStatus": {
+      "pending": "Chờ duyệt",
+      "approved": "Đã duyệt",
+      "posted": "Đã ghi sổ",
+      "rejected": "Từ chối"
+    },
+    "import": {
+      "title": "Nhập sao kê ngân hàng",
+      "step1": "Tải file",
+      "step2": "Ánh xạ cột",
+      "step3": "Xem trước dữ liệu",
+      "step4": "Xác nhận nhập",
+      "selectFile": "Chọn file",
+      "dragAndDrop": "hoặc kéo thả vào đây",
+      "supportedFormats": "Định dạng hỗ trợ: CSV, Excel (.xlsx, .xls)",
+      "maxFileSize": "Kích thước tối đa: 10MB",
+      "columnMapping": "Ánh xạ cột",
+      "dateColumn": "Cột ngày",
+      "descriptionColumn": "Cột mô tả",
+      "referenceColumn": "Cột tham chiếu",
+      "debitColumn": "Cột nợ",
+      "creditColumn": "Cột có",
+      "balanceColumn": "Cột số dư",
+      "dateFormat": "Định dạng ngày",
+      "skipHeaderRows": "Bỏ qua dòng tiêu đề",
+      "saveFormatProfile": "Lưu làm mẫu cho lần nhập sau",
+      "formatProfileName": "Tên mẫu",
+      "useSavedProfile": "Sử dụng mẫu đã lưu",
+      "previewData": "Xem trước dữ liệu",
+      "rowsToImport": "Số dòng sẽ nhập",
+      "duplicateWarning": "Phát hiện file trùng lặp",
+      "duplicateMessage": "File này đã được nhập vào bản đối chiếu khác.",
+      "importErrors": "Lỗi nhập dữ liệu",
+      "downloadErrorReport": "Tải báo cáo lỗi",
+      "rowNumber": "Dòng",
+      "field": "Trường",
+      "value": "Giá trị",
+      "errorMessage": "Lỗi"
+    },
+    "match": {
+      "selectStatementLine": "Chọn dòng sao kê",
+      "selectLedgerTransaction": "Chọn giao dịch sổ cái",
+      "matchNotes": "Ghi chú (tùy chọn)",
+      "confirmMatch": "Xác nhận khớp",
+      "unmatchConfirm": "Bạn có chắc muốn hủy khớp dòng này?",
+      "autoMatchConfig": "Cấu hình khớp tự động",
+      "dateTolerance": "Dung sai ngày (ngày)",
+      "amountTolerance": "Dung sai số tiền (%)",
+      "minimumConfidence": "Độ tin cậy tối thiểu",
+      "autoApply": "Tự động áp dụng các khớp có độ tin cậy cao",
+      "runAutoMatch": "Chạy khớp tự động",
+      "matchResult": "Kết quả khớp",
+      "linesProcessed": "Dòng đã xử lý",
+      "matchesFound": "Tìm thấy khớp",
+      "matchesApplied": "Đã áp dụng khớp",
+      "noMatchFound": "Không tìm thấy khớp",
+      "suggestions": "Gợi ý khớp",
+      "applySuggestion": "Áp dụng"
+    },
+    "adjustment": {
+      "createTitle": "Tạo điều chỉnh",
+      "editTitle": "Sửa điều chỉnh",
+      "type": "Loại điều chỉnh",
+      "amount": "Số tiền",
+      "description": "Mô tả",
+      "accountCode": "Mã tài khoản kế toán",
+      "linkedStatementLine": "Dòng sao kê liên kết",
+      "approve": "Duyệt",
+      "reject": "Từ chối",
+      "post": "Ghi sổ",
+      "rejectReason": "Lý do từ chối",
+      "approvalRequired": "Cần kế toán trưởng phê duyệt",
+      "voucherCreated": "Chứng từ sẽ được tạo khi ghi sổ"
+    },
+    "completion": {
+      "confirmTitle": "Hoàn thành đối chiếu",
+      "confirmMessage": "Bạn có chắc muốn hoàn thành bản đối chiếu này?",
+      "warningUnmatched": "Vẫn còn dòng sao kê chưa khớp.",
+      "warningAdjustments": "Có điều chỉnh đang chờ chưa được ghi sổ.",
+      "balanceCheck": "Kiểm tra số dư",
+      "balanceMatch": "Số dư sao kê và sổ cái khớp nhau",
+      "balanceMismatch": "Số dư sao kê và sổ cái không khớp",
+      "bankAccountUpdated": "Ngày đối chiếu tài khoản ngân hàng sẽ được cập nhật",
+      "reopenMessage": "Bạn có chắc chắn muốn mở lại bản đối chiếu này? Điều này sẽ cho phép tiếp tục khớp và điều chỉnh."
+    },
+    "messages": {
+      "createSuccess": "Tạo bản đối chiếu thành công",
+      "deleteSuccess": "Xóa bản đối chiếu thành công",
+      "importSuccess": "Nhập sao kê thành công",
+      "matchSuccess": "Khớp thành công",
+      "unmatchSuccess": "Hủy khớp thành công",
+      "autoMatchComplete": "Khớp tự động hoàn tất",
+      "adjustmentCreated": "Đã tạo điều chỉnh",
+      "adjustmentApproved": "Điều chỉnh đã được duyệt",
+      "adjustmentRejected": "Điều chỉnh đã bị từ chối",
+      "adjustmentPosted": "Điều chỉnh đã ghi sổ",
+      "adjustmentDeleted": "Đã xóa điều chỉnh",
+      "reconciliationCompleted": "Hoàn thành đối chiếu thành công",
+      "reconciliationReopened": "Đã mở lại bản đối chiếu",
+      "exportStarted": "Bắt đầu xuất file",
+      "failedToCreate": "Không thể tạo bản đối chiếu",
+      "failedToDelete": "Không thể xóa bản đối chiếu",
+      "failedToImport": "Không thể nhập sao kê",
+      "failedToMatch": "Không thể khớp",
+      "failedToUnmatch": "Không thể hủy khớp",
+      "failedToAutoMatch": "Không thể chạy khớp tự động",
+      "failedToComplete": "Không thể hoàn thành đối chiếu",
+      "failedToExport": "Không thể xuất file"
+    },
+    "deleteConfirm": {
+      "title": "Xóa bản đối chiếu",
+      "message": "Bạn có chắc muốn xóa bản đối chiếu này?",
+      "warning": "Thao tác này sẽ xóa tất cả dòng sao kê và điều chỉnh đã nhập."
+    }
+  },
+  "trialBalance": {
+    "title": "Bảng Cân đối Phát sinh (S06-DN)",
+    "subtitle": "Xem số dư tài khoản theo kỳ kế toán",
+    "filters": {
+      "period": "Kỳ kế toán",
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tìm theo mã hoặc tên tài khoản..."
+    },
+    "table": {
+      "accountCode": "Mã TK",
+      "accountName": "Tên tài khoản",
+      "openingDebit": "Nợ đầu kỳ",
+      "openingCredit": "Có đầu kỳ",
+      "periodDebit": "Phát sinh Nợ",
+      "periodCredit": "Phát sinh Có",
+      "closingDebit": "Nợ cuối kỳ",
+      "closingCredit": "Có cuối kỳ",
+      "total": "TỔNG CỘNG",
+      "noAccounts": "Không tìm thấy tài khoản",
+      "accountBalances": "Số dư tài khoản"
+    },
+    "actions": {
+      "refresh": "Làm mới",
+      "export": "Xuất báo cáo",
+      "exporting": "Đang xuất...",
+      "exportExcel": "Xuất Excel",
+      "exportPdf": "Xuất PDF"
+    },
+    "pagination": {
+      "showing": "Hiển thị",
+      "to": "đến",
+      "of": "trong",
+      "accounts": "tài khoản",
+      "perPage": "Số dòng",
+      "first": "Đầu",
+      "previous": "Trước",
+      "next": "Sau",
+      "last": "Cuối",
+      "page": "Trang"
+    },
+    "validation": {
+      "imbalanceWarning": "Cảnh báo: Bảng cân đối không cân. Tổng Nợ ({{debit}}) không bằng Tổng Có ({{credit}}).",
+      "selectPeriod": "Chọn kỳ kế toán để xem bảng cân đối"
+    },
+    "errors": {
+      "loadFailed": "Không thể tải bảng cân đối",
+      "exportFailed": "Không thể xuất bảng cân đối",
+      "periodLoadFailed": "Không thể tải danh sách kỳ",
+      "validationFailed": "Kiểm tra thất bại"
+    },
+    "success": {
+      "exported": "Xuất bảng cân đối thành công",
+      "exportedPdf": "Xuất PDF thành công"
+    },
+    "reportFilters": "Bộ lọc báo cáo",
+    "periodInfo": "Kỳ: {{periodName}} | Khoảng thời gian: {{dateRange}}",
+    "drillDown": {
+      "title": "Chi tiết Chứng từ",
+      "openingDebit": "Nợ đầu kỳ",
+      "openingCredit": "Có đầu kỳ",
+      "periodDebit": "Phát sinh Nợ",
+      "periodCredit": "Phát sinh Có",
+      "closingDebit": "Nợ cuối kỳ",
+      "closingCredit": "Có cuối kỳ",
+      "voucherCount": "{{count}} chứng từ",
+      "totalAmount": "Tổng cộng",
+      "noVouchers": "Không tìm thấy chứng từ cho lựa chọn này",
+      "date": "Ngày",
+      "voucherNumber": "Số CT",
+      "description": "Diễn giải",
+      "debit": "Nợ",
+      "credit": "Có"
+    }
+  },
+  "cashAudit": {
+    "title": "Kiểm toán Tiền mặt & Ngân hàng",
+    "subtitle": "Nhật ký kiểm toán, báo cáo tuân thủ và kiểm tra tính toàn vẹn",
+    "explorer": {
+      "title": "Trình duyệt Kiểm toán",
+      "filterDescription": "Lọc nhật ký kiểm toán theo khoảng thời gian, loại thao tác, người dùng và đối tượng",
+      "filters": {
+        "dateFrom": "Từ ngày",
+        "dateTo": "Đến ngày",
+        "bankAccount": "Tài khoản ngân hàng",
+        "actionType": "Loại thao tác",
+        "user": "Người dùng",
+        "entityType": "Loại đối tượng"
+      },
+      "columns": {
+        "timestamp": "Thời gian",
+        "action": "Thao tác",
+        "user": "Người dùng",
+        "entity": "Đối tượng",
+        "details": "Chi tiết",
+        "ipAddress": "Địa chỉ IP"
+      }
+    },
+    "integrity": {
+      "title": "Kiểm tra tính toàn vẹn",
+      "subtitle": "Xác minh tính toàn vẹn hàng ngày và cuối kỳ",
+      "status": {
+        "title": "Trạng thái",
+        "passed": "Đạt",
+        "failed": "Không đạt",
+        "error": "Lỗi"
+      },
+      "checkTypes": {
+        "daily": "Kiểm tra hàng ngày",
+        "periodClose": "Kiểm tra đóng kỳ",
+        "manual": "Kiểm tra thủ công",
+        "hourlyAnomaly": "Quét bất thường hàng giờ"
+      },
+      "lastCheck": "Kiểm tra gần nhất",
+      "runCheck": "Chạy kiểm tra ngay",
+      "history": "Lịch sử kiểm tra",
+      "historyDescription": "Các lần thực hiện kiểm tra tính toàn vẹn gần đây",
+      "issuesFound": "Vấn đề phát hiện",
+      "issuesFromLastCheck": "vấn đề từ lần kiểm tra gần nhất",
+      "detectedIssues": "Vấn đề phát hiện được",
+      "duration": "Thời gian",
+      "executionTime": "thời gian thực thi",
+      "recordsChecked": "Bản ghi đã kiểm tra",
+      "records": "bản ghi",
+      "checkType": "Loại kiểm tra",
+      "executedAt": "Thực hiện lúc",
+      "noChecks": "Chưa có kiểm tra tính toàn vẹn nào được chạy",
+      "running": "Đang chạy kiểm tra tính toàn vẹn...",
+      "loadFailed": "Không thể tải dữ liệu kiểm tra tính toàn vẹn",
+      "runFailed": "Không thể chạy kiểm tra tính toàn vẹn",
+      "checkPassed": "Tất cả kiểm tra tính toàn vẹn đều đạt!",
+      "checkFailed": "Kiểm tra tính toàn vẹn phát hiện vấn đề",
+      "severity": "Mức độ nghiêm trọng",
+      "issueType": "Loại vấn đề",
+      "description": "Mô tả",
+      "entity": "Đối tượng"
+    },
+    "actions": {
+      "periodBlockAttempt": "Nỗ lực chỉnh sửa kỳ đóng",
+      "integrityCheckPass": "Kiểm tra toàn vẹn đạt",
+      "integrityCheckFail": "Kiểm tra toàn vẹn không đạt",
+      "backupExport": "Xuất sao lưu",
+      "auditExplorerQuery": "Truy vấn kiểm toán",
+      "anomalyDetected": "Phát hiện bất thường",
+      "purgeRequest": "Yêu cầu xóa",
+      "purgeApprove": "Xóa đã duyệt",
+      "purgeReject": "Xóa bị từ chối",
+      "alertSent": "Cảnh báo đã gửi",
+      "complianceExport": "Xuất tuân thủ"
+    },
+    "export": {
+      "json": "Xuất JSON",
+      "csv": "Xuất CSV",
+      "pdf": "Xuất PDF",
+      "downloading": "Đang tải...",
+      "hashVerified": "Đã xác minh mã băm tài liệu",
+      "success": "Xuất hoàn tất ({{format}})",
+      "failed": "Xuất thất bại"
+    },
+    "purge": {
+      "request": "Yêu cầu xóa",
+      "approve": "Duyệt xóa",
+      "reject": "Từ chối xóa",
+      "reason": "Lý do",
+      "dateRange": "Khoảng thời gian xóa",
+      "recordsPurged": "Bản ghi đã xóa",
+      "pendingApproval": "Chờ duyệt",
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối",
+      "selfApprovalForbidden": "Bạn không thể duyệt yêu cầu xóa của chính mình",
+      "confirmTitle": "Xác nhận yêu cầu xóa",
+      "confirmMessage": "Bạn có chắc muốn yêu cầu xóa nhật ký kiểm toán? Thao tác này cần được quản trị viên phê duyệt và không thể hoàn tác.",
+      "warningRetention": "Cảnh báo: Nhật ký kiểm toán có yêu cầu lưu trữ 10 năm. Đảm bảo việc xóa tuân thủ quy định."
+    },
+    "issues": {
+      "drCrImbalance": "Mất cân đối Nợ/Có",
+      "duplicateReference": "Tham chiếu trùng lặp",
+      "sequenceGap": "Khoảng trống số thứ tự",
+      "unusualAmount": "Số tiền bất thường",
+      "repeatedBlockedAttempts": "Nỗ lực bị chặn lặp lại"
+    },
+    "severity": {
+      "high": "Cao",
+      "medium": "Trung bình",
+      "low": "Thấp"
+    },
+    "errors": {
+      "dateRangeExceeded": "Khoảng thời gian không được vượt quá {{max}} tháng",
+      "exportLimitExceeded": "Xuất giới hạn 10.000 bản ghi. Hãy áp dụng bộ lọc.",
+      "missingCompanyContext": "Yêu cầu ngữ cảnh công ty",
+      "accessDenied": "Yêu cầu vai trò QUẢN TRỊ VIÊN hoặc KẾ TOÁN TRƯỞNG",
+      "loadFailed": "Không thể tải nhật ký kiểm toán"
+    },
+    "messages": {
+      "querySuccess": "Đã tải nhật ký kiểm toán",
+      "exportSuccess": "Xuất hoàn tất",
+      "purgeRequested": "Đã gửi yêu cầu xóa",
+      "purgeApproved": "Xóa đã duyệt và thực hiện",
+      "purgeRejected": "Yêu cầu xóa bị từ chối",
+      "checkCompleted": "Kiểm tra toàn vẹn hoàn tất",
+      "checkPassed": "Tất cả kiểm tra đạt",
+      "checkFailed": "Phát hiện vấn đề"
+    }
+  },
+  "statutoryReports": {
+    "title": "Báo cáo tài chính",
+    "subtitle": "Báo cáo tài chính theo TT200 (B01, B02, B03)",
+    "tabs": {
+      "balanceSheet": "Bảng cân đối",
+      "incomeStatement": "Kết quả HĐKD",
+      "cashFlow": "Lưu chuyển tiền tệ",
+      "detailedLedger": "Sổ chi tiết"
+    },
+    "reportTitles": {
+      "balanceSheet": "Bảng cân đối kế toán (B01-DN)",
+      "incomeStatement": "Báo cáo kết quả hoạt động kinh doanh (B02-DN)",
+      "cashFlow": "Báo cáo lưu chuyển tiền tệ (B03-DN)",
+      "detailedLedger": "Sổ chi tiết (F01)"
+    },
+    "filters": {
+      "title": "Bộ lọc báo cáo",
+      "period": "Kỳ kế toán",
+      "selectPeriod": "Chọn kỳ",
+      "comparisonPeriod": "Kỳ so sánh",
+      "noComparison": "Không so sánh",
+      "dateRange": "Khoảng thời gian"
+    },
+    "table": {
+      "code": "Mã",
+      "description": "Chỉ tiêu",
+      "currentPeriod": "Kỳ này",
+      "priorPeriod": "Kỳ trước",
+      "variance": "Chênh lệch",
+      "variancePercent": "%"
+    },
+    "taxCode": "Mã số thuế",
+    "periodLabel": "Kỳ",
+    "comparedTo": "So với",
+    "mappingVersion": "Phiên bản ánh xạ",
+    "generatedAt": "Tạo lúc",
+    "hash": "Mã băm",
+    "mapping": "Ánh xạ",
+    "selectPeriodToView": "Chọn kỳ để xem báo cáo",
+    "noDataAvailable": "Không có dữ liệu cho kỳ này",
+    "exportExcel": "Xuất Excel",
+    "exportPdf": "Xuất PDF",
+    "draftWarning": {
+      "title": "Báo cáo nháp",
+      "description": "Báo cáo này cho kỳ chưa khóa sổ và có thể thay đổi. Số liệu chính thức sẽ có sau khi khóa sổ."
+    },
+    "validation": {
+      "selectPeriod": "Vui lòng chọn kỳ kế toán",
+      "hasErrors": "Phát hiện lỗi xác thực",
+      "cannotExportWithErrors": "Không thể xuất báo cáo có lỗi xác thực. Vui lòng sửa lỗi trước."
+    },
+    "drillDown": {
+      "noAccounts": "Không tìm thấy tài khoản đóng góp",
+      "noVouchers": "Không tìm thấy chứng từ cho tài khoản này",
+      "voucherDetail": "Chi tiết chứng từ",
+      "voucherDetailDescription": "Chi tiết chứng từ và các bút toán",
+      "lines": "Bút toán",
+      "attachments": "Đính kèm",
+      "openVoucher": "Mở chứng từ"
+    },
+    "errors": {
+      "loadPeriodsFailed": "Không thể tải danh sách kỳ kế toán",
+      "loadReportFailed": "Không thể tải báo cáo",
+      "exportFailed": "Xuất báo cáo thất bại"
+    },
+    "success": {
+      "exported": "Xuất báo cáo thành công"
+    }
+  },
+  "reportMappings": {
+    "title": "Cấu hình ánh xạ báo cáo",
+    "subtitle": "Cấu hình ánh xạ tài khoản-chỉ tiêu theo TT200 cho báo cáo tài chính",
+    "warning": "Thay đổi ánh xạ ảnh hưởng đến tất cả báo cáo tương lai. Mỗi thay đổi tạo phiên bản mới và được ghi nhật ký kiểm toán.",
+    "reportTypes": {
+      "balanceSheet": "Bảng cân đối",
+      "incomeStatement": "Kết quả HĐKD",
+      "cashFlow": "Lưu chuyển tiền tệ",
+      "detailedLedger": "Sổ chi tiết"
+    },
+    "table": {
+      "code": "Mã",
+      "lineName": "Tên chỉ tiêu",
+      "accountPattern": "Mẫu tài khoản",
+      "operator": "Phép tính",
+      "version": "Phiên bản"
+    },
+    "calculated": "Tính toán",
+    "viewHistory": "Xem lịch sử",
+    "operators": {
+      "sum": "Tổng các tài khoản",
+      "diff": "Hiệu",
+      "abs": "Giá trị tuyệt đối"
+    },
+    "editDialog": {
+      "title": "Sửa ánh xạ",
+      "description": "Đang sửa ánh xạ cho chỉ tiêu {{lineCode}}: {{lineName}}",
+      "accountPattern": "Mẫu tài khoản",
+      "accountPatternHelp": "Dùng ký tự đại diện (111*), khoảng (111-119), hoặc mã phân cách (111,112,113)",
+      "operator": "Phép tính",
+      "reason": "Lý do thay đổi",
+      "reasonPlaceholder": "Giải thích lý do thay đổi ánh xạ này...",
+      "reasonHelp": "Bắt buộc cho nhật ký kiểm toán. Hãy cụ thể về lý do."
+    },
+    "historyDialog": {
+      "title": "Lịch sử phiên bản ánh xạ",
+      "noHistory": "Không có lịch sử phiên bản",
+      "current": "Hiện tại",
+      "rollback": "Hoàn tác"
+    },
+    "rollbackDialog": {
+      "title": "Xác nhận hoàn tác",
+      "description": "Bạn có chắc muốn hoàn tác về phiên bản {{version}}? Thao tác này sẽ tạo phiên bản mới với cấu hình ánh xạ trước đó.",
+      "confirm": "Xác nhận hoàn tác"
+    },
+    "validation": {
+      "reasonRequired": "Bắt buộc nhập lý do thay đổi"
+    },
+    "errors": {
+      "loadFailed": "Không thể tải ánh xạ",
+      "updateFailed": "Cập nhật ánh xạ thất bại",
+      "historyFailed": "Không thể tải lịch sử ánh xạ",
+      "rollbackFailed": "Hoàn tác ánh xạ thất bại"
+    },
+    "success": {
+      "updated": "Cập nhật ánh xạ thành công (đã tạo phiên bản mới)",
+      "rolledBack": "Hoàn tác ánh xạ thành công"
+    }
+  },
+  "reportSchedules": {
+    "title": "Lịch chạy báo cáo",
+    "createNew": "Tạo lịch mới",
+    "editSchedule": "Chỉnh sửa lịch",
+    "scheduleName": "Tên lịch",
+    "reportType": "Loại báo cáo",
+    "cronExpression": "Tần suất chạy",
+    "periodRule": "Chọn kỳ",
+    "exportFormats": "Định dạng xuất",
+    "recipients": "Người nhận",
+    "owner": "Chủ sở hữu",
+    "lastRun": "Lần chạy cuối",
+    "nextRun": "Lần chạy tiếp",
+    "active": "Hoạt động",
+    "inactive": "Tạm dừng",
+    "runNow": "Chạy ngay",
+    "viewHistory": "Xem lịch sử",
+    "disable": "Vô hiệu hóa",
+    "enable": "Kích hoạt",
+    "periodRules": {
+      "LAST_CLOSED": "Kỳ đóng gần nhất",
+      "CURRENT": "Kỳ hiện tại",
+      "SPECIFIC": "Kỳ cụ thể"
+    },
+    "cronPresets": {
+      "monthly": "Hàng tháng ngày 5",
+      "weekly": "Hàng tuần thứ 2",
+      "quarterly": "Hàng quý",
+      "custom": "Tùy chỉnh"
+    },
+    "runStatus": {
+      "PENDING": "Đang chờ",
+      "RUNNING": "Đang chạy",
+      "SUCCESS": "Thành công",
+      "PARTIAL_SUCCESS": "Một phần thành công",
+      "FAILED": "Thất bại",
+      "CANCELLED": "Đã hủy",
+      "SKIPPED_DUPLICATE": "Bỏ qua (Trùng)"
+    },
+    "triggerType": {
+      "SCHEDULED": "Theo lịch",
+      "MANUAL": "Thủ công",
+      "RETRY": "Thử lại"
+    }
+  },
+  "reportCenter": {
+    "title": "Trung tâm báo cáo",
+    "upcoming": "Lịch chạy sắp tới",
+    "history": "Lịch sử chạy",
+    "noUpcoming": "Không có lịch chạy sắp tới",
+    "rerun": "Chạy lại",
+    "viewDetails": "Xem chi tiết",
+    "duration": "Thời gian",
+    "queuedAt": "Thời điểm xếp hàng",
+    "triggeredBy": "Người kích hoạt"
+  },
+  "multiPeriodComparison": {
+    "title": "So sánh đa kỳ",
+    "subtitle": "So sánh báo cáo tài chính qua nhiều kỳ với phân tích chênh lệch",
+    "selectPeriods": "Chọn các kỳ để so sánh (tối đa 4)",
+    "variance": "Chênh lệch",
+    "variancePercent": "Chênh lệch %",
+    "favorable": "Thuận lợi",
+    "unfavorable": "Bất lợi",
+    "neutral": "Trung tính",
+    "material": "Chênh lệch trọng yếu",
+    "hideZeros": "Ẩn giá trị bằng 0",
+    "hideImmaterial": "Ẩn chênh lệch không trọng yếu",
+    "showSparklines": "Hiển thị biểu đồ xu hướng",
+    "hiddenLines": "{{count}} dòng đã ẩn",
+    "noPeriodsSelected": "Chọn ít nhất một kỳ để tạo báo cáo so sánh",
+    "draftPeriodWarning": "Một hoặc nhiều kỳ được chọn vẫn đang mở. Giá trị có thể thay đổi.",
+    "presets": {
+      "yoy": "So sánh cùng kỳ năm",
+      "mom": "So sánh tháng liên tiếp",
+      "quarterly": "4 quý gần nhất",
+      "custom": "Tùy chỉnh"
+    },
+    "reportOptions": "Tùy chọn báo cáo",
+    "configureParams": "Cấu hình tham số so sánh",
+    "periods": "Kỳ",
+    "displayOptions": "Tùy chọn hiển thị",
+    "trend": "Xu hướng"
+  },
+  "comparisonSettings": {
+    "title": "Cài đặt so sánh",
+    "description": "Cấu hình ngưỡng và tùy chọn hiển thị cho báo cáo so sánh đa kỳ",
+    "thresholds": "Ngưỡng chênh lệch",
+    "percentThreshold": "Ngưỡng phần trăm",
+    "percentThresholdHelp": "Các dòng có chênh lệch vượt ngưỡng này sẽ được đánh dấu",
+    "absoluteThreshold": "Ngưỡng tuyệt đối (VND)",
+    "absoluteThresholdHelp": "Giá trị hiện tại: {{value}}",
+    "defaultMode": "Chế độ so sánh mặc định",
+    "displayPreferences": "Tùy chọn hiển thị",
+    "showSparklines": "Hiển thị biểu đồ mini",
+    "sparklinesHelp": "Hiển thị biểu đồ xu hướng trong bảng so sánh",
+    "hideImmaterial": "Ẩn không trọng yếu theo mặc định",
+    "hideImmaterialHelp": "Tự động ẩn các dòng dưới ngưỡng khi mở báo cáo",
+    "saveSuccess": "Đã lưu cài đặt thành công",
+    "saveFailed": "Lưu cài đặt thất bại",
+    "loadError": "Tải cài đặt so sánh thất bại",
+    "modes": {
+      "yoy": "Cùng kỳ năm trước",
+      "mom": "Tháng liên tiếp",
+      "quarterly": "Theo quý",
+      "custom": "Tùy chỉnh"
+    }
   }
 }

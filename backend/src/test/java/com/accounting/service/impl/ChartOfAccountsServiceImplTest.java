@@ -8,12 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.accounting.entity.ChartOfAccount;
-import com.accounting.repository.ChartOfAccountsRepository;
-import com.accounting.security.CompanyContext;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +20,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.entity.ChartOfAccount;
+import com.accounting.repository.ChartOfAccountsRepository;
+import com.accounting.security.CompanyContext;
 
 @ExtendWith(MockitoExtension.class)
 class ChartOfAccountsServiceImplTest {

@@ -25,4 +25,3 @@ public interface CompanySettingsService {
    */
   CompanySettingsDto updateCurrentCompanySettings(UpdateCompanySettingsRequest request);
 }
-

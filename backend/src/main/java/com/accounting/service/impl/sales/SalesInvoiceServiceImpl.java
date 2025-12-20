@@ -1,37 +1,5 @@
 package com.accounting.service.impl.sales;
 
-import com.accounting.dto.SalesInvoiceCreateRequest;
-import com.accounting.dto.SalesInvoiceDTO;
-import com.accounting.dto.SalesInvoiceLineDTO;
-import com.accounting.dto.SalesInvoiceListDTO;
-import com.accounting.dto.SalesInvoiceValidationResult;
-import com.accounting.entity.SalesInvoice;
-import com.accounting.entity.SalesInvoiceLine;
-import com.accounting.entity.SalesInvoiceStatus;
-import com.accounting.entity.Customer;
-import com.accounting.entity.User;
-import com.accounting.entity.VatRate;
-import com.accounting.repository.SalesInvoiceLineRepository;
-import com.accounting.repository.SalesInvoiceRepository;
-import com.accounting.repository.CustomerRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.SecurityUtils;
-import com.accounting.service.AuditService;
-import com.accounting.service.ARVATService;
-import com.accounting.service.SalesInvoiceApprovalService;
-import com.accounting.service.SalesInvoiceService;
-import com.accounting.service.SalesInvoiceValidationService;
-import com.accounting.service.VoucherService;
-import com.accounting.service.voucher.VoucherPostingService;
-import com.accounting.service.util.SalesInvoiceAuditHelper;
-import com.accounting.dto.VoucherCreateRequest;
-import com.accounting.dto.VoucherDTO;
-import com.accounting.dto.VoucherEntryLineRequest;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -41,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -52,6 +21,39 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.accounting.dto.SalesInvoiceCreateRequest;
+import com.accounting.dto.SalesInvoiceDTO;
+import com.accounting.dto.SalesInvoiceLineDTO;
+import com.accounting.dto.SalesInvoiceListDTO;
+import com.accounting.dto.SalesInvoiceValidationResult;
+import com.accounting.dto.VoucherCreateRequest;
+import com.accounting.dto.VoucherDTO;
+import com.accounting.dto.VoucherEntryLineRequest;
+import com.accounting.entity.Customer;
+import com.accounting.entity.SalesInvoice;
+import com.accounting.entity.SalesInvoiceLine;
+import com.accounting.entity.SalesInvoiceStatus;
+import com.accounting.entity.User;
+import com.accounting.entity.VatRate;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.repository.SalesInvoiceLineRepository;
+import com.accounting.repository.SalesInvoiceRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.SecurityUtils;
+import com.accounting.service.ARVATService;
+import com.accounting.service.AuditService;
+import com.accounting.service.SalesInvoiceApprovalService;
+import com.accounting.service.SalesInvoiceService;
+import com.accounting.service.SalesInvoiceValidationService;
+import com.accounting.service.VoucherService;
+import com.accounting.service.util.SalesInvoiceAuditHelper;
+import com.accounting.service.voucher.VoucherPostingService;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.Predicate;
 
 /**
  * Implementation of SalesInvoiceService for sales invoice operations.

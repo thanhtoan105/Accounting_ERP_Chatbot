@@ -1,5 +1,16 @@
 package com.accounting.service.impl.sales;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.accounting.dto.ReceiptAllocationRequest;
 import com.accounting.dto.ReceiptValidationResult;
 import com.accounting.entity.ARPayment;
@@ -12,15 +23,6 @@ import com.accounting.security.CompanyContext;
 import com.accounting.service.AccountBalanceService;
 import com.accounting.service.CompanySettingsService;
 import com.accounting.service.ReceiptValidationService;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Implementation of ReceiptValidationService.

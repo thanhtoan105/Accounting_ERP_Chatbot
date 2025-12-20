@@ -1,37 +1,17 @@
 package com.accounting.controller.sales;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import com.accounting.entity.AccountingPeriod;
-import com.accounting.entity.ChartOfAccount;
-import com.accounting.entity.Company;
-import com.accounting.entity.PeriodStatus;
-import com.accounting.entity.SalesInvoice;
-import com.accounting.entity.SalesInvoiceLine;
-import com.accounting.entity.SalesInvoiceStatus;
-import com.accounting.entity.Customer;
-import com.accounting.entity.User;
-import com.accounting.entity.VatRate;
-import com.accounting.repository.AccountingPeriodRepository;
-import com.accounting.repository.ChartOfAccountsRepository;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.SalesInvoiceLineRepository;
-import com.accounting.repository.SalesInvoiceRepository;
-import com.accounting.repository.CustomerRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.JwtTokenProvider;
-import com.accounting.security.PasswordEncoder;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.UUID;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +20,27 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.accounting.entity.AccountingPeriod;
+import com.accounting.entity.ChartOfAccount;
+import com.accounting.entity.Company;
+import com.accounting.entity.Customer;
+import com.accounting.entity.PeriodStatus;
+import com.accounting.entity.SalesInvoice;
+import com.accounting.entity.SalesInvoiceLine;
+import com.accounting.entity.SalesInvoiceStatus;
+import com.accounting.entity.User;
+import com.accounting.entity.VatRate;
+import com.accounting.repository.AccountingPeriodRepository;
+import com.accounting.repository.ChartOfAccountsRepository;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.repository.CustomerRepository;
+import com.accounting.repository.SalesInvoiceLineRepository;
+import com.accounting.repository.SalesInvoiceRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.JwtTokenProvider;
+import com.accounting.security.PasswordEncoder;
 
 @SpringBootTest
 @AutoConfigureMockMvc

@@ -1,19 +1,11 @@
 package com.accounting.controller;
 
-import com.accounting.dto.AcceptInvitationRequest;
-import com.accounting.dto.AuthResponse;
-import com.accounting.dto.CreateInvitationRequest;
-import com.accounting.dto.InvitationResponse;
-import com.accounting.entity.Invitation;
-import com.accounting.entity.User;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.security.JwtTokenProvider;
-import com.accounting.service.InvitationService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,8 +19,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.accounting.dto.AcceptInvitationRequest;
+import com.accounting.dto.AuthResponse;
+import com.accounting.dto.CreateInvitationRequest;
+import com.accounting.dto.InvitationResponse;
+import com.accounting.entity.Invitation;
+import com.accounting.entity.User;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.security.JwtTokenProvider;
+import com.accounting.service.InvitationService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 /**
  * REST controller for invitation operations.
@@ -175,5 +177,49 @@ public class InvitationController {
     body.put("data", authResponse);
     return ResponseEntity.ok(body);
   }
-}
 
+  /**
+   * Revoke an invitation.
+   * Requires ADMIN or CHIEF_ACCOUNTANT role.
+   */
+  @PostMapping("/{id}/revoke")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('CHIEF_ACCOUNTANT')")
+  public ResponseEntity<Map<String, Object>> revokeInvitation(
+      @PathVariable Long id, HttpServletRequest httpRequest) {
+
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    Long currentUserId = Long.parseLong(authentication.getPrincipal().toString());
+
+    invitationService.revokeInvitation(id, currentUserId, httpRequest);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("message", "Invitation revoked successfully");
+    return ResponseEntity.ok(body);
+  }
+
+  /**
+   * Resend an invitation.
+   * Revokes the old invitation and creates a new one with fresh token and expiry.
+   * Requires ADMIN or CHIEF_ACCOUNTANT role.
+   */
+  @PostMapping("/{id}/resend")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('CHIEF_ACCOUNTANT')")
+  public ResponseEntity<Map<String, Object>> resendInvitation(
+      @PathVariable Long id, HttpServletRequest httpRequest) {
+
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    Long currentUserId = Long.parseLong(authentication.getPrincipal().toString());
+
+    Invitation newInvitation = invitationService.resendInvitation(id, currentUserId, httpRequest);
+
+    Map<String, Object> responseData = new HashMap<>();
+    responseData.put("invitationId", newInvitation.getId());
+    responseData.put("invitationToken", newInvitation.getToken());
+    responseData.put("expiresAt", newInvitation.getExpiresAt());
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("data", responseData);
+    body.put("message", "Invitation resent successfully");
+    return ResponseEntity.ok(body);
+  }
+}

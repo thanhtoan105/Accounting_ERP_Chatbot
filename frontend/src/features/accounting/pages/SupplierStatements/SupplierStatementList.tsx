@@ -24,7 +24,6 @@ import { ReconciliationResultsDialog } from './ReconciliationResultsDialog'
 import { SendStatementDialog } from '@/components/supplier-statements'
 import type {
   SupplierStatementHistory,
-  StatementType,
   ExportFormat,
   ReconciliationResult,
 } from '@/types/supplierStatement'

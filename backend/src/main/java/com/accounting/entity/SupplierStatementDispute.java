@@ -1,12 +1,13 @@
 package com.accounting.entity;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.UUID;
 
 /**
  * SupplierStatementDispute entity for tracking discrepancies found during

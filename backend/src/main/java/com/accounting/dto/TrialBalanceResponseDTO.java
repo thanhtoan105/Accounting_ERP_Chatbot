@@ -19,6 +19,7 @@ public class TrialBalanceResponseDTO {
   private BigDecimal totalPeriodCredit = BigDecimal.ZERO;
   private BigDecimal totalClosingDebit = BigDecimal.ZERO;
   private BigDecimal totalClosingCredit = BigDecimal.ZERO;
+  private boolean isBalanced = true;
 
   public TrialBalanceResponseDTO() {}
 
@@ -124,5 +125,12 @@ public class TrialBalanceResponseDTO {
   public void setTotalClosingCredit(BigDecimal totalClosingCredit) {
     this.totalClosingCredit = totalClosingCredit != null ? totalClosingCredit : BigDecimal.ZERO;
   }
-}
 
+  public boolean isBalanced() {
+    return isBalanced;
+  }
+
+  public void setBalanced(boolean isBalanced) {
+    this.isBalanced = isBalanced;
+  }
+}

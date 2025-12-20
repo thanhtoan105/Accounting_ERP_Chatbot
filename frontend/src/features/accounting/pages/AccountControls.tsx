@@ -7,11 +7,8 @@ import {
   RefreshCw,
   Edit,
   Trash2,
-  CheckCircle2,
-  XCircle,
   Building2,
   User,
-  ShoppingCart,
   FolderTree,
   Package,
 } from 'lucide-react'

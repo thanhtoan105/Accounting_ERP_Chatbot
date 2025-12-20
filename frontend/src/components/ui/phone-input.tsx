@@ -54,7 +54,7 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
     },
     ref,
   ) => {
-    const [countryData, setCountryData] = useState<CountryData | undefined>()
+    const [_countryData, setCountryData] = useState<CountryData | undefined>()
     const [displayFlag, setDisplayFlag] = useState<string>('')
     const [hasInitialized, setHasInitialized] = useState(false)
     const [countryOpen, setCountryOpen] = useState(false)

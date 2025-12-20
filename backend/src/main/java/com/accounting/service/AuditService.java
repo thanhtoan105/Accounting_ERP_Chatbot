@@ -1,11 +1,13 @@
 package com.accounting.service;
 
-import com.accounting.entity.User;
-import com.accounting.imports.ImportType;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
+
+import com.accounting.entity.User;
+import com.accounting.imports.ImportType;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuditService {
         void logLoginSuccess(User user, HttpServletRequest request);
@@ -1537,4 +1539,38 @@ public interface AuditService {
                         Long bankAccountId,
                         String details,
                         String clientIp);
+
+        /**
+         * Log bank reconciliation operation for audit trail.
+         *
+         * @param action           operation action (e.g., RECONCILIATION_CREATE,
+         *                         STATEMENT_IMPORT, AUTO_MATCH, MANUAL_MATCH, etc.)
+         * @param reconciliationId reconciliation ID
+         * @param details          operation details
+         * @param clientIp         client IP address
+         */
+        void logReconciliationOperation(
+                        String action,
+                        java.util.UUID reconciliationId,
+                        String details,
+                        String clientIp);
+
+        /**
+         * Log report schedule event (create, update, cancel).
+         *
+         * @param action       action type (e.g., REPORT_SCHEDULE_CREATED, REPORT_SCHEDULE_UPDATED, REPORT_SCHEDULE_CANCELLED)
+         * @param scheduleId   schedule ID
+         * @param scheduleName schedule name
+         */
+        void logReportScheduleEvent(String action, UUID scheduleId, String scheduleName);
+
+        /**
+         * Log report schedule run event (queued, started, completed, failed).
+         *
+         * @param action       action type (e.g., REPORT_SCHEDULE_RUN_QUEUED, REPORT_SCHEDULE_RUN_STARTED, etc.)
+         * @param runId        run ID
+         * @param scheduleName schedule name
+         * @param triggerType  trigger type (SCHEDULED, MANUAL, RETRY)
+         */
+        void logReportScheduleRunEvent(String action, UUID runId, String scheduleName, String triggerType);
 }

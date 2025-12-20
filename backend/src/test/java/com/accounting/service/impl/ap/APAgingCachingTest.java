@@ -1,11 +1,33 @@
 package com.accounting.service.impl.ap;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
 import com.accounting.entity.PurchaseBill;
 import com.accounting.entity.PurchaseBillStatus;
@@ -16,29 +38,6 @@ import com.accounting.repository.PurchaseBillRepository;
 import com.accounting.repository.SupplierRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.APAgingService;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
-import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
-import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.test.context.ActiveProfiles;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Verifies caching behavior for APAgingServiceImpl without requiring a Redis instance.
@@ -174,4 +173,3 @@ class APAgingCachingTest {
     when(supplierRepository.findByCompanyId(1L)).thenReturn(Collections.singletonList(supplier));
   }
 }
-

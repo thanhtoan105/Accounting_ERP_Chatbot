@@ -5,9 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.accounting.entity.Company;
-import com.accounting.service.CompanyService;
 import java.time.LocalDate;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -19,6 +18,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import com.accounting.entity.Company;
+import com.accounting.service.CompanyService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -79,5 +81,3 @@ class ReportControllerIT {
                 .andExpect(status().isForbidden());
     }
 }
-
-

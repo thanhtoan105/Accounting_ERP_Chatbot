@@ -44,6 +44,14 @@
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aspects</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
@@ -108,7 +116,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Reporting: JasperReports for PDF/XLSX, DynamicReports for fluent API, POI for Excel control -->
@@ -153,6 +161,13 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
+        <!-- DataFaker for generating realistic test/demo data -->
+        <dependency>
+            <groupId>net.datafaker</groupId>
+            <artifactId>datafaker</artifactId>
+            <version>2.5.3</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -186,16 +201,27 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
                 <version>2.43.0</version>
                 <configuration>
                     <java>
-                        <eclipse>
-                            <file>""</file>
-                        </eclipse>
-                        <importOrder>java,javax,org,com</importOrder>
-                        <removeUnusedImports>true</removeUnusedImports>
+                        <importOrder>
+                            <order>java,javax,org,com</order>
+                        </importOrder>
+                        <removeUnusedImports />
                     </java>
                 </configuration>
                 <executions>
@@ -229,10 +255,10 @@
                 <configuration>
                         <!-- Tăng forkCount để tận dụng 4 CPU cores -->
                         <!-- Công thức: forkCount = CPU cores - 1 (để lại 1 core cho OS) -->
-                        <forkCount>3</forkCount>
+                        <forkCount>2</forkCount>
                         <reuseForks>true</reuseForks>
                         <parallel>classes</parallel>
-                        <threadCountClasses>3</threadCountClasses>
+                        <threadCountClasses>2</threadCountClasses>
                         <!-- Tối ưu JVM cho test -->
                         <argLine>-Xmx1024m -XX:MaxMetaspaceSize=512m -XX:+UseG1GC</argLine>
                         <!-- Shutdown timeout để tránh hang -->

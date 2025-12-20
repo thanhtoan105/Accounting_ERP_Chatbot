@@ -34,14 +34,13 @@ const mockReceipt = {
 
 test.describe('ReceiptReversalDialog Component', () => {
   const defaultProps = {
-    receipt: mockReceipt,
-    isOpen: true,
-    onClose: () => {},
-    onConfirm: async () => {},
-    isLoading: false,
+    receipt: mockReceipt as any,
+    open: true,
+    onOpenChange: () => {},
+    onSuccess: async () => {},
   }
 
-  test('AC6-7: should display receipt details in dialog', async ({ mount, page }) => {
+  test('AC6-7: should display receipt details in dialog', async ({ mount }) => {
     // GIVEN: Dialog is open with receipt data
     const component = await mount(
       <QueryClientProvider client={queryClient}>
@@ -61,7 +60,7 @@ test.describe('ReceiptReversalDialog Component', () => {
     )
   })
 
-  test('AC6-7: should display current allocations', async ({ mount, page }) => {
+  test('AC6-7: should display current allocations', async ({ mount }) => {
     // GIVEN: Dialog with receipt containing allocations
     const component = await mount(
       <QueryClientProvider client={queryClient}>
@@ -83,7 +82,7 @@ test.describe('ReceiptReversalDialog Component', () => {
     ).toContainText('5,000,000')
   })
 
-  test('AC7: should require mandatory reversal reason', async ({ mount, page }) => {
+  test('AC7: should require mandatory reversal reason', async ({ mount }) => {
     // GIVEN: Dialog is open
     const component = await mount(
       <QueryClientProvider client={queryClient}>
@@ -101,7 +100,7 @@ test.describe('ReceiptReversalDialog Component', () => {
     await expect(reasonError).toContainText('required')
   })
 
-  test('AC7: should accept reversal reason with max 500 characters', async ({ mount, page }) => {
+  test('AC7: should accept reversal reason with max 500 characters', async ({ mount }) => {
     // GIVEN: Dialog is open
     const component = await mount(
       <QueryClientProvider client={queryClient}>
@@ -118,7 +117,7 @@ test.describe('ReceiptReversalDialog Component', () => {
     await expect(reasonError).not.toBeVisible()
   })
 
-  test('AC7: should prevent reason exceeding 500 characters', async ({ mount, page }) => {
+  test('AC7: should prevent reason exceeding 500 characters', async ({ mount }) => {
     // GIVEN: Dialog is open
     const component = await mount(
       <QueryClientProvider client={queryClient}>
@@ -137,7 +136,7 @@ test.describe('ReceiptReversalDialog Component', () => {
     await expect(reasonError).toContainText('500 characters')
   })
 
-  test('AC6: should show warning before confirming reversal', async ({ mount, page }) => {
+  test('AC6: should show warning before confirming reversal', async ({ mount }) => {
     // GIVEN: Dialog is open with valid reason
     const component = await mount(
       <QueryClientProvider client={queryClient}>
@@ -154,17 +153,11 @@ test.describe('ReceiptReversalDialog Component', () => {
     await expect(warning).toContainText('linked reversal voucher')
   })
 
-  test('should call onConfirm with reversal data', async ({ mount, page }) => {
+  test('should call onSuccess with reversal data', async ({ mount }) => {
     // GIVEN: Dialog with reason entered
-    let confirmData = null
     const component = await mount(
       <QueryClientProvider client={queryClient}>
-        <ReceiptReversalDialog
-          {...defaultProps}
-          onConfirm={async (data) => {
-            confirmData = data
-          }}
-        />
+        <ReceiptReversalDialog {...defaultProps} />
       </QueryClientProvider>,
     )
 
@@ -176,23 +169,16 @@ test.describe('ReceiptReversalDialog Component', () => {
     const confirmButton = component.locator('[data-testid="confirm-reversal-button"]')
     await confirmButton.click()
 
-    // THEN: onConfirm called with reason
+    // THEN: onSuccess called
     // (This would require async handling in test)
-    // expect(confirmData).toEqual(expect.objectContaining({ reason }));
+    // expect(successCalled).toBe(true);
   })
 
-  test('should show success message after reversal', async ({ mount, page }) => {
+  test('should show success message after reversal', async ({ mount }) => {
     // GIVEN: Dialog confirming reversal
-    let successShown = false
     const component = await mount(
       <QueryClientProvider client={queryClient}>
-        <ReceiptReversalDialog
-          {...defaultProps}
-          onConfirm={async () => {
-            successShown = true
-            return { reversalVoucherId: 'voucher-002' }
-          }}
-        />
+        <ReceiptReversalDialog {...defaultProps} />
       </QueryClientProvider>,
     )
 
@@ -201,19 +187,17 @@ test.describe('ReceiptReversalDialog Component', () => {
     await component.locator('[data-testid="confirm-reversal-button"]').click()
 
     // THEN: Success message shown with reversal voucher link
-    // (Async handling in component)
-    const successMessage = component.locator('[data-testid="reversal-success-message"]')
-    // await expect(successMessage).toBeVisible();
+    // (Async handling in component - would verify success message visibility)
   })
 
-  test('should close dialog on cancel', async ({ mount, page }) => {
+  test('should close dialog on cancel', async ({ mount }) => {
     // GIVEN: Dialog is open
     let closeCalled = false
     const component = await mount(
       <QueryClientProvider client={queryClient}>
         <ReceiptReversalDialog
           {...defaultProps}
-          onClose={() => {
+          onOpenChange={() => {
             closeCalled = true
           }}
         />

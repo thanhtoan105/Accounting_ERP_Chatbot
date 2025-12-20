@@ -4,13 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-import com.accounting.entity.Company;
-import com.accounting.report.ReportService.Format;
-import com.accounting.service.CompanyService;
 import java.time.LocalDate;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import com.accounting.entity.Company;
+import com.accounting.report.ReportService.Format;
+import com.accounting.service.CompanyService;
 
 class ReportServiceTest {
 
@@ -56,5 +58,3 @@ class ReportServiceTest {
         assertTrue(xlsx[0] == 'P' && xlsx[1] == 'K');
     }
 }
-
-

@@ -14,6 +14,7 @@ so that I can analyze movements and verify balances accurately.
 ## Requirements Context Summary
 
 **Business Requirements:**
+
 - This story delivers operational visibility for all cash/bank transactions with running balance tracking.
 - Primary users are accountants reviewing daily cash movements, and chief accountants/auditors requiring comprehensive transaction history and balance verification.
 - Must support:
@@ -24,6 +25,7 @@ so that I can analyze movements and verify balances accurately.
   - Pagination for large datasets (>5k transactions)
 
 **Technical Context from Tech Spec (Epic 6):**
+
 - **New Services Required:**
   - `CashBookService`: Query transaction ledger, compute running balances, export cash/bank books
   - `CashBookQueryBuilder`: Dynamic query construction with filters
@@ -42,6 +44,7 @@ so that I can analyze movements and verify balances accurately.
   - RBAC enforced for all queries/exports; unauthorized attempts fail and are audit-logged
 
 **Dependencies:**
+
 - **Prerequisites:**
   - Story 6.1: Cash/Bank Account Management (bank accounts exist)
   - Story 6.2: Cash Receipt Entry & Posting (receipts posted to GL)
@@ -59,11 +62,13 @@ so that I can analyze movements and verify balances accurately.
 From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
 
 - **Route Role Consistency:**
+
   - When adding new routes in `AppRoutes.tsx`, ensure role arrays match between list/view/create/edit routes
   - Pattern: If list allows `['admin', 'accountant', 'chief_accountant', 'cfo']`, detail views should too
   - Check: Compare `requiredRoles` across all routes for the same feature
 
 - **i18n Translation Pattern:**
+
   1. Add section to `frontend/src/i18n/locales/vi/common.json` and `en/common.json`
   2. Import `useTranslation` hook: `import { useTranslation } from 'react-i18next'`
   3. Destructure in component: `const { t } = useTranslation()`
@@ -72,11 +77,13 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   6. Add `t` to `useMemo` dependency array if used inside columns/computed values
 
 - **Sidebar Navigation:**
+
   - Menu items defined in `frontend/src/layouts/ProtectedLayout.tsx` → `navItems` array
   - Add `labelKey` for translation, `path` for route, `requiredRoles` for RBAC
   - Group related items (e.g., Cash Book under Cash & Bank menu) by filtering and mapping in `sidebarItems`
 
 - **GL Account Code Integration:**
+
   - Story 6.3 used `bankAccount.glAccountCode` for GL account lookup
   - Cash book queries should filter voucher lines by the bank account's GL account code to get inflows/outflows
 
@@ -85,12 +92,14 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   - Cash book queries should add equivalent telemetry for query performance
 
 **Files from Previous Story to Reference/Reuse:**
+
 - `frontend/src/features/accounting/pages/Payments/PaymentList.tsx` – Data table patterns, i18n, pagination
 - `frontend/src/routes/AppRoutes.tsx` – Route and role configuration
 - `frontend/src/layouts/ProtectedLayout.tsx` – Sidebar navigation patterns
 - `backend/src/main/java/com/accounting/service/impl/payment/PaymentServiceImpl.java` – Service layer patterns
 
 **Pending Review Items from 6-3:**
+
 - [Low] Complete `PaymentImportDialog` frontend component (not blocking for 6.4)
 - [Low] Update documentation to reflect actual payment number format (documentation only)
 
@@ -99,20 +108,24 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
 ### Architecture Alignment
 
 - **Service Layer (NEW):**
+
   - Create `CashBookService` interface and `CashBookServiceImpl` for query and running balance logic
   - Create `CashBookExportService` for Excel/PDF generation
   - Follow existing service patterns from `ReceiptServiceImpl`, `PaymentServiceImpl`
 
 - **Query Optimization:**
+
   - Use indexed queries on `(company_id, bank_account_id, transaction_date)` for performance
   - Consider window functions or application-level aggregation for running balance
   - Cache frequently accessed balance summaries if needed
 
 - **API and Response Shape:**
+
   - Maintain standard `{ data, meta, error }` response wrapper used across the platform
   - Use consistent error codes for validation failures, RBAC denials, and query errors
 
 - **Frontend Stack:**
+
   - Use React + TypeScript + shadcn/ui components
   - Leverage TanStack Table with server-side pagination (already used in PaymentList, InvoiceList)
   - Align UI with generic data table patterns from `docs/ux-component-spec-generic-data-table.md`
@@ -160,6 +173,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
 ## Tasks / Subtasks
 
 - [x] **Task 1: Backend – CashBookService Implementation (AC: #1, #3, #7)**
+
   - [x] Create `CashBookService` interface with methods: `getCashBook()`, `getCashBookSummary()`, `getVoucherDetail()`
   - [x] Create `CashBookServiceImpl` with query logic for transactions and running balance computation
   - [x] Implement date/type/reference filters with indexed query optimization
@@ -169,6 +183,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   - [x] Add unit tests for balance calculations, filter logic, and edge cases
 
 - [x] **Task 2: Backend – CashBookController Endpoints (AC: #1-#3, #6-#8)**
+
   - [x] Create `CashBookController` at `/api/v1/cash-book`
   - [x] Implement `GET /:bankAccountId` endpoint for per-account ledger
   - [x] Implement `GET /:bankAccountId/transactions/:voucherId` endpoint for voucher drill-down
@@ -178,6 +193,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   - [x] Add integration tests for endpoints with RBAC validation
 
 - [x] **Task 3: Backend – CashBookExportService (AC: #4, #6, #8)**
+
   - [x] Create `CashBookExportService` interface and implementation
   - [x] Implement Excel export with Apache POI including company branding, filter snapshot, timestamp
   - [x] Implement PDF export (simple text-based implementation for MVP)
@@ -187,6 +203,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   - [x] Add tests for export content validation and hash verification
 
 - [x] **Task 4: Backend – Async Export for Large Datasets (AC: #5)**
+
   - [x] Implement async export job for datasets >10k rows (threshold increased from 5k)
   - [x] Add polling endpoint for job status (`GET /exports/{jobId}/status`)
   - [x] Implement in-memory job registry for MVP (production: use database)
@@ -194,6 +211,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   - [x] Add endpoint for download (`GET /exports/{jobId}/download`)
 
 - [x] **Task 5: Database – Index Optimization (AC: #7)**
+
   - [x] Created `V20251127005__add_cash_book_indexes.sql` migration
   - [x] Added composite indexes on `voucher_lines(company_id, account_id)`
   - [x] Added index on `vouchers(company_id, status, voucher_date)`
@@ -201,6 +219,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   - [x] Added ANALYZE statements for query planner optimization
 
 - [x] **Task 6: Frontend – CashBookList Page (AC: #1, #3, #5)**
+
   - [x] Create `frontend/src/features/accounting/pages/CashBook/CashBookPage.tsx`
   - [x] Implement account selector with Select component from bank accounts
   - [x] Implement date range filter, type filter (all/receipt/payment), reference search
@@ -210,6 +229,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   - [x] Summary cards for opening balance, inflow, outflow, closing balance
 
 - [x] **Task 7: Frontend – Voucher Detail Modal (AC: #2)**
+
   - [x] Implemented drill-down modal in `CashBookPage.tsx` using shadcn Dialog
   - [x] Display voucher header: number, date, description, status, currency
   - [x] Display voucher lines table: line#, account code/name, description, debit, credit
@@ -218,6 +238,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   - [x] Integrated with `getVoucherDetail()` API call
 
 - [x] **Task 8: Frontend – Multi-Account Summary View (AC: #3)**
+
   - [x] Create `CashBookSummaryPage.tsx` for aggregated totals view
   - [x] Display summary cards for grand totals
   - [x] Display table with: Account, Type, Opening, Inflow, Outflow, Closing, Transaction Count
@@ -225,6 +246,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   - [x] Click action navigates to per-account detail view
 
 - [x] **Task 9: Frontend – Export Functionality (AC: #4-#5)**
+
   - [x] Added Export Excel and Export PDF buttons
   - [x] Implemented sync export for small datasets (returns Blob)
   - [x] Implemented async export handling (returns job status when 202)
@@ -232,14 +254,16 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
   - [x] `downloadBlob()` utility for file download
 
 - [x] **Task 10: Frontend – Routes and Navigation (AC: #6)**
+
   - [x] Added routes `/accounting/cash-book` and `/accounting/cash-book/summary` in `AppRoutes.tsx`
   - [x] Configured RBAC with `requiredRoles: ['admin', 'accountant', 'chief_accountant', 'cfo']`
   - [x] Added Cash Book and Cash Book Summary to sidebar in `ProtectedLayout.tsx` reports section
   - [x] Updated barrel exports in `features/accounting/index.ts`
 
 - [x] **Task 11: Testing – Backend Unit and Integration (AC: #1-#8)**
+
   - [x] Existing `CashBookServiceTest` unit tests passing
-  - [x] Backend compiles successfully (`mvn compile` passes)
+  - [x] Backend compiles successfully (`mvnd compile` passes)
   - [x] Service integration verified through compile and test execution
   - [ ] [Deferred] Additional integration tests for export service
   - [ ] [Deferred] Performance benchmarking with large dataset
@@ -256,18 +280,21 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
 - **New Service Creation:** Unlike Stories 6.2 and 6.3 which reused existing AR/AP services, Story 6.4 requires creating new `CashBookService` and `CashBookExportService`. Follow the service patterns established in `ReceiptServiceImpl` and `PaymentServiceImpl`.
 
 - **Running Balance Computation Strategy:**
+
   - Option A: Window function in SQL (PostgreSQL `SUM() OVER (ORDER BY date)`)
   - Option B: Application-level cumulative sum with initial balance
   - Recommend Option A for performance, Option B as fallback for complex scenarios
   - Must handle transactions on the same date correctly (use secondary sort by voucher ID)
 
 - **Export Branding:**
+
   - Company logo from `Company.logoUrl` or default branding
   - Include report title, date range, generated-by user, timestamp
   - SHA256 hash of data rows in footer for integrity
   - Consider watermarking "DRAFT" for open periods (per tech spec AC6.6-04)
 
 - **Performance Optimization:**
+
   - Ensure composite index exists: `CREATE INDEX idx_vouchers_cash_book ON vouchers(company_id, bank_account_id, voucher_date)`
   - Consider materialized views or balance snapshots for high-volume accounts (deferred optimization)
   - Add query EXPLAIN ANALYZE logging for slow queries
@@ -280,6 +307,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
 ### Project Structure Notes
 
 **Backend Structure:**
+
 - `backend/src/main/java/com/accounting/service/CashBookService.java` (NEW)
 - `backend/src/main/java/com/accounting/service/impl/cashbook/CashBookServiceImpl.java` (NEW)
 - `backend/src/main/java/com/accounting/service/CashBookExportService.java` (NEW)
@@ -289,6 +317,7 @@ From **Story 6.3: Cash Payment Entry & Posting** (Status: done):
 - `backend/src/main/java/com/accounting/dto/cashbook/CashBookSummaryDTO.java` (NEW)
 
 **Frontend Structure:**
+
 - `frontend/src/features/accounting/pages/CashBook/CashBookList.tsx` (NEW)
 - `frontend/src/features/accounting/pages/CashBook/CashBookSummaryView.tsx` (NEW)
 - `frontend/src/features/accounting/pages/CashBook/index.ts` (NEW)
@@ -321,8 +350,8 @@ Claude claude-sonnet-4-20250514 (Cascade)
 
 ### Debug Log References
 
-- Backend compilation: `mvn compile -q` → Exit 0
-- Backend tests: `mvn test -Dtest=CashBookServiceTest -q` → All pass
+- Backend compilation: `mvnd compile -q` → Exit 0
+- Backend tests: `mvnd test -Dtest=CashBookServiceTest -q` → All pass
 - Frontend types: `pnpm exec tsc --noEmit` → Exit 0
 
 ### Completion Notes List
@@ -337,6 +366,7 @@ Claude claude-sonnet-4-20250514 (Cascade)
 ### File List
 
 **Backend - New Files:**
+
 - `backend/src/main/java/com/accounting/service/CashBookService.java`
 - `backend/src/main/java/com/accounting/service/impl/cashbook/CashBookServiceImpl.java`
 - `backend/src/main/java/com/accounting/service/CashBookExportService.java`
@@ -352,37 +382,42 @@ Claude claude-sonnet-4-20250514 (Cascade)
 - `backend/src/main/resources/db/migration/V20251127005__add_cash_book_indexes.sql`
 
 **Frontend - New Files:**
+
 - `frontend/src/features/accounting/services/cashBook.ts`
 - `frontend/src/features/accounting/pages/CashBook/CashBookPage.tsx`
 - `frontend/src/features/accounting/pages/CashBook/CashBookSummaryPage.tsx`
 - `frontend/src/features/accounting/pages/CashBook/index.ts`
 
 **Frontend - Modified Files:**
+
 - `frontend/src/features/accounting/index.ts`
 - `frontend/src/routes/AppRoutes.tsx`
 - `frontend/src/layouts/ProtectedLayout.tsx`
 
 ## Changelog
 
-| Date       | Author    | Changes                              |
-|------------|-----------|--------------------------------------|
-| 2025-11-27 | SM Agent  | Initial story draft created from tech spec, epic, and 6.3 learnings |
-| 2025-11-27 | SM Agent  | Validation PASS (21/23, 91%) - Minor issues fixed: added section anchors to references |
-| 2025-11-27 | SM Agent  | Context XML validation PASS (10/10, 100%) - Added 2 doc refs, fixed missing lines tag |
+| Date       | Author    | Changes                                                                                                                                       |
+| ---------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2025-11-27 | SM Agent  | Initial story draft created from tech spec, epic, and 6.3 learnings                                                                           |
+| 2025-11-27 | SM Agent  | Validation PASS (21/23, 91%) - Minor issues fixed: added section anchors to references                                                        |
+| 2025-11-27 | SM Agent  | Context XML validation PASS (10/10, 100%) - Added 2 doc refs, fixed missing lines tag                                                         |
 | 2025-11-27 | Dev Agent | Implementation complete - All 12 tasks done. Backend services, controller, DTOs, database indexes, and frontend pages created. Tests passing. |
-| 2025-11-27 | SM Agent  | Senior Developer Review - APPROVED with minor advisory notes |
+| 2025-11-27 | SM Agent  | Senior Developer Review - APPROVED with minor advisory notes                                                                                  |
 
 ---
 
 ## Senior Developer Review (AI)
 
 ### Reviewer
+
 thanhtoan
 
 ### Date
+
 2025-11-27
 
 ### Outcome
+
 **APPROVE** ✅
 
 All 8 acceptance criteria have been verified with evidence. All 12 tasks marked complete have been validated against actual implementation. The story delivers a well-structured Cash Book / Bank Book feature with proper multi-tenancy, RBAC, audit logging, and export capabilities.
@@ -392,6 +427,7 @@ All 8 acceptance criteria have been verified with evidence. All 12 tasks marked 
 ### Summary
 
 Story 6.4 implements a comprehensive Cash/Bank Book viewing feature with:
+
 - **Per-account ledger view** with running balance calculation
 - **Voucher drill-down** with full voucher detail modal
 - **Multi-account summary** with grand totals
@@ -406,19 +442,23 @@ The implementation follows established patterns from Epic 4/5 and maintains arch
 ### Key Findings
 
 #### HIGH Severity
+
 None
 
 #### MEDIUM Severity
+
 None
 
 #### LOW Severity
 
 1. **[Low] PDF Export is text-based (not true PDF format)**
+
    - `CashBookExportServiceImpl.exportToPdf()` returns plain text bytes, not actual PDF format
    - Works for MVP but should use PDFBox/iText for production
    - Documented in Completion Notes #2 as intentional MVP decision
 
 2. **[Low] Missing `isNegativeBalance()` usage in frontend**
+
    - `CashBookEntryDTO.isNegativeBalance()` method exists but frontend doesn't use it for highlighting
    - AC6.4-02 specifies "highlight negative balances with color and tooltip"
    - Currently: inflows are green, outflows are red, but negative running balance not highlighted
@@ -432,16 +472,16 @@ None
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
+| AC#      | Description                                       | Status         | Evidence                                                                                        |
+| -------- | ------------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------- |
 | AC6.4-01 | Per-account view with filters and running balance | ✅ IMPLEMENTED | `CashBookServiceImpl.java:91-217`, `CashBookController.java:88-132`, `CashBookPage.tsx:106-126` |
-| AC6.4-02 | Drill-down to voucher detail with attachments | ✅ IMPLEMENTED | `CashBookController.java:143-160`, `CashBookPage.tsx:499-584` (voucher modal) |
-| AC6.4-03 | Multi-account aggregated view | ✅ IMPLEMENTED | `CashBookServiceImpl.java:219-328`, `CashBookSummaryPage.tsx` |
-| AC6.4-04 | Export to Excel/PDF with branding and hash | ✅ IMPLEMENTED | `CashBookExportServiceImpl.java:63-259`, hash in footer at line 177 |
-| AC6.4-05 | Pagination and async export for >5k rows | ✅ IMPLEMENTED | `CashBookAsyncExportServiceImpl.java`, threshold 10k at `CashBookController.java:55` |
-| AC6.4-06 | RBAC enforced for all queries/exports | ✅ IMPLEMENTED | `@PreAuthorize` on all endpoints: lines 89, 144, 174, 208, 237, 311, 357, 389 |
-| AC6.4-07 | Performance target ≤2s with slow query logging | ✅ IMPLEMENTED | `CashBookServiceImpl.java:60,204-214,319-325`, indexes in migration |
-| AC6.4-08 | Audit logging for views/exports | ✅ IMPLEMENTED | `CashBookController.java:418-470`, `AuditService.logCashBookOperation()` |
+| AC6.4-02 | Drill-down to voucher detail with attachments     | ✅ IMPLEMENTED | `CashBookController.java:143-160`, `CashBookPage.tsx:499-584` (voucher modal)                   |
+| AC6.4-03 | Multi-account aggregated view                     | ✅ IMPLEMENTED | `CashBookServiceImpl.java:219-328`, `CashBookSummaryPage.tsx`                                   |
+| AC6.4-04 | Export to Excel/PDF with branding and hash        | ✅ IMPLEMENTED | `CashBookExportServiceImpl.java:63-259`, hash in footer at line 177                             |
+| AC6.4-05 | Pagination and async export for >5k rows          | ✅ IMPLEMENTED | `CashBookAsyncExportServiceImpl.java`, threshold 10k at `CashBookController.java:55`            |
+| AC6.4-06 | RBAC enforced for all queries/exports             | ✅ IMPLEMENTED | `@PreAuthorize` on all endpoints: lines 89, 144, 174, 208, 237, 311, 357, 389                   |
+| AC6.4-07 | Performance target ≤2s with slow query logging    | ✅ IMPLEMENTED | `CashBookServiceImpl.java:60,204-214,319-325`, indexes in migration                             |
+| AC6.4-08 | Audit logging for views/exports                   | ✅ IMPLEMENTED | `CashBookController.java:418-470`, `AuditService.logCashBookOperation()`                        |
 
 **Summary: 8 of 8 acceptance criteria fully implemented**
 
@@ -449,20 +489,20 @@ None
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: CashBookService Implementation | ✅ Complete | ✅ VERIFIED | `CashBookService.java`, `CashBookServiceImpl.java` (570 lines) |
-| Task 2: CashBookController Endpoints | ✅ Complete | ✅ VERIFIED | `CashBookController.java` (487 lines), 8 endpoints implemented |
-| Task 3: CashBookExportService | ✅ Complete | ✅ VERIFIED | `CashBookExportService.java`, `CashBookExportServiceImpl.java` (578 lines) |
+| Task                                    | Marked As   | Verified As | Evidence                                                                             |
+| --------------------------------------- | ----------- | ----------- | ------------------------------------------------------------------------------------ |
+| Task 1: CashBookService Implementation  | ✅ Complete | ✅ VERIFIED | `CashBookService.java`, `CashBookServiceImpl.java` (570 lines)                       |
+| Task 2: CashBookController Endpoints    | ✅ Complete | ✅ VERIFIED | `CashBookController.java` (487 lines), 8 endpoints implemented                       |
+| Task 3: CashBookExportService           | ✅ Complete | ✅ VERIFIED | `CashBookExportService.java`, `CashBookExportServiceImpl.java` (578 lines)           |
 | Task 4: Async Export for Large Datasets | ✅ Complete | ✅ VERIFIED | `CashBookAsyncExportService.java`, `CashBookAsyncExportServiceImpl.java` (226 lines) |
-| Task 5: Database Index Optimization | ✅ Complete | ✅ VERIFIED | `V20251127005__add_cash_book_indexes.sql` (59 lines, 6 indexes) |
-| Task 6: Frontend CashBookPage | ✅ Complete | ✅ VERIFIED | `CashBookPage.tsx` (588 lines), filters, pagination, summary cards |
-| Task 7: Voucher Detail Modal | ✅ Complete | ✅ VERIFIED | `CashBookPage.tsx:499-584`, Dialog with lines table |
-| Task 8: Multi-Account Summary View | ✅ Complete | ✅ VERIFIED | `CashBookSummaryPage.tsx` (305 lines), grand totals, navigation |
-| Task 9: Export Functionality | ✅ Complete | ✅ VERIFIED | `CashBookPage.tsx:150-181`, `cashBook.ts:190-218` |
-| Task 10: Routes and Navigation | ✅ Complete | ✅ VERIFIED | `AppRoutes.tsx:378-395`, `ProtectedLayout.tsx:250-258` |
-| Task 11: Backend Testing | ✅ Complete | ✅ VERIFIED | `CashBookServiceTest.java` (608 lines, 15 test cases) |
-| Task 12: Frontend Testing | ✅ Complete | ✅ VERIFIED | TypeScript compilation passes per dev notes |
+| Task 5: Database Index Optimization     | ✅ Complete | ✅ VERIFIED | `V20251127005__add_cash_book_indexes.sql` (59 lines, 6 indexes)                      |
+| Task 6: Frontend CashBookPage           | ✅ Complete | ✅ VERIFIED | `CashBookPage.tsx` (588 lines), filters, pagination, summary cards                   |
+| Task 7: Voucher Detail Modal            | ✅ Complete | ✅ VERIFIED | `CashBookPage.tsx:499-584`, Dialog with lines table                                  |
+| Task 8: Multi-Account Summary View      | ✅ Complete | ✅ VERIFIED | `CashBookSummaryPage.tsx` (305 lines), grand totals, navigation                      |
+| Task 9: Export Functionality            | ✅ Complete | ✅ VERIFIED | `CashBookPage.tsx:150-181`, `cashBook.ts:190-218`                                    |
+| Task 10: Routes and Navigation          | ✅ Complete | ✅ VERIFIED | `AppRoutes.tsx:378-395`, `ProtectedLayout.tsx:250-258`                               |
+| Task 11: Backend Testing                | ✅ Complete | ✅ VERIFIED | `CashBookServiceTest.java` (608 lines, 15 test cases)                                |
+| Task 12: Frontend Testing               | ✅ Complete | ✅ VERIFIED | TypeScript compilation passes per dev notes                                          |
 
 **Summary: 12 of 12 completed tasks verified, 0 questionable, 0 false completions**
 
@@ -471,6 +511,7 @@ None
 ### Test Coverage and Gaps
 
 **Covered:**
+
 - Unit tests for balance calculations (`CashBookServiceTest.java`)
 - Filter logic tests (date range, transaction type, reference)
 - Edge cases (negative balance, missing GL code, empty transactions)
@@ -478,6 +519,7 @@ None
 - Drill-down validation
 
 **Gaps (Deferred):**
+
 - Integration tests for export service (noted as deferred in Task 11)
 - Frontend component tests (noted as deferred in Task 12)
 - E2E tests for cash book workflow (noted as deferred)
@@ -488,6 +530,7 @@ None
 ### Architectural Alignment
 
 **Tech Spec Compliance:**
+
 - ✅ Services follow `PaymentServiceImpl`/`ReceiptServiceImpl` patterns
 - ✅ Controller uses `@PreAuthorize` for RBAC
 - ✅ Standard response wrapper `{ data, meta }` used
@@ -520,9 +563,11 @@ None
 ### Action Items
 
 **Code Changes Required:**
+
 - [ ] [Low] Add negative balance highlighting in `CashBookPage.tsx` transaction table (AC #2) [file: frontend/src/features/accounting/pages/CashBook/CashBookPage.tsx:420]
 
 **Advisory Notes:**
+
 - Note: PDF export is text-based for MVP; consider PDFBox/iText for production
 - Note: Consider adding rate limiting for export endpoints in production
 - Note: User view preference persistence (localStorage) could be added for summary page filters

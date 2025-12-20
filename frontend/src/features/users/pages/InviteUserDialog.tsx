@@ -27,9 +27,24 @@ import { getRoleDisplayName, type Role } from '@/utils/roles'
 
 const ROLES: Role[] = ['admin', 'accountant', 'chief_accountant', 'cfo']
 
+const FORM_ROLES = [
+  'admin',
+  'accountant',
+  'chief_accountant',
+  'cfo',
+  'super_admin',
+  'accountant_general',
+  'accountant_ar',
+  'accountant_ap',
+  'cashier',
+  'finance',
+] as const
+
+type FormRole = (typeof FORM_ROLES)[number]
+
 const inviteUserSchema = z.object({
   email: z.string().email('Please enter a valid email address').min(1, 'Email is required'),
-  role: z.enum(['admin', 'accountant', 'chief_accountant', 'cfo'] as const),
+  role: z.enum(FORM_ROLES),
 })
 
 type InviteUserFormValues = z.infer<typeof inviteUserSchema>
@@ -144,7 +159,7 @@ export default function InviteUserDialog({ open, onClose, onSuccess }: InviteUse
                 <Select
                   value={selectedRole}
                   onValueChange={(value) =>
-                    setValue('role', value as Role, { shouldValidate: true })
+                    setValue('role', value as FormRole, { shouldValidate: true })
                   }
                   disabled={isSubmitting}
                 >

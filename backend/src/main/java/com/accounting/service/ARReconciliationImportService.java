@@ -1,7 +1,8 @@
 package com.accounting.service;
 
-import com.accounting.dto.ARReconciliationImportDTO;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.accounting.dto.ARReconciliationImportDTO;
 
 /**
  * Service interface for AR reconciliation import (CSV parsing and mismatch detection).
@@ -17,4 +18,3 @@ public interface ARReconciliationImportService {
    */
   ARReconciliationImportDTO importReconciliation(Long customerId, MultipartFile file);
 }
-

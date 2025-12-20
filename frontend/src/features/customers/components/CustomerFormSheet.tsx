@@ -23,11 +23,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
-import {
-  createCustomer,
-  updateCustomer,
-  getCustomerById,
-} from '@/features/customers/services/customer'
+import { createCustomer, updateCustomer } from '@/features/customers/services/customer'
 import type { Customer, CustomerCreateRequest, CustomerUpdateRequest } from '@/types/customer'
 
 interface CustomerFormSheetProps {
@@ -143,28 +139,6 @@ export default function CustomerFormSheet({
       setDuplicateError(null)
     }
   }, [open, isEditMode, customer])
-
-  const loadCustomer = async () => {
-    if (!customer) return
-    try {
-      const customerData = await getCustomerById(customer.id)
-      reset({
-        code: customerData.code,
-        name: customerData.name,
-        taxCode: customerData.taxCode || '',
-        email: customerData.email || '',
-        phone: customerData.phone || '',
-        address: customerData.address || '',
-        active: customerData.active,
-      })
-      setFormError(null)
-      setDuplicateError(null)
-    } catch (err: any) {
-      const errorMessage = err?.error?.message || err?.message || 'Failed to load customer'
-      setFormError(errorMessage)
-      toast.error('Failed to load customer', { description: errorMessage })
-    }
-  }
 
   const onSubmit = async (values: CustomerFormValues) => {
     setFormError(null)

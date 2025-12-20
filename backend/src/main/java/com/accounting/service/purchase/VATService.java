@@ -1,7 +1,8 @@
 package com.accounting.service.purchase;
 
-import com.accounting.entity.VatRate;
 import java.math.BigDecimal;
+
+import com.accounting.entity.VatRate;
 
 /**
  * Service for VAT calculation and validation for purchase bills.
@@ -55,4 +56,3 @@ public interface VATService {
    */
   BigDecimal getVATTolerance();
 }
-

@@ -1,6 +1,11 @@
 package com.accounting.entity;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
+
 import com.accounting.repository.CompanyScopedEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.DiscriminatorType;
@@ -16,9 +21,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.UUID;
 
 /**
  * Base StatementHistory entity for tracking all generated and sent statements.

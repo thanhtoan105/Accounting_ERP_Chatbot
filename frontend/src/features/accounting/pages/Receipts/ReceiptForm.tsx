@@ -27,17 +27,6 @@ import {
 } from '@/components/receipt/ReceiptAllocationGrid'
 import { ReceiptAttachmentDropzone } from '@/components/receipt/ReceiptAttachmentDropzone'
 import { CustomerPicker } from '@/components/sales/CustomerPicker'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -66,7 +55,6 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 
-import { useAuth } from '@/hooks/useAuth'
 import { useRole } from '@/hooks/useRole'
 import type {
   ARPaymentDTO,
@@ -83,7 +71,7 @@ import {
   getOpenInvoicesForCustomer,
 } from '@/services/receipt'
 import { getBankAccounts } from '@/features/bankaccounts/services/bankAccount'
-import type { BankAccount, AccountType } from '@/types/bankAccount'
+import type { BankAccount } from '@/types/bankAccount'
 import type { Customer } from '@/types/customer'
 
 const formSchema = z.object({

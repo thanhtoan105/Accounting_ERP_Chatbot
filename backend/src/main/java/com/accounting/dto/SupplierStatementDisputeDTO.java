@@ -1,9 +1,10 @@
 package com.accounting.dto;
 
-import com.accounting.entity.SupplierStatementDispute;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+
+import com.accounting.entity.SupplierStatementDispute;
 
 /**
  * DTO for supplier statement dispute.
@@ -156,4 +157,3 @@ public class SupplierStatementDisputeDTO {
     this.variance = variance;
   }
 }
-

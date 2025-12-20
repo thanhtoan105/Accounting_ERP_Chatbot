@@ -7,20 +7,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 
-import com.accounting.entity.*;
-import com.accounting.enums.Role;
-import com.accounting.repository.*;
-import org.springframework.http.HttpHeaders;
-import com.accounting.security.CompanyContext;
-import com.accounting.security.JwtTokenProvider;
-import com.accounting.test.IntegrationTest;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +27,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import com.accounting.entity.*;
+import com.accounting.enums.Role;
+import com.accounting.repository.*;
+import com.accounting.security.CompanyContext;
+import com.accounting.security.JwtTokenProvider;
+import com.accounting.test.IntegrationTest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Integration Tests for Receipt Controller

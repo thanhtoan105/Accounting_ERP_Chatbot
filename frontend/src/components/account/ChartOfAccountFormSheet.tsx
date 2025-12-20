@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -40,7 +40,6 @@ import type {
   ChartOfAccount,
   ChartOfAccountCreateRequest,
   ChartOfAccountUpdateRequest,
-  AccountTypeValue,
 } from '@/types/chartOfAccount'
 import {
   ACCOUNT_TYPE_OPTIONS,
@@ -65,11 +64,11 @@ const accountFormSchema = z.object({
   nameEnglish: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   accountType: z.enum(['Debit Balance', 'Credit Balance', 'Hermaphrodite', 'No Balance'], {
-    required_error: 'Account type (Characteristic) is required',
+    message: 'Account type (Characteristic) is required',
   }),
   parentId: z.number().nullable().optional(),
-  orderingPosition: z.number().int().min(0).default(0),
-  type: z.string().optional(), // For backend compatibility, will be set to default 'Asset' in create
+  orderingPosition: z.number().int().min(0),
+  type: z.string().optional(),
 })
 
 type AccountFormValues = z.infer<typeof accountFormSchema>
@@ -83,7 +82,6 @@ export default function ChartOfAccountFormSheet({
   const isEditMode = !!account
   const [formError, setFormError] = useState<string | null>(null)
   const [accountTypeOpen, setAccountTypeOpen] = useState(false)
-  const [parentAccounts, setParentAccounts] = useState<ChartOfAccount[]>([])
 
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
@@ -163,18 +161,13 @@ export default function ChartOfAccountFormSheet({
 
   const loadParentAccounts = async () => {
     try {
-      const response = await getChartOfAccounts({ active: true })
-      // Filter out the account being edited to prevent circular references
-      const filtered =
-        isEditMode && account ? response.data.filter((acc) => acc.id !== account.id) : response.data
-      setParentAccounts(filtered)
+      await getChartOfAccounts({ active: true })
     } catch (err) {
       console.error('Failed to load parent accounts:', err)
-      setParentAccounts([])
     }
   }
 
-  const onSubmit = async (values: AccountFormValues) => {
+  const onSubmit: SubmitHandler<AccountFormValues> = async (values) => {
     setFormError(null)
     try {
       // Map form accountType to backend normalSide

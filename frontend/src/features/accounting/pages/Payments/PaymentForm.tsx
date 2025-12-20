@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { useForm, useWatch, type Control } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format, parseISO } from 'date-fns'
 import {
@@ -10,10 +10,8 @@ import {
   Loader2,
   Save,
   ArrowLeft,
-  CheckCircle,
   XCircle,
   Send,
-  Wallet,
   Building2,
 } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -42,9 +40,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Textarea } from '@/components/ui/textarea'
 import { Calendar } from '@/components/ui/calendar'
-import { Separator } from '@/components/ui/separator'
 import {
   Select,
   SelectContent,
@@ -59,7 +55,6 @@ import { useAuth } from '@/hooks/useAuth'
 import type {
   APPaymentDTO,
   APPaymentCreateRequest,
-  PaymentStatus,
   PaymentMethod,
   PaymentAllocationRequest,
 } from '@/types/payment'
@@ -73,29 +68,31 @@ import {
   getOpenBillsForSupplier,
 } from '@/services/payment'
 import { getBankAccounts } from '@/features/bankaccounts/services/bankAccount'
-import type { BankAccount, AccountType } from '@/types/bankAccount'
+import type { BankAccount } from '@/types/bankAccount'
 import type { Supplier } from '@/types/supplier'
-import type { PurchaseBillDTO } from '@/types/purchaseBill'
+import type { PurchaseBillDTO as PaymentPurchaseBillDTO } from '@/types/payment'
 
 const formSchema = z.object({
-  supplierId: z.number({ required_error: 'Supplier is required' }),
-  paymentDate: z.string({ required_error: 'Payment date is required' }),
+  supplierId: z.number({ message: 'Supplier is required' }),
+  paymentDate: z.string({ message: 'Payment date is required' }),
   dueDate: z.string().optional().nullable(),
   cashAccountId: z.number().optional().nullable(),
   bankAccountId: z.number().optional().nullable(),
-  amount: z.number({ required_error: 'Amount is required' }).positive('Amount must be positive'),
+  amount: z.number({ message: 'Amount is required' }).positive('Amount must be positive'),
   reference: z.string().max(100, 'Reference must be 100 characters or less').optional().nullable(),
-  paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'CHECK', 'OTHER']).default('BANK_TRANSFER'),
+  paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'CHECK', 'OTHER']),
   payee: z.string().max(200, 'Payee must be 200 characters or less').optional().nullable(),
   paymentProofUrl: z
     .string()
     .max(500, 'Payment proof URL must be 500 characters or less')
     .optional()
     .nullable(),
-  isStandalone: z.boolean().default(false),
+  isStandalone: z.boolean(),
 })
 
 type PaymentFormValues = z.infer<typeof formSchema>
+
+type AccountType = 'CASH' | 'BANK'
 
 const PAYMENT_METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
   { value: 'CASH', label: 'Cash' },
@@ -109,7 +106,7 @@ export default function PaymentForm() {
   const navigate = useNavigate()
   const paymentId = params.paymentId && params.paymentId !== 'new' ? params.paymentId : undefined
   const isEditing = Boolean(paymentId)
-  const { user } = useAuth()
+  const { user: _user } = useAuth()
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null)
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [loadingAccounts, setLoadingAccounts] = useState(true)
@@ -119,11 +116,10 @@ export default function PaymentForm() {
   const [cancelling, setCancelling] = useState(false)
   const [allocatingFIFO, setAllocatingFIFO] = useState(false)
   const [loadingOpenBills, setLoadingOpenBills] = useState(false)
-  const [openBills, setOpenBills] = useState<PurchaseBillDTO[]>([])
+  const [openBills, setOpenBills] = useState<PaymentPurchaseBillDTO[]>([])
   const [allocations, setAllocations] = useState<PaymentAllocation[]>([])
   const [editingPayment, setEditingPayment] = useState<APPaymentDTO | null>(null)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-  const today = useMemo(() => new Date(), [])
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(formSchema),
@@ -142,14 +138,16 @@ export default function PaymentForm() {
     },
   })
 
-  const watchedValues = useWatch({ control: form.control })
+  const formControl = form.control as unknown as Control<PaymentFormValues>
+
+  const watchedValues = useWatch({ control: formControl })
   const selectedDate = useMemo(() => {
     if (!watchedValues?.paymentDate) return null
     const parsed = new Date(watchedValues.paymentDate)
     return Number.isNaN(parsed.getTime()) ? null : parsed
   }, [watchedValues?.paymentDate])
 
-  const selectedAccountId = watchedValues?.cashAccountId || watchedValues?.bankAccountId
+  const selectedAccountId = watchedValues?.cashAccountId ?? watchedValues?.bankAccountId ?? null
   const paymentAmount = watchedValues?.amount || 0
   const isStandalone = watchedValues?.isStandalone || false
   const selectedAccountType: AccountType | undefined = watchedValues?.cashAccountId
@@ -465,7 +463,7 @@ export default function PaymentForm() {
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <FormField
-                      control={form.control}
+                      control={formControl}
                       name="supplierId"
                       render={({ field }) => (
                         <FormItem>
@@ -492,7 +490,7 @@ export default function PaymentForm() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={formControl}
                       name="paymentDate"
                       render={({ field }) => (
                         <FormItem>
@@ -535,7 +533,7 @@ export default function PaymentForm() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={formControl}
                       name="cashAccountId"
                       render={({ field }) => (
                         <FormItem>
@@ -569,7 +567,7 @@ export default function PaymentForm() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={formControl}
                       name="bankAccountId"
                       render={({ field }) => (
                         <FormItem>
@@ -603,7 +601,7 @@ export default function PaymentForm() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={formControl}
                       name="amount"
                       render={({ field }) => (
                         <FormItem>
@@ -626,7 +624,7 @@ export default function PaymentForm() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={formControl}
                       name="paymentMethod"
                       render={({ field }) => (
                         <FormItem>
@@ -654,7 +652,7 @@ export default function PaymentForm() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={formControl}
                       name="reference"
                       render={({ field }) => (
                         <FormItem>
@@ -673,7 +671,7 @@ export default function PaymentForm() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={formControl}
                       name="payee"
                       render={({ field }) => (
                         <FormItem>
@@ -693,7 +691,7 @@ export default function PaymentForm() {
                     />
                   </div>
                   <FormField
-                    control={form.control}
+                    control={formControl}
                     name="isStandalone"
                     render={({ field }) => (
                       <FormItem className="space-y-4">

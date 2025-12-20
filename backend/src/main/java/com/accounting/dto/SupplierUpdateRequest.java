@@ -91,4 +91,3 @@ public class SupplierUpdateRequest {
     this.active = active;
   }
 }
-

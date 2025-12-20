@@ -204,4 +204,3 @@ public class JournalEntryDTO {
     this.createdAt = createdAt;
   }
 }
-

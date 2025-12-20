@@ -2,16 +2,9 @@ package com.accounting.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.accounting.entity.Company;
-import com.accounting.entity.ImportAuditEntry;
-import com.accounting.entity.User;
-import com.accounting.imports.ImportType;
-import com.accounting.repository.CompanyRepository;
-import com.accounting.repository.ImportAuditEntryRepository;
-import com.accounting.repository.UserRepository;
-import com.accounting.security.CompanyContext;
 import java.time.Instant;
 import java.util.UUID;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +14,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.accounting.entity.Company;
+import com.accounting.entity.ImportAuditEntry;
+import com.accounting.entity.User;
+import com.accounting.imports.ImportType;
+import com.accounting.repository.CompanyRepository;
+import com.accounting.repository.ImportAuditEntryRepository;
+import com.accounting.repository.UserRepository;
+import com.accounting.security.CompanyContext;
 import com.accounting.test.IntegrationTest;
 
 /**
@@ -213,4 +215,3 @@ class AuditServiceImportRowTest extends IntegrationTest {
     assertThat(failureEntry.getMessage()).isEqualTo("Validation error");
   }
 }
-

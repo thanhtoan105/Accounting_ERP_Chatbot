@@ -31,6 +31,7 @@ describe('Visual Regression - Branding Consistency (AC#1, AC#4)', () => {
       isAuthenticated: true,
       loading: false,
       logout: vi.fn(),
+      login: vi.fn(),
       user: {
         id: 1,
         email: 'test@example.com',
@@ -40,9 +41,19 @@ describe('Visual Regression - Branding Consistency (AC#1, AC#4)', () => {
       },
     })
     vi.mocked(roleHook.useRole).mockReturnValue({
+      role: 'admin',
+      hasRole: vi.fn(() => true),
       hasAnyRole: vi.fn(() => true),
+      hasAllRoles: vi.fn(() => true),
+      isAdmin: () => true,
+      isChiefAccountant: () => false,
+      canManageUsers: () => true,
+      canViewReports: () => true,
+      canCreateVouchers: () => true,
+      canApproveVouchers: () => true,
+      canChangeRoles: () => true,
       getRoleDisplayName: vi.fn(() => 'Admin'),
-      hasRole: vi.fn(),
+      isValidRole: vi.fn(() => true),
     })
     vi.mocked(companyHook.useCompany).mockReturnValue({
       company: {

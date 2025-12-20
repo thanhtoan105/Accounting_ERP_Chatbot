@@ -2,10 +2,11 @@ package com.accounting.imports.service;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.accounting.imports.ImportType;
-import com.accounting.imports.service.impl.ImportTemplateServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.accounting.imports.ImportType;
+import com.accounting.imports.service.impl.ImportTemplateServiceImpl;
 
 class ImportTemplateServiceImplTest {
 
@@ -32,4 +33,3 @@ class ImportTemplateServiceImplTest {
     assertTrue(template[0] == 'P' && template[1] == 'K');
   }
 }
-

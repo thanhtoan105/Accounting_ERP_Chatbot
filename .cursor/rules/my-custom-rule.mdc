@@ -13,12 +13,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Backend (Java 21 + Spring Boot 3.5.7)
 
-- Run development server: `cd backend && mvn spring-boot:run`
-- Run tests: `cd backend && mvn test`
-- Build: `cd backend && mvn clean package`
-- Compile: `cd backend && mvn clean compile`
-- Format code: `cd backend && mvn spotless:apply`
-- Run specific test: `cd backend && mvn test -Dtest=ClassName`
+- Run development server: `cd backend && mvnd spring-boot:run`
+- Run tests: `cd backend && mvnd test`
+- Build: `cd backend && mvnd clean package`
+- Compile: `cd backend && mvnd clean compile`
+- Format code: `cd backend && mvnd spotless:apply`
+- Run specific test: `cd backend && mvnd test -Dtest=ClassName`
 
 ### Frontend (React + TypeScript + Vite)
 

@@ -1,7 +1,8 @@
 package com.accounting.service;
 
-import com.accounting.dto.ImportResultDTO;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.accounting.dto.ImportResultDTO;
 
 /**
  * Service interface for AP Payment batch import operations.
@@ -28,4 +29,3 @@ public interface PaymentImportService {
    */
   byte[] generateTemplate();
 }
-

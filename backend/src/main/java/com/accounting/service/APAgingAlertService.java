@@ -1,11 +1,12 @@
 package com.accounting.service;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import com.accounting.dto.BatchReminderRequestDTO;
 import com.accounting.dto.BatchReminderResultDTO;
 import com.accounting.dto.ReminderRequestDTO;
 import com.accounting.dto.ReminderResultDTO;
-import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Service interface for AP aging alert and reminder operations.
@@ -39,4 +40,3 @@ public interface APAgingAlertService {
    */
   void scheduleAutoAlerts(Long periodId, LocalDate asOfDate, List<String> roles);
 }
-

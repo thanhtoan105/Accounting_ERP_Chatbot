@@ -1,8 +1,9 @@
 package com.accounting.dto;
 
-import org.springframework.data.domain.Page;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import org.springframework.data.domain.Page;
 
 /**
  * Wrapper DTO for AR aging report responses with snapshot metadata.
