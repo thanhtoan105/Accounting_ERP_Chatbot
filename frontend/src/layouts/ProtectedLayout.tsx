@@ -459,14 +459,16 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       </SidebarInset>
 
       {/* Chatbot Widget - Floating on all pages with error boundary */}
-      <ChatbotErrorBoundary
-        onError={(error, errorInfo) => {
-          console.error('Chatbot crashed:', error, errorInfo)
-          // TODO: Send to error tracking service (Sentry, etc.)
-        }}
-      >
-        <ChatbotWidget enabled={true} />
-      </ChatbotErrorBoundary>
+      {import.meta.env.VITE_CHATBOT_ENABLED !== 'false' && (
+        <ChatbotErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('Chatbot crashed:', error, errorInfo)
+            // TODO: Send to error tracking service (Sentry, etc.)
+          }}
+        >
+          <ChatbotWidget />
+        </ChatbotErrorBoundary>
+      )}
     </SidebarProvider>
   )
 }

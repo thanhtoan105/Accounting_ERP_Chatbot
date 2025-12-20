@@ -133,9 +133,13 @@ export interface PeriodFinancialSummary {
   periodEnd: string
 }
 
-export const getPeriodFinancialSummary = async (periodId: string): Promise<PeriodFinancialSummary | null> => {
+export const getPeriodFinancialSummary = async (
+  periodId: string,
+): Promise<PeriodFinancialSummary | null> => {
   try {
-    const response = await axios.get<PeriodFinancialSummary>(`/dashboard/period-summary/${periodId}`)
+    const response = await axios.get<PeriodFinancialSummary>(
+      `/dashboard/period-summary/${periodId}`,
+    )
     return response.data
   } catch {
     return null

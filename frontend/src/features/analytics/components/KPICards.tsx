@@ -9,7 +9,6 @@ import {
   TrendingDown,
   DollarSign,
   Wallet,
-  CreditCard,
 } from 'lucide-react'
 import type { DashboardKPIs } from '../hooks/useDashboardKPIs'
 
@@ -61,8 +60,14 @@ export function KPICards({ kpis, isLoading }: KPICardsProps) {
       title: t('analytics.kpi.netIncome', 'Net Income'),
       value: kpis.netIncome,
       icon: DollarSign,
-      color: kpis.netIncome >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400',
-      bgColor: kpis.netIncome >= 0 ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30',
+      color:
+        kpis.netIncome >= 0
+          ? 'text-emerald-600 dark:text-emerald-400'
+          : 'text-red-600 dark:text-red-400',
+      bgColor:
+        kpis.netIncome >= 0
+          ? 'bg-emerald-100 dark:bg-emerald-900/30'
+          : 'bg-red-100 dark:bg-red-900/30',
       format: 'currency' as const,
     },
     {

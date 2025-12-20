@@ -439,9 +439,7 @@ export default function VoucherTemplateManagementPage() {
                     >
                       <span
                         className={`size-1.5 rounded-full mr-1 ${
-                          template.isActive
-                            ? 'bg-green-600 dark:bg-green-400'
-                            : 'bg-destructive'
+                          template.isActive ? 'bg-green-600 dark:bg-green-400' : 'bg-destructive'
                         }`}
                         aria-hidden="true"
                       />

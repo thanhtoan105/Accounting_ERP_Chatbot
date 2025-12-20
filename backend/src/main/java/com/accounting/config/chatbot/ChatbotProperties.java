@@ -114,10 +114,10 @@ public class ChatbotProperties {
         private String indexName = "accounting-embeddings";
 
         /**
-         * Namespace prefix for multi-tenancy. Default: company-
-         * Actual namespace: company-{companyId}
+         * Namespace prefix for multi-tenancy. Default: company_
+         * Actual namespace: company_{companyId}
          */
-        private String namespacePrefix = "company-";
+        private String namespacePrefix = "company_";
 
         /**
          * Number of top results to retrieve. Default: 10

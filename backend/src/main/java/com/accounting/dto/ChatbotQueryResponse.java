@@ -1,7 +1,6 @@
 package com.accounting.dto;
 
 import java.util.List;
-import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -50,10 +49,10 @@ public class ChatbotQueryResponse {
      * Unique identifier for this query (for tracking and audit).
      */
     @Schema(
-        description = "Unique query ID (UUID) for tracking and audit",
-        example = "550e8400-e29b-41d4-a716-446655440000"
+        description = "Unique query ID for tracking and audit",
+        example = "12345"
     )
-    private UUID queryId;
+    private String queryId;
 
     /**
      * AI-generated answer in Vietnamese or English.
