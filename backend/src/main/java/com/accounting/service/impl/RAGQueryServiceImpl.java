@@ -128,7 +128,7 @@ public class RAGQueryServiceImpl implements RAGQueryService {
                 // Only add if not already seen (first occurrence has highest score due to
                 // Pinecone ordering)
                 if (!citationMap.containsKey(voucherId)) {
-                    String link = "/accounting/vouchers/" + voucherId;
+                    String link = "/vouchers/" + voucherId;
                     String excerpt = description.length() > 100 ? description.substring(0, 100) + "..." : description;
                     citationMap.put(voucherId, new Citation("voucher", voucherId, voucherNumber, excerpt, score, link));
                     contextMap.put(voucherId, new VoucherContext(voucherNumber, voucherDate, description, totalDebit,

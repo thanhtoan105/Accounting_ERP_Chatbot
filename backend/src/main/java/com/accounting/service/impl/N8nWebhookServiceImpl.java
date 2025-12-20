@@ -113,7 +113,7 @@ public class N8nWebhookServiceImpl implements N8nWebhookService {
             Request request = new Request.Builder()
                 .url(webhookUrl)
                 .head()
-                .addHeader("X-N8N-Secret", webhookSecret)
+                .addHeader("X-Webhook-Secret", webhookSecret)
                 .build();
 
             try (Response response = httpClient.newCall(request).execute()) {
@@ -165,7 +165,7 @@ public class N8nWebhookServiceImpl implements N8nWebhookService {
             .url(webhookUrl)
             .post(body)
             .addHeader("Content-Type", "application/json")
-            .addHeader("X-N8N-Secret", webhookSecret)
+            .addHeader("X-Webhook-Secret", webhookSecret)
             .addHeader("X-Request-ID", requestId)
             .build();
 

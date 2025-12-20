@@ -115,6 +115,41 @@
 			"name": "dev-browser",
 			"source": "https://github.com/SawyerHood/dev-browser.git",
 			"installedAt": 1765546749265
+		},
+		"n8n-expression-syntax": {
+			"name": "n8n-expression-syntax",
+			"source": "czlonkowski/n8n-skills",
+			"installedAt": 1765723079043
+		},
+		"n8n-workflow-patterns": {
+			"name": "n8n-workflow-patterns",
+			"source": "czlonkowski/n8n-skills",
+			"installedAt": 1765723079043
+		},
+		"n8n-code-python": {
+			"name": "n8n-code-python",
+			"source": "czlonkowski/n8n-skills",
+			"installedAt": 1765723079044
+		},
+		"n8n-code-javascript": {
+			"name": "n8n-code-javascript",
+			"source": "czlonkowski/n8n-skills",
+			"installedAt": 1765723079044
+		},
+		"n8n-validation-expert": {
+			"name": "n8n-validation-expert",
+			"source": "czlonkowski/n8n-skills",
+			"installedAt": 1765723079044
+		},
+		"n8n-mcp-tools-expert": {
+			"name": "n8n-mcp-tools-expert",
+			"source": "czlonkowski/n8n-skills",
+			"installedAt": 1765723079044
+		},
+		"n8n-node-configuration": {
+			"name": "n8n-node-configuration",
+			"source": "czlonkowski/n8n-skills",
+			"installedAt": 1765723079044
 		}
 	}
 }
