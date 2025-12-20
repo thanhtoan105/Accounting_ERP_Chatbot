@@ -51,7 +51,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: "health,info"
+        include: 'health,info'
 
 info:
   app:
@@ -93,9 +93,9 @@ chatbot:
   azure-openai:
     endpoint: ${AZURE_OPENAI_ENDPOINT:https://your-resource.openai.azure.com/}
     api-key: ${AZURE_OPENAI_API_KEY:}
-    api-version: "2023-05-15"
+    api-version: '2023-05-15'
     embedding-deployment: ${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:embedding-ada-002}
-    completion-deployment: ${AZURE_OPENAI_COMPLETION_DEPLOYMENT:gpt-35-turbo}
+    completion-deployment: ${AZURE_OPENAI_COMPLETION_DEPLOYMENT:gpt-4o}
     max-tokens: ${AZURE_OPENAI_MAX_TOKENS:500}
     temperature: ${AZURE_OPENAI_TEMPERATURE:0.3}
     timeout-seconds: ${AZURE_OPENAI_TIMEOUT:30}
@@ -105,13 +105,13 @@ chatbot:
     api-key: ${PINECONE_API_KEY:}
     environment: ${PINECONE_ENVIRONMENT:us-east-1-aws}
     index-name: ${PINECONE_INDEX_NAME:accounting-embeddings}
-    namespace-prefix: "company-"
+    namespace-prefix: 'company-'
     top-k: 10
     score-threshold: 0.7
 
   # n8n Webhook Configuration
   n8n:
-    webhook-url: ${N8N_WEBHOOK_URL:http://localhost:5678/webhook/voucher-embedding}
+    webhook-url: ${N8N_WEBHOOK_URL:https://n8n.duongthanhtoan105.com/webhook/voucher-embedding-v2}
     webhook-secret: ${N8N_WEBHOOK_SECRET:}
     retry-attempts: 3
     retry-delays: 1000,5000,15000 # milliseconds: 1s, 5s, 15s
@@ -133,10 +133,10 @@ chatbot:
 reporting:
   schedule:
     check:
-      cron: "0 */5 * * * *" # Every 5 minutes
+      cron: '0 */5 * * * *' # Every 5 minutes
   orphan:
     check:
-      cron: "0 0 1 * * *" # Daily at 1 AM
+      cron: '0 0 1 * * *' # Daily at 1 AM
 
 # Dashboard ETL Configuration (Epic 8.0)
 dashboard:

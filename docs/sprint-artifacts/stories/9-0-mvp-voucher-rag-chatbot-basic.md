@@ -133,13 +133,13 @@ Feature flag `chatbot.enabled` (env variable) allows disabling chatbot widget UI
     - Azure OpenAI embedding node (n8n langchain)
     - Pinecone upsert node (n8n langchain)
     - Error handling with payload validation
-    - **n8n Workflow ID:** `Cf26BZwsq8r9wuPB`
+    - **n8n Workflow ID:** `T91oQREOzfnKQVxm`
   - [x] Create "RAG Query Processing" workflow for chatbot queries
     - AI Agent with Vietnamese accounting system prompt
     - Pinecone Vector Store as retrieval tool
     - Window Buffer Memory for conversation context
     - Citation extraction with confidence scoring
-    - **n8n Workflow ID:** `DQaYgnbZ2ryRSwM8`
+    - **n8n Workflow ID:** `Y3w8Q8Q6vdQIaqFm`
   - [x] Configure webhook secret (`N8N_WEBHOOK_SECRET`)
   - [x] Test webhook with sample voucher payload
   - **Note:** Pre-built workflow JSON files available at `docs/n8n-workflows/`
@@ -1299,8 +1299,8 @@ ChatbotServiceImplTest: ✅ All tests passing
 
 ## Manual QA Checklist - Vietnamese Language Quality (Task 8.5)
 
-**Tester:** ********\_********  
-**Date:** ********\_********  
+**Tester:** **\*\*\*\***\_**\*\*\*\***  
+**Date:** **\*\*\*\***\_**\*\*\*\***  
 **Environment:** Development / Staging
 
 ### Test Cases
@@ -1335,4 +1335,4 @@ ChatbotServiceImplTest: ✅ All tests passing
 | Response time (< 3s) |              |          |
 
 **Overall QA Result:** ⬜ PASS / ⬜ FAIL  
-**Sign-off:** ********\_********
+**Sign-off:** **\*\*\*\***\_**\*\*\*\***

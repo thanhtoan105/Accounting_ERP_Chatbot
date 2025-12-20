@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { periodService } from '@/services/period'
 import { arAgingApi } from '@/features/accounting/services/arAgingApi'
+import { getPeriodFinancialSummary } from '../services/analytics'
 import type { AccountingPeriod } from '@/types/accountingPeriod'
 
 export interface DashboardKPIs {
@@ -24,6 +25,14 @@ export interface DashboardKPIs {
     customerName: string
     overdueAmount: number
   }>
+
+  // Financial KPIs (from period summary)
+  totalRevenue: number
+  totalExpenses: number
+  netIncome: number
+  arBalance: number
+  apBalance: number
+  cashBalance: number
 }
 
 export interface DashboardAlerts {
@@ -43,9 +52,10 @@ async function fetchDashboardKPIs(
     return null
   }
 
-  const [periodSummary, arMetrics] = await Promise.all([
+  const [periodSummary, arMetrics, financialSummary] = await Promise.all([
     periodService.getPeriodSummary(currentPeriod.id),
     arAgingApi.getDashboardMetrics().catch(() => null),
+    getPeriodFinancialSummary(currentPeriod.id).catch(() => null),
   ])
 
   if (!periodSummary) {
@@ -64,6 +74,12 @@ async function fetchDashboardKPIs(
     totalOverdue: arMetrics?.totalOverdue ?? 0,
     overdueInvoiceCount: arMetrics?.overdueCount ?? 0,
     topOverdueCustomers: arMetrics?.topOverdueCustomers ?? [],
+    totalRevenue: financialSummary?.totalRevenue ?? 0,
+    totalExpenses: financialSummary?.totalExpense ?? 0,
+    netIncome: financialSummary?.netIncome ?? 0,
+    arBalance: financialSummary?.arBalance ?? 0,
+    apBalance: financialSummary?.apBalance ?? 0,
+    cashBalance: financialSummary?.cashBalance ?? 0,
   }
 }
 

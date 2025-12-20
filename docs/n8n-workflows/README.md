@@ -4,30 +4,39 @@
 
 This folder contains n8n workflow definitions for the accounting RAG chatbot system using **Azure OpenAI** for embeddings/LLM and **Pinecone** for vector storage.
 
+## ✅ Status: WORKING (2025-12-20)
+
+Both workflows are tested and working in production:
+- Embedding workflow: ✅ Working (~2-3s response time)
+- RAG Query workflow: ✅ Working (~7-10s response time with citations)
+
 ## 🔄 Workflows
 
 ### 1. Voucher Embedding Automation (Recommended - n8n Langchain)
 - **File:** `embedding-workflow-azure-pinecone.json`
-- **n8n ID:** `Cf26BZwsq8r9wuPB`
-- **Webhook:** `POST /webhook/voucher-embedding`
+- **n8n ID:** `T91oQREOzfnKQVxm`
+- **Webhook:** `POST /webhook/voucher-embedding-v2`
 - **Purpose:** Embeds voucher data into Pinecone when vouchers are posted
 - **Features:**
   - Uses n8n native Langchain nodes (Azure OpenAI Embeddings + Pinecone Vector Store)
+  - Default Data Loader for document input
   - Automatic payload validation
   - Vietnamese text formatting for better semantic search
   - Company-scoped namespaces (`company_{companyId}`)
 
 ### 2. RAG Query Processing (Recommended - n8n Langchain)
 - **File:** `rag-chatbot-query-azure-pinecone.json`
-- **n8n ID:** `DQaYgnbZ2ryRSwM8`
-- **Webhook:** `POST /webhook/chatbot-query`
+- **n8n ID:** `Y3w8Q8Q6vdQIaqFm`
+- **Webhook:** `POST /webhook/chatbot-query-v2`
 - **Purpose:** Processes chatbot queries using RAG with Vietnamese accounting context
 - **Features:**
   - AI Agent with Vietnamese accounting system prompt
   - Pinecone retrieval as AI tool
-  - Window Buffer Memory for conversation context
-  - Citation extraction with confidence scoring
+  - Window Buffer Memory for conversation context (session-based)
+  - Citation extraction from answer text (regex-based voucher number detection)
+  - Confidence scoring based on citations found
   - Response time tracking
+  - Follow-up question support within same session
 
 ### 3. Legacy Workflows (HTTP Request based)
 - `voucher-embedding-automation.json` - Uses HTTP Request nodes
@@ -37,8 +46,8 @@ This folder contains n8n workflow definitions for the accounting RAG chatbot sys
 
 ### Option A: Already Deployed in n8n
 The workflows are already created in your n8n instance:
-- **Embedding Workflow ID:** `Cf26BZwsq8r9wuPB`
-- **Query Workflow ID:** `DQaYgnbZ2ryRSwM8`
+- **Embedding Workflow ID:** `T91oQREOzfnKQVxm`
+- **Query Workflow ID:** `Y3w8Q8Q6vdQIaqFm`
 
 Just activate them in the n8n UI!
 
@@ -79,7 +88,7 @@ Region: us-east-1 (or your preferred)
 
 ### Test Embedding Webhook
 ```bash
-curl -X POST http://localhost:5678/webhook/voucher-embedding \
+curl -X POST http://localhost:5678/webhook/voucher-embedding-v2 \
   -H "Content-Type: application/json" \
   -d '{
     "company_id": "test-company-uuid",
@@ -100,7 +109,7 @@ curl -X POST http://localhost:5678/webhook/voucher-embedding \
 
 ### Test Query Webhook
 ```bash
-curl -X POST http://localhost:5678/webhook/chatbot-query \
+curl -X POST http://localhost:5678/webhook/chatbot-query-v2 \
   -H "Content-Type: application/json" \
   -d '{
     "query": "Công nợ phải trả tháng này là bao nhiêu?",

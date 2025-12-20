@@ -119,3 +119,25 @@ export const getDashboardForRole = async (): Promise<DashboardConfigResponse> =>
   )
   return response.data
 }
+
+export interface PeriodFinancialSummary {
+  periodId: number
+  totalRevenue: number
+  totalExpense: number
+  netIncome: number
+  arBalance: number
+  apBalance: number
+  cashBalance: number
+  voucherCount: number
+  periodStart: string
+  periodEnd: string
+}
+
+export const getPeriodFinancialSummary = async (periodId: string): Promise<PeriodFinancialSummary | null> => {
+  try {
+    const response = await axios.get<PeriodFinancialSummary>(`/dashboard/period-summary/${periodId}`)
+    return response.data
+  } catch {
+    return null
+  }
+}
