@@ -14,7 +14,7 @@ export function useEmbeddingStatus() {
     queryFn: getEmbeddingStatus,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
-    refetchInterval: (query) => (query.state.data?.pending ?? 0) > 0 ? 30000 : false,
+    refetchInterval: (query) => ((query.state.data?.pending ?? 0) > 0 ? 30000 : false),
   })
 }
 
