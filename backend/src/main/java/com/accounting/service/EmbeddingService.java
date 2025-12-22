@@ -1,5 +1,6 @@
 package com.accounting.service;
 
+import com.accounting.dto.admin.EmbeddingStatusResponse;
 import com.accounting.entity.Voucher;
 
 /**
@@ -21,6 +22,23 @@ import com.accounting.entity.Voucher;
  * @see N8nWebhookService for current MVP implementation
  */
 public interface EmbeddingService {
+
+    /**
+     * Get embedding status for a company's vouchers.
+     *
+     * @param companyId The company ID to get status for
+     * @return EmbeddingStatusResponse with total, embedded, pending counts and percentage
+     */
+    EmbeddingStatusResponse getEmbeddingStatus(Long companyId);
+
+    /**
+     * Trigger batch embedding for unembedded vouchers via n8n workflow.
+     * This proxies the call to the n8n batch embedding webhook to keep
+     * the webhook URL and secret private from the frontend.
+     *
+     * @param companyId The company ID to trigger embedding for
+     */
+    void triggerBatchEmbedding(Long companyId);
 
     /**
      * Generate and store embedding for a voucher in Pinecone (future implementation).

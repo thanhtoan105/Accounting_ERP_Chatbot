@@ -213,7 +213,7 @@ class ChatbotControllerIntegrationTest {
                                 anyLong(),
                                 anyString(),
                                 anyString(),
-                                anyMap())).thenThrow(new RuntimeException("Pinecone service unavailable"));
+                                anyMap())).thenThrow(new RuntimeException("n8n RAG service unavailable"));
 
                 // When & Then: POST request returns 500 Internal Server Error
                 mockMvc.perform(post("/api/v1/chatbot/query")

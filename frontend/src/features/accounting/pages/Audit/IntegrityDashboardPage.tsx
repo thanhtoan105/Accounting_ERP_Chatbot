@@ -37,6 +37,7 @@ import {
   type IssueSeverity,
 } from '../../services/cashAudit'
 import { useAuth } from '@/hooks/useAuth'
+import { EmbeddingStatusCard } from '@/features/admin'
 
 function StatusIcon({ status }: { status?: IntegrityCheckStatus }) {
   switch (status) {
@@ -245,6 +246,13 @@ export function IntegrityDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* RAG Embedding Status - for AI chatbot feature */}
+      {isAdmin && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <EmbeddingStatusCard />
+        </div>
+      )}
 
       {/* Running Check Progress */}
       {running && (

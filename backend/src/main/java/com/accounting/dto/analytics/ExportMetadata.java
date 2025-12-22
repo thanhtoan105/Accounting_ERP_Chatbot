@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "Metadata for exported analytics dashboard with TT200 compliance watermark")
 public record ExportMetadata(
         @Schema(description = "Company ID the export belongs to") Long companyId,
-        @Schema(description = "Accounting period ID") Long periodId,
+        @Schema(description = "Accounting period ID") java.util.UUID periodId,
         @Schema(
                         description = "Dashboard type",
                         example = "FINANCIAL_OVERVIEW",

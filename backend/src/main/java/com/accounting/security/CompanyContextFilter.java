@@ -19,8 +19,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.springframework.stereotype.Component;
-
 /**
  * Filter that establishes the company context for each request.
  * This filter runs AFTER JwtAuthenticationFilter in the Spring Security filter chain

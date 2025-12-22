@@ -4,8 +4,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
+import com.accounting.config.hibernate.PostgresInetType;
 import com.accounting.repository.CompanyScopedEntity;
 
 import jakarta.persistence.Column;
@@ -45,6 +47,7 @@ public class DashboardAuditLog implements CompanyScopedEntity {
     @Column(name = "resource_id", length = 255)
     private String resourceId;
 
+    @Type(PostgresInetType.class)
     @Column(name = "ip_address", columnDefinition = "inet")
     private String ipAddress;
 

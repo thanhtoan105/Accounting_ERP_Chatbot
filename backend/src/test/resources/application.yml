@@ -36,27 +36,18 @@ app:
 # Chatbot configuration (disabled for tests)
 chatbot:
   enabled: false
-  azure-openai:
-    endpoint: https://test.openai.azure.com/
-    api-key: test-key
-    api-version: "2023-05-15"
-    embedding-deployment: embedding-ada-002
-    completion-deployment: gpt-35-turbo
-    max-tokens: 500
-    temperature: 0.3
-    timeout-seconds: 30
-  pinecone:
-    api-key: test-key
-    environment: us-east-1-aws
-    index-name: accounting-embeddings
-    namespace-prefix: "company-"
-    top-k: 10
-    score-threshold: 0.7
   n8n:
     webhook-url: http://localhost:5678/webhook/voucher-embedding-v2
+    batch-webhook-url: http://localhost:5678/webhook-test/batch
+    rag-query-url: http://localhost:5678/webhook/chatbot-query-v2
     webhook-secret: test-secret
     retry-attempts: 3
-    timeout-seconds: 10
+    timeout-seconds: 30
+  query:
+    max-length: 5000
+    default-language: vi
+    confidence-threshold-low: 0.5
+    confidence-threshold-high: 0.8
 
 # Resend (email)
 resend:

@@ -89,33 +89,15 @@ metabase:
 chatbot:
   enabled: ${CHATBOT_ENABLED:true}
 
-  # Azure OpenAI Configuration
-  azure-openai:
-    endpoint: ${AZURE_OPENAI_ENDPOINT:https://your-resource.openai.azure.com/}
-    api-key: ${AZURE_OPENAI_API_KEY:}
-    api-version: '2023-05-15'
-    embedding-deployment: ${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:embedding-ada-002}
-    completion-deployment: ${AZURE_OPENAI_COMPLETION_DEPLOYMENT:gpt-4o}
-    max-tokens: ${AZURE_OPENAI_MAX_TOKENS:500}
-    temperature: ${AZURE_OPENAI_TEMPERATURE:0.3}
-    timeout-seconds: ${AZURE_OPENAI_TIMEOUT:30}
-
-  # Pinecone Configuration
-  pinecone:
-    api-key: ${PINECONE_API_KEY:}
-    environment: ${PINECONE_ENVIRONMENT:us-east-1-aws}
-    index-name: ${PINECONE_INDEX_NAME:accounting-embeddings}
-    namespace-prefix: 'company-'
-    top-k: 10
-    score-threshold: 0.7
-
-  # n8n Webhook Configuration
+  # n8n Webhook Configuration (all RAG processing delegated to n8n workflows)
   n8n:
     webhook-url: ${N8N_WEBHOOK_URL:https://n8n.duongthanhtoan105.com/webhook/voucher-embedding-v2}
+    batch-webhook-url: ${N8N_BATCH_WEBHOOK_URL:https://n8n.duongthanhtoan105.com/webhook/batch-embed-vouchers}
+    rag-query-url: ${N8N_RAG_QUERY_URL:https://n8n.duongthanhtoan105.com/webhook/chatbot-query-v2}
     webhook-secret: ${N8N_WEBHOOK_SECRET:}
     retry-attempts: 3
     retry-delays: 1000,5000,15000 # milliseconds: 1s, 5s, 15s
-    timeout-seconds: 10
+    timeout-seconds: 30
 
   # Query Configuration
   query:
@@ -159,14 +141,14 @@ analytics:
   dashboards:
     # IMPORTANT: Dashboard ID 4 is "Financial Overview" in Metabase
     # Dashboard ID 1 is the demo "E-commerce insights" dashboard
-    default-dashboard-id: 4
+    default-dashboard-id: 2
     role-profiles:
-      ADMIN: 4 # Full dashboard - Financial Overview with all widgets
-      CFO: 4
-      CHIEF_ACCOUNTANT: 4
-      ACCOUNTANT_GENERAL: 4 # Financial Overview
-      ACCOUNTANT_AR: 4 # Financial Overview (filtered by role permissions)
-      ACCOUNTANT_AP: 4 # Financial Overview (filtered by role permissions)
-      CASHIER: 4 # Financial Overview (filtered by role permissions)
-      FINANCE: 4
-      ACCOUNTANT: 4
+      ADMIN: 2 # Full dashboard - Financial Overview with all widgets
+      CFO: 2
+      CHIEF_ACCOUNTANT: 2
+      ACCOUNTANT_GENERAL: 2 # Financial Overview
+      ACCOUNTANT_AR: 2 # Financial Overview (filtered by role permissions)
+      ACCOUNTANT_AP: 2 # Financial Overview (filtered by role permissions)
+      CASHIER: 2 # Financial Overview (filtered by role permissions)
+      FINANCE: 2
+      ACCOUNTANT: 2

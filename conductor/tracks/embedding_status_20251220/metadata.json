@@ -1,0 +1,10 @@
+{
+  "id": "embedding_status_20251220",
+  "title": "Voucher Embedding Status - Phase 1",
+  "type": "feature",
+  "status": "in_progress",
+  "priority": 1,
+  "created": "2024-12-20",
+  "parent_epic": "Epic 9: AI Chatbot (RAG)",
+  "bd_issue": null
+}

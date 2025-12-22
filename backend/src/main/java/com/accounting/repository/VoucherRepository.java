@@ -110,4 +110,20 @@ public interface VoucherRepository
       nativeQuery = true)
   List<UUID> findIdsByCompanyIdAndSearchTerm(
       @Param("companyId") Long companyId, @Param("searchTerm") String searchTerm);
+
+  /**
+   * Count total vouchers for a company.
+   *
+   * @param companyId company ID
+   * @return total voucher count
+   */
+  long countByCompanyId(Long companyId);
+
+  /**
+   * Count vouchers with non-null embedded_at for a company.
+   *
+   * @param companyId company ID
+   * @return count of embedded vouchers
+   */
+  long countByCompanyIdAndEmbeddedAtIsNotNull(Long companyId);
 }

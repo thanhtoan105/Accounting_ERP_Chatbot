@@ -1,3 +1,6 @@
 export { default as TenantManagementPage } from './pages/TenantManagementPage'
 export { default as CreateTenantDialog } from './components/CreateTenantDialog'
+export { EmbeddingStatusCard } from './components/EmbeddingStatusCard'
+export { useEmbeddingStatus, useStartBatchEmbedding } from './hooks/useEmbeddingStatus'
 export * from './api/tenantApi'
+export * from './api/embeddingApi'

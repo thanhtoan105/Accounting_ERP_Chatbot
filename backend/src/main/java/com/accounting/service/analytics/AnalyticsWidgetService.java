@@ -17,7 +17,7 @@ public interface AnalyticsWidgetService {
 
     List<TopDebtorCreditor> getTop5Creditors(LocalDate asOfDate);
 
-    PeriodSummaryData getPeriodSummary(Long periodId);
+    PeriodSummaryData getPeriodSummary(java.util.UUID periodId);
 
     List<CashPositionTrend> getCashPositionTrend(LocalDate startDate, LocalDate endDate);
 
@@ -57,7 +57,7 @@ public interface AnalyticsWidgetService {
             int rank) {}
 
     record PeriodSummaryData(
-            Long periodId,
+            java.util.UUID periodId,
             BigDecimal totalRevenue,
             BigDecimal totalExpense,
             BigDecimal arBalance,

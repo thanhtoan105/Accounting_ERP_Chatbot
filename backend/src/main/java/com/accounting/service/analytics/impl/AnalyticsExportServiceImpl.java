@@ -74,7 +74,7 @@ public class AnalyticsExportServiceImpl implements AnalyticsExportService {
     }
 
     @Override
-    public byte[] exportDashboardToExcel(Long companyId, Long periodId, String dashboardType) {
+    public byte[] exportDashboardToExcel(Long companyId, java.util.UUID periodId, String dashboardType) {
         Company company = getCompany(companyId);
         String username = getCurrentUsername();
         String watermark = buildWatermark(company.getName(), username);
@@ -110,7 +110,7 @@ public class AnalyticsExportServiceImpl implements AnalyticsExportService {
     }
 
     @Override
-    public byte[] exportDashboardToPdf(Long companyId, Long periodId, String dashboardType) {
+    public byte[] exportDashboardToPdf(Long companyId, java.util.UUID periodId, String dashboardType) {
         Company company = getCompany(companyId);
         String username = getCurrentUsername();
         String watermark = buildWatermark(company.getName(), username);
@@ -327,7 +327,7 @@ public class AnalyticsExportServiceImpl implements AnalyticsExportService {
         return 4;
     }
 
-    private int createPeriodSummarySheet(Workbook workbook, Company company, Long periodId, String watermark) {
+    private int createPeriodSummarySheet(Workbook workbook, Company company, java.util.UUID periodId, String watermark) {
         Sheet sheet = workbook.createSheet("Period Summary");
         setSheetHeader(sheet, watermark);
 
@@ -357,7 +357,7 @@ public class AnalyticsExportServiceImpl implements AnalyticsExportService {
     }
 
     private void createMetadataSheet(
-            Sheet sheet, Long companyId, Long periodId, String dashboardType, String format, int rowCount,
+            Sheet sheet, Long companyId, java.util.UUID periodId, String dashboardType, String format, int rowCount,
             String generatedBy) {
         CellStyle headerStyle = createHeaderStyle(sheet.getWorkbook());
         CellStyle dataStyle = createDataStyle(sheet.getWorkbook());
@@ -465,7 +465,7 @@ public class AnalyticsExportServiceImpl implements AnalyticsExportService {
                 .setDataSource(dataSource);
     }
 
-    private JasperReportBuilder buildPeriodSummaryPdfReport(Company company, Long periodId, String watermark) {
+    private JasperReportBuilder buildPeriodSummaryPdfReport(Company company, java.util.UUID periodId, String watermark) {
         PeriodSummaryData data = widgetService.getPeriodSummary(periodId);
 
         StyleBuilder titleStyle = DynamicReports.stl.style().bold().setFontSize(16);

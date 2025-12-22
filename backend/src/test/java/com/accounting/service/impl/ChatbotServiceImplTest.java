@@ -4,9 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,9 +26,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.accounting.config.chatbot.ChatbotProperties;
 import com.accounting.entity.ChatbotQuery;
 import com.accounting.repository.ChatbotQueryRepository;
-import com.accounting.service.AzureOpenAIService;
 import com.accounting.service.ChatbotService;
-import com.accounting.service.RAGQueryService;
+import com.accounting.service.N8nRAGQueryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -38,8 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  * Tests cover:
  * - Input validation
- * - Confidence score calculation
- * - Fallback message handling
+ * - n8n RAG query execution
  * - Database persistence
  * - Service availability checks
  */
@@ -47,10 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 class ChatbotServiceImplTest {
 
     @Mock
-    private RAGQueryService ragQueryService;
-
-    @Mock
-    private AzureOpenAIService azureOpenAIService;
+    private N8nRAGQueryService n8nRAGQueryService;
 
     @Mock
     private ChatbotQueryRepository chatbotQueryRepository;
@@ -75,8 +68,7 @@ class ChatbotServiceImplTest {
         objectMapper = new ObjectMapper();
 
         chatbotService = new ChatbotServiceImpl(
-                ragQueryService,
-                azureOpenAIService,
+                n8nRAGQueryService,
                 chatbotQueryRepository,
                 chatbotProperties,
                 objectMapper);
@@ -97,25 +89,27 @@ class ChatbotServiceImplTest {
             String language = "vi";
             Map<String, String> contextFilters = new HashMap<>();
 
-            RAGQueryService.Citation citation = new RAGQueryService.Citation(
-                    "voucher",
+            N8nRAGQueryService.Citation citation = new N8nRAGQueryService.Citation(
+                    "VOUCHER",
                     "123e4567-e89b-12d3-a456-426614174000",
                     "PC-2024-001",
                     "Chi tiền mặt cho NCC ABC",
                     0.85,
                     "/vouchers/123");
 
-            RAGQueryService.RetrievalResult retrievalResult = new RAGQueryService.RetrievalResult(
-                    "Context about voucher PC-2024-001...",
+            N8nRAGQueryService.RAGQueryResult ragResult = new N8nRAGQueryService.RAGQueryResult(
+                    "Công nợ phải thu hiện tại là 100,000,000 VND.",
                     List.of(citation),
                     0.85,
-                    1);
+                    "HIGH",
+                    "q_123_456",
+                    sessionId,
+                    1500,
+                    language,
+                    List.of());
 
-            when(ragQueryService.retrieveRelevantContext(anyString(), anyLong(), anyLong(), anyMap()))
-                    .thenReturn(retrievalResult);
-
-            when(azureOpenAIService.generateCompletion(anyString(), anyString(), anyString()))
-                    .thenReturn("Công nợ phải thu hiện tại là 100,000,000 VND.");
+            when(n8nRAGQueryService.executeQuery(anyString(), anyLong(), anyLong(), anyString(), anyString()))
+                    .thenReturn(ragResult);
 
             ChatbotQuery savedQuery = new ChatbotQuery();
             savedQuery.setId(123L);
@@ -130,10 +124,9 @@ class ChatbotServiceImplTest {
             assertThat(response.getQueryId()).isEqualTo(123L);
             assertThat(response.getAnswerText()).isEqualTo("Công nợ phải thu hiện tại là 100,000,000 VND.");
             assertThat(response.getCitations()).hasSize(1);
-            assertThat(response.getConfidenceScore()).isGreaterThan(0.5);
+            assertThat(response.getConfidenceScore()).isEqualTo(0.85);
 
-            verify(ragQueryService).retrieveRelevantContext(queryText, companyId, userId, contextFilters);
-            verify(azureOpenAIService).generateCompletion(queryText, "Context about voucher PC-2024-001...", language);
+            verify(n8nRAGQueryService).executeQuery(queryText, companyId, userId, sessionId, language);
             verify(chatbotQueryRepository).save(chatbotQueryCaptor.capture());
 
             ChatbotQuery capturedQuery = chatbotQueryCaptor.getValue();
@@ -145,8 +138,8 @@ class ChatbotServiceImplTest {
         }
 
         @Test
-        @DisplayName("Should return fallback message for low confidence")
-        void processQuery_lowConfidence_returnsFallback() {
+        @DisplayName("Should handle low confidence response from n8n")
+        void processQuery_lowConfidence_handlesResponse() {
             // Given
             String queryText = "Câu hỏi không liên quan";
             Long userId = 1L;
@@ -155,15 +148,19 @@ class ChatbotServiceImplTest {
             String language = "vi";
             Map<String, String> contextFilters = new HashMap<>();
 
-            // Low relevance score = low confidence
-            RAGQueryService.RetrievalResult retrievalResult = new RAGQueryService.RetrievalResult(
-                    "",
-                    List.of(), // Empty citations
-                    0.0,
-                    0);
+            N8nRAGQueryService.RAGQueryResult ragResult = new N8nRAGQueryService.RAGQueryResult(
+                    "Không tìm thấy dữ liệu phù hợp. Vui lòng thử lại với câu hỏi cụ thể hơn.",
+                    List.of(),
+                    0.3,
+                    "LOW",
+                    "q_456_789",
+                    sessionId,
+                    800,
+                    language,
+                    List.of("Thử hỏi cụ thể hơn về số phiếu hoặc ngày tháng"));
 
-            when(ragQueryService.retrieveRelevantContext(anyString(), anyLong(), anyLong(), anyMap()))
-                    .thenReturn(retrievalResult);
+            when(n8nRAGQueryService.executeQuery(anyString(), anyLong(), anyLong(), anyString(), anyString()))
+                    .thenReturn(ragResult);
 
             ChatbotQuery savedQuery = new ChatbotQuery();
             savedQuery.setId(456L);
@@ -175,40 +172,9 @@ class ChatbotServiceImplTest {
 
             // Then
             assertThat(response).isNotNull();
-            assertThat(response.getAnswerText()).contains("Không đủ dữ liệu");
-            assertThat(response.getConfidenceScore()).isEqualTo(0.0);
-
-            // Should NOT call LLM for low confidence
-            verify(azureOpenAIService, never()).generateCompletion(anyString(), anyString(), anyString());
-        }
-
-        @Test
-        @DisplayName("Should return English fallback message when language is 'en'")
-        void processQuery_lowConfidenceEnglish_returnsEnglishFallback() {
-            // Given
-            String queryText = "Unrelated question";
-            Long userId = 1L;
-            Long companyId = 2L;
-            String sessionId = UUID.randomUUID().toString();
-            String language = "en";
-            Map<String, String> contextFilters = new HashMap<>();
-
-            RAGQueryService.RetrievalResult retrievalResult = new RAGQueryService.RetrievalResult(
-                    "", List.of(), 0.0, 0);
-
-            when(ragQueryService.retrieveRelevantContext(anyString(), anyLong(), anyLong(), anyMap()))
-                    .thenReturn(retrievalResult);
-
-            ChatbotQuery savedQuery = new ChatbotQuery();
-            savedQuery.setId(789L);
-            when(chatbotQueryRepository.save(any(ChatbotQuery.class))).thenReturn(savedQuery);
-
-            // When
-            ChatbotService.ChatbotQueryResponse response = chatbotService.processQuery(
-                    queryText, userId, companyId, sessionId, language, contextFilters);
-
-            // Then
-            assertThat(response.getAnswerText()).contains("Insufficient data");
+            assertThat(response.getAnswerText()).contains("Không tìm thấy dữ liệu");
+            assertThat(response.getConfidenceScore()).isEqualTo(0.3);
+            assertThat(response.getCitations()).isEmpty();
         }
     }
 
@@ -256,85 +222,13 @@ class ChatbotServiceImplTest {
     }
 
     @Nested
-    @DisplayName("Confidence Score Calculation Tests")
-    class ConfidenceScoreTests {
-
-        @Test
-        @DisplayName("Should calculate correct confidence with 5 citations and high average score")
-        void confidenceScore_5Citations_highScore() {
-            // Given: 5 citations with 0.9 average score
-            // Expected: (0.9 * 0.7) + (1.0 * 0.3) = 0.63 + 0.3 = 0.93
-            String queryText = "Test query";
-            Long userId = 1L;
-            Long companyId = 2L;
-
-            List<RAGQueryService.Citation> citations = List.of(
-                    createCitation(0.9), createCitation(0.9), createCitation(0.9),
-                    createCitation(0.9), createCitation(0.9));
-
-            RAGQueryService.RetrievalResult retrievalResult = new RAGQueryService.RetrievalResult(
-                    "Context", citations, 0.9, 5);
-
-            when(ragQueryService.retrieveRelevantContext(anyString(), anyLong(), anyLong(), anyMap()))
-                    .thenReturn(retrievalResult);
-            when(azureOpenAIService.generateCompletion(anyString(), anyString(), anyString()))
-                    .thenReturn("Answer");
-
-            ChatbotQuery savedQuery = new ChatbotQuery();
-            savedQuery.setId(1L);
-            when(chatbotQueryRepository.save(any(ChatbotQuery.class))).thenReturn(savedQuery);
-
-            // When
-            ChatbotService.ChatbotQueryResponse response = chatbotService.processQuery(
-                    queryText, userId, companyId, "session", "vi", new HashMap<>());
-
-            // Then
-            assertThat(response.getConfidenceScore()).isCloseTo(0.93, org.assertj.core.api.Assertions.within(0.01));
-        }
-
-        @Test
-        @DisplayName("Should calculate correct confidence with 1 citation")
-        void confidenceScore_1Citation_mediumScore() {
-            // Given: 1 citation with 0.8 average score
-            // Expected: (0.8 * 0.7) + (0.2 * 0.3) = 0.56 + 0.06 = 0.62
-            String queryText = "Test query";
-
-            List<RAGQueryService.Citation> citations = List.of(createCitation(0.8));
-
-            RAGQueryService.RetrievalResult retrievalResult = new RAGQueryService.RetrievalResult(
-                    "Context", citations, 0.8, 1);
-
-            when(ragQueryService.retrieveRelevantContext(anyString(), anyLong(), anyLong(), anyMap()))
-                    .thenReturn(retrievalResult);
-            when(azureOpenAIService.generateCompletion(anyString(), anyString(), anyString()))
-                    .thenReturn("Answer");
-
-            ChatbotQuery savedQuery = new ChatbotQuery();
-            savedQuery.setId(1L);
-            when(chatbotQueryRepository.save(any(ChatbotQuery.class))).thenReturn(savedQuery);
-
-            // When
-            ChatbotService.ChatbotQueryResponse response = chatbotService.processQuery(
-                    queryText, 1L, 2L, "session", "vi", new HashMap<>());
-
-            // Then
-            assertThat(response.getConfidenceScore()).isCloseTo(0.62, org.assertj.core.api.Assertions.within(0.01));
-        }
-
-        private RAGQueryService.Citation createCitation(double score) {
-            return new RAGQueryService.Citation(
-                    "voucher", "test-entity-id", "VC-001", "Excerpt", score, "/vouchers/1");
-        }
-    }
-
-    @Nested
     @DisplayName("Service Availability Tests")
     class AvailabilityTests {
 
         @Test
-        @DisplayName("Should return true when all services are available")
-        void isAvailable_allServicesUp_returnsTrue() {
-            when(azureOpenAIService.isAvailable()).thenReturn(true);
+        @DisplayName("Should return true when n8n service is available")
+        void isAvailable_n8nServiceUp_returnsTrue() {
+            when(n8nRAGQueryService.isAvailable()).thenReturn(true);
 
             boolean available = chatbotService.isAvailable();
 
@@ -342,9 +236,9 @@ class ChatbotServiceImplTest {
         }
 
         @Test
-        @DisplayName("Should return false when OpenAI is unavailable")
-        void isAvailable_openAIDown_returnsFalse() {
-            when(azureOpenAIService.isAvailable()).thenReturn(false);
+        @DisplayName("Should return false when n8n service is unavailable")
+        void isAvailable_n8nServiceDown_returnsFalse() {
+            when(n8nRAGQueryService.isAvailable()).thenReturn(false);
 
             boolean available = chatbotService.isAvailable();
 

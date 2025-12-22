@@ -57,6 +57,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
 @Tag(name = "Chatbot", description = "AI-powered chatbot for voucher queries with RAG")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    prefix = "chatbot", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class ChatbotController {
 
     private final ChatbotService chatbotService;

@@ -215,7 +215,7 @@ public class DashboardController {
 
     @GetMapping("/period-summary/{periodId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'CFO', 'CHIEF_ACCOUNTANT', 'ACCOUNTANT_GENERAL', 'ACCOUNTANT_AR', 'ACCOUNTANT_AP', 'CASHIER', 'FINANCE', 'ACCOUNTANT')")
-    public ResponseEntity<PeriodSummaryResponse> getPeriodSummary(@PathVariable Long periodId) {
+    public ResponseEntity<PeriodSummaryResponse> getPeriodSummary(@PathVariable java.util.UUID periodId) {
         try {
             PeriodSummaryData data = analyticsWidgetService.getPeriodSummary(periodId);
             return ResponseEntity.ok(new PeriodSummaryResponse(
@@ -257,7 +257,7 @@ public class DashboardController {
             Boolean canManualRefresh) {}
 
     public record PeriodSummaryResponse(
-            Long periodId,
+            java.util.UUID periodId,
             BigDecimal totalRevenue,
             BigDecimal totalExpense,
             BigDecimal netIncome,
