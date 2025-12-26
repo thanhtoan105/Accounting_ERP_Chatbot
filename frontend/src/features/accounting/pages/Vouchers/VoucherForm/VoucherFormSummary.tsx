@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
-import { CheckCircle2, AlertTriangle, Calculator, FileText, History } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, Paperclip, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Separator } from '@/components/ui/separator'
 
 interface VoucherFormSummaryProps {
   totals: {
@@ -20,6 +21,7 @@ interface VoucherFormSummaryProps {
   } | null
   isEditing: boolean
   onAttachmentClick?: () => void
+  onValidationSummaryClick?: () => void
 }
 
 function formatCurrency(amount: number): string {
@@ -34,166 +36,129 @@ export function VoucherFormSummary({
   totals,
   attachmentCount,
   validationSummary,
-  editingVoucher,
-  isEditing,
   onAttachmentClick,
+  onValidationSummaryClick,
 }: VoucherFormSummaryProps) {
   const balanceStatus = useMemo(() => {
     if (totals.lineCount === 0) {
       return {
-        icon: Calculator,
-        label: 'No entries',
+        label: 'Empty',
         color: 'text-muted-foreground',
-        bgColor: 'bg-muted/50',
       }
     }
     if (totals.isBalanced) {
       return {
-        icon: CheckCircle2,
         label: 'Balanced',
-        color: 'text-voucher-status-posted',
-        bgColor: 'bg-voucher-status-posted/10',
+        color: 'text-emerald-600 dark:text-emerald-400',
       }
     }
     return {
-      icon: AlertTriangle,
       label: 'Unbalanced',
-      color: 'text-voucher-status-unposted',
-      bgColor: 'bg-voucher-status-unposted/10',
+      color: 'text-red-600 dark:text-red-400',
     }
   }, [totals])
 
-  const BalanceIcon = balanceStatus.icon
-
   return (
-    <div className="voucher-form-summary sticky top-6 space-y-4">
-      {/* Balance Card */}
-      <div
-        className={cn(
-          'rounded-xl border p-5 transition-all duration-300',
-          totals.isBalanced
-            ? 'border-voucher-status-posted/30'
-            : 'border-voucher-status-unposted/30',
-          balanceStatus.bgColor,
-        )}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-base">Summary</h3>
-          <div
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium',
-              balanceStatus.color,
-              balanceStatus.bgColor,
-            )}
-          >
-            <BalanceIcon className="h-3.5 w-3.5" />
-            {balanceStatus.label}
-          </div>
+    <div className="flex flex-col md:flex-row items-center justify-between px-6 py-3 h-full gap-4 md:gap-0">
+      {/* Left Side: Status & Counts */}
+      <div className="flex items-center gap-4 md:gap-6 text-sm w-full md:w-auto justify-between md:justify-start">
+        {/* Line Count */}
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <span className="font-medium text-foreground">{totals.lineCount}</span>
+          <span className="hidden sm:inline">lines</span>
+          <span className="sm:hidden">L</span>
         </div>
 
-        <div className="space-y-3">
-          {/* Total Debit */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Total Debit</span>
-            <span className="font-mono text-base font-semibold text-voucher-debit tabular-nums">
+        <Separator orientation="vertical" className="h-4" />
+
+        {/* Attachment Count */}
+        <button
+          type="button"
+          onClick={onAttachmentClick}
+          className={cn(
+            'flex items-center gap-2 transition-colors',
+            attachmentCount > 0
+              ? 'text-foreground hover:text-primary'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <Paperclip className="h-4 w-4" />
+          <span className="hidden sm:inline">
+            <span className="font-medium text-foreground">{attachmentCount}</span> attachments
+          </span>
+          <span className="sm:hidden font-medium text-foreground">{attachmentCount}</span>
+        </button>
+
+        {/* Validation Status */}
+        {validationSummary.errorCount > 0 && (
+          <>
+            <Separator orientation="vertical" className="h-4" />
+            <button
+              type="button"
+              onClick={onValidationSummaryClick}
+              className="flex items-center gap-2 text-destructive hover:text-destructive/80 transition-colors"
+            >
+              <AlertCircle className="h-4 w-4" />
+              <span className="font-medium hidden sm:inline">{validationSummary.errorCount} lines with errors</span>
+              <span className="font-medium sm:hidden">{validationSummary.errorCount} err</span>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Right Side: Financials */}
+      <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto justify-between md:justify-end">
+        <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Debit</span>
+            <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400 text-sm md:text-base">
               {formatCurrency(totals.totalDebit)}
             </span>
           </div>
 
-          {/* Total Credit */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Total Credit</span>
-            <span className="font-mono text-base font-semibold text-voucher-credit tabular-nums">
+          <Separator orientation="vertical" className="h-8" />
+
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Credit</span>
+            <span className="font-mono font-medium text-blue-600 dark:text-blue-400 text-sm md:text-base">
               {formatCurrency(totals.totalCredit)}
             </span>
           </div>
+        </div>
 
-          {/* Divider */}
-          <div className="border-t border-dashed pt-3">
-            {/* Difference */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Difference</span>
-              <span
-                className={cn(
-                  'font-mono text-base font-bold tabular-nums',
-                  totals.isBalanced ? 'text-voucher-status-posted' : 'text-voucher-status-unposted',
-                )}
-              >
-                {totals.difference >= 0 ? '+' : ''}
-                {formatCurrency(totals.difference)}
+        {/* Difference / Balance Status */}
+        <div
+          className={cn(
+            'flex items-center gap-2 md:gap-3 px-3 md:px-4 py-1.5 rounded-md border shadow-sm ml-2',
+            totals.isBalanced
+              ? 'bg-emerald-50/50 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-800'
+              : 'bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-800',
+          )}
+        >
+          {totals.isBalanced ? (
+            <CheckCircle2
+              className={cn('h-4 w-4 md:h-5 md:w-5', totals.isBalanced ? 'text-emerald-600' : 'text-red-600')}
+            />
+          ) : (
+            <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-red-600" />
+          )}
+          <div className="flex flex-col items-end leading-none gap-0.5">
+             <span
+              className={cn(
+                'text-[10px] font-semibold uppercase tracking-wider',
+                totals.isBalanced ? 'text-emerald-600' : 'text-red-600',
+              )}
+            >
+              {balanceStatus.label}
+            </span>
+            {!totals.isBalanced && (
+              <span className="font-mono font-bold text-red-600 dark:text-red-400 text-sm">
+                {formatCurrency(Math.abs(totals.difference))}
               </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Line Count */}
-        <div className="mt-4 pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
-          <span>Entry lines</span>
-          <span className="font-medium">{totals.lineCount} lines</span>
-        </div>
-      </div>
-
-      {/* Validation Status Card */}
-      {validationSummary.errorCount > 0 && (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-          <div className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <span className="text-sm font-medium">Validation Issues</span>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {validationSummary.errorCount} lines with {validationSummary.totalErrors} errors
-          </p>
-        </div>
-      )}
-
-      {/* Attachments Card */}
-      <div
-        className={cn(
-          'rounded-xl border bg-card p-4 transition-colors',
-          onAttachmentClick && 'cursor-pointer hover:bg-accent/50',
-        )}
-        onClick={onAttachmentClick}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <FileText className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-medium">Attachments</p>
-            <p className="text-xs text-muted-foreground">{attachmentCount} files</p>
+            )}
           </div>
         </div>
       </div>
-
-      {/* History Card (only for editing) */}
-      {isEditing && editingVoucher && (
-        <div className="rounded-xl border bg-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <History className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">History</span>
-          </div>
-          <div className="space-y-2 text-xs text-muted-foreground">
-            {editingVoucher.createdAt && (
-              <div className="flex justify-between">
-                <span>Created</span>
-                <span>{new Date(editingVoucher.createdAt).toLocaleDateString('vi-VN')}</span>
-              </div>
-            )}
-            {editingVoucher.updatedAt && (
-              <div className="flex justify-between">
-                <span>Last updated</span>
-                <span>{new Date(editingVoucher.updatedAt).toLocaleDateString('vi-VN')}</span>
-              </div>
-            )}
-            {editingVoucher.createdBy && (
-              <div className="flex justify-between">
-                <span>Created by</span>
-                <span className="truncate max-w-[120px]">{editingVoucher.createdBy}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

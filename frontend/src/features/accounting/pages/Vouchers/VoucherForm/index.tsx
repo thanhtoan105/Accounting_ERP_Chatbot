@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import type { AccountingPeriod } from '@/types/accountingPeriod'
 import { getVoucherById } from '@/services/voucher'
 
@@ -53,10 +54,10 @@ export default function VoucherForm() {
   }, [state.voucherId, state.setAttachmentCount])
 
   return (
-    <div className="voucher-form-container space-y-6 animate-in fade-in duration-300">
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-background">
       {/* Lock Alert */}
       {state.isLocked && state.draftLock ? (
-        <Alert variant="destructive" className="animate-in slide-in-from-top duration-300">
+        <Alert variant="destructive" className="animate-in slide-in-from-top duration-300 m-4 mb-0">
           <AlertTitle>Voucher is locked</AlertTitle>
           <AlertDescription className="flex flex-wrap items-center gap-2 text-sm">
             {state.draftLock.ownerName || 'Other user'} is editing this draft. Lock will expire in{' '}
@@ -73,43 +74,47 @@ export default function VoucherForm() {
         </Alert>
       ) : null}
 
-      {/* Header Section */}
-      <VoucherFormHeader
-        isEditing={state.isEditing}
-        editingVoucher={state.editingVoucher}
-        voucherId={state.voucherId}
-        attachmentCount={state.attachmentCount}
-        onAttachmentClick={() => state.setAttachmentModalOpen(true)}
-        onTemplateClick={() => state.setTemplateDialogOpen(true)}
-        onValidateClick={() =>
-          state.form.handleSubmit(() => state.performRealTimeValidation(false))()
-        }
-        onSaveClick={() => state.form.handleSubmit(state.handleSave)()}
-        onPostClick={state.handlePost}
-        onUnpostClick={() => state.setUnpostDialogOpen(true)}
-        onReverseClick={() => state.setReverseDialogOpen(true)}
-        formDisabled={state.formDisabled}
-        loadingAccounts={state.loadingAccounts}
-        saving={state.saving}
-        posting={state.posting}
-        unposting={state.unposting}
-        reversing={state.reversing}
-        canPost={state.canPost}
-        canUnpost={state.canUnpost}
-        canReverse={state.canReverse}
-        autoSaveStatus={state.autoSaveStatus}
-        lastSavedAt={state.lastSavedAt}
-        autoSaveError={state.autoSaveError}
-        validationSummary={state.validationSummary}
-        onValidationSummaryClick={() => state.setValidationSummaryOpen(true)}
-      />
-
-      {/* Two-Column Layout */}
       <Form {...state.form}>
-        <form onSubmit={state.form.handleSubmit(state.handleSave)} className="voucher-form-layout">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr,380px] gap-6">
-            {/* Left Column - Main Content */}
-            <div className="space-y-6 order-2 lg:order-1">
+        <form
+          onSubmit={state.form.handleSubmit(state.handleSave)}
+          className="flex flex-col flex-1 min-h-0"
+        >
+          {/* Header Section - Fixed at top */}
+          <div className="flex-none px-6 py-4 border-b bg-background z-10">
+            <VoucherFormHeader
+              isEditing={state.isEditing}
+              editingVoucher={state.editingVoucher}
+              voucherId={state.voucherId}
+              attachmentCount={state.attachmentCount}
+              onAttachmentClick={() => state.setAttachmentModalOpen(true)}
+              onTemplateClick={() => state.setTemplateDialogOpen(true)}
+              onValidateClick={() =>
+                state.form.handleSubmit(() => state.performRealTimeValidation(false))()
+              }
+              onSaveClick={() => state.form.handleSubmit(state.handleSave)()}
+              onPostClick={state.handlePost}
+              onUnpostClick={() => state.setUnpostDialogOpen(true)}
+              onReverseClick={() => state.setReverseDialogOpen(true)}
+              formDisabled={state.formDisabled}
+              loadingAccounts={state.loadingAccounts}
+              saving={state.saving}
+              posting={state.posting}
+              unposting={state.unposting}
+              reversing={state.reversing}
+              canPost={state.canPost}
+              canUnpost={state.canUnpost}
+              canReverse={state.canReverse}
+              autoSaveStatus={state.autoSaveStatus}
+              lastSavedAt={state.lastSavedAt}
+              autoSaveError={state.autoSaveError}
+              validationSummary={state.validationSummary}
+              onValidationSummaryClick={() => state.setValidationSummaryOpen(true)}
+            />
+          </div>
+
+          {/* Main Content - Scrollable */}
+          <ScrollArea className="flex-1">
+            <div className="p-6 space-y-6 max-w-full">
               <VoucherFormGeneral
                 form={state.form}
                 formDisabled={state.formDisabled}
@@ -139,26 +144,28 @@ export default function VoucherForm() {
                 canRedo={state.canRedo}
               />
 
-              <VoucherFormAttachments
-                voucherId={state.voucherId}
-                formDisabled={state.formDisabled}
-                setAttachmentCount={state.setAttachmentCount}
-              />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <VoucherFormAttachments
+                  voucherId={state.voucherId}
+                  formDisabled={state.formDisabled}
+                  setAttachmentCount={state.setAttachmentCount}
+                />
 
-              <VoucherFormHistory voucherId={state.voucherId} isEditing={state.isEditing} />
+                <VoucherFormHistory voucherId={state.voucherId} isEditing={state.isEditing} />
+              </div>
             </div>
+          </ScrollArea>
 
-            {/* Right Column - Summary Sidebar */}
-            <div className="order-1 lg:order-2">
-              <VoucherFormSummary
-                totals={state.totals}
-                attachmentCount={state.attachmentCount}
-                validationSummary={state.validationSummary}
-                editingVoucher={state.editingVoucher}
-                isEditing={state.isEditing}
-                onAttachmentClick={() => state.setAttachmentModalOpen(true)}
-              />
-            </div>
+          {/* Footer Section - Fixed at bottom */}
+          <div className="flex-none border-t bg-background z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <VoucherFormSummary
+              totals={state.totals}
+              attachmentCount={state.attachmentCount}
+              validationSummary={state.validationSummary}
+              editingVoucher={state.editingVoucher}
+              isEditing={state.isEditing}
+              onAttachmentClick={() => state.setAttachmentModalOpen(true)}
+            />
           </div>
         </form>
       </Form>

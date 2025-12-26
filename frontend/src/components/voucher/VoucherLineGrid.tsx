@@ -59,9 +59,11 @@ export interface VoucherLineGridProps {
   onRedo?: () => void
   canUndo?: boolean
   canRedo?: boolean
+  variant?: 'default' | 'dense'
 }
 
 const VIRTUAL_ROW_HEIGHT = 72
+const VIRTUAL_ROW_HEIGHT_DENSE = 48
 const VIRTUAL_OVERSCAN = 5
 const DEFAULT_VIRTUAL_WINDOW = 30
 
@@ -127,6 +129,7 @@ export function VoucherLineGrid({
   onRedo,
   canUndo = false,
   canRedo = false,
+  variant = 'default',
 }: VoucherLineGridProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -134,6 +137,9 @@ export function VoucherLineGrid({
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const amountFormatter = useMemo(() => new Intl.NumberFormat('vi-VN'), [])
   const shouldVirtualize = lines.length > DEFAULT_VIRTUAL_WINDOW
+
+  const rowHeight = variant === 'dense' ? VIRTUAL_ROW_HEIGHT_DENSE : VIRTUAL_ROW_HEIGHT
+
   const [virtualWindow, setVirtualWindow] = useState(() => ({
     start: 0,
     end: Math.min(lines.length, DEFAULT_VIRTUAL_WINDOW),
@@ -187,14 +193,15 @@ export function VoucherLineGrid({
   const removeLine = useCallback(
     (index: number) => {
       if (!onLinesChange) return
-      if (lines.length === 1) {
-        onLinesChange([createEmptyLine(0)])
-        setActiveRowIndex(0)
-        return
-      }
       const next = lines.filter((_, idx) => idx !== index)
-      onLinesChange(next)
-      setActiveRowIndex(Math.max(0, index - 1))
+      // Ensure at least one line remains or handle empty state externally
+      if (next.length === 0) {
+          onLinesChange([createEmptyLine(0)])
+          setActiveRowIndex(0)
+      } else {
+          onLinesChange(next)
+          setActiveRowIndex(Math.max(0, index - 1))
+      }
     },
     [lines, onLinesChange],
   )
@@ -264,11 +271,11 @@ export function VoucherLineGrid({
     }
     const scrollTop = element.scrollTop
     const viewportHeight = element.clientHeight || 0
-    const start = Math.max(0, Math.floor(scrollTop / VIRTUAL_ROW_HEIGHT) - VIRTUAL_OVERSCAN)
-    const visibleCount = Math.ceil(viewportHeight / VIRTUAL_ROW_HEIGHT) + VIRTUAL_OVERSCAN * 2
+    const start = Math.max(0, Math.floor(scrollTop / rowHeight) - VIRTUAL_OVERSCAN)
+    const visibleCount = Math.ceil(viewportHeight / rowHeight) + VIRTUAL_OVERSCAN * 2
     const end = Math.min(lines.length, start + visibleCount)
     setVirtualWindow({ start, end })
-  }, [lines.length, shouldVirtualize])
+  }, [lines.length, shouldVirtualize, rowHeight])
 
   React.useEffect(() => {
     updateVirtualWindow()
@@ -280,9 +287,10 @@ export function VoucherLineGrid({
     }
     return lines.slice(virtualWindow.start, virtualWindow.end)
   }, [lines, shouldVirtualize, virtualWindow.end, virtualWindow.start])
-  const topPadding = shouldVirtualize ? virtualWindow.start * VIRTUAL_ROW_HEIGHT : 0
+
+  const topPadding = shouldVirtualize ? virtualWindow.start * rowHeight : 0
   const bottomPadding = shouldVirtualize
-    ? Math.max(0, lines.length - virtualWindow.end) * VIRTUAL_ROW_HEIGHT
+    ? Math.max(0, lines.length - virtualWindow.end) * rowHeight
     : 0
 
   const lineErrors = useMemo(() => {
@@ -296,57 +304,63 @@ export function VoucherLineGrid({
     )
   }, [validationMap])
 
+  // Style constants based on variant
+  const cellPadding = variant === 'dense' ? 'p-1' : 'p-4'
+  const inputHeight = variant === 'dense' ? 'h-8 text-sm' : 'h-10'
+
   return (
     <TooltipProvider>
       <div ref={containerRef} className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm font-medium text-muted-foreground">
-            Entry lines
-            {loading ? <span className="ml-2 animate-pulse text-xs">Loading...</span> : null}
-          </div>
-          {!readOnly ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => insertLine(lines.length)}
-                  disabled={loading}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add line
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={onUndo}
-                  disabled={!canUndo}
-                  aria-label="Undo (Ctrl+Z)"
-                >
-                  <Undo2 className="mr-2 h-4 w-4" />
-                  Undo
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={onRedo}
-                  disabled={!canRedo}
-                  aria-label="Redo (Ctrl+Shift+Z)"
-                >
-                  <Redo2 className="mr-2 h-4 w-4" />
-                  Redo
-                </Button>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Shortcuts: Ctrl+N (add), Ctrl+D (duplicate), Ctrl+Backspace (delete), Ctrl+Z /
-                Ctrl+Shift+Z (undo), drag and drop to reorder
-              </div>
+        {variant !== 'dense' && (
+           <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-sm font-medium text-muted-foreground">
+              Entry lines
+              {loading ? <span className="ml-2 animate-pulse text-xs">Loading...</span> : null}
             </div>
-          ) : null}
-        </div>
+            {!readOnly ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => insertLine(lines.length)}
+                    disabled={loading}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add line
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={onUndo}
+                    disabled={!canUndo}
+                    aria-label="Undo (Ctrl+Z)"
+                  >
+                    <Undo2 className="mr-2 h-4 w-4" />
+                    Undo
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={onRedo}
+                    disabled={!canRedo}
+                    aria-label="Redo (Ctrl+Shift+Z)"
+                  >
+                    <Redo2 className="mr-2 h-4 w-4" />
+                    Redo
+                  </Button>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Shortcuts: Ctrl+N (add), Ctrl+D (duplicate), Ctrl+Backspace (delete), Ctrl+Z /
+                  Ctrl+Shift+Z (undo), drag and drop to reorder
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
 
         <div
           className={cn(
@@ -358,16 +372,16 @@ export function VoucherLineGrid({
         >
           <Table>
             <TableHeader className="bg-muted/40">
-              <TableRow>
-                <TableHead className="w-[40px]" />
-                <TableHead className="w-[60px] text-center">STT</TableHead>
-                <TableHead className="min-w-[220px]">Debit account</TableHead>
-                <TableHead className="min-w-[220px]">Credit account</TableHead>
-                <TableHead className="min-w-[200px]">Description</TableHead>
-                <TableHead className="w-[160px] text-right">Amount</TableHead>
-                <TableHead className="min-w-[240px]">Dimensions</TableHead>
-                <TableHead className="w-[120px] text-center">Status</TableHead>
-                <TableHead className="w-[80px] text-center">Actions</TableHead>
+              <TableRow className={variant === 'dense' ? 'h-8' : ''}>
+                <TableHead className="w-[40px] p-0" />
+                <TableHead className={cn("w-[50px] text-center", cellPadding)}>#</TableHead>
+                <TableHead className={cn("min-w-[180px]", cellPadding)}>Debit</TableHead>
+                <TableHead className={cn("min-w-[180px]", cellPadding)}>Credit</TableHead>
+                <TableHead className={cn("min-w-[200px]", cellPadding)}>Description</TableHead>
+                <TableHead className={cn("w-[140px] text-right", cellPadding)}>Amount</TableHead>
+                <TableHead className={cn("min-w-[240px]", cellPadding)}>Dimensions</TableHead>
+                <TableHead className={cn("w-[100px] text-center", cellPadding)}>Status</TableHead>
+                <TableHead className={cn("w-[60px] text-center", cellPadding)}>Opts</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -398,7 +412,7 @@ export function VoucherLineGrid({
                     draggable={!readOnly}
                     data-active={activeRowIndex === actualIndex}
                     className={cn(
-                      'border-b last:border-b-0',
+                      'border-b last:border-b-0 group',
                       hasErrors && 'bg-destructive/5',
                       activeRowIndex === actualIndex && 'bg-primary/5',
                     )}
@@ -417,13 +431,13 @@ export function VoucherLineGrid({
                       }
                     }}
                   >
-                    <TableCell className="align-middle">
+                    <TableCell className="align-middle p-0 w-[40px] text-center">
                       {!readOnly ? (
-                        <GripVertical className="mx-auto h-4 w-4 cursor-grab text-muted-foreground" />
+                        <GripVertical className="mx-auto h-4 w-4 cursor-grab text-muted-foreground opacity-20 group-hover:opacity-100 transition-opacity" />
                       ) : null}
                     </TableCell>
-                    <TableCell className="text-center font-medium">{actualIndex + 1}</TableCell>
-                    <TableCell>
+                    <TableCell className={cn("text-center font-medium text-muted-foreground text-xs", cellPadding)}>{actualIndex + 1}</TableCell>
+                    <TableCell className={cellPadding}>
                       <AccountPicker
                         value={line.debitAccount}
                         options={accounts}
@@ -435,14 +449,15 @@ export function VoucherLineGrid({
                             ? 'Debit account is locked by template'
                             : undefined
                         }
+                        triggerClassName={inputHeight}
                       />
                       {errors.debitAccount ? (
-                        <p className="mt-1 text-xs text-destructive">
+                        <p className="mt-1 text-[10px] text-destructive truncate">
                           {errors.debitAccount.join(', ')}
                         </p>
                       ) : null}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className={cellPadding}>
                       <AccountPicker
                         value={line.creditAccount}
                         options={accounts}
@@ -454,14 +469,15 @@ export function VoucherLineGrid({
                             ? 'Credit account is locked by template'
                             : undefined
                         }
+                        triggerClassName={inputHeight}
                       />
                       {errors.creditAccount ? (
-                        <p className="mt-1 text-xs text-destructive">
+                        <p className="mt-1 text-[10px] text-destructive truncate">
                           {errors.creditAccount.join(', ')}
                         </p>
                       ) : null}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className={cellPadding}>
                       <Input
                         value={line.description ?? ''}
                         onFocus={() => setActiveRowIndex(actualIndex)}
@@ -469,10 +485,11 @@ export function VoucherLineGrid({
                           updateLine(actualIndex, { description: event.target.value })
                         }
                         disabled={readOnly || loading}
-                        placeholder="Line description"
+                        placeholder="Description..."
+                        className={inputHeight}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className={cellPadding}>
                       <MoneyInput
                         value={line.amount ?? null}
                         onFocus={() => setActiveRowIndex(actualIndex)}
@@ -488,17 +505,29 @@ export function VoucherLineGrid({
                           ) {
                             insertLine(lines.length)
                           }
+                          // Add Enter key support to new line
+                          if (event.key === 'Enter' && !event.shiftKey) {
+                             event.preventDefault();
+                             if (actualIndex === lines.length - 1) {
+                                insertLine(lines.length)
+                             } else {
+                                // Logic to focus next row's amount would require refs, skipping for now
+                                // Just selecting next row index
+                                setActiveRowIndex(actualIndex + 1)
+                             }
+                          }
                         }}
                         allowNegative={allowNegative}
                         disabled={readOnly || loading}
                         decimals={0}
+                        className={inputHeight}
                       />
                       {errors.amount ? (
-                        <p className="mt-1 text-xs text-destructive">{errors.amount.join(', ')}</p>
+                        <p className="mt-1 text-[10px] text-destructive truncate">{errors.amount.join(', ')}</p>
                       ) : null}
                     </TableCell>
-                    <TableCell>
-                      <div className="grid gap-3 sm:grid-cols-2">
+                    <TableCell className={cellPadding}>
+                      <div className="grid gap-2 sm:grid-cols-2">
                         <DimensionPicker
                           type="customer"
                           value={line.customer ?? fallbackDimensionOption(line.customerId, 'KH')}
@@ -512,9 +541,10 @@ export function VoucherLineGrid({
                           required={requireCustomer}
                           error={
                             requireCustomer && !(line.customerId || line.customer?.id)
-                              ? 'Customer is required'
+                              ? 'Required'
                               : null
                           }
+                          triggerClassName={inputHeight}
                         />
                         <DimensionPicker
                           type="supplier"
@@ -529,9 +559,10 @@ export function VoucherLineGrid({
                           required={requireSupplier}
                           error={
                             requireSupplier && !(line.supplierId || line.supplier?.id)
-                              ? 'Supplier is required'
+                              ? 'Required'
                               : null
                           }
+                           triggerClassName={inputHeight}
                         />
                         <div className="sm:col-span-2">
                           <DimensionPicker
@@ -549,41 +580,39 @@ export function VoucherLineGrid({
                             required={requireCostCenter}
                             error={
                               requireCostCenter && !(line.costCenterId || line.costCenter?.id)
-                                ? 'Cost center is required'
+                                ? 'Required'
                                 : null
                             }
+                             triggerClassName={inputHeight}
                           />
                         </div>
                       </div>
                       {errors.dimensions ? (
-                        <p className="mt-1 text-xs text-destructive">
+                        <p className="mt-1 text-[10px] text-destructive truncate">
                           {errors.dimensions.join(', ')}
                         </p>
                       ) : null}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className={cn("text-center", cellPadding)}>
                       {hasErrors ? (
-                        <Badge variant="destructive">Needs review</Badge>
+                        <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">Error</Badge>
                       ) : (
-                        <Badge variant="secondary">Valid</Badge>
+                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">OK</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="flex items-center justify-center gap-1 text-center">
+                    <TableCell className={cn("flex items-center justify-center gap-1 text-center", cellPadding)}>
                       {onAddAttachment ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              type="button"
-                              disabled={loading}
-                              onClick={() => onAddAttachment(line.id)}
-                            >
-                              📎
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Attach voucher</TooltipContent>
-                        </Tooltip>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            type="button"
+                            disabled={loading}
+                            onClick={() => onAddAttachment(line.id)}
+                            title="Attach"
+                        >
+                            <span className="text-xs">📎</span>
+                        </Button>
                       ) : null}
 
                       {!readOnly ? (
@@ -592,10 +621,11 @@ export function VoucherLineGrid({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-6 w-6"
                               onFocus={() => setActiveRowIndex(actualIndex)}
                             >
-                              ⋮
+                              <span className="sr-only">Menu</span>
+                              <span className="text-xs">⋮</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -641,26 +671,31 @@ export function VoucherLineGrid({
               ) : null}
             </TableBody>
           </Table>
-          <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-4 py-2 text-sm backdrop-blur supports-[backdrop-filter]:bg-background/75">
-            <span>
-              {lines.length} lines • Total amount{' '}
-              <span className="font-semibold">{amountFormatter.format(totals.amount)}</span> VND
-            </span>
-            <span className="text-xs text-muted-foreground">Total Debit = Total Credit</span>
-          </div>
+
+          {variant !== 'dense' && (
+             <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-4 py-2 text-sm backdrop-blur supports-[backdrop-filter]:bg-background/75">
+                <span>
+                {lines.length} lines • Total amount{' '}
+                <span className="font-semibold">{amountFormatter.format(totals.amount)}</span> VND
+                </span>
+                <span className="text-xs text-muted-foreground">Total Debit = Total Credit</span>
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3 text-sm md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-wrap items-center gap-4">
-            <span>
-              Total amount: <strong>{totals.amount.toLocaleString('vi-VN')}</strong>
-            </span>
-            <span className="text-muted-foreground">Number of lines: {lines.length}</span>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Lines marked in red have errors that need to be reviewed before posting the voucher.
-          </div>
-        </div>
+        {variant !== 'dense' && (
+            <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3 text-sm md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-center gap-4">
+                <span>
+                Total amount: <strong>{totals.amount.toLocaleString('vi-VN')}</strong>
+                </span>
+                <span className="text-muted-foreground">Number of lines: {lines.length}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+                Lines marked in red have errors that need to be reviewed before posting the voucher.
+            </div>
+            </div>
+        )}
       </div>
     </TooltipProvider>
   )
