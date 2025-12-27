@@ -1,5 +1,13 @@
 import { useCallback, useState } from 'react'
-import { Upload, X, FileText, Image as ImageIcon, AlertCircle, Loader2 } from 'lucide-react'
+import {
+  Upload,
+  X,
+  FileText,
+  Image as ImageIcon,
+  AlertCircle,
+  Loader2,
+  Paperclip,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -29,6 +37,7 @@ interface VoucherAttachmentDropzoneProps {
   disabled?: boolean
   maxSize?: number // in bytes, default 10MB
   acceptedTypes?: string[] // MIME types, default ['image/*', 'application/pdf']
+  variant?: 'default' | 'minimal'
 }
 
 const DEFAULT_MAX_SIZE = 10 * 1024 * 1024 // 10MB
@@ -41,6 +50,7 @@ export function VoucherAttachmentDropzone({
   disabled = false,
   maxSize = DEFAULT_MAX_SIZE,
   acceptedTypes = DEFAULT_ACCEPTED_TYPES,
+  variant = 'default',
 }: VoucherAttachmentDropzoneProps) {
   const [files, setFiles] = useState<AttachmentFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
@@ -253,6 +263,99 @@ export function VoucherAttachmentDropzone({
       return <ImageIcon className="size-4" />
     }
     return <FileText className="size-4" />
+  }
+
+  if (variant === 'minimal') {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <div
+          className={cn(
+            'group relative flex items-center gap-2 rounded-full border border-dashed px-3 py-1 text-xs font-medium transition-colors',
+            isDragging && !disabled
+              ? 'border-primary bg-primary/5 text-primary'
+              : disabled
+                ? 'border-muted bg-muted/50 text-muted-foreground cursor-not-allowed'
+                : 'border-muted-foreground/30 text-muted-foreground hover:border-primary hover:text-primary cursor-pointer',
+          )}
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <Upload className="size-3.5" />
+          <span>Upload</span>
+
+          {!disabled && (
+            <label htmlFor="file-upload" className="absolute inset-0 cursor-pointer">
+              <span className="sr-only">Upload files</span>
+              <input
+                id="file-upload"
+                type="file"
+                className="hidden"
+                multiple
+                accept={acceptedTypes.join(',')}
+                onChange={handleFileInput}
+                disabled={disabled}
+              />
+            </label>
+          )}
+        </div>
+
+        {files.map((attachmentFile) => (
+          <Badge
+            key={attachmentFile.id}
+            variant="secondary"
+            className={cn(
+              'flex items-center gap-1.5 px-2 py-1 text-xs font-normal',
+              attachmentFile.status === 'error' &&
+                'border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/15',
+              attachmentFile.status === 'uploading' && 'opacity-70',
+            )}
+          >
+            {attachmentFile.status === 'uploading' ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              getFileIcon(attachmentFile.file)
+            )}
+
+            <span className="max-w-[150px] truncate">{attachmentFile.file.name}</span>
+
+            {attachmentFile.status === 'error' ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="ml-1 h-4 w-4 rounded-full p-0 hover:bg-destructive/20"
+                onClick={(e) => {
+                  e.preventDefault()
+                  retryUpload(attachmentFile)
+                }}
+              >
+                <AlertCircle className="size-3" />
+              </Button>
+            ) : (
+              <div
+                role="button"
+                className="ml-1 cursor-pointer rounded-full p-0.5 hover:bg-muted-foreground/20"
+                onClick={(e) => {
+                  e.preventDefault()
+                  removeFile(attachmentFile.id)
+                }}
+              >
+                <X className="size-3" />
+              </div>
+            )}
+          </Badge>
+        ))}
+
+        {dragError && (
+          <span className="flex items-center gap-1 text-xs text-destructive">
+            <AlertCircle className="size-3" />
+            {dragError}
+          </span>
+        )}
+      </div>
+    )
   }
 
   return (

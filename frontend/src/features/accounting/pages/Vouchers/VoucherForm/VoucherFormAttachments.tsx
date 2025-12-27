@@ -15,40 +15,37 @@ export function VoucherFormAttachments({
   setAttachmentCount,
 }: VoucherFormAttachmentsProps) {
   return (
-    <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-      <div className="bg-gradient-to-b from-primary/10 to-transparent px-6 py-4 border-b">
-        <h3 className="font-semibold text-base flex items-center gap-2">
-          <Paperclip className="w-4 h-4 text-primary" />
-          Attachments
-        </h3>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+      <div className="flex items-center gap-2 pt-1 sm:w-[140px] flex-shrink-0">
+        <Paperclip className="h-4 w-4 text-muted-foreground" />
+        <h3 className="text-sm font-medium">Attachments</h3>
       </div>
-      <div className="p-6">
-        <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-1 bg-muted/5 transition-colors hover:bg-muted/10">
-          <VoucherAttachmentDropzone
-            voucherId={voucherId || null}
-            disabled={formDisabled}
-            onUploadSuccess={(attachmentFile) => {
-              setAttachmentCount((prev) => prev + 1)
-              toast.success(`Uploaded: ${attachmentFile.file.name}`, {
-                icon: <FileUp className="w-4 h-4 text-emerald-500" />,
-              })
-              if (voucherId) {
-                getVoucherById(voucherId)
-                  .then((voucher) => {
-                    setAttachmentCount(voucher.attachmentCount || 0)
-                  })
-                  .catch(() => {
-                    // Ignore errors
-                  })
-              }
-            }}
-            onUploadError={(attachmentFile, error) => {
-              toast.error(`Cannot upload ${attachmentFile.file.name}`, {
-                description: error,
-              })
-            }}
-          />
-        </div>
+      <div className="flex-1">
+        <VoucherAttachmentDropzone
+          voucherId={voucherId || null}
+          disabled={formDisabled}
+          variant="minimal"
+          onUploadSuccess={(attachmentFile) => {
+            setAttachmentCount((prev) => prev + 1)
+            toast.success(`Uploaded: ${attachmentFile.file.name}`, {
+              icon: <FileUp className="w-4 h-4 text-emerald-500" />,
+            })
+            if (voucherId) {
+              getVoucherById(voucherId)
+                .then((voucher) => {
+                  setAttachmentCount(voucher.attachmentCount || 0)
+                })
+                .catch(() => {
+                  // Ignore errors
+                })
+            }
+          }}
+          onUploadError={(attachmentFile, error) => {
+            toast.error(`Cannot upload ${attachmentFile.file.name}`, {
+              description: error,
+            })
+          }}
+        />
       </div>
     </div>
   )
