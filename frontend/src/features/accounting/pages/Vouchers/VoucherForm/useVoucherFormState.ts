@@ -376,7 +376,7 @@ export function useVoucherFormState() {
 
   const selectedDate = useMemo(() => {
     if (!watchedValues?.voucherDate) return null
-    const parsed = new Date(watchedValues.voucherDate)
+    const parsed = parseISO(watchedValues.voucherDate)
     return Number.isNaN(parsed.getTime()) ? null : parsed
   }, [watchedValues?.voucherDate])
 

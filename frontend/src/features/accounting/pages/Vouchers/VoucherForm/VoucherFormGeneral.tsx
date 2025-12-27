@@ -119,8 +119,8 @@ export function VoucherFormGeneral({
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full pl-9 text-left font-normal h-10",
-                        !field.value && "text-muted-foreground"
+                        'w-full pl-9 text-left font-normal h-10',
+                        !field.value && 'text-muted-foreground',
                       )}
                       disabled={formDisabled}
                     >

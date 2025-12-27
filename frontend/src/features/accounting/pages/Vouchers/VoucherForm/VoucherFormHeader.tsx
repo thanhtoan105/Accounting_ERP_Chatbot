@@ -99,8 +99,8 @@ export function VoucherFormHeader({
                 editingVoucher.status === 'posted'
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
                   : editingVoucher.status === 'draft'
-                  ? 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700'
-                  : '',
+                    ? 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700'
+                    : '',
               )}
             >
               {editingVoucher.status}
@@ -110,18 +110,24 @@ export function VoucherFormHeader({
 
         {/* Reversed/Reversal Badges - Compact */}
         {(editingVoucher?.reversedByVoucherId || editingVoucher?.reversalOf) && (
-           <div className="flex gap-2">
-             {editingVoucher.reversedByVoucherId && (
-                <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 text-[10px] h-5 px-1.5">
-                  Reversed
-                </Badge>
-             )}
-              {editingVoucher.reversalOf && (
-                <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 text-[10px] h-5 px-1.5">
-                  Reversal
-                </Badge>
-             )}
-           </div>
+          <div className="flex gap-2">
+            {editingVoucher.reversedByVoucherId && (
+              <Badge
+                variant="outline"
+                className="text-orange-600 border-orange-200 bg-orange-50 text-[10px] h-5 px-1.5"
+              >
+                Reversed
+              </Badge>
+            )}
+            {editingVoucher.reversalOf && (
+              <Badge
+                variant="outline"
+                className="text-blue-600 border-blue-200 bg-blue-50 text-[10px] h-5 px-1.5"
+              >
+                Reversal
+              </Badge>
+            )}
+          </div>
         )}
       </div>
 
@@ -139,10 +145,10 @@ export function VoucherFormHeader({
             <span>Saved {formatDistanceToNow(lastSavedAt, { addSuffix: true })}</span>
           )}
           {autoSaveStatus === 'error' && (
-             <span className="text-destructive flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {autoSaveError || 'Save failed'}
-             </span>
+            <span className="text-destructive flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" />
+              {autoSaveError || 'Save failed'}
+            </span>
           )}
         </div>
 
@@ -170,7 +176,11 @@ export function VoucherFormHeader({
             size="sm"
             className="h-8"
           >
-            {saving ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-2 h-3.5 w-3.5" />}
+            {saving ? (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-3.5 w-3.5" />
+            )}
             Save Draft
           </Button>
 
@@ -194,7 +204,7 @@ export function VoucherFormHeader({
           {/* Secondary Actions (Unpost/Reverse) */}
           {(canUnpost || canReverse) && (
             <div className="flex gap-2">
-               {canUnpost && (
+              {canUnpost && (
                 <Button
                   type="button"
                   variant="outline"
@@ -205,9 +215,9 @@ export function VoucherFormHeader({
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                 </Button>
-               )}
-               {canReverse && (
-                  <Button
+              )}
+              {canReverse && (
+                <Button
                   type="button"
                   variant="outline"
                   size="sm"
@@ -217,7 +227,7 @@ export function VoucherFormHeader({
                 >
                   <ArrowLeftRight className="h-3.5 w-3.5" />
                 </Button>
-               )}
+              )}
             </div>
           )}
         </div>

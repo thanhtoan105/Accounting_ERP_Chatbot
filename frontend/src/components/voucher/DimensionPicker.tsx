@@ -85,6 +85,7 @@ interface DimensionPickerProps {
   disabled?: boolean
   required?: boolean
   error?: string | null
+  triggerClassName?: string
 }
 
 export function DimensionPicker({
@@ -94,6 +95,7 @@ export function DimensionPicker({
   disabled,
   required,
   error,
+  triggerClassName,
 }: DimensionPickerProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -153,6 +155,7 @@ export function DimensionPicker({
             className={cn(
               'w-full justify-between text-left font-normal',
               !value && 'text-muted-foreground',
+              triggerClassName
             )}
             disabled={disabled}
           >

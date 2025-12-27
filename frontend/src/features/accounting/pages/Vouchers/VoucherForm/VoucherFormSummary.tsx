@@ -99,7 +99,9 @@ export function VoucherFormSummary({
               className="flex items-center gap-2 text-destructive hover:text-destructive/80 transition-colors"
             >
               <AlertCircle className="h-4 w-4" />
-              <span className="font-medium hidden sm:inline">{validationSummary.errorCount} lines with errors</span>
+              <span className="font-medium hidden sm:inline">
+                {validationSummary.errorCount} lines with errors
+              </span>
               <span className="font-medium sm:hidden">{validationSummary.errorCount} err</span>
             </button>
           </>
@@ -110,7 +112,9 @@ export function VoucherFormSummary({
       <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto justify-between md:justify-end">
         <div className="flex items-center gap-4 md:gap-6">
           <div className="flex flex-col items-end">
-            <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Debit</span>
+            <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">
+              Debit
+            </span>
             <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400 text-sm md:text-base">
               {formatCurrency(totals.totalDebit)}
             </span>
@@ -119,7 +123,9 @@ export function VoucherFormSummary({
           <Separator orientation="vertical" className="h-8" />
 
           <div className="flex flex-col items-end">
-            <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Credit</span>
+            <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">
+              Credit
+            </span>
             <span className="font-mono font-medium text-blue-600 dark:text-blue-400 text-sm md:text-base">
               {formatCurrency(totals.totalCredit)}
             </span>
@@ -137,13 +143,16 @@ export function VoucherFormSummary({
         >
           {totals.isBalanced ? (
             <CheckCircle2
-              className={cn('h-4 w-4 md:h-5 md:w-5', totals.isBalanced ? 'text-emerald-600' : 'text-red-600')}
+              className={cn(
+                'h-4 w-4 md:h-5 md:w-5',
+                totals.isBalanced ? 'text-emerald-600' : 'text-red-600',
+              )}
             />
           ) : (
             <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-red-600" />
           )}
           <div className="flex flex-col items-end leading-none gap-0.5">
-             <span
+            <span
               className={cn(
                 'text-[10px] font-semibold uppercase tracking-wider',
                 totals.isBalanced ? 'text-emerald-600' : 'text-red-600',

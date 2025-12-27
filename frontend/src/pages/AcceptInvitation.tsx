@@ -1,21 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  TextField,
-  Typography,
-  Alert,
-  Stack,
-  Divider,
-} from '@mui/material'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 import { validateInvitation, acceptInvitation } from '../services/invitation'
 import type { InvitationDetails } from '../services/invitation'
 import { getRoleDisplayName } from '../utils/roles'
 import { setAccessToken, setCompanyId } from '../utils/axios'
+import { AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { toast } from 'sonner'
 
 /**
  * Public page for accepting user invitations.
@@ -34,6 +31,8 @@ export default function AcceptInvitation() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   useEffect(() => {
     if (token) {
@@ -101,6 +100,8 @@ export default function AcceptInvitation() {
       if (response.user?.companyId) {
         setCompanyId(response.user.companyId)
       }
+
+      toast.success(t('auth.loginSuccess'))
       navigate('/', { replace: true })
     } catch (err) {
       const errorMessage =
@@ -117,41 +118,37 @@ export default function AcceptInvitation() {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          minHeight: '100vh',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Typography>{t('invitation.loading')}</Typography>
-      </Box>
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p className="text-sm text-muted-foreground">{t('invitation.loading')}</p>
+        </div>
+      </div>
     )
   }
 
   if (error && !invitation) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          minHeight: '100vh',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 3,
-        }}
-      >
-        <Card sx={{ maxWidth: 500, width: '100%' }}>
-          <CardContent>
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gray-900">
+        <Card className="w-full max-w-[500px]">
+          <CardHeader>
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-6 w-6" />
+              <CardTitle className="text-xl">Error</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
-            <Button fullWidth variant="contained" onClick={() => navigate('/login')}>
+            <Button className="w-full" onClick={() => navigate('/login')}>
               {t('invitation.goToLogin')}
             </Button>
           </CardContent>
         </Card>
-      </Box>
+      </div>
     )
   }
 
@@ -163,114 +160,143 @@ export default function AcceptInvitation() {
   const isExpired = expirationDate < new Date()
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        minHeight: '100vh',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-        p: 3,
-      }}
-    >
-      <Card sx={{ maxWidth: 500, width: '100%' }}>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gray-900">
+      <Card className="w-full max-w-[500px]">
+        <CardHeader>
+          <CardTitle className="text-2xl">{t('invitation.youveBeenInvited')}</CardTitle>
+          <CardDescription>
+            {t(
+              'invitation.completeRegistration',
+              'Please complete your registration details below.',
+            )}
+          </CardDescription>
+        </CardHeader>
         <CardContent>
-          <Typography variant="h5" component="h1" gutterBottom>
-            {t('invitation.youveBeenInvited')}
-          </Typography>
-
           {isExpired && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              {t('invitation.expired')}
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>{t('error')}</AlertTitle>
+              <AlertDescription>{t('invitation.expired')}</AlertDescription>
             </Alert>
           )}
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>{t('error')}</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          <Stack spacing={2} sx={{ mb: 3 }}>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                {t('invitation.company')}
-              </Typography>
-              <Typography variant="body1">{invitation.companyName}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                {t('auth.email')}
-              </Typography>
-              <Typography variant="body1">{invitation.email}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                {t('invitation.role')}
-              </Typography>
-              <Typography variant="body1">{getRoleDisplayName(invitation.role)}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                {t('invitation.expires')}
-              </Typography>
-              <Typography variant="body1">
-                {expirationDate.toLocaleDateString()} at {expirationDate.toLocaleTimeString()}
-              </Typography>
-            </Box>
-          </Stack>
+          <div className="mb-6 space-y-4 rounded-lg border bg-muted/50 p-4 text-sm">
+            <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
+              <span className="font-medium text-muted-foreground">{t('invitation.company')}</span>
+              <span className="font-medium sm:col-span-2">{invitation.companyName}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
+              <span className="font-medium text-muted-foreground">{t('auth.email')}</span>
+              <span className="font-medium sm:col-span-2">{invitation.email}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
+              <span className="font-medium text-muted-foreground">{t('invitation.role')}</span>
+              <span className="font-medium sm:col-span-2">
+                {getRoleDisplayName(invitation.role)}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
+              <span className="font-medium text-muted-foreground">{t('invitation.expires')}</span>
+              <span className="font-medium sm:col-span-2">
+                {expirationDate.toLocaleDateString()} {expirationDate.toLocaleTimeString()}
+              </span>
+            </div>
+          </div>
 
-          <Divider sx={{ my: 3 }} />
+          <Separator className="my-6" />
 
-          <form onSubmit={handleSubmit}>
-            <Stack spacing={2}>
-              <TextField
-                label={t('auth.email')}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">{t('auth.email')}</Label>
+              <Input
+                id="email"
                 type="email"
                 value={invitation.email}
                 disabled
-                fullWidth
+                className="bg-muted"
               />
-              <TextField
-                label={t('invitation.fullName')}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fullName">{t('invitation.fullName')}</Label>
+              <Input
+                id="fullName"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                fullWidth
                 disabled={submitting || isExpired}
+                placeholder="John Doe"
               />
-              <TextField
-                label={t('auth.password')}
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                fullWidth
-                disabled={submitting || isExpired}
-                helperText={t('invitation.passwordMinLength')}
-              />
-              <TextField
-                label={t('auth.confirmPassword')}
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                fullWidth
-                disabled={submitting || isExpired}
-              />
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                disabled={submitting || isExpired}
-                sx={{ mt: 2 }}
-              >
-                {submitting ? t('invitation.creatingAccount') : t('invitation.acceptAndCreate')}
-              </Button>
-            </Stack>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">{t('auth.password')}</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={submitting || isExpired}
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/80 hover:text-foreground transition h-8 w-8 rounded-md inline-flex items-center justify-center"
+                  onClick={() => setShowPassword((v) => !v)}
+                  disabled={submitting || isExpired}
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">{t('invitation.passwordMinLength')}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={submitting || isExpired}
+                />
+                <button
+                  type="button"
+                  aria-label={showConfirmPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/80 hover:text-foreground transition h-8 w-8 rounded-md inline-flex items-center justify-center"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  disabled={submitting || isExpired}
+                >
+                  {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={submitting || isExpired}>
+              {submitting ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  {t('invitation.creatingAccount')}
+                </>
+              ) : (
+                t('invitation.acceptAndCreate')
+              )}
+            </Button>
           </form>
         </CardContent>
       </Card>
-    </Box>
+    </div>
   )
 }

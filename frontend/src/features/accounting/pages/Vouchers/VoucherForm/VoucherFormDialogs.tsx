@@ -108,18 +108,18 @@ export function VoucherFormDialogs({
           <div className="bg-gradient-to-b from-destructive/10 to-transparent px-6 py-6 border-b">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-destructive">
-                 <div className="p-2 rounded-full bg-destructive/10">
-                   <AlertTriangle className="h-5 w-5" />
-                 </div>
-                 Validation Error Summary
+                <div className="p-2 rounded-full bg-destructive/10">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                Validation Error Summary
               </DialogTitle>
               <DialogDescription className="text-destructive/80">
-                Action required: Found {validationSummary.errorCount} lines with {validationSummary.totalErrors}{' '}
-                errors.
+                Action required: Found {validationSummary.errorCount} lines with{' '}
+                {validationSummary.totalErrors} errors.
               </DialogDescription>
             </DialogHeader>
           </div>
-          
+
           <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
             {Object.entries(validationMap).length === 0 ? (
               <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
@@ -137,14 +137,16 @@ export function VoucherFormDialogs({
                     >
                       <div className="bg-destructive/10 px-4 py-2 border-b border-destructive/10 flex justify-between items-center">
                         <span className="font-semibold text-destructive text-sm flex items-center gap-2">
-                           <span className="bg-destructive text-destructive-foreground w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">!</span>
-                           Line {lineNum}
+                          <span className="bg-destructive text-destructive-foreground w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">
+                            !
+                          </span>
+                          Line {lineNum}
                         </span>
                         <Badge variant="destructive" className="text-xs h-5">
                           {Object.values(fieldErrors).flat().length} errors
                         </Badge>
                       </div>
-                      
+
                       <div className="p-4 space-y-3">
                         {Object.entries(fieldErrors).map(([field, errors]) => (
                           <div key={field} className="text-sm flex gap-2">
@@ -168,10 +170,16 @@ export function VoucherFormDialogs({
               </div>
             )}
           </div>
-          
+
           <DialogFooter className="px-6 py-4 bg-muted/20 border-t">
-            <Button variant="ghost" onClick={() => setValidationSummaryOpen(false)}>Close</Button>
-            <Button variant="default" onClick={onRevalidate} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+            <Button variant="ghost" onClick={() => setValidationSummaryOpen(false)}>
+              Close
+            </Button>
+            <Button
+              variant="default"
+              onClick={onRevalidate}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
               <ShieldAlert className="mr-2 h-4 w-4" />
               Revalidate All
             </Button>
@@ -183,21 +191,21 @@ export function VoucherFormDialogs({
       <Dialog open={postingErrorModalOpen} onOpenChange={setPostingErrorModalOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto p-0 gap-0">
           <div className="bg-gradient-to-b from-destructive/10 to-transparent px-6 py-6 border-b">
-             <DialogHeader>
+            <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-destructive">
                 <div className="p-2 rounded-full bg-destructive/10">
-                   <AlertCircle className="h-5 w-5" />
-                 </div>
-                 Posting Failed
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                Posting Failed
               </DialogTitle>
             </DialogHeader>
           </div>
-          
+
           <div className="p-6 space-y-4">
             {postingErrors && (
               <div className="space-y-4">
                 {postingErrors.global && Array.isArray(postingErrors.global) && (
-                   <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+                  <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
                     <h4 className="text-sm font-semibold text-destructive mb-2">General Errors</h4>
                     <ul className="list-disc list-inside text-sm text-destructive/90 space-y-1">
                       {postingErrors.global.map((error: string, idx: number) => (
@@ -206,26 +214,28 @@ export function VoucherFormDialogs({
                     </ul>
                   </div>
                 )}
-                
+
                 {postingErrors.lines && typeof postingErrors.lines === 'object' && (
                   <div className="space-y-3">
-                     <h4 className="text-sm font-semibold text-muted-foreground">Line Item Errors</h4>
+                    <h4 className="text-sm font-semibold text-muted-foreground">
+                      Line Item Errors
+                    </h4>
                     {Object.entries(postingErrors.lines).map(([lineNum, errors]: [string, any]) => (
-                      <div
-                        key={lineNum}
-                        className="rounded-lg border bg-card p-3 shadow-sm"
-                      >
+                      <div key={lineNum} className="rounded-lg border bg-card p-3 shadow-sm">
                         <div className="text-sm font-medium border-b pb-2 mb-2">
                           Line {lineNum === '0' ? 'General' : lineNum}
                         </div>
                         {typeof errors === 'object' &&
                           Object.entries(errors).map(([field, fieldErrors]: [string, any]) => (
-                            <div key={field} className="text-sm grid grid-cols-[100px_1fr] gap-2 mb-1">
+                            <div
+                              key={field}
+                              className="text-sm grid grid-cols-[100px_1fr] gap-2 mb-1"
+                            >
                               <span className="text-muted-foreground">{field}:</span>
                               <span className="text-destructive font-medium">
                                 {Array.isArray(fieldErrors)
-                                ? fieldErrors.join(', ')
-                                : String(fieldErrors)}
+                                  ? fieldErrors.join(', ')
+                                  : String(fieldErrors)}
                               </span>
                             </div>
                           ))}
@@ -246,17 +256,21 @@ export function VoucherFormDialogs({
       <Dialog open={unpostDialogOpen} onOpenChange={setUnpostDialogOpen}>
         <DialogContent className="p-0 gap-0 overflow-hidden">
           <div className="bg-gradient-to-b from-red-500/10 to-transparent px-6 py-6 border-b">
-             <DialogHeader>
+            <DialogHeader>
               <DialogTitle className="text-red-600">Unpost Voucher</DialogTitle>
               <DialogDescription>
-                This action will reverse the ledger entries. A reason is required for the audit trail.
+                This action will reverse the ledger entries. A reason is required for the audit
+                trail.
               </DialogDescription>
             </DialogHeader>
           </div>
-          
+
           <div className="p-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="unpost-reason" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label
+                htmlFor="unpost-reason"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
                 Reason for unposting <span className="text-destructive">*</span>
               </Label>
               <Textarea
@@ -269,13 +283,13 @@ export function VoucherFormDialogs({
               />
             </div>
           </div>
-          
+
           <DialogFooter className="px-6 py-4 bg-muted/20 border-t">
             <Button variant="ghost" onClick={() => setUnpostDialogOpen(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={onUnpost} 
+            <Button
+              onClick={onUnpost}
               disabled={!unpostReason.trim() || unposting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
@@ -289,19 +303,22 @@ export function VoucherFormDialogs({
       {/* Reverse Dialog */}
       <Dialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen}>
         <DialogContent className="p-0 gap-0 overflow-hidden">
-           <div className="bg-gradient-to-b from-orange-500/10 to-transparent px-6 py-6 border-b">
+          <div className="bg-gradient-to-b from-orange-500/10 to-transparent px-6 py-6 border-b">
             <DialogHeader>
               <DialogTitle className="text-orange-700">Reverse Voucher</DialogTitle>
-               <DialogDescription>
+              <DialogDescription>
                 Create a new voucher that reverses all accounting entries.
               </DialogDescription>
             </DialogHeader>
           </div>
-          
+
           <div className="p-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reverse-description" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                 New Voucher Description <span className="text-destructive">*</span>
+              <Label
+                htmlFor="reverse-description"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                New Voucher Description <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="reverse-description"
@@ -312,8 +329,11 @@ export function VoucherFormDialogs({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reverse-reason" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                 Reason for Reversal <span className="text-destructive">*</span>
+              <Label
+                htmlFor="reverse-reason"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Reason for Reversal <span className="text-destructive">*</span>
               </Label>
               <Textarea
                 id="reverse-reason"
@@ -325,7 +345,7 @@ export function VoucherFormDialogs({
               />
             </div>
           </div>
-          
+
           <DialogFooter className="px-6 py-4 bg-muted/20 border-t">
             <Button variant="ghost" onClick={() => setReverseDialogOpen(false)}>
               Cancel

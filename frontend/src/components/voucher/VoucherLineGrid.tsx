@@ -85,10 +85,7 @@ function deriveDimensionRequirements(
   const accountCodes = [debit?.code, credit?.code].filter(Boolean) as string[]
   const requiresCustomer = accountCodes.some((code) => code.startsWith('131'))
   const requiresSupplier = accountCodes.some((code) => code.startsWith('331'))
-  const requiresCostCenter = accountCodes.some(
-    (code) => code.startsWith('154') || code.startsWith('621'),
-  )
-  return { requiresCustomer, requiresSupplier, requiresCostCenter }
+  return { requiresCustomer, requiresSupplier }
 }
 
 const createEmptyLine = (index: number): VoucherEntryLine => ({
@@ -196,11 +193,11 @@ export function VoucherLineGrid({
       const next = lines.filter((_, idx) => idx !== index)
       // Ensure at least one line remains or handle empty state externally
       if (next.length === 0) {
-          onLinesChange([createEmptyLine(0)])
-          setActiveRowIndex(0)
+        onLinesChange([createEmptyLine(0)])
+        setActiveRowIndex(0)
       } else {
-          onLinesChange(next)
-          setActiveRowIndex(Math.max(0, index - 1))
+        onLinesChange(next)
+        setActiveRowIndex(Math.max(0, index - 1))
       }
     },
     [lines, onLinesChange],
@@ -312,7 +309,7 @@ export function VoucherLineGrid({
     <TooltipProvider>
       <div ref={containerRef} className="space-y-3">
         {variant !== 'dense' && (
-           <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm font-medium text-muted-foreground">
               Entry lines
               {loading ? <span className="ml-2 animate-pulse text-xs">Loading...</span> : null}
@@ -374,14 +371,14 @@ export function VoucherLineGrid({
             <TableHeader className="bg-muted/40">
               <TableRow className={variant === 'dense' ? 'h-8' : ''}>
                 <TableHead className="w-[40px] p-0" />
-                <TableHead className={cn("w-[50px] text-center", cellPadding)}>#</TableHead>
-                <TableHead className={cn("min-w-[180px]", cellPadding)}>Debit</TableHead>
-                <TableHead className={cn("min-w-[180px]", cellPadding)}>Credit</TableHead>
-                <TableHead className={cn("min-w-[200px]", cellPadding)}>Description</TableHead>
-                <TableHead className={cn("w-[140px] text-right", cellPadding)}>Amount</TableHead>
-                <TableHead className={cn("min-w-[240px]", cellPadding)}>Dimensions</TableHead>
-                <TableHead className={cn("w-[100px] text-center", cellPadding)}>Status</TableHead>
-                <TableHead className={cn("w-[60px] text-center", cellPadding)}>Opts</TableHead>
+                <TableHead className={cn('w-[50px] text-center', cellPadding)}>#</TableHead>
+                <TableHead className={cn('min-w-[180px]', cellPadding)}>Debit</TableHead>
+                <TableHead className={cn('min-w-[180px]', cellPadding)}>Credit</TableHead>
+                <TableHead className={cn('min-w-[200px]', cellPadding)}>Description</TableHead>
+                <TableHead className={cn('w-[140px] text-right', cellPadding)}>Amount</TableHead>
+                <TableHead className={cn('min-w-[240px]', cellPadding)}>Dimensions</TableHead>
+                <TableHead className={cn('w-[100px] text-center', cellPadding)}>Status</TableHead>
+                <TableHead className={cn('w-[60px] text-center', cellPadding)}>Opts</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -404,7 +401,6 @@ export function VoucherLineGrid({
                 )
                 const requireCustomer = dimensionRequirements.requiresCustomer
                 const requireSupplier = dimensionRequirements.requiresSupplier
-                const requireCostCenter = dimensionRequirements.requiresCostCenter
 
                 return (
                   <TableRow
@@ -436,7 +432,14 @@ export function VoucherLineGrid({
                         <GripVertical className="mx-auto h-4 w-4 cursor-grab text-muted-foreground opacity-20 group-hover:opacity-100 transition-opacity" />
                       ) : null}
                     </TableCell>
-                    <TableCell className={cn("text-center font-medium text-muted-foreground text-xs", cellPadding)}>{actualIndex + 1}</TableCell>
+                    <TableCell
+                      className={cn(
+                        'text-center font-medium text-muted-foreground text-xs',
+                        cellPadding,
+                      )}
+                    >
+                      {actualIndex + 1}
+                    </TableCell>
                     <TableCell className={cellPadding}>
                       <AccountPicker
                         value={line.debitAccount}
@@ -507,14 +510,14 @@ export function VoucherLineGrid({
                           }
                           // Add Enter key support to new line
                           if (event.key === 'Enter' && !event.shiftKey) {
-                             event.preventDefault();
-                             if (actualIndex === lines.length - 1) {
-                                insertLine(lines.length)
-                             } else {
-                                // Logic to focus next row's amount would require refs, skipping for now
-                                // Just selecting next row index
-                                setActiveRowIndex(actualIndex + 1)
-                             }
+                            event.preventDefault()
+                            if (actualIndex === lines.length - 1) {
+                              insertLine(lines.length)
+                            } else {
+                              // Logic to focus next row's amount would require refs, skipping for now
+                              // Just selecting next row index
+                              setActiveRowIndex(actualIndex + 1)
+                            }
                           }
                         }}
                         allowNegative={allowNegative}
@@ -523,7 +526,9 @@ export function VoucherLineGrid({
                         className={inputHeight}
                       />
                       {errors.amount ? (
-                        <p className="mt-1 text-[10px] text-destructive truncate">{errors.amount.join(', ')}</p>
+                        <p className="mt-1 text-[10px] text-destructive truncate">
+                          {errors.amount.join(', ')}
+                        </p>
                       ) : null}
                     </TableCell>
                     <TableCell className={cellPadding}>
@@ -562,30 +567,8 @@ export function VoucherLineGrid({
                               ? 'Required'
                               : null
                           }
-                           triggerClassName={inputHeight}
+                          triggerClassName={inputHeight}
                         />
-                        <div className="sm:col-span-2">
-                          <DimensionPicker
-                            type="costCenter"
-                            value={
-                              line.costCenter ?? fallbackDimensionOption(line.costCenterId, 'TTCP')
-                            }
-                            onChange={(option) =>
-                              updateLine(actualIndex, {
-                                costCenter: option,
-                                costCenterId: option?.id ?? null,
-                              })
-                            }
-                            disabled={readOnly || loading}
-                            required={requireCostCenter}
-                            error={
-                              requireCostCenter && !(line.costCenterId || line.costCenter?.id)
-                                ? 'Required'
-                                : null
-                            }
-                             triggerClassName={inputHeight}
-                          />
-                        </div>
                       </div>
                       {errors.dimensions ? (
                         <p className="mt-1 text-[10px] text-destructive truncate">
@@ -593,25 +576,37 @@ export function VoucherLineGrid({
                         </p>
                       ) : null}
                     </TableCell>
-                    <TableCell className={cn("text-center", cellPadding)}>
+                    <TableCell className={cn('text-center', cellPadding)}>
                       {hasErrors ? (
-                        <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">Error</Badge>
+                        <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">
+                          Error
+                        </Badge>
                       ) : (
-                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">OK</Badge>
+                        <Badge
+                          variant="secondary"
+                          className="h-5 px-1.5 text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200"
+                        >
+                          OK
+                        </Badge>
                       )}
                     </TableCell>
-                    <TableCell className={cn("flex items-center justify-center gap-1 text-center", cellPadding)}>
+                    <TableCell
+                      className={cn(
+                        'flex items-center justify-center gap-1 text-center',
+                        cellPadding,
+                      )}
+                    >
                       {onAddAttachment ? (
                         <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            type="button"
-                            disabled={loading}
-                            onClick={() => onAddAttachment(line.id)}
-                            title="Attach"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          type="button"
+                          disabled={loading}
+                          onClick={() => onAddAttachment(line.id)}
+                          title="Attach"
                         >
-                            <span className="text-xs">📎</span>
+                          <span className="text-xs">📎</span>
                         </Button>
                       ) : null}
 
@@ -673,28 +668,28 @@ export function VoucherLineGrid({
           </Table>
 
           {variant !== 'dense' && (
-             <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-4 py-2 text-sm backdrop-blur supports-[backdrop-filter]:bg-background/75">
-                <span>
+            <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-4 py-2 text-sm backdrop-blur supports-[backdrop-filter]:bg-background/75">
+              <span>
                 {lines.length} lines • Total amount{' '}
                 <span className="font-semibold">{amountFormatter.format(totals.amount)}</span> VND
-                </span>
-                <span className="text-xs text-muted-foreground">Total Debit = Total Credit</span>
+              </span>
+              <span className="text-xs text-muted-foreground">Total Debit = Total Credit</span>
             </div>
           )}
         </div>
 
         {variant !== 'dense' && (
-            <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3 text-sm md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3 text-sm md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-4">
-                <span>
+              <span>
                 Total amount: <strong>{totals.amount.toLocaleString('vi-VN')}</strong>
-                </span>
-                <span className="text-muted-foreground">Number of lines: {lines.length}</span>
+              </span>
+              <span className="text-muted-foreground">Number of lines: {lines.length}</span>
             </div>
             <div className="text-xs text-muted-foreground">
-                Lines marked in red have errors that need to be reviewed before posting the voucher.
+              Lines marked in red have errors that need to be reviewed before posting the voucher.
             </div>
-            </div>
+          </div>
         )}
       </div>
     </TooltipProvider>
