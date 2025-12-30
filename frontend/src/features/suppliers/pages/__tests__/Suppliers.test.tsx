@@ -92,7 +92,7 @@ describe('Suppliers', () => {
       expect(screen.getByText('Supplier One')).toBeInTheDocument()
     })
 
-    const searchInput = screen.getByPlaceholderText(/search by name, code, tax code/i)
+    const searchInput = screen.getByPlaceholderText(/search suppliers/i)
     fireEvent.change(searchInput, { target: { value: 'One' } })
 
     await waitFor(

@@ -22,4 +22,4 @@ jobs:
           cache: 'maven'
       - name: Build and Test
         working-directory: backend
-        run: mvnd -B -U -DskipTests=false verify
+        run: mvn -B -U -DskipTests=false verify
