@@ -114,7 +114,6 @@ public class AccountControlController {
     accountControl.setAccountId(request.getAccountId());
     accountControl.setRequiresCustomer(request.getRequiresCustomer() != null ? request.getRequiresCustomer() : false);
     accountControl.setRequiresSupplier(request.getRequiresSupplier() != null ? request.getRequiresSupplier() : false);
-    accountControl.setRequiresCostCenter(request.getRequiresCostCenter() != null ? request.getRequiresCostCenter() : false);
     accountControl.setRequiresItem(request.getRequiresItem() != null ? request.getRequiresItem() : false);
 
     AccountControl saved = accountControlService.saveAccountControl(accountControl);
@@ -145,7 +144,6 @@ public class AccountControlController {
     // Update fields
     accountControl.setRequiresCustomer(request.getRequiresCustomer() != null ? request.getRequiresCustomer() : false);
     accountControl.setRequiresSupplier(request.getRequiresSupplier() != null ? request.getRequiresSupplier() : false);
-    accountControl.setRequiresCostCenter(request.getRequiresCostCenter() != null ? request.getRequiresCostCenter() : false);
     accountControl.setRequiresItem(request.getRequiresItem() != null ? request.getRequiresItem() : false);
 
     AccountControl saved = accountControlService.saveAccountControl(accountControl);
@@ -179,7 +177,6 @@ public class AccountControlController {
     dto.setCompanyId(accountControl.getCompanyId());
     dto.setRequiresCustomer(accountControl.getRequiresCustomer());
     dto.setRequiresSupplier(accountControl.getRequiresSupplier());
-    dto.setRequiresCostCenter(accountControl.getRequiresCostCenter());
     dto.setRequiresItem(accountControl.getRequiresItem());
     dto.setCreatedAt(accountControl.getCreatedAt());
     dto.setUpdatedAt(accountControl.getUpdatedAt());

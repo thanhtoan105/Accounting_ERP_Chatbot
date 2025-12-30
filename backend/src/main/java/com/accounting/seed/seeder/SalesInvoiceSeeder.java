@@ -47,18 +47,7 @@ public class SalesInvoiceSeeder {
           + "description, quantity, unit_price, amount, vat_rate, vat_amount, company_id, "
           + "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-  private static final String[] DESCRIPTIONS = {
-    "Bán hàng hóa",
-    "Cung cấp dịch vụ",
-    "Dịch vụ tư vấn",
-    "Bán sản phẩm",
-    "Dịch vụ vận chuyển",
-    "Cung cấp phần mềm",
-    "Dịch vụ bảo trì",
-    "Bán thiết bị",
-    "Dịch vụ lắp đặt",
-    "Bán vật tư"
-  };
+  // Removed static DESCRIPTIONS - now using faker.salesInvoiceDescription() for diverse descriptions
 
   private static final int[] DUE_DATE_DAYS = {15, 30, 45, 60};
 
@@ -107,7 +96,7 @@ public class SalesInvoiceSeeder {
           invoiceDate.plusDays(DUE_DATE_DAYS[random.nextInt(DUE_DATE_DAYS.length)]);
       String invoiceNumber = generator.nextInvoiceNumber(ctx.getCompanyId(), customerId, year);
       String reference = String.format("HDB-%06d", random.nextInt(1_000_000));
-      String description = DESCRIPTIONS[random.nextInt(DESCRIPTIONS.length)];
+      String description = faker.salesInvoiceDescription("KH-" + customerId, invoiceDate.getYear());
       SalesInvoiceStatus status = randomStatus(random);
       Long createdById = ctx.getUserIds().get(random.nextInt(ctx.getUserIds().size()));
       Long approvedById = null;
@@ -129,7 +118,7 @@ public class SalesInvoiceSeeder {
       for (int lineNum = 1; lineNum <= lineCount; lineNum++) {
         UUID lineId = UUID.randomUUID();
         Long accountId = getRevenueAccountId(ctx, random);
-        String lineDescription = faker.productDescription();
+        String lineDescription = faker.lineItemDescription();
         BigDecimal quantity = BigDecimal.valueOf(random.nextInt(100) + 1);
         BigDecimal unitPrice = randomVndPrice(random);
         BigDecimal amount = quantity.multiply(unitPrice);

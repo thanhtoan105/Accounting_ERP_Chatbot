@@ -3,18 +3,18 @@ import {
   AlertCircle,
   ArrowLeftRight,
   CheckCircle,
-  FileText,
   Loader2,
   RotateCcw,
   Save,
-  ShieldAlert,
   Sparkles,
+  ClipboardList,
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { VoucherPageHeader } from '@/features/accounting/components/voucher-ui'
+import { Separator } from '@/components/ui/separator'
 import type { VoucherDTO } from '@/types/voucher'
+import { cn } from '@/lib/utils'
 
 interface VoucherFormHeaderProps {
   isEditing: boolean
@@ -51,11 +51,7 @@ interface VoucherFormHeaderProps {
 export function VoucherFormHeader({
   isEditing,
   editingVoucher,
-  voucherId,
-  attachmentCount,
-  onAttachmentClick,
   onTemplateClick,
-  onValidateClick,
   onSaveClick,
   onPostClick,
   onUnpostClick,
@@ -72,197 +68,167 @@ export function VoucherFormHeader({
   autoSaveStatus,
   lastSavedAt,
   autoSaveError,
-  validationSummary,
-  onValidationSummaryClick,
 }: VoucherFormHeaderProps) {
   return (
-    <div className="voucher-form-header space-y-4">
-      <VoucherPageHeader
-        title={isEditing ? 'Edit accounting voucher' : 'Create accounting voucher'}
-        subtitle="Quickly enter by keyboard, apply templates and automatically validate before posting."
-        icon={<FileText className="h-6 w-6" />}
-      >
-        {/* Status badges */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {editingVoucher?.status && (
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between w-full">
+      {/* Left: Title & Status */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+            <ClipboardList className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight leading-none">
+              {isEditing ? 'Edit Voucher' : 'New Voucher'}
+            </h1>
+            {editingVoucher?.voucherNumber && (
+              <span className="text-xs text-muted-foreground font-mono">
+                #{editingVoucher.voucherNumber}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {editingVoucher?.status && (
+          <>
+            <Separator orientation="vertical" className="h-8 hidden md:block" />
             <Badge
               variant="outline"
-              className={`uppercase font-medium ${
+              className={cn(
+                'uppercase font-medium px-2.5 py-0.5 hidden md:inline-flex',
                 editingVoucher.status === 'posted'
-                  ? 'bg-voucher-status-posted/10 text-voucher-status-posted border-voucher-status-posted/30'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
                   : editingVoucher.status === 'draft'
-                    ? 'bg-voucher-status-draft/10 text-voucher-status-draft border-voucher-status-draft/30'
-                    : ''
-              }`}
+                    ? 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700'
+                    : '',
+              )}
             >
               {editingVoucher.status}
             </Badge>
+          </>
+        )}
+
+        {/* Reversed/Reversal Badges - Compact */}
+        {(editingVoucher?.reversedByVoucherId || editingVoucher?.reversalOf) && (
+          <div className="flex gap-2">
+            {editingVoucher.reversedByVoucherId && (
+              <Badge
+                variant="outline"
+                className="text-orange-600 border-orange-200 bg-orange-50 text-[10px] h-5 px-1.5"
+              >
+                Reversed
+              </Badge>
+            )}
+            {editingVoucher.reversalOf && (
+              <Badge
+                variant="outline"
+                className="text-blue-600 border-blue-200 bg-blue-50 text-[10px] h-5 px-1.5"
+              >
+                Reversal
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Right: Actions & Auto-save Status */}
+      <div className="flex items-center gap-3">
+        {/* Auto-save Indicator */}
+        <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground mr-2">
+          {autoSaveStatus === 'saving' && (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Saving...</span>
+            </>
           )}
-          {editingVoucher?.voucherNumber && (
-            <Badge variant="secondary" className="font-mono">
-              {editingVoucher.voucherNumber}
-            </Badge>
+          {autoSaveStatus === 'saved' && lastSavedAt && (
+            <span>Saved {formatDistanceToNow(lastSavedAt, { addSuffix: true })}</span>
           )}
-          {editingVoucher?.reversedByVoucherId && (
-            <Badge
-              variant="outline"
-              className="cursor-pointer hover:bg-orange-100 transition-colors"
-              onClick={() => {
-                window.location.href = `/vouchers/${editingVoucher.reversedByVoucherId}`
-              }}
-            >
-              Reversed by
-            </Badge>
-          )}
-          {editingVoucher?.reversalOf && (
-            <Badge
-              variant="outline"
-              className="cursor-pointer hover:bg-blue-100 transition-colors"
-              onClick={() => {
-                window.location.href = `/vouchers/${editingVoucher.reversalOf}`
-              }}
-            >
-              Reversal of
-            </Badge>
-          )}
-          {voucherId && (
-            <Badge
-              variant="outline"
-              className="gap-1 cursor-pointer hover:bg-accent transition-colors"
-              onClick={onAttachmentClick}
-            >
-              <FileText className="size-3" />
-              {attachmentCount} attachments
-            </Badge>
+          {autoSaveStatus === 'error' && (
+            <span className="text-destructive flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" />
+              {autoSaveError || 'Save failed'}
+            </span>
           )}
         </div>
-      </VoucherPageHeader>
 
-      {/* Action Buttons Row */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
+          {/* Template Button */}
           <Button
-            variant="outline"
-            type="button"
+            variant="ghost"
+            size="sm"
             onClick={onTemplateClick}
             disabled={loadingAccounts || formDisabled || isEditing}
-            className="voucher-button-secondary"
+            className="h-8 px-2 text-muted-foreground hover:text-purple-600"
+            title="Apply Template"
           >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Apply template
+            <Sparkles className="h-4 w-4" />
           </Button>
-          <Button
-            variant="outline"
-            type="button"
-            onClick={onValidateClick}
-            disabled={formDisabled}
-            className="voucher-button-secondary"
-          >
-            {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <ShieldAlert className="mr-2 h-4 w-4" />
-            )}
-            Validate
-          </Button>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Primary Actions */}
           <Button
             type="button"
             onClick={onSaveClick}
-            disabled={formDisabled}
-            className="voucher-button-primary"
+            disabled={formDisabled || saving}
+            variant="outline"
+            size="sm"
+            className="h-8"
           >
             {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="mr-2 h-3.5 w-3.5" />
             )}
-            Save draft
+            Save Draft
           </Button>
 
-          {/* Post/Unpost/Reverse buttons */}
           {canPost && (
             <Button
               type="button"
               onClick={onPostClick}
               disabled={posting || formDisabled}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              size="sm"
+              className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {posting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <CheckCircle className="mr-2 h-4 w-4" />
+                <CheckCircle className="mr-2 h-3.5 w-3.5" />
               )}
               Post
             </Button>
           )}
-          {canUnpost && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onUnpostClick}
-              disabled={unposting || formDisabled}
-            >
-              {unposting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RotateCcw className="mr-2 h-4 w-4" />
-              )}
-              Unpost
-            </Button>
-          )}
-          {canReverse && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onReverseClick}
-              disabled={reversing || formDisabled}
-            >
-              {reversing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <ArrowLeftRight className="mr-2 h-4 w-4" />
-              )}
-              Reverse
-            </Button>
-          )}
-        </div>
 
-        {/* Status indicators */}
-        <div className="flex items-center gap-4">
-          {/* Auto-save status */}
-          <div className="text-xs text-muted-foreground">
-            {autoSaveStatus === 'saving' && (
-              <span className="flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Saving draft...
-              </span>
-            )}
-            {autoSaveStatus === 'saved' && lastSavedAt && (
-              <span className="text-voucher-status-posted">
-                Draft saved {formatDistanceToNow(lastSavedAt, { addSuffix: true })}
-              </span>
-            )}
-            {autoSaveStatus === 'error' && (
-              <span className="text-destructive flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {autoSaveError || 'Cannot save draft'}
-              </span>
-            )}
-          </div>
-
-          {/* Validation summary */}
-          {validationSummary.errorCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              type="button"
-              onClick={onValidationSummaryClick}
-              className="text-destructive border-destructive hover:bg-destructive/10"
-            >
-              <AlertCircle className="mr-2 h-4 w-4" />
-              {validationSummary.errorCount} lines with errors ({validationSummary.totalErrors}{' '}
-              errors)
-            </Button>
+          {/* Secondary Actions (Unpost/Reverse) */}
+          {(canUnpost || canReverse) && (
+            <div className="flex gap-2">
+              {canUnpost && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onUnpostClick}
+                  disabled={unposting || formDisabled}
+                  className="h-8 text-destructive border-destructive/20 hover:bg-destructive/5"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              {canReverse && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onReverseClick}
+                  disabled={reversing || formDisabled}
+                  className="h-8 text-orange-600 border-orange-200 hover:bg-orange-50"
+                >
+                  <ArrowLeftRight className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>

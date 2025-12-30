@@ -64,6 +64,14 @@ Data quality monitoring and BI security controls.
 
 ### [~] Epic 9: AI Chatbot (RAG)
 
+#### [x] Track: Voucher Embedding Status - Phase 1
+*ID: embedding_status_20251220 | Priority: 1 | Type: feature*
+*Link: [conductor/tracks/embedding_status_20251220/](conductor/tracks/embedding_status_20251220/)*
+
+Admin endpoint and UI to display voucher embedding progress for RAG chatbot.
+- Backend: GET /api/v1/admin/vouchers/embedding-status
+- Frontend: Progress card showing "Embedded: X / Y"
+
 #### [ ] Track: Chatbot Widget UI (Frontend)
 *ID: accounting-3ik | Priority: 1 | Type: feature*
 

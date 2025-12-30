@@ -28,6 +28,7 @@ import com.accounting.dto.ReceiptAllocationDTO;
 import com.accounting.dto.ReceiptAllocationRequest;
 import com.accounting.dto.VoucherCreateRequest;
 import com.accounting.dto.VoucherEntryLineRequest;
+import com.accounting.dto.embedding.EmbeddingAction;
 import com.accounting.entity.ARPayment;
 import com.accounting.entity.BankAccount;
 import com.accounting.entity.Customer;
@@ -47,6 +48,7 @@ import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.service.AuditService;
 import com.accounting.service.CompanySettingsService;
+import com.accounting.service.EmbeddingTriggerService;
 import com.accounting.service.ReceiptService;
 import com.accounting.service.ReceiptValidationService;
 import com.accounting.service.VoucherService;
@@ -90,6 +92,7 @@ public class ReceiptServiceImpl implements ReceiptService {
   private final ObjectMapper objectMapper;
   private final EntityManager entityManager;
   private final com.accounting.service.ARAgingService arAgingService;
+  private final EmbeddingTriggerService embeddingTriggerService;
 
   public ReceiptServiceImpl(
       ARPaymentRepository receiptRepository,
@@ -106,7 +109,8 @@ public class ReceiptServiceImpl implements ReceiptService {
       CompanySettingsService companySettingsService,
       ObjectMapper objectMapper,
       EntityManager entityManager,
-      com.accounting.service.ARAgingService arAgingService) {
+      com.accounting.service.ARAgingService arAgingService,
+      EmbeddingTriggerService embeddingTriggerService) {
     this.receiptRepository = receiptRepository;
     this.allocationRepository = allocationRepository;
     this.salesInvoiceRepository = salesInvoiceRepository;
@@ -122,6 +126,7 @@ public class ReceiptServiceImpl implements ReceiptService {
     this.objectMapper = objectMapper;
     this.entityManager = entityManager;
     this.arAgingService = arAgingService;
+    this.embeddingTriggerService = embeddingTriggerService;
   }
 
   @Override
@@ -718,6 +723,12 @@ public class ReceiptServiceImpl implements ReceiptService {
     // Log audit event
     logAuditEvent(receipt, "POST", null, receipt);
 
+    // Trigger embedding for RAG chatbot (fire-and-forget)
+    String customerName = getCustomerName(receipt.getCustomerId());
+    String bankAccountName = bankAccount.getAccountNumber();
+    embeddingTriggerService.triggerARPaymentEmbedding(
+        receipt, allocations, customerName, bankAccountName, EmbeddingAction.UPSERT);
+
     // AC6.2-07: Performance telemetry - log post latency
     long elapsedMs = System.currentTimeMillis() - startTime;
     logger.info(
@@ -906,6 +917,15 @@ public class ReceiptServiceImpl implements ReceiptService {
 
     // Log audit event
     logAuditEvent(originalReceipt, "REVERSE", originalReceipt, originalReceipt);
+
+    // Trigger embedding deletion for RAG chatbot (fire-and-forget)
+    String customerName = getCustomerName(originalReceipt.getCustomerId());
+    BankAccount bankAccountForEmbed = bankAccountRepository
+        .findById(bankAccountEntityId)
+        .orElse(null);
+    String bankAccountName = bankAccountForEmbed != null ? bankAccountForEmbed.getAccountNumber() : "";
+    embeddingTriggerService.triggerARPaymentEmbedding(
+        originalReceipt, originalAllocations, customerName, bankAccountName, EmbeddingAction.DELETE);
 
     return convertToDTO(originalReceipt);
   }

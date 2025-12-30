@@ -34,7 +34,6 @@ export interface PurchaseBillLineDTO {
   amount: number
   vatRate?: VatRate
   vatAmount?: number
-  costCenterId?: number | null
   itemId?: number | null
 }
 

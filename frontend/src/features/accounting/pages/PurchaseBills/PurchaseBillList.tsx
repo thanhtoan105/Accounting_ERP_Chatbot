@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Calendar,
+  Calendar as CalendarIcon,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
@@ -29,7 +29,8 @@ import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { DatePicker } from '@/components/ui/date-picker'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
 import {
   Select,
   SelectContent,
@@ -70,7 +71,9 @@ import type {
   PurchaseBillQueryParams,
   PurchaseBillStatus,
 } from '@/types/purchaseBill'
-import { useDebounce } from '@/hooks/use-debounce'
+
+import { PeriodSelector } from '@/components/period'
+import type { AccountingPeriod } from '@/types/accountingPeriod'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100]
 const STATUS_OPTIONS: { value: string; label: string }[] = [
@@ -174,6 +177,13 @@ export default function PurchaseBillList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Counts state (Placeholder for now)
+  const [counts] = useState<{ draft: number; posted: number; pending: number }>({
+    draft: 0,
+    posted: 0,
+    pending: 0,
+  })
+
   // Filters and search - with localStorage persistence
   const [status, setStatus] = useState<string>(() => loadFromStorage('status', 'all'))
   const [supplier, setSupplier] = useState<number | undefined>(() =>
@@ -182,9 +192,14 @@ export default function PurchaseBillList() {
   const [dateFrom, setDateFrom] = useState<string>(() => loadFromStorage('dateFrom', ''))
   const [dateTo, setDateTo] = useState<string>(() => loadFromStorage('dateTo', ''))
   const [search, setSearch] = useState<string>(() => loadFromStorage('search', ''))
-  const debouncedSearch = useDebounce(search, 300)
+  const [debouncedSearch, setDebouncedSearch] = useState<string>(search)
   const [sorting, setSorting] = useState<SortingState>(() =>
     loadFromStorage('sorting', [] as SortingState),
+  )
+
+  // Period selection
+  const [selectedPeriod, setSelectedPeriod] = useState<AccountingPeriod | null>(() =>
+    loadFromStorage('selectedPeriod', null),
   )
 
   // Pagination
@@ -230,6 +245,32 @@ export default function PurchaseBillList() {
   useEffect(() => {
     saveToStorage('pageSize', pageSize)
   }, [pageSize])
+  useEffect(() => {
+    saveToStorage('selectedPeriod', selectedPeriod)
+  }, [selectedPeriod])
+
+  // Debounce search manually to match VoucherList pattern
+  const isFirstRender = useRef(true)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(0)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  // Handle period change
+  const handlePeriodChange = useCallback((period: AccountingPeriod) => {
+    setSelectedPeriod(period)
+    // Here you would typically set dateFrom/dateTo based on the period
+    if (period.startDate) setDateFrom(period.startDate)
+    if (period.endDate) setDateTo(period.endDate)
+    setPage(0)
+  }, [])
 
   // Convert sorting state to API sort parameters
   const sortParams = useMemo(() => {
@@ -284,12 +325,24 @@ export default function PurchaseBillList() {
     }
   }, [page, pageSize, status, supplier, dateFrom, dateTo, debouncedSearch, sortParams])
 
+  // Placeholder for loading counts
+  const loadCounts = useCallback(async () => {
+    try {
+      // TODO: Implement getPurchaseBillCounts service
+      // const countsData = await getPurchaseBillCounts()
+      // setCounts(countsData)
+    } catch (err) {
+      console.warn('Failed to load counts:', err)
+    }
+  }, [])
+
   useEffect(() => {
     loadBills()
-  }, [loadBills])
+    loadCounts()
+  }, [loadBills, loadCounts])
 
   const handleRefresh = async () => {
-    await loadBills()
+    await Promise.all([loadBills(), loadCounts()])
     toast.success('Purchase bills refreshed')
   }
 
@@ -307,7 +360,7 @@ export default function PurchaseBillList() {
       setBillToDelete(null)
       setDeleteReason('')
       // Refresh data
-      await loadBills()
+      await Promise.all([loadBills(), loadCounts()])
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || 'Failed to delete purchase bill'
@@ -315,6 +368,17 @@ export default function PurchaseBillList() {
     } finally {
       setDeleting(false)
     }
+  }
+
+  const handleResetFilters = () => {
+    setStatus('all')
+    setSupplier(undefined)
+    setDateFrom('')
+    setDateTo('')
+    setSearch('')
+    setSorting([])
+    setPage(0)
+    setSelectedPeriod(null)
   }
 
   const columns = useMemo<ColumnDef<PurchaseBillListDTO>[]>(
@@ -448,7 +512,7 @@ export default function PurchaseBillList() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
-            Purchase Bills <span className="text-muted-foreground text-lg">/ Hóa đơn mua hàng</span>
+            Purchase Bills
           </h1>
           <p className="text-muted-foreground">
             View, search, and manage purchase bills with server-side pagination.
@@ -474,6 +538,30 @@ export default function PurchaseBillList() {
         </div>
       </div>
 
+      {/* Badge counts (Placeholder visual) */}
+      <div className="flex gap-4">
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">Draft: {counts.draft}</Badge>
+          <Badge variant="outline">Pending: {counts.pending}</Badge>
+          <Badge variant="default">Posted: {counts.posted}</Badge>
+        </div>
+      </div>
+
+      {/* Period Selector */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1 max-w-md">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Period</label>
+            <PeriodSelector
+              selectedPeriod={selectedPeriod}
+              onPeriodChange={handlePeriodChange}
+              showSummary={true}
+              placeholder="Select period..."
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="flex flex-col gap-2">
@@ -483,10 +571,7 @@ export default function PurchaseBillList() {
             <Input
               placeholder="Bill number, reference..."
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(0)
-              }}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-8"
             />
           </div>
@@ -514,31 +599,63 @@ export default function PurchaseBillList() {
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+            <CalendarIcon className="h-4 w-4" />
             Date From
           </label>
-          <DatePicker
-            value={dateFrom}
-            onChange={(value) => {
-              setDateFrom(value)
-              setPage(0)
-            }}
-            placeholder="Select start date"
-          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-start text-left font-normal">
+                {dateFrom ? format(new Date(dateFrom), 'dd/MM/yyyy') : 'Select date'}
+                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateFrom ? new Date(dateFrom) : undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    setDateFrom(format(date, 'yyyy-MM-dd'))
+                    setPage(0)
+                  } else {
+                    setDateFrom('')
+                    setPage(0)
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+            <CalendarIcon className="h-4 w-4" />
             Date To
           </label>
-          <DatePicker
-            value={dateTo}
-            onChange={(value) => {
-              setDateTo(value)
-              setPage(0)
-            }}
-            placeholder="Select end date"
-          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-start text-left font-normal">
+                {dateTo ? format(new Date(dateTo), 'dd/MM/yyyy') : 'Select date'}
+                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateTo ? new Date(dateTo) : undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    setDateTo(format(date, 'yyyy-MM-dd'))
+                    setPage(0)
+                  } else {
+                    setDateTo('')
+                    setPage(0)
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">Supplier ID</label>
@@ -559,9 +676,20 @@ export default function PurchaseBillList() {
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
             <span>{error}</span>
-            <Button variant="outline" size="sm" onClick={loadBills}>
-              Retry
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Logic to show error modal if implemented
+                }}
+              >
+                View Details
+              </Button>
+              <Button variant="outline" size="sm" onClick={loadBills}>
+                Retry
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       )}
@@ -623,10 +751,9 @@ export default function PurchaseBillList() {
                         onClick={header.column.getToggleSortingHandler()}
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
-                        {{
-                          asc: ' ↑',
-                          desc: ' ↓',
-                        }[header.column.getIsSorted() as string] ?? null}
+                        {header.column.getIsSorted() && (
+                          <span>{header.column.getIsSorted() === 'desc' ? '↓' : '↑'}</span>
+                        )}
                       </div>
                     )}
                   </TableHead>
@@ -636,19 +763,40 @@ export default function PurchaseBillList() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: pageSize }).map((_, i) => (
-                <TableRow key={i}>
-                  {columns.map((_, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-4 w-full" />
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`}>
+                  {columns.map((column) => (
+                    <TableCell key={`skeleton-${column.id ?? 'cell'}-${index}`}>
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : isEmpty ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No purchase bills found.
+                <TableCell colSpan={columns.length} className="text-center py-12">
+                  <div className="flex flex-col items-center gap-4">
+                    <FileText className="h-12 w-12 text-muted-foreground" />
+                    <div>
+                      <p className="text-lg font-medium">No purchase bills found</p>
+                      <p className="text-sm text-muted-foreground">
+                        {search || status !== 'all' || dateFrom || dateTo || supplier
+                          ? 'Try adjusting your filters'
+                          : 'Get started by creating a new purchase bill'}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={() => navigate('/purchase-bills/new')}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Purchase Bill
+                      </Button>
+                      {(search || status !== 'all' || dateFrom || dateTo || supplier) && (
+                        <Button variant="outline" onClick={handleResetFilters}>
+                          Reset Filters
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
@@ -671,68 +819,71 @@ export default function PurchaseBillList() {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
-            Showing {bills.length > 0 ? page * pageSize + 1 : 0} to{' '}
-            {Math.min((page + 1) * pageSize, totalElements)} of {totalElements} purchase bills
-          </span>
-          <Select
-            value={String(pageSize)}
-            onValueChange={(value) => {
-              setPageSize(Number(value))
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[100px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PAGE_SIZE_OPTIONS.map((size) => (
-                <SelectItem key={size} value={String(size)}>
-                  {size}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">per page</span>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="text-sm text-muted-foreground">
+          Showing <span className="font-medium text-foreground">{bills.length}</span> of{' '}
+          <span className="font-medium text-foreground">{totalElements}</span> records
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage(0)}
-            disabled={page === 0 || loading}
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage(page - 1)}
-            disabled={page === 0 || loading}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-sm">
-            Page {page + 1} of {totalPages || 1}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage(page + 1)}
-            disabled={page >= totalPages - 1 || loading}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage(totalPages - 1)}
-            disabled={page >= totalPages - 1 || loading}
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Rows per page</span>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => {
+                setPageSize(Number(value))
+                setPage(0)
+              }}
+            >
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option.toString()}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={page <= 0 || loading}
+              onClick={() => setPage(0)}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={page <= 0 || loading}
+              onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page <span className="font-semibold text-foreground">{page + 1}</span> of{' '}
+              <span className="font-semibold text-foreground">{Math.max(totalPages, 1)}</span>
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={page >= totalPages - 1 || loading}
+              onClick={() => setPage((prev) => Math.min(prev + 1, Math.max(totalPages - 1, 0)))}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={page >= totalPages - 1 || loading}
+              onClick={() => setPage(Math.max(totalPages - 1, 0))}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 

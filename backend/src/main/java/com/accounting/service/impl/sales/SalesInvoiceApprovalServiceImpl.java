@@ -572,7 +572,6 @@ public class SalesInvoiceApprovalServiceImpl implements SalesInvoiceApprovalServ
                 entry.setAmount(amount);
                 entry.setDescription(description);
                 entry.setCustomerId(invoice.getCustomerId());
-                entry.setCostCenterId(line.getCostCenterId());
                 entry.setItemId(line.getItemId());
                 return entry;
         }

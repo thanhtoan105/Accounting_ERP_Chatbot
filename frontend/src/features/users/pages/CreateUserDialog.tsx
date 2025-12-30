@@ -21,14 +21,15 @@ import {
 } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '@/components/ui/field'
-import { Loader2 } from 'lucide-react'
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Loader2, User, Mail, Shield, Lock, AlertCircle, Sparkles } from 'lucide-react'
 import { createUser, type CreateUserRequest } from '@/services/user'
 import { getRoleDisplayName, getAssignableRoles } from '@/utils/roles'
 import { useAuth } from '@/hooks/useAuth'
@@ -72,15 +73,10 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
   })
 
   const {
-    handleSubmit,
-    register,
-    setValue,
-    watch,
     reset,
-    formState: { errors, isSubmitting },
+    handleSubmit,
+    formState: { isSubmitting },
   } = form
-
-  const selectedRole = watch('role')
   const [formError, setFormError] = useState<string | null>(null)
 
   // Reset form when dialog opens/closes
@@ -129,113 +125,196 @@ export default function CreateUserDialog({ open, onClose, onSuccess }: CreateUse
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[500px]">
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <DialogContent className="sm:max-w-[550px] gap-0 p-0 overflow-hidden border-none shadow-xl">
+        <div className="bg-gradient-to-b from-primary/10 to-transparent px-6 py-6 border-b">
           <DialogHeader className="space-y-2">
-            <DialogTitle>Create User</DialogTitle>
-            <DialogDescription>
-              Create a new user account directly. The user will be able to log in immediately with
-              the provided credentials.
+            <div className="flex items-center gap-2 text-primary mb-1">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-semibold uppercase tracking-wider opacity-80">
+                New Account
+              </span>
+            </div>
+            <DialogTitle className="text-xl font-bold tracking-tight">Create User</DialogTitle>
+            <DialogDescription className="text-muted-foreground/90">
+              Manually create a user account. The user will be able to log in immediately with the
+              provided credentials.
             </DialogDescription>
           </DialogHeader>
-          <FieldGroup className="space-y-1 py-1">
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="px-6 py-6 space-y-6">
             {formError && (
-              <Alert variant="destructive">
+              <Alert
+                variant="destructive"
+                className="border-destructive/20 bg-destructive/5 text-destructive animate-in fade-in zoom-in-95 duration-200"
+              >
+                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{formError}</AlertDescription>
               </Alert>
             )}
-            <Field className="gap-2">
-              <FieldLabel htmlFor="create-email">
-                Email Address <span className="text-destructive">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Input
-                  id="create-email"
-                  type="email"
-                  placeholder="user@example.com"
-                  {...register('email')}
-                  aria-invalid={!!errors.email}
-                  disabled={isSubmitting}
-                  autoFocus
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-sm font-medium flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        Full Name <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <div className="relative group">
+                        <FormControl>
+                          <Input
+                            placeholder="John Doe"
+                            disabled={isSubmitting}
+                            className="pl-9 transition-all border-[var(--border)] focus:ring-1 focus:ring-[var(--voucher-primary)] focus:border-[var(--voucher-primary)]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <div className="absolute left-2.5 top-2.5 text-muted-foreground/50 group-focus-within:text-primary transition-colors">
+                          <User className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <FormMessage className="ml-1" />
+                    </FormItem>
+                  )}
                 />
-                {errors.email?.message && <FieldError>{errors.email.message}</FieldError>}
-              </FieldContent>
-            </Field>
-            <Field className="gap-2">
-              <FieldLabel htmlFor="create-fullname">
-                Full Name <span className="text-destructive">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Input
-                  id="create-fullname"
-                  placeholder="John Doe"
-                  {...register('fullName')}
-                  aria-invalid={!!errors.fullName}
-                  disabled={isSubmitting}
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-sm font-medium flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        Email Address <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <div className="relative group">
+                        <FormControl>
+                          <Input
+                            placeholder="user@example.com"
+                            type="email"
+                            disabled={isSubmitting}
+                            autoFocus
+                            className="pl-9 transition-all border-[var(--border)] focus:ring-1 focus:ring-[var(--voucher-primary)] focus:border-[var(--voucher-primary)]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <div className="absolute left-2.5 top-2.5 text-muted-foreground/50 group-focus-within:text-primary transition-colors">
+                          <Mail className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <FormMessage className="ml-1" />
+                    </FormItem>
+                  )}
                 />
-                {errors.fullName?.message && <FieldError>{errors.fullName.message}</FieldError>}
-              </FieldContent>
-            </Field>
-            <Field className="gap-2">
-              <FieldLabel htmlFor="create-password">
-                Password <span className="text-destructive">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Input
-                  id="create-password"
-                  type="password"
-                  {...register('password')}
-                  aria-invalid={!!errors.password}
-                  disabled={isSubmitting}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-sm font-medium flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-muted-foreground" />
+                        Role
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={isSubmitting || assignableRoles.length === 0}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {assignableRoles.map((r) => (
+                            <SelectItem key={r} value={r}>
+                              <span className="font-medium">{getRoleDisplayName(r)}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="ml-1" />
+                      {assignableRoles.length === 0 && (
+                        <FormDescription className="text-yellow-600 dark:text-yellow-500">
+                          You do not have permission to assign roles
+                        </FormDescription>
+                      )}
+                    </FormItem>
+                  )}
                 />
-                {errors.password?.message && <FieldError>{errors.password.message}</FieldError>}
-                <FieldDescription>Must be at least 8 characters</FieldDescription>
-              </FieldContent>
-            </Field>
-            <Field className="gap-2">
-              <FieldLabel htmlFor="create-role">Role</FieldLabel>
-              <FieldContent>
-                <Select
-                  value={selectedRole}
-                  onValueChange={(value) =>
-                    setValue('role', value as FormRole, { shouldValidate: true })
-                  }
-                  disabled={isSubmitting || assignableRoles.length === 0}
-                >
-                  <SelectTrigger id="create-role" aria-invalid={!!errors.role}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {assignableRoles.map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {getRoleDisplayName(r)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.role?.message && <FieldError>{errors.role.message}</FieldError>}
-                {assignableRoles.length === 0 && (
-                  <FieldDescription>You do not have permission to assign roles</FieldDescription>
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-sm font-medium flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                        Password <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <div className="relative group">
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            disabled={isSubmitting}
+                            className="pl-9 transition-all border-[var(--border)] focus:ring-1 focus:ring-[var(--voucher-primary)] focus:border-[var(--voucher-primary)]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <div className="absolute left-2.5 top-2.5 text-muted-foreground/50 group-focus-within:text-primary transition-colors">
+                          <Lock className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <FormMessage className="ml-1" />
+                      {!form.formState.errors.password && (
+                        <FormDescription className="ml-1 text-xs">
+                          At least 8 characters
+                        </FormDescription>
+                      )}
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="bg-muted/30 p-3 rounded-lg border border-border/50 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Users created manually will not require email verification.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:justify-end">
+              <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting} className="min-w-[130px] shadow-sm">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <User className="mr-2 h-4 w-4" />
+                    Create User
+                  </>
                 )}
-              </FieldContent>
-            </Field>
-          </FieldGroup>
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create User'
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

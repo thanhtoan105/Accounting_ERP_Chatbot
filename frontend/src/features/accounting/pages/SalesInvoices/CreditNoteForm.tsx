@@ -99,9 +99,7 @@ function createInitialLines(): SalesInvoiceLine[] {
       amount: null,
       vatRate: 'ZERO',
       vatAmount: null,
-      costCenterId: null,
       itemId: null,
-      costCenter: null,
       item: null,
       status: 'clean',
     },
@@ -218,9 +216,7 @@ export default function CreditNoteForm() {
           amount: line.amount ? -Math.abs(line.amount) : null, // Invert amount
           vatRate: line.vatRate || 'ZERO',
           vatAmount: line.vatAmount ? -Math.abs(line.vatAmount) : null, // Invert VAT amount
-          costCenterId: line.costCenterId ? String(line.costCenterId) : null,
           itemId: line.itemId ? String(line.itemId) : null,
-          costCenter: null,
           item: null,
           status: 'dirty',
         }))
@@ -312,7 +308,6 @@ export default function CreditNoteForm() {
           amount: line.amount ?? 0,
           vatRate: line.vatRate,
           vatAmount: line.vatAmount ?? 0,
-          costCenterId: line.costCenterId ? Number(line.costCenterId) : undefined,
           itemId: line.itemId ? Number(line.itemId) : undefined,
         }))
 

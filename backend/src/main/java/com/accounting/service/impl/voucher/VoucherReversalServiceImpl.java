@@ -135,8 +135,7 @@ public class VoucherReversalServiceImpl implements VoucherReversalService {
       reversalLine.setCredit(originalLine.getDebit());
       reversalLine.setDescription(originalLine.getDescription());
       reversalLine.setCustomerId(originalLine.getCustomerId());
-      reversalLine.setVendorId(originalLine.getVendorId());
-      reversalLine.setCostCenterId(originalLine.getCostCenterId());
+      reversalLine.setSupplierId(originalLine.getSupplierId());
       reversalLine.setItemId(originalLine.getItemId());
       reversalLine.setCompanyId(companyId);
       reversalLines.add(reversalLine);

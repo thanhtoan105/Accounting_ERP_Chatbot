@@ -7,9 +7,9 @@ import jakarta.validation.constraints.Pattern;
 
 @Schema(description = "Request to export analytics dashboard data")
 public record ExportRequest(
-        @Schema(description = "Accounting period ID", example = "1")
+        @Schema(description = "Accounting period ID", example = "6d472567-5342-40ac-9555-0be8672bc7b9")
                 @NotNull(message = "Period ID is required")
-                Long periodId,
+                java.util.UUID periodId,
         @Schema(
                         description = "Dashboard type to export",
                         example = "FINANCIAL_OVERVIEW",

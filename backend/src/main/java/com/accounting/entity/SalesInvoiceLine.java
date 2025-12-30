@@ -76,9 +76,6 @@ public class SalesInvoiceLine implements CompanyScopedEntity {
   private BigDecimal vatAmount = BigDecimal.ZERO;
 
   // Optional dimension fields
-  @Column(name = "cost_center_id")
-  private Long costCenterId;
-
   @Column(name = "item_id")
   private Long itemId;
 
@@ -192,14 +189,6 @@ public class SalesInvoiceLine implements CompanyScopedEntity {
 
   public void setVatAmount(BigDecimal vatAmount) {
     this.vatAmount = vatAmount;
-  }
-
-  public Long getCostCenterId() {
-    return costCenterId;
-  }
-
-  public void setCostCenterId(Long costCenterId) {
-    this.costCenterId = costCenterId;
   }
 
   public Long getItemId() {

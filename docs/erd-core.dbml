@@ -1,0 +1,204 @@
+// Accounting ERP - Core Database Schema
+// Multi-tenant architecture following TT200 Vietnamese Accounting Standards
+
+Project AccountingERP {
+  database_type: 'PostgreSQL'
+  Note: 'Multi-tenant Accounting System with TT200 Chart of Accounts'
+}
+
+// =====================
+// TENANT & USER MANAGEMENT
+// =====================
+
+Table companies {
+  id bigserial [pk]
+  code varchar(16) [not null, unique, note: 'Company code']
+  name varchar(255) [not null]
+  tax_code varchar(10) [not null, unique, note: 'MST - 10 digits']
+  address varchar(512) [not null]
+  logo_url varchar(512)
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  Note: 'Root tenant table - each company is isolated'
+}
+
+Table users {
+  id bigserial [pk]
+  email varchar(255) [not null, unique]
+  password_hash varchar(255) [not null]
+  full_name varchar(255) [not null]
+  role varchar(50) [not null, note: 'ADMIN, ACCOUNTANT, VIEWER, etc.']
+  company_id bigint [ref: > companies.id]
+  locked_until timestamp
+  failed_login_count int [not null, default: 0]
+  reset_token varchar(255)
+  reset_token_expiry timestamp
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  Note: 'System users with RBAC'
+}
+
+// =====================
+// MASTER DATA
+// =====================
+
+Table customers {
+  id bigserial [pk]
+  company_id bigint [not null, ref: > companies.id]
+  code varchar(32) [not null, note: 'CUS-YYYY-NNNN']
+  name varchar(255) [not null]
+  tax_code varchar(20)
+  address varchar(512)
+
+  indexes {
+    (company_id, code) [unique]
+  }
+
+  Note: 'Khách hàng - Accounts Receivable (AR)'
+}
+
+Table suppliers {
+  id bigserial [pk]
+  company_id bigint [not null, ref: > companies.id]
+  code varchar(32) [not null, note: 'SUP-YYYY-NNNN']
+  name varchar(255) [not null]
+  tax_code varchar(20)
+  address varchar(512)
+  email varchar(255)
+  phone varchar(20)
+  active boolean [not null, default: true]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (company_id, code) [unique]
+  }
+
+  Note: 'Nhà cung cấp - Accounts Payable (AP)'
+}
+
+Table chart_of_accounts {
+  id bigserial [pk]
+  company_id bigint [not null, ref: > companies.id]
+  code varchar(20) [not null, note: 'TT200 account code (111, 131, 511...)']
+  name varchar(255) [not null]
+  type varchar(50) [not null, note: 'ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE']
+  normal_side varchar(10) [not null, note: 'DEBIT or CREDIT']
+  postable boolean [not null, default: false, note: 'Only leaf accounts are postable']
+  parent_id bigint [ref: > chart_of_accounts.id]
+  ordering_position int [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (company_id, code) [unique]
+    parent_id
+    postable
+    type
+  }
+
+  Note: 'Hệ thống tài khoản theo TT200 - Hierarchical structure'
+}
+
+// =====================
+// ACCOUNTING TRANSACTIONS
+// =====================
+
+Table vouchers {
+  id uuid [pk, default: `gen_random_uuid()`]
+  company_id bigint [not null, ref: > companies.id]
+  voucher_number varchar(50) [not null, note: 'PC-2025-0001, PT-2025-0001']
+  voucher_date date [not null]
+  period_id bigint [note: 'Accounting period']
+  description varchar(500) [not null]
+  status varchar(20) [not null, note: 'draft, posted, unposted']
+  currency varchar(3) [not null, default: 'VND']
+  total_debit numeric(19,2) [not null, default: 0]
+  total_credit numeric(19,2) [not null, default: 0]
+  entered_by bigint [not null, ref: > users.id]
+  posted_by bigint [ref: > users.id]
+  posted_at timestamptz
+  reversal_of uuid [ref: > vouchers.id]
+  reversed_by bigint [ref: > users.id]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (company_id, voucher_number) [unique]
+    voucher_date
+    status
+    period_id
+  }
+
+  Note: 'Chứng từ kế toán - Accounting Vouchers'
+}
+
+Table voucher_lines {
+  id uuid [pk, default: `gen_random_uuid()`]
+  voucher_id uuid [not null, ref: > vouchers.id]
+  line_number int [not null]
+  account_id bigint [not null, ref: > chart_of_accounts.id]
+  debit numeric(19,2) [not null, default: 0]
+  credit numeric(19,2) [not null, default: 0]
+  description varchar(500)
+  customer_id bigint [ref: > customers.id]
+  supplier_id bigint [ref: > suppliers.id]
+  company_id bigint [not null, ref: > companies.id]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (voucher_id, line_number) [unique]
+    account_id
+    customer_id
+    supplier_id
+  }
+
+  Note: 'Chi tiết dòng chứng từ - Either debit OR credit per line'
+}
+
+Table journal_entries {
+  id uuid [pk, default: `gen_random_uuid()`]
+  voucher_id uuid [not null, ref: > vouchers.id]
+  account_id bigint [not null, ref: > chart_of_accounts.id]
+  period_id bigint
+  debit_amount numeric(19,2) [not null, default: 0]
+  credit_amount numeric(19,2) [not null, default: 0]
+  customer_id bigint [ref: > customers.id]
+  supplier_id bigint [ref: > suppliers.id]
+  company_id bigint [not null, ref: > companies.id]
+  posted_at timestamptz [not null, default: `now()`]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    voucher_id
+    (period_id, account_id, company_id)
+    posted_at
+  }
+
+  Note: 'Sổ cái - Auto-generated when voucher is posted'
+}
+
+// =====================
+// TABLE GROUPS
+// =====================
+
+TableGroup tenant {
+  companies
+  users
+}
+
+TableGroup master_data {
+  customers
+  suppliers
+  chart_of_accounts
+}
+
+TableGroup transactions {
+  vouchers
+  voucher_lines
+  journal_entries
+}

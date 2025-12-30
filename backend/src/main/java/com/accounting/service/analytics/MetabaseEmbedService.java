@@ -8,6 +8,10 @@ public interface MetabaseEmbedService {
 
     MetabaseEmbedConfig refreshEmbedConfig(User user, Long companyId);
 
+    String generateDashboardEmbedUrl(Long dashboardId);
+
+    String generateQuestionEmbedUrl(Long questionId);
+
     record MetabaseEmbedConfig(
             String metabaseInstanceUrl,
             AuthConfig authConfig) {

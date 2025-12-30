@@ -33,7 +33,6 @@ export interface SalesInvoiceLineDTO {
   amount: number
   vatRate?: VatRate
   vatAmount?: number
-  costCenterId?: number | null
   itemId?: number | null
 }
 

@@ -38,6 +38,7 @@ export interface AccountPickerProps {
   lockReason?: string
   searchPlaceholder?: string
   className?: string
+  triggerClassName?: string
 }
 
 const BALANCE_LABEL: Record<AccountBalanceSide, string> = {
@@ -56,6 +57,7 @@ export function AccountPicker({
   lockReason,
   searchPlaceholder = 'Search by code or name...',
   className,
+  triggerClassName,
 }: AccountPickerProps) {
   const [open, setOpen] = useState(false)
 
@@ -79,6 +81,7 @@ export function AccountPicker({
                   className={cn(
                     'w-full justify-between',
                     isLocked && 'cursor-not-allowed opacity-80',
+                    triggerClassName,
                   )}
                   disabled={disabled || isLocked}
                   role="combobox"

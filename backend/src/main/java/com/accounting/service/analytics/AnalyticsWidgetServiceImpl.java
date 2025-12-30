@@ -205,7 +205,7 @@ public class AnalyticsWidgetServiceImpl implements AnalyticsWidgetService {
     @Override
     @Cacheable(value = "analytics-widget",
             key = "'widget:' + T(com.accounting.security.CompanyContext).getCompanyId() + ':period-summary:' + #periodId")
-    public PeriodSummaryData getPeriodSummary(Long periodId) {
+    public PeriodSummaryData getPeriodSummary(java.util.UUID periodId) {
         Long companyId = CompanyContext.getCompanyId();
         logger.debug("Fetching period summary for company {} period {}", companyId, periodId);
 
@@ -219,7 +219,7 @@ public class AnalyticsWidgetServiceImpl implements AnalyticsWidgetService {
                 WHERE company_id = ? AND period_id = ?
                 """,
                 (rs, rowNum) -> new PeriodSummaryData(
-                        rs.getLong("period_id"),
+                        java.util.UUID.fromString(rs.getString("period_id")),
                         rs.getBigDecimal("total_revenue"),
                         rs.getBigDecimal("total_expense"),
                         rs.getBigDecimal("ar_balance"),

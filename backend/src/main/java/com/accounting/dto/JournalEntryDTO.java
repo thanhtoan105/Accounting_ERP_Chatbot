@@ -22,8 +22,6 @@ public class JournalEntryDTO {
   private String customerName;
   private Long supplierId;
   private String supplierName;
-  private Long costCenterId;
-  private String costCenterName;
   private Long companyId;
   private Instant postedAt;
   private Instant createdAt;
@@ -43,8 +41,6 @@ public class JournalEntryDTO {
       String customerName,
       Long supplierId,
       String supplierName,
-      Long costCenterId,
-      String costCenterName,
       Long companyId,
       Instant postedAt,
       Instant createdAt) {
@@ -60,8 +56,6 @@ public class JournalEntryDTO {
     this.customerName = customerName;
     this.supplierId = supplierId;
     this.supplierName = supplierName;
-    this.costCenterId = costCenterId;
-    this.costCenterName = costCenterName;
     this.companyId = companyId;
     this.postedAt = postedAt;
     this.createdAt = createdAt;
@@ -162,22 +156,6 @@ public class JournalEntryDTO {
 
   public void setSupplierName(String supplierName) {
     this.supplierName = supplierName;
-  }
-
-  public Long getCostCenterId() {
-    return costCenterId;
-  }
-
-  public void setCostCenterId(Long costCenterId) {
-    this.costCenterId = costCenterId;
-  }
-
-  public String getCostCenterName() {
-    return costCenterName;
-  }
-
-  public void setCostCenterName(String costCenterName) {
-    this.costCenterName = costCenterName;
   }
 
   public Long getCompanyId() {

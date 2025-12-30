@@ -226,7 +226,6 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
       line.setDefaultDescription(normalize(lineRequest.getDefaultDescription()));
       line.setRequiresCustomer(Boolean.TRUE.equals(lineRequest.getRequiresCustomer()));
       line.setRequiresSupplier(Boolean.TRUE.equals(lineRequest.getRequiresSupplier()));
-      line.setRequiresCostCenter(Boolean.TRUE.equals(lineRequest.getRequiresCostCenter()));
       line.setLockAccounts(Boolean.TRUE.equals(lineRequest.getLockAccounts()));
       lines.add(line);
     }
@@ -317,7 +316,6 @@ public class VoucherTemplateServiceImpl implements VoucherTemplateService {
     dto.setDefaultDescription(line.getDefaultDescription());
     dto.setRequiresCustomer(line.isRequiresCustomer());
     dto.setRequiresSupplier(line.isRequiresSupplier());
-    dto.setRequiresCostCenter(line.isRequiresCostCenter());
     dto.setLockAccounts(line.isLockAccounts());
     return dto;
   }

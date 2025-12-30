@@ -4,9 +4,9 @@ import com.accounting.dto.analytics.ExportResponse;
 
 public interface AnalyticsExportService {
 
-    byte[] exportDashboardToExcel(Long companyId, Long periodId, String dashboardType);
+    byte[] exportDashboardToExcel(Long companyId, java.util.UUID periodId, String dashboardType);
 
-    byte[] exportDashboardToPdf(Long companyId, Long periodId, String dashboardType);
+    byte[] exportDashboardToPdf(Long companyId, java.util.UUID periodId, String dashboardType);
 
     ExportResponse getExportStatus(String jobId);
 

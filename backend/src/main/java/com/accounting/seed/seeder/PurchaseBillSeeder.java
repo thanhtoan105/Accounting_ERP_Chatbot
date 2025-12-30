@@ -48,18 +48,10 @@ public class PurchaseBillSeeder {
 
     private static final String INSERT_LINE_SQL =
             "INSERT INTO purchase_bill_lines (id, purchase_bill_id, line_number, account_id, description, "
-                    + "quantity, unit_price, amount, vat_rate, vat_amount, cost_center_id, item_id, company_id, "
-                    + "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    + "quantity, unit_price, amount, vat_rate, vat_amount, item_id, company_id, "
+                    + "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    private static final List<String> PURCHASE_DESCRIPTIONS = List.of(
-            "Mua hàng hóa",
-            "Mua nguyên vật liệu",
-            "Mua công cụ dụng cụ",
-            "Mua vật tư văn phòng",
-            "Mua thiết bị",
-            "Chi phí dịch vụ mua ngoài",
-            "Chi phí vận chuyển",
-            "Chi phí sửa chữa bảo trì");
+    // Removed static PURCHASE_DESCRIPTIONS - now using faker.purchaseBillDescription() for diverse descriptions
 
     private static final List<String> EXPENSE_ACCOUNT_CODES = List.of("642", "156", "152", "153");
 
@@ -98,7 +90,7 @@ public class PurchaseBillSeeder {
             LocalDate billDate = startDate.plusDays(random.nextLong(daysBetween + 1));
             LocalDate dueDate = billDate.plusDays(DUE_DAYS[random.nextInt(DUE_DAYS.length)]);
             String reference = "HD-" + String.format("%06d", random.nextInt(1_000_000));
-            String description = randomElement(PURCHASE_DESCRIPTIONS, random);
+            String description = faker.purchaseBillDescription("NCC-" + supplierId, billDate.getYear());
             PurchaseBillStatus status = randomStatus(random);
             Long createdById = randomElement(ctx.getUserIds(), random);
             Long approvedById = needsApprover(status) ? randomOther(ctx.getUserIds(), createdById, random) : null;
@@ -158,7 +150,7 @@ public class PurchaseBillSeeder {
             UUID lineId = UUID.randomUUID();
             int lineNumber = i + 1;
             Long accountId = getRandomExpenseAccount(ctx, random);
-            String description = faker.productDescription();
+            String description = faker.lineItemDescription();
             BigDecimal quantity = new BigDecimal(1 + random.nextInt(100));
             BigDecimal unitPrice = MoneyHelper.niceVndAmount(random, 10_000, 10_000_000);
             BigDecimal amount = quantity.multiply(unitPrice);
@@ -272,10 +264,9 @@ public class PurchaseBillSeeder {
                         ps.setString(9, line.vatRate.name());
                         ps.setBigDecimal(10, line.vatAmount);
                         ps.setNull(11, Types.BIGINT);
-                        ps.setNull(12, Types.BIGINT);
-                        ps.setLong(13, line.companyId);
+                        ps.setLong(12, line.companyId);
+                        ps.setTimestamp(13, Timestamp.from(line.createdAt));
                         ps.setTimestamp(14, Timestamp.from(line.createdAt));
-                        ps.setTimestamp(15, Timestamp.from(line.createdAt));
                     }
 
                     @Override

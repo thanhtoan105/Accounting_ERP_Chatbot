@@ -12,7 +12,6 @@ public class AccountControlCreateRequest {
 
   private Boolean requiresCustomer = false;
   private Boolean requiresSupplier = false;
-  private Boolean requiresCostCenter = false;
   private Boolean requiresItem = false;
 
   public Long getAccountId() {
@@ -37,14 +36,6 @@ public class AccountControlCreateRequest {
 
   public void setRequiresSupplier(Boolean requiresSupplier) {
     this.requiresSupplier = requiresSupplier;
-  }
-
-  public Boolean getRequiresCostCenter() {
-    return requiresCostCenter;
-  }
-
-  public void setRequiresCostCenter(Boolean requiresCostCenter) {
-    this.requiresCostCenter = requiresCostCenter;
   }
 
   public Boolean getRequiresItem() {

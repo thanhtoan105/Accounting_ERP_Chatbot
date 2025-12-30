@@ -147,10 +147,8 @@ function createInitialLines(): VoucherEntryLine[] {
       description: '',
       customerId: null,
       supplierId: null,
-      costCenterId: null,
       customer: null,
       supplier: null,
-      costCenter: null,
       source: 'manual',
       status: 'clean',
     },
@@ -264,11 +262,9 @@ function convertLedgerLinesToEntries(
       amount: Number(debitLine?.debit ?? creditLine?.credit ?? 0),
       description: debitLine?.description || creditLine?.description || '',
       customerId: (debitLine?.customerId ?? creditLine?.customerId)?.toString() ?? null,
-      supplierId: (debitLine?.vendorId ?? creditLine?.vendorId)?.toString() ?? null,
-      costCenterId: (debitLine?.costCenterId ?? creditLine?.costCenterId)?.toString() ?? null,
+      supplierId: (debitLine?.supplierId ?? creditLine?.supplierId)?.toString() ?? null,
       customer: buildDimensionOption(debitLine?.customerId ?? creditLine?.customerId, 'KH'),
-      supplier: buildDimensionOption(debitLine?.vendorId ?? creditLine?.vendorId, 'NCC'),
-      costCenter: buildDimensionOption(debitLine?.costCenterId ?? creditLine?.costCenterId, 'TTCP'),
+      supplier: buildDimensionOption(debitLine?.supplierId ?? creditLine?.supplierId, 'NCC'),
       source: 'manual',
       status: 'clean',
     })
@@ -427,7 +423,6 @@ export default function VoucherForm() {
         description: line.description,
         customerId: line.customerId ?? line.customer?.id ?? undefined,
         supplierId: line.supplierId ?? line.supplier?.id ?? undefined,
-        costCenterId: line.costCenterId ?? line.costCenter?.id ?? undefined,
       }))
       .filter((line) => line.debitAccountId && line.creditAccountId)
   }, [lines])
@@ -744,10 +739,8 @@ export default function VoucherForm() {
           amount: null,
           customerId: null,
           supplierId: null,
-          costCenterId: null,
           customer: null,
           supplier: null,
-          costCenter: null,
           source: 'template',
           status: 'dirty',
         }

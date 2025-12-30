@@ -574,10 +574,10 @@ public class CashBookServiceImpl implements CashBookService {
                                                                                 .orElse(null));
                                                 entry.setCustomerName(customerName);
                                         }
-                                        if (line.getVendorId() != null) {
-                                                entry.setSupplierId(line.getVendorId());
+                                        if (line.getSupplierId() != null) {
+                                                entry.setSupplierId(line.getSupplierId());
                                                 String supplierName = supplierNameCache.computeIfAbsent(
-                                                                line.getVendorId(),
+                                                                line.getSupplierId(),
                                                                 supplierId -> supplierRepository
                                                                                 .findByCompanyIdAndId(companyId,
                                                                                                 supplierId)

@@ -152,8 +152,12 @@ export default function ChartOfAccounts() {
         // When not using hierarchy endpoint, response.data is ChartOfAccount[]
         const accountsData = Array.isArray(response.data) ? (response.data as ChartOfAccount[]) : []
 
-        // Filter to root accounts and add children property
-        const allAccounts: ChartOfAccountWithChildren[] = accountsData.map((account) => {
+        // When not searching, API returns hierarchical data with children already populated
+        // When searching, API returns flat list
+        const isHierarchical = !debouncedSearch.trim()
+
+        // Map accounts and preserve children from API response (for hierarchical data)
+        const allAccounts: ChartOfAccountWithChildren[] = accountsData.map((account: any) => {
           // Debug logging to check active field from API
           if (
             process.env.NODE_ENV === 'development' &&
@@ -166,23 +170,44 @@ export default function ChartOfAccounts() {
               name: account.name,
               activeRaw: account.active,
               activeType: typeof account.active,
+              children: account.children?.length ?? 0,
+              postable: account.postable,
             })
           }
           return {
             ...account,
-            children: undefined, // Will be loaded on demand
+            // Preserve children from API response (hierarchical data already has children)
+            children:
+              account.children && account.children.length > 0 ? account.children : undefined,
           }
         })
 
-        // If searching, show all accounts. Otherwise, show only root accounts (parentId is null)
-        const rootAccounts = debouncedSearch.trim()
-          ? allAccounts
-          : allAccounts.filter((account) => !account.parentId)
+        // For hierarchical data, allAccounts are already root accounts (API returns only roots with nested children)
+        // For search results, show all matching accounts
+        const rootAccounts = isHierarchical
+          ? allAccounts // API already returns only root accounts with children nested
+          : allAccounts
 
         setAccounts(rootAccounts)
 
+        // For hierarchical data, populate children cache from the response
+        if (isHierarchical) {
+          const newCache: Record<number, ChartOfAccount[]> = {}
+          const populateCache = (accounts: ChartOfAccountWithChildren[]) => {
+            for (const account of accounts) {
+              if (account.children && account.children.length > 0) {
+                newCache[account.id] = account.children as ChartOfAccount[]
+                // Recursively populate cache for nested children
+                populateCache(account.children as ChartOfAccountWithChildren[])
+              }
+            }
+          }
+          populateCache(rootAccounts)
+          setChildrenCache(newCache)
+        }
+
         // Only clear children cache if not preserving expanded state
-        if (!preserveExpanded) {
+        if (!preserveExpanded && !isHierarchical) {
           setChildrenCache({})
           setExpanded({})
         } else if (getExpandedIds) {

@@ -9,11 +9,8 @@ import lombok.Data;
  * Configuration properties for the AI Chatbot feature.
  * Binds to chatbot.* properties in application.yml.
  *
- * <p>This class provides type-safe access to chatbot configuration including
- * Azure OpenAI, Pinecone, n8n, and query settings.
- *
- * @see AzureOpenAIConfig
- * @see PineconeConfig
+ * <p>This class provides type-safe access to chatbot configuration.
+ * All RAG processing (embedding, vector search, LLM) is delegated to n8n workflows.
  */
 @Data
 @Configuration
@@ -27,17 +24,7 @@ public class ChatbotProperties {
     private boolean enabled = true;
 
     /**
-     * Azure OpenAI configuration for embeddings and completions.
-     */
-    private AzureOpenAI azureOpenai = new AzureOpenAI();
-
-    /**
-     * Pinecone vector database configuration.
-     */
-    private Pinecone pinecone = new Pinecone();
-
-    /**
-     * n8n webhook configuration for embedding automation.
+     * n8n webhook configuration for RAG processing.
      */
     private N8n n8n = new N8n();
 
@@ -52,91 +39,24 @@ public class ChatbotProperties {
     private Cache cache = new Cache();
 
     @Data
-    public static class AzureOpenAI {
-        /**
-         * Azure OpenAI resource endpoint.
-         * Example: https://your-resource.openai.azure.com/
-         */
-        private String endpoint;
-
-        /**
-         * Azure OpenAI API key from Keys and Endpoint section in Azure portal.
-         */
-        private String apiKey;
-
-        /**
-         * Azure OpenAI API version. Default: 2023-05-15
-         */
-        private String apiVersion = "2023-05-15";
-
-        /**
-         * Deployment name for embedding model (text-embedding-ada-002).
-         */
-        private String embeddingDeployment = "embedding-ada-002";
-
-        /**
-         * Deployment name for chat completion model (gpt-35-turbo or gpt-4).
-         */
-        private String completionDeployment = "gpt-35-turbo";
-
-        /**
-         * Maximum tokens for completion responses. Default: 500
-         */
-        private int maxTokens = 500;
-
-        /**
-         * Temperature for LLM sampling (0.0-1.0). Lower = more deterministic.
-         * Default: 0.3
-         */
-        private double temperature = 0.3;
-
-        /**
-         * Request timeout in seconds. Default: 30
-         */
-        private int timeoutSeconds = 30;
-    }
-
-    @Data
-    public static class Pinecone {
-        /**
-         * Pinecone API key from dashboard.
-         */
-        private String apiKey;
-
-        /**
-         * Pinecone environment (e.g., us-east-1-aws).
-         */
-        private String environment = "us-east-1-aws";
-
-        /**
-         * Pinecone index name. Default: accounting-embeddings
-         */
-        private String indexName = "accounting-embeddings";
-
-        /**
-         * Namespace prefix for multi-tenancy. Default: company_
-         * Actual namespace: company_{companyId}
-         */
-        private String namespacePrefix = "company_";
-
-        /**
-         * Number of top results to retrieve. Default: 10
-         */
-        private int topK = 10;
-
-        /**
-         * Minimum relevance score threshold. Default: 0.7
-         */
-        private double scoreThreshold = 0.7;
-    }
-
-    @Data
     public static class N8n {
         /**
          * n8n webhook URL for voucher embedding automation.
          * Example: http://localhost:5678/webhook/voucher-embedding-v2
          */
         private String webhookUrl;
+
+        /**
+         * n8n webhook URL for batch voucher embedding.
+         * Example: http://localhost:5678/webhook/batch-embed-vouchers
+         */
+        private String batchWebhookUrl;
+
+        /**
+         * n8n webhook URL for RAG query processing.
+         * Example: http://localhost:5678/webhook/chatbot-query-v2
+         */
+        private String ragQueryUrl;
 
         /**
          * Shared secret for webhook authentication (X-Webhook-Secret header).
@@ -155,9 +75,9 @@ public class ChatbotProperties {
         private String retryDelays = "1000,5000,15000";
 
         /**
-         * Webhook request timeout in seconds. Default: 10
+         * Webhook request timeout in seconds. Default: 30
          */
-        private int timeoutSeconds = 10;
+        private int timeoutSeconds = 30;
 
         /**
          * Parse retry delays from comma-separated string to long array.

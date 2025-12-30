@@ -1,70 +1,38 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { TrendingUp, LayoutDashboard } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, Activity } from 'lucide-react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import {
   StaticDashboardEmbed,
   FreshnessBadge,
   RefreshButton,
-  DashboardSkeleton,
   BiUnavailableFallback,
   PeriodLockBadge,
   PeriodLockWarning,
-  KPICards,
-  AlertsPanel,
 } from '../components'
-import { useDashboards, useWidgetPermissions, useDashboardConfig, useDashboardKPIs } from '../hooks'
+import { useWidgetPermissions } from '../hooks'
 
-const DEFAULT_DASHBOARD_KEY = 'financial-overview'
+const DASHBOARDS = [
+  { key: 'financial-overview', metabaseId: 2, icon: TrendingUp },
+  { key: 'operational-analytics', metabaseId: 4, icon: Activity },
+] as const
+
+type DashboardKey = (typeof DASHBOARDS)[number]['key']
 
 export default function Dashboard() {
   const { t } = useTranslation()
-  const [activeDashboard, setActiveDashboard] = useState(DEFAULT_DASHBOARD_KEY)
+  const [activeDashboard, setActiveDashboard] = useState<DashboardKey>('financial-overview')
 
-  const { data: dashboardConfig, isLoading: configLoading } = useDashboardConfig()
-  const { data: dashboards, isLoading: dashboardsLoading } = useDashboards()
   const { data: permissions } = useWidgetPermissions()
-  const { kpis, alerts, isLoading: kpisLoading } = useDashboardKPIs()
 
   const handleDashboardChange = useCallback((value: string) => {
-    setActiveDashboard(value)
+    setActiveDashboard(value as DashboardKey)
   }, [])
 
-  const dashboardId = useMemo(() => {
-    if (dashboardConfig?.dashboardId) {
-      return dashboardConfig.dashboardId
-    }
-    const activeDashboardInfo = dashboards?.find((d) => d.key === activeDashboard)
-    return activeDashboardInfo?.metabaseDashboardId ?? 2
-  }, [dashboardConfig, dashboards, activeDashboard])
-
-  if (dashboardsLoading || configLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title')}</h1>
-            <p className="text-muted-foreground">{t('analytics.subtitle')}</p>
-          </div>
-        </div>
-        <DashboardSkeleton />
-      </div>
-    )
-  }
-
-  const availableDashboards = dashboards ?? [
-    {
-      key: 'financial-overview',
-      name: t('analytics.financialOverview'),
-      description: '',
-      allowedRoles: [],
-      metabaseDashboardId: 2,
-    },
-  ]
-
-  const showTabs = availableDashboards.length > 1 && dashboardConfig?.isFullAccess
+  const activeDashboardInfo = DASHBOARDS.find((d) => d.key === activeDashboard)
+  const ActiveIcon = activeDashboardInfo?.icon ?? TrendingUp
 
   return (
     <ErrorBoundary fallback={<BiUnavailableFallback />}>
@@ -92,58 +60,35 @@ export default function Dashboard() {
 
         <PeriodLockWarning />
 
-        {showTabs ? (
-          <Tabs value={activeDashboard} onValueChange={handleDashboardChange}>
-            <TabsList className="grid w-full grid-cols-4">
-              {availableDashboards.map((dashboard) => (
+        <Tabs value={activeDashboard} onValueChange={handleDashboardChange}>
+          <TabsList className="grid w-full grid-cols-2">
+            {DASHBOARDS.map((dashboard) => {
+              const Icon = dashboard.icon
+              return (
                 <TabsTrigger key={dashboard.key} value={dashboard.key} className="text-sm">
-                  {dashboard.name}
+                  <Icon className="mr-2 h-4 w-4" />
+                  {t(`analytics.dashboards.${dashboard.key}`)}
                 </TabsTrigger>
-              ))}
-            </TabsList>
-            {availableDashboards.map((dashboard) => (
-              <TabsContent key={dashboard.key} value={dashboard.key}>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1">
-                    <h2 className="flex items-center gap-2 text-lg font-semibold">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                      {dashboard.name}
-                    </h2>
-                    {dashboard.description && (
-                      <p className="text-sm text-muted-foreground">{dashboard.description}</p>
-                    )}
-                  </div>
-                  <StaticDashboardEmbed
-                    dashboardId={dashboard.metabaseDashboardId ?? 1}
-                    className="min-h-[600px]"
-                  />
+              )
+            })}
+          </TabsList>
+          {DASHBOARDS.map((dashboard) => (
+            <TabsContent key={dashboard.key} value={dashboard.key} className="mt-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <ActiveIcon className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-semibold">
+                    {t(`analytics.dashboards.${dashboard.key}`)}
+                  </h2>
                 </div>
-              </TabsContent>
-            ))}
-          </Tabs>
-        ) : (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <h2 className="flex items-center gap-2 text-lg font-semibold">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                {t('analytics.financialOverview')}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {t('analytics.financialOverviewDesc')}
-              </p>
-            </div>
-            <StaticDashboardEmbed dashboardId={dashboardId} className="min-h-[600px]" />
-          </div>
-        )}
-
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <KPICards kpis={kpis} isLoading={kpisLoading} />
-          </div>
-          <div className="lg:col-span-1">
-            <AlertsPanel alerts={alerts} isLoading={kpisLoading} />
-          </div>
-        </div>
+                <StaticDashboardEmbed
+                  dashboardId={dashboard.metabaseId}
+                  className="min-h-[800px]"
+                />
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
       </div>
     </ErrorBoundary>
   )

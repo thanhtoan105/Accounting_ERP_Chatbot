@@ -98,8 +98,9 @@ public interface BankAccountRepository
          */
         @Query(value = "SELECT COUNT(*) FROM voucher_lines vl "
                         + "JOIN vouchers v ON vl.voucher_id = v.id "
+                        + "JOIN chart_of_accounts coa ON vl.account_id = coa.id "
                         + "WHERE v.company_id = :companyId "
-                        + "AND vl.account_code = :glAccountCode "
+                        + "AND coa.code = :glAccountCode "
                         + "AND v.status != 'POSTED'", nativeQuery = true)
         long countUnpostedTransactionsByGlAccountCode(
                         @Param("companyId") Long companyId, @Param("glAccountCode") String glAccountCode);
@@ -115,8 +116,9 @@ public interface BankAccountRepository
          */
         @Query(value = "SELECT COUNT(*) FROM voucher_lines vl "
                         + "JOIN vouchers v ON vl.voucher_id = v.id "
+                        + "JOIN chart_of_accounts coa ON vl.account_id = coa.id "
                         + "WHERE v.company_id = :companyId "
-                        + "AND vl.account_code = :glAccountCode "
+                        + "AND coa.code = :glAccountCode "
                         + "AND v.status = 'POSTED'", nativeQuery = true)
         long countPostedReferencesByGlAccountCode(
                         @Param("companyId") Long companyId, @Param("glAccountCode") String glAccountCode);
@@ -131,8 +133,9 @@ public interface BankAccountRepository
          */
         @Query(value = "SELECT v.voucher_number FROM voucher_lines vl "
                         + "JOIN vouchers v ON vl.voucher_id = v.id "
+                        + "JOIN chart_of_accounts coa ON vl.account_id = coa.id "
                         + "WHERE v.company_id = :companyId "
-                        + "AND vl.account_code = :glAccountCode "
+                        + "AND coa.code = :glAccountCode "
                         + "AND v.status != 'POSTED' "
                         + "LIMIT :limit", nativeQuery = true)
         List<String> findUnpostedTransactionExamples(
@@ -150,8 +153,9 @@ public interface BankAccountRepository
          */
         @Query(value = "SELECT v.voucher_number FROM voucher_lines vl "
                         + "JOIN vouchers v ON vl.voucher_id = v.id "
+                        + "JOIN chart_of_accounts coa ON vl.account_id = coa.id "
                         + "WHERE v.company_id = :companyId "
-                        + "AND vl.account_code = :glAccountCode "
+                        + "AND coa.code = :glAccountCode "
                         + "AND v.status = 'POSTED' "
                         + "LIMIT :limit", nativeQuery = true)
         List<String> findPostedTransactionExamples(
@@ -168,8 +172,9 @@ public interface BankAccountRepository
          */
         @Query(value = "SELECT MAX(v.voucher_date) FROM voucher_lines vl "
                         + "JOIN vouchers v ON vl.voucher_id = v.id "
+                        + "JOIN chart_of_accounts coa ON vl.account_id = coa.id "
                         + "WHERE v.company_id = :companyId "
-                        + "AND vl.account_code = :glAccountCode "
+                        + "AND coa.code = :glAccountCode "
                         + "AND v.status = 'POSTED'", nativeQuery = true)
         java.time.LocalDate findLastTransactionDate(
                         @Param("companyId") Long companyId, @Param("glAccountCode") String glAccountCode);

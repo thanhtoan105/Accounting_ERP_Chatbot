@@ -60,8 +60,7 @@ public class JournalEntryServiceImpl implements JournalEntryService {
 
       // Copy dimension references from voucher line
       entry.setCustomerId(line.getCustomerId());
-      entry.setSupplierId(line.getVendorId()); // vendorId maps to supplierId in journal entry
-      entry.setCostCenterId(line.getCostCenterId());
+      entry.setSupplierId(line.getSupplierId());
 
       // Set debit or credit amount (one must be > 0, the other must be 0)
       if (line.getDebit().compareTo(java.math.BigDecimal.ZERO) > 0) {

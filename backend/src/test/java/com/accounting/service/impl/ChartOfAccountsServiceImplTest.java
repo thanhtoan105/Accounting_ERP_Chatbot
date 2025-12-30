@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
@@ -30,11 +31,10 @@ class ChartOfAccountsServiceImplTest {
 
   @Mock private ChartOfAccountsRepository chartOfAccountsRepository;
 
-  private ChartOfAccountsServiceImpl chartOfAccountsService;
+  @InjectMocks private ChartOfAccountsServiceImpl chartOfAccountsService;
 
   @BeforeEach
   void setUp() {
-    chartOfAccountsService = new ChartOfAccountsServiceImpl(chartOfAccountsRepository);
     CompanyContext.setCompanyId(1L);
   }
 

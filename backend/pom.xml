@@ -137,18 +137,6 @@
         </dependency>
 
         <!-- AI Chatbot Dependencies -->
-        <!-- Azure OpenAI SDK for embeddings and completions -->
-        <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-ai-openai</artifactId>
-            <version>1.0.0-beta.8</version>
-        </dependency>
-        <!-- Pinecone Java SDK for vector database -->
-        <dependency>
-            <groupId>io.pinecone</groupId>
-            <artifactId>pinecone-client</artifactId>
-            <version>2.1.0</version>
-        </dependency>
         <!-- OkHttp for n8n webhook HTTP calls -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
@@ -166,6 +154,13 @@
             <groupId>net.datafaker</groupId>
             <artifactId>datafaker</artifactId>
             <version>2.5.3</version>
+        </dependency>
+
+        <!-- PDFBox for ThongTu200 PDF parsing -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.3</version>
         </dependency>
 
         <dependency>

@@ -27,6 +27,7 @@ import com.accounting.dto.PurchaseBillDTO;
 import com.accounting.dto.PurchaseBillLineDTO;
 import com.accounting.dto.PurchaseBillListDTO;
 import com.accounting.dto.PurchaseBillValidationResult;
+import com.accounting.dto.embedding.EmbeddingAction;
 import com.accounting.entity.PurchaseBill;
 import com.accounting.entity.PurchaseBillLine;
 import com.accounting.entity.PurchaseBillStatus;
@@ -41,6 +42,7 @@ import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.service.ApprovalWorkflowService;
 import com.accounting.service.AuditService;
+import com.accounting.service.EmbeddingTriggerService;
 import com.accounting.service.PurchaseBillService;
 import com.accounting.service.PurchaseBillValidationService;
 import com.accounting.service.util.PurchaseBillAuditHelper;
@@ -66,6 +68,7 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
   private final SupplierRepository supplierRepository;
   private final UserRepository userRepository;
   private final AuditService auditService;
+  private final EmbeddingTriggerService embeddingTriggerService;
   private final PurchaseBillValidationService purchaseBillValidationService;
   private final PurchaseBillAuditHelper purchaseBillAuditHelper;
   private final ApprovalWorkflowService approvalWorkflowService;
@@ -79,6 +82,7 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
       SupplierRepository supplierRepository,
       UserRepository userRepository,
       AuditService auditService,
+      EmbeddingTriggerService embeddingTriggerService,
       PurchaseBillValidationService purchaseBillValidationService,
       PurchaseBillAuditHelper purchaseBillAuditHelper,
       ApprovalWorkflowService approvalWorkflowService) {
@@ -87,6 +91,7 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
     this.supplierRepository = supplierRepository;
     this.userRepository = userRepository;
     this.auditService = auditService;
+    this.embeddingTriggerService = embeddingTriggerService;
     this.purchaseBillValidationService = purchaseBillValidationService;
     this.purchaseBillAuditHelper = purchaseBillAuditHelper;
     this.approvalWorkflowService = approvalWorkflowService;
@@ -263,7 +268,6 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
               lineDto.getVatAmount() != null
                   ? lineDto.getVatAmount().setScale(SCALE, ROUNDING_MODE)
                   : BigDecimal.ZERO);
-          line.setCostCenterId(lineDto.getCostCenterId());
           line.setItemId(lineDto.getItemId());
           line.setCompanyId(companyId);
           lines.add(line);
@@ -299,6 +303,10 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
           // Non-blocking: log error but don't break main flow
           logger.error("Failed to log audit event for purchase bill creation: {}", e.getMessage(), e);
         }
+
+        // Trigger embedding for RAG chatbot (fire-and-forget)
+        embeddingTriggerService.triggerPurchaseBillEmbedding(
+            bill, lines, supplier.getName(), EmbeddingAction.UPSERT);
 
         return toDTO(bill);
     } catch (Exception e) {
@@ -403,7 +411,6 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
               lineDto.getVatAmount() != null
                   ? lineDto.getVatAmount().setScale(SCALE, ROUNDING_MODE)
                   : BigDecimal.ZERO);
-          line.setCostCenterId(lineDto.getCostCenterId());
           line.setItemId(lineDto.getItemId());
           line.setCompanyId(companyId);
           lines.add(line);
@@ -430,6 +437,13 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
           // Non-blocking: log error but don't break main flow
           logger.error("Failed to log audit event for purchase bill update: {}", e.getMessage(), e);
         }
+
+        // Trigger embedding for RAG chatbot (fire-and-forget)
+        Supplier supplier = supplierRepository
+            .findByCompanyIdAndId(companyId, bill.getSupplierId())
+            .orElse(null);
+        embeddingTriggerService.triggerPurchaseBillEmbedding(
+            bill, lines, supplier != null ? supplier.getName() : null, EmbeddingAction.UPSERT);
 
         return toDTO(bill);
     } catch (Exception e) {
@@ -487,6 +501,14 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 
         // Store bill details before deletion for audit logging
         UUID billIdForAudit = bill.getId();
+
+        // Trigger embedding deletion for RAG chatbot (fire-and-forget) - before actual delete
+        List<PurchaseBillLine> lines = purchaseBillLineRepository.findByPurchaseBillIdOrderByLineNumberAsc(billId);
+        Supplier supplier = supplierRepository
+            .findByCompanyIdAndId(companyId, bill.getSupplierId())
+            .orElse(null);
+        embeddingTriggerService.triggerPurchaseBillEmbedding(
+            bill, lines, supplier != null ? supplier.getName() : null, EmbeddingAction.DELETE);
 
         // Delete purchase bill (lines will be deleted via CASCADE)
         purchaseBillRepository.delete(bill);
@@ -718,7 +740,6 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
     dto.setAmount(line.getAmount());
     dto.setVatRate(line.getVatRate());
     dto.setVatAmount(line.getVatAmount());
-    dto.setCostCenterId(line.getCostCenterId());
     dto.setItemId(line.getItemId());
     return dto;
   }

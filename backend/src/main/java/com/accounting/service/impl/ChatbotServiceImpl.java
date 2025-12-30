@@ -11,9 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.accounting.config.chatbot.ChatbotProperties;
 import com.accounting.entity.ChatbotQuery;
 import com.accounting.repository.ChatbotQueryRepository;
-import com.accounting.service.AzureOpenAIService;
 import com.accounting.service.ChatbotService;
-import com.accounting.service.RAGQueryService;
+import com.accounting.service.N8nRAGQueryService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -21,23 +20,28 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of ChatbotService for end-to-end query processing.
+ * Implementation of ChatbotService that delegates RAG processing to n8n workflow.
  *
- * <p>This service orchestrates the complete RAG pipeline:
+ * <p>This service orchestrates:
  * <ul>
  *   <li>Input validation and sanitization</li>
- *   <li>Context retrieval via RAGQueryService</li>
- *   <li>LLM response generation via AzureOpenAIService</li>
- *   <li>Confidence scoring and fallback handling</li>
+ *   <li>RAG query execution via n8n workflow (N8nRAGQueryService)</li>
  *   <li>Database persistence with audit hash</li>
  *   <li>Audit logging for compliance</li>
+ * </ul>
+ *
+ * <p>The n8n workflow "RAG Query Processing - Accounting Chatbot v2" handles:
+ * <ul>
+ *   <li>Query embedding via Azure OpenAI</li>
+ *   <li>Vector search in Pinecone with correct namespace</li>
+ *   <li>LLM response with full text context (not just metadata)</li>
+ *   <li>Window buffer memory for conversation history</li>
  * </ul>
  *
  * <p>Only active when chatbot.enabled=true in application.yml.
  *
  * @see ChatbotService
- * @see RAGQueryService
- * @see AzureOpenAIService
+ * @see N8nRAGQueryService
  */
 @Slf4j
 @Service
@@ -45,8 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(prefix = "chatbot", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class ChatbotServiceImpl implements ChatbotService {
 
-    private final RAGQueryService ragQueryService;
-    private final AzureOpenAIService azureOpenAIService;
+    private final N8nRAGQueryService n8nRAGQueryService;
     private final ChatbotQueryRepository chatbotQueryRepository;
     private final ChatbotProperties chatbotProperties;
     private final ObjectMapper objectMapper;
@@ -67,72 +70,64 @@ public class ChatbotServiceImpl implements ChatbotService {
         validateQuery(queryText);
 
         log.info(
-                "Processing chatbot query: userId={}, companyId={}, sessionId={}, language={}",
+                "Processing chatbot query via n8n: userId={}, companyId={}, sessionId={}, language={}",
                 userId,
                 companyId,
                 sessionId,
                 language);
 
         try {
-            // Step 2: Retrieve relevant context
-            RAGQueryService.RetrievalResult retrievalResult =
-                    ragQueryService.retrieveRelevantContext(queryText, companyId, userId, contextFilters);
-
-            // Step 3: Calculate confidence score
-            double confidenceScore = calculateConfidenceScore(retrievalResult);
+            // Step 2: Execute RAG query via n8n workflow
+            N8nRAGQueryService.RAGQueryResult ragResult = n8nRAGQueryService.executeQuery(
+                    queryText, companyId, userId, sessionId, language);
 
             log.info(
-                    "Retrieval complete: citations={}, averageScore={:.3f}, confidence={:.3f}",
-                    retrievalResult.getCitations().size(),
-                    retrievalResult.getAverageScore(),
-                    confidenceScore);
+                    "n8n RAG query complete: citations={}, confidence={}, badge={}",
+                    ragResult.citations().size(),
+                    ragResult.confidenceScore(),
+                    ragResult.confidenceBadge());
 
-            // Step 4: Generate LLM response or fallback
-            String answerText;
-            if (confidenceScore < chatbotProperties.getQuery().getConfidenceThresholdLow()) {
-                answerText = getFallbackMessage(language);
-                log.warn("Low confidence ({:.3f}), returning fallback message", confidenceScore);
-            } else {
-                answerText = azureOpenAIService.generateCompletion(
-                        queryText, retrievalResult.getContextString(), language);
-            }
-
-            // Step 5: Convert citations to DTOs
-            List<CitationDTO> citationDTOs = retrievalResult.getCitations().stream()
+            // Step 3: Convert citations to DTOs
+            List<CitationDTO> citationDTOs = ragResult.citations().stream()
                     .map(c -> new CitationDTO(
-                            c.getEntityType(),
-                            c.getEntityId(),
-                            c.getVoucherNumber(),
-                            c.getExcerpt(),
-                            c.getRelevanceScore(),
-                            c.getLink()))
+                            c.entityType(),
+                            c.entityId(),
+                            c.voucherNumber(),
+                            c.excerpt(),
+                            c.relevanceScore(),
+                            c.link()))
                     .collect(Collectors.toList());
 
-            // Step 6: Save to database with audit hash
+            // Step 4: Save to database with audit hash
             int responseTimeMs = (int) (System.currentTimeMillis() - startTime);
             ChatbotQuery chatbotQuery = saveChatbotQuery(
                     queryText,
-                    answerText,
+                    ragResult.answer(),
                     citationDTOs,
-                    confidenceScore,
+                    ragResult.confidenceScore(),
                     responseTimeMs,
                     userId,
                     companyId,
                     sessionId,
                     language);
 
-            // Step 7: Log completion (audit logging will be added in future story via AuditService integration)
+            // Step 5: Log completion
             log.info(
-                    "Chatbot query processed: queryId={}, responseTimeMs={}, confidence={:.3f}",
+                    "Chatbot query processed: queryId={}, responseTimeMs={}, confidence={}",
                     chatbotQuery.getId(),
                     responseTimeMs,
-                    confidenceScore);
+                    ragResult.confidenceScore());
 
             return new ChatbotQueryResponse(
-                    chatbotQuery.getId(), answerText, citationDTOs, confidenceScore, responseTimeMs);
+                    chatbotQuery.getId(), 
+                    ragResult.answer(), 
+                    citationDTOs, 
+                    ragResult.confidenceScore(), 
+                    responseTimeMs);
 
         } catch (Exception e) {
-            log.error("Failed to process chatbot query: userId={}, companyId={}, error={}", userId, companyId, e.getMessage(), e);
+            log.error("Failed to process chatbot query: userId={}, companyId={}, error={}", 
+                    userId, companyId, e.getMessage(), e);
             throw new RuntimeException("Failed to process chatbot query", e);
         }
     }
@@ -149,55 +144,6 @@ public class ChatbotServiceImpl implements ChatbotService {
         if (queryText.length() > maxLength) {
             throw new IllegalArgumentException(
                     String.format("Query text exceeds maximum length of %d characters", maxLength));
-        }
-    }
-
-    /**
-     * Calculate confidence score based on retrieval quality.
-     *
-     * <p>Confidence formula:
-     * - If no citations: 0.0
-     * - Otherwise: (averageScore * 0.7) + (min(citationCount / 5, 1.0) * 0.3)
-     *
-     * <p>This balances retrieval relevance (70%) with citation count (30%).
-     */
-    private double calculateConfidenceScore(RAGQueryService.RetrievalResult retrievalResult) {
-        if (retrievalResult.getCitations().isEmpty()) {
-            return 0.0;
-        }
-
-        double averageScore = retrievalResult.getAverageScore();
-        int citationCount = retrievalResult.getCitations().size();
-
-        // Citation count factor: 1 citation = 0.2, 5+ citations = 1.0
-        double citationFactor = Math.min(citationCount / 5.0, 1.0);
-
-        // Weighted confidence: 70% relevance, 30% citation count
-        return (averageScore * 0.7) + (citationFactor * 0.3);
-    }
-
-    /**
-     * Get fallback message for low confidence queries.
-     */
-    private String getFallbackMessage(String language) {
-        if ("vi".equalsIgnoreCase(language)) {
-            return """
-                Không đủ dữ liệu để trả lời câu hỏi này với độ chính xác cao.
-
-                Gợi ý:
-                - Thử diễn đạt lại câu hỏi với các thuật ngữ kế toán cụ thể hơn
-                - Kiểm tra xem dữ liệu chứng từ đã được nhập đầy đủ chưa
-                - Liên hệ kế toán trưởng để được hỗ trợ chi tiết hơn
-                """;
-        } else {
-            return """
-                Insufficient data to answer this question with high accuracy.
-
-                Suggestions:
-                - Try rephrasing the question with more specific accounting terms
-                - Check if voucher data has been fully entered
-                - Contact the chief accountant for detailed support
-                """;
         }
     }
 
@@ -242,20 +188,17 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Override
     public boolean isAvailable() {
         try {
-            // Check Pinecone service availability
-            boolean pineconeAvailable = ragQueryService != null;
-
-            // Check Azure OpenAI service availability
-            boolean openAIAvailable = azureOpenAIService != null && azureOpenAIService.isAvailable();
+            // Check n8n RAG query service availability
+            boolean n8nAvailable = n8nRAGQueryService != null && n8nRAGQueryService.isAvailable();
 
             // Check database connection (simple check - if repository is injected)
             boolean databaseAvailable = chatbotQueryRepository != null;
 
-            boolean allHealthy = pineconeAvailable && openAIAvailable && databaseAvailable;
+            boolean allHealthy = n8nAvailable && databaseAvailable;
 
             if (!allHealthy) {
-                log.warn("Chatbot service health check failed - Pinecone: {}, OpenAI: {}, DB: {}",
-                    pineconeAvailable, openAIAvailable, databaseAvailable);
+                log.warn("Chatbot service health check failed - n8n: {}, DB: {}",
+                    n8nAvailable, databaseAvailable);
             }
 
             return allHealthy;

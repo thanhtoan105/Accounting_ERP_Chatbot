@@ -86,8 +86,7 @@ class JournalEntryServiceImplTest {
         Voucher voucher = createVoucher();
         VoucherLine lineWithDimensions = createVoucherLine(1L, BigDecimal.valueOf(1000), BigDecimal.ZERO);
         lineWithDimensions.setCustomerId(10L);
-        lineWithDimensions.setVendorId(20L);
-        lineWithDimensions.setCostCenterId(30L);
+        lineWithDimensions.setSupplierId(20L);
         List<VoucherLine> lines = List.of(lineWithDimensions);
 
         when(voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(testVoucherId))
@@ -102,7 +101,6 @@ class JournalEntryServiceImplTest {
         JournalEntry entry = journalEntries.get(0);
         assertEquals(10L, entry.getCustomerId());
         assertEquals(20L, entry.getSupplierId());
-        assertEquals(30L, entry.getCostCenterId());
     }
 
     @Test

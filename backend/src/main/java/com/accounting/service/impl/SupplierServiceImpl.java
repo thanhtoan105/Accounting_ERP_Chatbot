@@ -25,10 +25,12 @@ import com.accounting.dto.SupplierAPSummaryDTO;
 import com.accounting.dto.SupplierCreateRequest;
 import com.accounting.dto.SupplierDTO;
 import com.accounting.dto.SupplierUpdateRequest;
+import com.accounting.dto.embedding.EmbeddingAction;
 import com.accounting.entity.Supplier;
 import com.accounting.repository.SupplierRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AuditService;
+import com.accounting.service.EmbeddingTriggerService;
 import com.accounting.service.SupplierService;
 import com.accounting.service.util.SupplierCodeGenerator;
 
@@ -47,14 +49,17 @@ public class SupplierServiceImpl implements SupplierService {
   private final SupplierRepository supplierRepository;
   private final SupplierCodeGenerator codeGenerator;
   private final AuditService auditService;
+  private final EmbeddingTriggerService embeddingTriggerService;
 
   public SupplierServiceImpl(
       SupplierRepository supplierRepository,
       SupplierCodeGenerator codeGenerator,
-      AuditService auditService) {
+      AuditService auditService,
+      EmbeddingTriggerService embeddingTriggerService) {
     this.supplierRepository = supplierRepository;
     this.codeGenerator = codeGenerator;
     this.auditService = auditService;
+    this.embeddingTriggerService = embeddingTriggerService;
   }
 
   /**
@@ -192,6 +197,8 @@ public class SupplierServiceImpl implements SupplierService {
     auditService.logSupplierCreated(
         saved.getId(), saved.getCode(), getCurrentUserId(), newValues, getCurrentRequest());
     
+    embeddingTriggerService.triggerSupplierEmbedding(saved, EmbeddingAction.UPSERT);
+    
     return toDTO(saved);
   }
 
@@ -264,6 +271,8 @@ public class SupplierServiceImpl implements SupplierService {
     // Audit log
     auditService.logSupplierUpdated(updated.getId(), updated.getCode(), getCurrentUserId(), oldValues, newValues, getCurrentRequest());
     
+    embeddingTriggerService.triggerSupplierEmbedding(updated, EmbeddingAction.UPSERT);
+    
     return toDTO(updated);
   }
 
@@ -291,6 +300,9 @@ public class SupplierServiceImpl implements SupplierService {
         "Deletion blocked: Referential integrity check requires Epic 4 (AP Module) data", 
         getCurrentUserId(), 
         getCurrentRequest());
+    
+    // TODO: When deletion is enabled, uncomment this line to trigger embedding delete:
+    // embeddingTriggerService.triggerSupplierEmbedding(supplier, EmbeddingAction.DELETE);
     
     throw new ResponseStatusException(
         HttpStatus.CONFLICT,

@@ -211,6 +211,10 @@
     "subtitle": "Số liệu tài chính và KPI theo thời gian thực cho doanh nghiệp của bạn",
     "financialOverview": "Tổng quan Tài chính",
     "financialOverviewDesc": "Doanh thu, Chi phí, Số dư AR/AP và Trạng thái Tiền mặt",
+    "dashboards": {
+      "financial-overview": "Tổng quan Tài chính",
+      "operational-analytics": "Phân tích Hoạt động"
+    },
     "revenueVsExpenses": "Doanh thu vs Chi phí",
     "currentPeriodComparison": "So sánh kỳ hiện tại",
     "arApBalances": "Số dư AR/AP",

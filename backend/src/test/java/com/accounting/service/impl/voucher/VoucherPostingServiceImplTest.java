@@ -34,8 +34,9 @@ import org.springframework.web.server.ResponseStatusException;
 import com.accounting.dto.PostVoucherResponse;
 import com.accounting.dto.VoucherCreateRequest;
 import com.accounting.dto.VoucherDTO;
-import com.accounting.dto.VoucherEmbeddingPayload;
 import com.accounting.dto.VoucherValidationResult;
+import com.accounting.dto.embedding.EmbeddingAction;
+import com.accounting.dto.embedding.EntityEmbeddingPayload;
 import com.accounting.entity.JournalEntry;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
@@ -43,6 +44,7 @@ import com.accounting.exception.VoucherPostingException;
 import com.accounting.repository.VoucherLineRepository;
 import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
+import com.accounting.service.EntityTextSynthesizer;
 import com.accounting.service.N8nWebhookService;
 import com.accounting.service.PeriodManagementService;
 import com.accounting.service.VoucherService;
@@ -73,6 +75,8 @@ class VoucherPostingServiceImplTest {
         private PeriodManagementService periodManagementService;
         @Mock
         private N8nWebhookService n8nWebhookService;
+        @Mock
+        private EntityTextSynthesizer entityTextSynthesizer;
 
         private VoucherPostingServiceImpl postingService;
         private Long testCompanyId = 1L;
@@ -89,7 +93,8 @@ class VoucherPostingServiceImplTest {
                                 auditService,
                                 voucherAuditHelper,
                                 periodManagementService,
-                                n8nWebhookService);
+                                n8nWebhookService,
+                                entityTextSynthesizer);
                 CompanyContext.setCompanyId(testCompanyId);
         }
 
@@ -642,6 +647,18 @@ class VoucherPostingServiceImplTest {
                 when(securityContext.getAuthentication()).thenReturn(auth);
                 org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
 
+                // Mock EntityTextSynthesizer to return a valid payload
+                EntityEmbeddingPayload mockPayload = EntityEmbeddingPayload.builder()
+                    .entityType(com.accounting.dto.embedding.EntityType.VOUCHER)
+                    .entityId(testVoucherId.toString())
+                    .companyId(testCompanyId)
+                    .action(EmbeddingAction.UPSERT)
+                    .text("Test voucher text")
+                    .metadata(java.util.Map.of("voucherNumber", draftVoucher.getVoucherNumber()))
+                    .build();
+                when(entityTextSynthesizer.buildVoucherPayload(any(Voucher.class), any(), any(EmbeddingAction.class)))
+                    .thenReturn(mockPayload);
+
                 // Act
                 PostVoucherResponse response = postingService.postVoucher(testVoucherId, null);
 
@@ -649,20 +666,9 @@ class VoucherPostingServiceImplTest {
                 assertNotNull(response);
                 assertEquals("posted", response.getVoucher().getStatus());
 
-                // Verify that N8nWebhookService.triggerEmbedding() was called exactly once
-                ArgumentCaptor<VoucherEmbeddingPayload> payloadCaptor = ArgumentCaptor.forClass(VoucherEmbeddingPayload.class);
-                verify(n8nWebhookService).triggerEmbedding(payloadCaptor.capture());
-
-                // Verify payload contents
-                VoucherEmbeddingPayload capturedPayload = payloadCaptor.getValue();
-                assertNotNull(capturedPayload);
-                assertEquals(testCompanyId, capturedPayload.companyId());
-                assertEquals(testVoucherId.toString(), capturedPayload.voucherId());
-                assertNotNull(capturedPayload.header());
-                assertEquals(draftVoucher.getVoucherNumber(), capturedPayload.header().voucherNumber());
-                assertNotNull(capturedPayload.lineItems());
-                assertEquals(2, capturedPayload.lineItems().size());
-                assertNotNull(capturedPayload.summary());
+                // Verify that EntityTextSynthesizer and N8nWebhookService were called
+                verify(entityTextSynthesizer).buildVoucherPayload(any(Voucher.class), any(), any(EmbeddingAction.class));
+                verify(n8nWebhookService).triggerEntityEmbedding(any(EntityEmbeddingPayload.class));
         }
 
         @Test
@@ -703,9 +709,9 @@ class VoucherPostingServiceImplTest {
                 when(securityContext.getAuthentication()).thenReturn(auth);
                 org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
 
-                // Simulate webhook failure - should not break posting
-                doThrow(new RuntimeException("n8n webhook unavailable"))
-                    .when(n8nWebhookService).triggerEmbedding(any(VoucherEmbeddingPayload.class));
+                // Mock EntityTextSynthesizer to throw exception - simulates synthesizer failure
+                when(entityTextSynthesizer.buildVoucherPayload(any(Voucher.class), any(), any(EmbeddingAction.class)))
+                    .thenThrow(new RuntimeException("Synthesizer failed"));
 
                 // Act
                 PostVoucherResponse response = postingService.postVoucher(testVoucherId, null);
@@ -717,7 +723,7 @@ class VoucherPostingServiceImplTest {
                 // Verify voucher was saved
                 verify(voucherRepository).save(any(Voucher.class));
 
-                // Verify webhook was attempted
-                verify(n8nWebhookService).triggerEmbedding(any(VoucherEmbeddingPayload.class));
+                // Verify synthesizer was attempted
+                verify(entityTextSynthesizer).buildVoucherPayload(any(Voucher.class), any(), any(EmbeddingAction.class));
         }
 }

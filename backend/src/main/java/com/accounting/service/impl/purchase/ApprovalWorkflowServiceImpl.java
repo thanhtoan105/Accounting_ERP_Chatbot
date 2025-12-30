@@ -502,7 +502,6 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     entry.setAmount(amount);
     entry.setDescription(description);
     entry.setSupplierId(bill.getSupplierId());
-    entry.setCostCenterId(line.getCostCenterId());
     entry.setItemId(line.getItemId());
     return entry;
   }

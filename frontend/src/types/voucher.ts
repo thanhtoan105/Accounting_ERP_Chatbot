@@ -58,7 +58,6 @@ export interface VoucherEntryLineRequest {
   description?: string
   customerId?: string | null
   supplierId?: string | null
-  costCenterId?: string | null
   dimensions?: Record<string, string | null>
   lockAccounts?: boolean
 }
@@ -87,8 +86,7 @@ export interface VoucherLedgerLineDTO {
   credit?: number | null
   description?: string | null
   customerId?: string | number | null
-  vendorId?: string | number | null
-  costCenterId?: string | number | null
+  supplierId?: string | number | null
   itemId?: string | number | null
 }
 
@@ -103,7 +101,6 @@ export interface VoucherTemplateLineDTO {
   defaultDescription?: string
   requiresCustomer?: boolean
   requiresSupplier?: boolean
-  requiresCostCenter?: boolean
   lockAccounts?: boolean
 }
 
@@ -114,7 +111,6 @@ export interface VoucherTemplateLineInput {
   defaultDescription?: string
   requiresCustomer?: boolean
   requiresSupplier?: boolean
-  requiresCostCenter?: boolean
   lockAccounts?: boolean
 }
 
@@ -215,8 +211,6 @@ export interface JournalEntryDTO {
   customerName?: string | null
   supplierId: number | null
   supplierName?: string | null
-  costCenterId: number | null
-  costCenterName?: string | null
   companyId: number
   postedAt: string
   createdAt: string

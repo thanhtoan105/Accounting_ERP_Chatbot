@@ -90,7 +90,6 @@ type TemplateLineForm = {
   defaultDescription: string
   requiresCustomer: boolean
   requiresSupplier: boolean
-  requiresCostCenter: boolean
   lockAccounts: boolean
 }
 
@@ -108,7 +107,6 @@ const createEmptyLine = (): TemplateLineForm => ({
   defaultDescription: '',
   requiresCustomer: false,
   requiresSupplier: false,
-  requiresCostCenter: false,
   lockAccounts: false,
 })
 
@@ -131,7 +129,6 @@ function mapTemplateToForm(template: VoucherTemplateDTO): TemplateFormState {
       defaultDescription: line.defaultDescription || '',
       requiresCustomer: Boolean(line.requiresCustomer),
       requiresSupplier: Boolean(line.requiresSupplier),
-      requiresCostCenter: Boolean(line.requiresCostCenter),
       lockAccounts: Boolean(line.lockAccounts),
     })) ?? [createEmptyLine()],
   }
@@ -148,7 +145,6 @@ function buildTemplatePayload(state: TemplateFormState): VoucherTemplatePayload 
       defaultDescription: line.defaultDescription?.trim() || undefined,
       requiresCustomer: line.requiresCustomer || undefined,
       requiresSupplier: line.requiresSupplier || undefined,
-      requiresCostCenter: line.requiresCostCenter || undefined,
       lockAccounts: line.lockAccounts || undefined,
       lineNumber: index + 1,
     })),
@@ -824,15 +820,6 @@ export default function VoucherTemplateManagementPage() {
                           }
                         />
                         Requires supplier
-                      </Label>
-                      <Label className="flex items-center gap-2 text-sm font-medium">
-                        <Checkbox
-                          checked={line.requiresCostCenter}
-                          onCheckedChange={(checked) =>
-                            updateLine(line.id, { requiresCostCenter: Boolean(checked) })
-                          }
-                        />
-                        Requires cost center
                       </Label>
                       <Label className="flex items-center gap-2 text-sm font-medium">
                         <Checkbox

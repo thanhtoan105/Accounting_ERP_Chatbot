@@ -83,11 +83,11 @@ export function AgingInvoiceDetailsDialog({
         page,
         size: pageSize,
       })
-      // Backend returns Page directly, not wrapped
-      if (response?.data) {
-        setInvoices(response.data.content || [])
-        setTotalElements(response.data.totalElements || 0)
-        setTotalPages(response.data.totalPages || 0)
+      // Backend returns Page object directly (content, totalElements, totalPages)
+      if (response?.content !== undefined) {
+        setInvoices(response.content || [])
+        setTotalElements(response.totalElements || 0)
+        setTotalPages(response.totalPages || 0)
       } else if (Array.isArray(response)) {
         // Fallback: if response is array directly
         setInvoices(response)

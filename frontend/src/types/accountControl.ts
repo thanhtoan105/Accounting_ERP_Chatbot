@@ -6,7 +6,6 @@ export interface AccountControl {
   companyId: number
   requiresCustomer: boolean
   requiresSupplier: boolean
-  requiresCostCenter: boolean
   requiresItem: boolean
   createdAt: string
   updatedAt: string
@@ -16,7 +15,6 @@ export interface AccountControlCreateRequest {
   accountId: number
   requiresCustomer?: boolean
   requiresSupplier?: boolean
-  requiresCostCenter?: boolean
   requiresItem?: boolean
 }
 

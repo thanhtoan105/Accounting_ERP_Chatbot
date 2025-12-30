@@ -81,7 +81,8 @@ public class Voucher implements CompanyScopedEntity {
   private UUID reversalOf; // Reference to original voucher if this is a reversal
 
   @Column(name = "reversed_by")
-  private Long reversedBy; // User ID who created the reversal (deprecated, use reversedByVoucherId for voucher reference)
+  private Long reversedBy; // User ID who created the reversal (deprecated, use reversedByVoucherId for
+                           // voucher reference)
 
   @Column(name = "reversed_by_voucher_id")
   private UUID reversedByVoucherId; // Reference to reversal voucher if this voucher has been reversed
@@ -98,6 +99,9 @@ public class Voucher implements CompanyScopedEntity {
 
   @Column(name = "is_locked", nullable = false)
   private Boolean isLocked = false; // Lock flag set when period is closed (prevents edits)
+
+  @Column(name = "embedded_at")
+  private Instant embeddedAt; // Timestamp when voucher was embedded into Pinecone for RAG chatbot
 
   // Relationships
   @ManyToOne
@@ -126,7 +130,8 @@ public class Voucher implements CompanyScopedEntity {
   @JoinColumn(name = "reversal_of", insertable = false, updatable = false)
   private Voucher reversalVoucher; // The original voucher that this voucher reverses
 
-  // OneToOne: The voucher that reverses this voucher (if this voucher has been reversed)
+  // OneToOne: The voucher that reverses this voucher (if this voucher has been
+  // reversed)
   // Inverse side: original voucher has FK to reversal
   @jakarta.persistence.OneToOne
   @JoinColumn(name = "reversed_by_voucher_id", insertable = false, updatable = false)
@@ -300,6 +305,14 @@ public class Voucher implements CompanyScopedEntity {
 
   public void setIsLocked(Boolean isLocked) {
     this.isLocked = isLocked;
+  }
+
+  public Instant getEmbeddedAt() {
+    return embeddedAt;
+  }
+
+  public void setEmbeddedAt(Instant embeddedAt) {
+    this.embeddedAt = embeddedAt;
   }
 
   // Relationship getters (read-only)

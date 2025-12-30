@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Calendar as CalendarIcon,
@@ -154,7 +154,9 @@ export default function VoucherList() {
   const [accountId, setAccountId] = useState<number | undefined>(() =>
     loadFromStorage('accountId', undefined),
   )
-  const [search, setSearch] = useState<string>(() => loadFromStorage('search', ''))
+  // Separate input value from the actual search query used for API
+  const [searchInput, setSearchInput] = useState<string>(() => loadFromStorage('search', ''))
+  const [searchQuery, setSearchQuery] = useState<string>(() => loadFromStorage('search', ''))
   const [sorting, setSorting] = useState<SortingState>(() =>
     loadFromStorage('sorting', [] as SortingState),
   )
@@ -198,8 +200,24 @@ export default function VoucherList() {
     saveToStorage('accountId', accountId)
   }, [accountId])
   useEffect(() => {
-    saveToStorage('search', search)
-  }, [search])
+    saveToStorage('search', searchInput)
+  }, [searchInput])
+
+  // Debounce search - wait 500ms after user stops typing
+  // Use ref to track if searchInput was changed by user (not initial load)
+  const searchInputChangedByUser = useRef(false)
+  useEffect(() => {
+    // Skip if this is not a user-initiated change
+    if (!searchInputChangedByUser.current) {
+      return
+    }
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput)
+      setPage(0)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
   useEffect(() => {
     saveToStorage('sorting', sorting)
   }, [sorting])
@@ -220,21 +238,22 @@ export default function VoucherList() {
     setPage(0)
   }, [])
 
-  // Convert sorting state to API sort parameters
-  const sortParams = useMemo(() => {
-    return sorting.map((sort) => {
-      const direction = sort.desc ? 'desc' : 'asc'
-      // Map column IDs to API field names
-      const fieldMap: Record<string, string> = {
-        voucherDate: 'voucherDate',
-        status: 'status',
-        voucherNumber: 'voucherNumber',
-        totalDebit: 'totalDebit',
-        totalCredit: 'totalCredit',
-      }
-      const field = fieldMap[sort.id] || sort.id
-      return `${field},${direction}`
-    })
+  // Convert sorting state to API sort parameters - stringify to avoid reference changes
+  const sortParamsString = useMemo(() => {
+    return sorting
+      .map((sort) => {
+        const direction = sort.desc ? 'desc' : 'asc'
+        const fieldMap: Record<string, string> = {
+          voucherDate: 'voucherDate',
+          status: 'status',
+          voucherNumber: 'voucherNumber',
+          totalDebit: 'totalDebit',
+          totalCredit: 'totalCredit',
+        }
+        const field = fieldMap[sort.id] || sort.id
+        return `${field},${direction}`
+      })
+      .join('|')
   }, [sorting])
 
   const loadVouchers = useCallback(async () => {
@@ -243,6 +262,7 @@ export default function VoucherList() {
       setError(null)
       setErrorDetails(null)
 
+      const sortParams = sortParamsString ? sortParamsString.split('|') : undefined
       const params: VoucherQueryParams = {
         page,
         size: pageSize,
@@ -250,8 +270,8 @@ export default function VoucherList() {
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         accountId,
-        search: search.trim() || undefined,
-        sort: sortParams.length > 0 ? sortParams : undefined,
+        search: searchQuery.trim() || undefined,
+        sort: sortParams,
       }
 
       const response = await getVouchers(params)
@@ -272,7 +292,7 @@ export default function VoucherList() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, status, dateFrom, dateTo, accountId, search, sortParams])
+  }, [page, pageSize, status, dateFrom, dateTo, accountId, searchQuery, sortParamsString])
 
   const loadCounts = useCallback(async () => {
     try {
@@ -284,9 +304,11 @@ export default function VoucherList() {
     }
   }, [])
 
+  // Fetch vouchers when filter params change (using primitives directly to avoid function identity issues)
   useEffect(() => {
     loadVouchers()
-  }, [loadVouchers])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, status, dateFrom, dateTo, accountId, searchQuery, sortParamsString])
 
   useEffect(() => {
     loadCounts()
@@ -325,7 +347,10 @@ export default function VoucherList() {
     setDateFrom('')
     setDateTo('')
     setAccountId(undefined)
-    setSearch('')
+    // Reset search without triggering debounce
+    searchInputChangedByUser.current = false
+    setSearchInput('')
+    setSearchQuery('')
     setSorting([])
     setPage(0)
   }
@@ -537,10 +562,10 @@ export default function VoucherList() {
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Voucher number, description..."
-              value={search}
+              value={searchInput}
               onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(0)
+                searchInputChangedByUser.current = true
+                setSearchInput(e.target.value)
               }}
               className="pl-8"
             />
@@ -768,7 +793,7 @@ export default function VoucherList() {
                     <div>
                       <p className="text-lg font-medium">{t('vouchers.noVouchersFound')}</p>
                       <p className="text-sm text-muted-foreground">
-                        {search || status !== 'all' || dateFrom || dateTo || accountId
+                        {searchInput || status !== 'all' || dateFrom || dateTo || accountId
                           ? t('vouchers.tryAdjustingFilters')
                           : t('vouchers.getStartedVoucher')}
                       </p>
@@ -778,7 +803,7 @@ export default function VoucherList() {
                         <Plus className="mr-2 h-4 w-4" />
                         {t('vouchers.createFirstVoucher')}
                       </Button>
-                      {(search || status !== 'all' || dateFrom || dateTo || accountId) && (
+                      {(searchInput || status !== 'all' || dateFrom || dateTo || accountId) && (
                         <Button variant="outline" onClick={handleResetFilters}>
                           {t('vouchers.resetFilters')}
                         </Button>

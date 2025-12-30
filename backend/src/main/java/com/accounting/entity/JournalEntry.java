@@ -54,9 +54,6 @@ public class JournalEntry implements CompanyScopedEntity {
   @Column(name = "supplier_id")
   private Long supplierId;
 
-  @Column(name = "cost_center_id")
-  private Long costCenterId;
-
   @NotNull
   @Column(name = "company_id", nullable = false)
   private Long companyId;
@@ -147,14 +144,6 @@ public class JournalEntry implements CompanyScopedEntity {
 
   public void setSupplierId(Long supplierId) {
     this.supplierId = supplierId;
-  }
-
-  public Long getCostCenterId() {
-    return costCenterId;
-  }
-
-  public void setCostCenterId(Long costCenterId) {
-    this.costCenterId = costCenterId;
   }
 
   @Override

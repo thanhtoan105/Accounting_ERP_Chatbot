@@ -1,17 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import {
-  Plus,
-  Search,
-  RefreshCw,
-  Edit,
-  Trash2,
-  Building2,
-  User,
-  FolderTree,
-  Package,
-} from 'lucide-react'
+import { Plus, Search, RefreshCw, Edit, Trash2, Building2, User, Package } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -81,7 +71,6 @@ export default function AccountControls() {
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
   const [requiresCustomer, setRequiresCustomer] = useState(false)
   const [requiresSupplier, setRequiresSupplier] = useState(false)
-  const [requiresCostCenter, setRequiresCostCenter] = useState(false)
   const [requiresItem, setRequiresItem] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -144,7 +133,6 @@ export default function AccountControls() {
     setSelectedAccountId(null)
     setRequiresCustomer(false)
     setRequiresSupplier(false)
-    setRequiresCostCenter(false)
     setRequiresItem(false)
     setDialogOpen(true)
   }
@@ -154,7 +142,6 @@ export default function AccountControls() {
     setSelectedAccountId(control.accountId)
     setRequiresCustomer(control.requiresCustomer)
     setRequiresSupplier(control.requiresSupplier)
-    setRequiresCostCenter(control.requiresCostCenter)
     setRequiresItem(control.requiresItem)
     setDialogOpen(true)
   }
@@ -176,7 +163,6 @@ export default function AccountControls() {
         accountId: selectedAccountId,
         requiresCustomer,
         requiresSupplier,
-        requiresCostCenter,
         requiresItem,
       }
 
@@ -370,12 +356,6 @@ export default function AccountControls() {
                             Nhà cung cấp
                           </Badge>
                         )}
-                        {control.requiresCostCenter && (
-                          <Badge variant="outline" className="gap-1">
-                            <FolderTree className="h-3 w-3" />
-                            Trung tâm chi phí
-                          </Badge>
-                        )}
                         {control.requiresItem && (
                           <Badge variant="outline" className="gap-1">
                             <Package className="h-3 w-3" />
@@ -384,7 +364,6 @@ export default function AccountControls() {
                         )}
                         {!control.requiresCustomer &&
                           !control.requiresSupplier &&
-                          !control.requiresCostCenter &&
                           !control.requiresItem && (
                             <span className="text-xs text-muted-foreground">Không có yêu cầu</span>
                           )}
@@ -572,20 +551,6 @@ export default function AccountControls() {
                   >
                     <Building2 className="h-4 w-4" />
                     Yêu cầu chọn Nhà cung cấp
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="requiresCostCenter"
-                    checked={requiresCostCenter}
-                    onCheckedChange={(checked) => setRequiresCostCenter(checked === true)}
-                  />
-                  <Label
-                    htmlFor="requiresCostCenter"
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <FolderTree className="h-4 w-4" />
-                    Yêu cầu chọn Trung tâm chi phí
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">

@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -71,6 +72,8 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/v1/vouchers")
 public class VoucherController {
 
+  private static final Logger logger = LoggerFactory.getLogger(VoucherController.class);
+
   private final VoucherService voucherService;
   private final VoucherValidationService voucherValidationService;
   private final VoucherTemplateService voucherTemplateService;
@@ -124,43 +127,20 @@ public class VoucherController {
   @GetMapping
   @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT', 'CHIEF_ACCOUNTANT', 'CFO')")
   public ResponseEntity<Map<String, Object>> getVouchers(
-      @RequestParam(required = false, defaultValue = "0") int page,
-      @RequestParam(required = false, defaultValue = "20") int size,
+      Pageable pageable,
       @RequestParam(required = false) String status,
       @RequestParam(required = false) LocalDate dateFrom,
       @RequestParam(required = false) LocalDate dateTo,
       @RequestParam(required = false) String search,
-      @RequestParam(required = false) Long accountId,
-      @RequestParam(required = false) String[] sort) {
+      @RequestParam(required = false) Long accountId) {
 
-    // Validate page size (max 50)
-    if (size > 50) {
-      size = 50;
+    // Validate page size (max 50) - create new pageable if needed
+    if (pageable.getPageSize() > 50) {
+      pageable = PageRequest.of(pageable.getPageNumber(), 50, pageable.getSort());
     }
-
-    // Build sort object
-    Sort sortObj = Sort.unsorted();
-    if (sort != null && sort.length > 0) {
-      List<Sort.Order> orders = new ArrayList<>();
-      for (String sortParam : sort) {
-        String[] parts = sortParam.split(",");
-        if (parts.length == 2) {
-          String field = parts[0] == null ? "" : parts[0].trim();
-          if (field.isEmpty()) {
-            continue;
-          }
-          Sort.Direction direction = "desc".equalsIgnoreCase(parts[1].trim()) ? Sort.Direction.DESC
-              : Sort.Direction.ASC;
-          orders.add(new Sort.Order(direction, field));
-        }
-      }
-      if (!orders.isEmpty()) {
-        sortObj = Sort.by(orders);
-      }
-    }
-
-    // Build pageable
-    Pageable pageable = PageRequest.of(page, size, sortObj);
+    
+    // Debug logging
+    logger.info("[VoucherController] Pageable sort: {}", pageable.getSort());
 
     // Call service
     Page<VoucherListDTO> vouchers = voucherService.findAll(pageable, status, dateFrom, dateTo, search, accountId);

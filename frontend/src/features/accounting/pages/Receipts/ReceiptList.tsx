@@ -154,7 +154,7 @@ function getStatusLabel(status: ReceiptStatus) {
 export default function ReceiptList() {
   const navigate = useNavigate()
   const { hasRole, hasAnyRole, isAdmin, isChiefAccountant } = useRole()
-  const [receipts, setReceipts] = useState<ARPaymentListDTO[]>([])
+  const [receipts, setReceipts] = useState<ARPaymentListDTO[] | undefined>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -574,7 +574,7 @@ export default function ReceiptList() {
                   ))}
                 </TableRow>
               ))
-            ) : receipts.length === 0 ? (
+            ) : !receipts || receipts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">

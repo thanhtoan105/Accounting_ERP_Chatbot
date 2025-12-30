@@ -278,11 +278,10 @@ class AccountControlServiceImplTest {
     AccountControl accountControl = createAccountControl(testAccountControlId, testAccountId, testCompanyId);
     accountControl.setRequiresCustomer(true);
     accountControl.setRequiresSupplier(true);
-    accountControl.setRequiresCostCenter(true);
     accountControl.setRequiresItem(true);
 
     List<String> errors = accountControlService.validateRequiredDimensions(
-        accountControl, 1L, 2L, 3L, 4L);
+        accountControl, 1L, 2L, 4L);
 
     assertTrue(errors.isEmpty());
   }
@@ -293,7 +292,7 @@ class AccountControlServiceImplTest {
     accountControl.setRequiresCustomer(true);
 
     List<String> errors = accountControlService.validateRequiredDimensions(
-        accountControl, null, 2L, 3L, 4L);
+        accountControl, null, 2L, 4L);
 
     assertEquals(1, errors.size());
     assertTrue(errors.get(0).contains("Customer is required"));
@@ -305,22 +304,10 @@ class AccountControlServiceImplTest {
     accountControl.setRequiresSupplier(true);
 
     List<String> errors = accountControlService.validateRequiredDimensions(
-        accountControl, 1L, null, 3L, 4L);
+        accountControl, 1L, null, 4L);
 
     assertEquals(1, errors.size());
     assertTrue(errors.get(0).contains("Supplier is required"));
-  }
-
-  @Test
-  void validateRequiredDimensions_whenCostCenterRequiredButMissing_returnsError() {
-    AccountControl accountControl = createAccountControl(testAccountControlId, testAccountId, testCompanyId);
-    accountControl.setRequiresCostCenter(true);
-
-    List<String> errors = accountControlService.validateRequiredDimensions(
-        accountControl, 1L, 2L, null, 4L);
-
-    assertEquals(1, errors.size());
-    assertTrue(errors.get(0).contains("Cost Center is required"));
   }
 
   @Test
@@ -329,7 +316,7 @@ class AccountControlServiceImplTest {
     accountControl.setRequiresItem(true);
 
     List<String> errors = accountControlService.validateRequiredDimensions(
-        accountControl, 1L, 2L, 3L, null);
+        accountControl, 1L, 2L, null);
 
     assertEquals(1, errors.size());
     assertTrue(errors.get(0).contains("Item is required"));
@@ -340,18 +327,17 @@ class AccountControlServiceImplTest {
     AccountControl accountControl = createAccountControl(testAccountControlId, testAccountId, testCompanyId);
     accountControl.setRequiresCustomer(true);
     accountControl.setRequiresSupplier(true);
-    accountControl.setRequiresCostCenter(true);
 
     List<String> errors = accountControlService.validateRequiredDimensions(
-        accountControl, null, null, null, 4L);
+        accountControl, null, null, 4L);
 
-    assertEquals(3, errors.size());
+    assertEquals(2, errors.size());
   }
 
   @Test
   void validateRequiredDimensions_whenNullAccountControl_returnsNoErrors() {
     List<String> errors = accountControlService.validateRequiredDimensions(
-        null, 1L, 2L, 3L, 4L);
+        null, 1L, 2L, 4L);
 
     assertTrue(errors.isEmpty());
   }
@@ -363,7 +349,6 @@ class AccountControlServiceImplTest {
     accountControl.setCompanyId(companyId);
     accountControl.setRequiresCustomer(false);
     accountControl.setRequiresSupplier(false);
-    accountControl.setRequiresCostCenter(false);
     accountControl.setRequiresItem(false);
     accountControl.setCreatedAt(Instant.now());
     accountControl.setUpdatedAt(Instant.now());

@@ -1,3 +1,4 @@
+import { List } from 'lucide-react'
 import { VoucherLineGrid, type VoucherEntryLine } from '@/components/voucher'
 import type { AccountSummary } from '@/components/account/AccountPicker'
 import { VoucherLineGridSkeleton } from '@/features/accounting/components/voucher-ui'
@@ -31,32 +32,40 @@ export function VoucherFormLines({
   canUndo,
   canRedo,
 }: VoucherFormLinesProps) {
+  if (loadingAccounts) {
+    return <VoucherLineGridSkeleton />
+  }
+
   return (
-    <div className="voucher-card rounded-xl border bg-card shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b bg-voucher-surface-1">
-        <h3 className="font-semibold text-base">Entry Lines</h3>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between px-1">
+        <h3 className="font-semibold text-sm flex items-center gap-2">
+          <List className="w-4 h-4 text-primary" />
+          Entry Lines
+        </h3>
+        <div className="text-xs text-muted-foreground">
+          Press{' '}
+          <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+            Enter
+          </kbd>{' '}
+          to add new line
+        </div>
       </div>
-      <div className="p-5">
-        {loadingAccounts ? (
-          <VoucherLineGridSkeleton />
-        ) : (
-          <VoucherLineGrid
-            accounts={accounts}
-            lines={lines}
-            onLinesChange={(updated) => {
-              onLinesChange(updated)
-            }}
-            validationMap={validationMap}
-            lockedAccountIds={lockedAccountIds}
-            readOnly={readOnly}
-            loading={loading}
-            onUndo={onUndo}
-            onRedo={onRedo}
-            canUndo={canUndo}
-            canRedo={canRedo}
-          />
-        )}
-      </div>
+
+      <VoucherLineGrid
+        accounts={accounts}
+        lines={lines}
+        onLinesChange={onLinesChange}
+        validationMap={validationMap}
+        lockedAccountIds={lockedAccountIds}
+        readOnly={readOnly}
+        loading={loading}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        variant="dense"
+      />
     </div>
   )
 }

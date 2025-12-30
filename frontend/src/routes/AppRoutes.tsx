@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { Dashboard } from '@/features/dashboard'
+import { Dashboard, CFODashboardPage } from '@/features/dashboard'
 import { Dashboard as AnalyticsDashboard } from '@/features/analytics'
 import { CompanySettings } from '@/features/company'
 import { Login, ForgotPassword, ResetPassword } from '@/features/auth'
@@ -653,6 +653,16 @@ export default function AppRoutes() {
               ]}
             >
               <AnalyticsDashboard />
+            </RoleGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/dashboard/cfo-snapshot"
+        element={
+          <ProtectedLayout>
+            <RoleGuard requiredRoles={['admin', 'cfo', 'chief_accountant']}>
+              <CFODashboardPage />
             </RoleGuard>
           </ProtectedLayout>
         }

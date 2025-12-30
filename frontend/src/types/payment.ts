@@ -140,16 +140,5 @@ export interface ImportResult {
   errorReportId?: string
 }
 
-// Re-export PurchaseBillDTO for convenience
-export interface PurchaseBillDTO {
-  id: string
-  billNumber: string
-  billDate: string
-  dueDate: string
-  supplierId: number
-  supplierName: string | null
-  supplierCode: string | null
-  totalAmount: number
-  remainingBalance?: number
-  status: string
-}
+// Re-export PurchaseBillDTO from purchaseBill.ts for convenience
+export type { PurchaseBillDTO } from './purchaseBill'

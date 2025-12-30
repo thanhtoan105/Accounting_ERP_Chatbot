@@ -27,9 +27,7 @@ public class VoucherLineDTO {
   // Optional dimension fields
   private Long customerId;
 
-  private Long vendorId;
-
-  private Long costCenterId;
+  private Long supplierId;
 
   private Long itemId;
 
@@ -42,8 +40,7 @@ public class VoucherLineDTO {
       BigDecimal credit,
       String description,
       Long customerId,
-      Long vendorId,
-      Long costCenterId,
+      Long supplierId,
       Long itemId) {
     this.lineNumber = lineNumber;
     this.accountId = accountId;
@@ -51,8 +48,7 @@ public class VoucherLineDTO {
     this.credit = credit;
     this.description = description;
     this.customerId = customerId;
-    this.vendorId = vendorId;
-    this.costCenterId = costCenterId;
+    this.supplierId = supplierId;
     this.itemId = itemId;
   }
 
@@ -105,20 +101,12 @@ public class VoucherLineDTO {
     this.customerId = customerId;
   }
 
-  public Long getVendorId() {
-    return vendorId;
+  public Long getSupplierId() {
+    return supplierId;
   }
 
-  public void setVendorId(Long vendorId) {
-    this.vendorId = vendorId;
-  }
-
-  public Long getCostCenterId() {
-    return costCenterId;
-  }
-
-  public void setCostCenterId(Long costCenterId) {
-    this.costCenterId = costCenterId;
+  public void setSupplierId(Long supplierId) {
+    this.supplierId = supplierId;
   }
 
   public Long getItemId() {
