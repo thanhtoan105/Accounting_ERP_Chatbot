@@ -537,7 +537,6 @@ class VoucherTemplateControllerIntegrationTest extends com.accounting.test.Integ
         line.put("defaultDescription", "Test line description");
         line.put("requiresCustomer", false);
         line.put("requiresSupplier", false);
-        line.put("requiresCostCenter", false);
         line.put("lockAccounts", false);
         return line;
     }

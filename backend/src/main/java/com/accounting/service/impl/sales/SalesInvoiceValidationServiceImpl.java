@@ -360,7 +360,6 @@ public class SalesInvoiceValidationServiceImpl implements SalesInvoiceValidation
                         account,
                         null, // customerId checked at header
                         null, // supplierId not applicable
-                        line.getCostCenterId(),
                         line.getItemId(),
                         companyId,
                         lineNumber,
@@ -447,7 +446,6 @@ public class SalesInvoiceValidationServiceImpl implements SalesInvoiceValidation
             ChartOfAccount account,
             Long customerId,
             Long supplierId,
-            Long costCenterId,
             Long itemId,
             Long companyId,
             int lineNumber,
@@ -466,7 +464,7 @@ public class SalesInvoiceValidationServiceImpl implements SalesInvoiceValidation
 
         // Validate required dimensions using AccountControlService
         List<String> dimensionErrors = accountControlService.validateRequiredDimensions(
-                accountControl, customerId, supplierId, costCenterId, itemId);
+                accountControl, customerId, supplierId, itemId);
 
         // Add all dimension errors to validation result
         for (String error : dimensionErrors) {
@@ -476,8 +474,6 @@ public class SalesInvoiceValidationServiceImpl implements SalesInvoiceValidation
                 fieldName = "customerId";
             } else if (error.contains("Supplier")) {
                 fieldName = "supplierId";
-            } else if (error.contains("Cost Center")) {
-                fieldName = "costCenterId";
             } else if (error.contains("Item")) {
                 fieldName = "itemId";
             }

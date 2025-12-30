@@ -2381,7 +2381,6 @@ class VoucherControllerIntegrationTest extends com.accounting.test.IntegrationTe
                 accountControl.setCompanyId(testCompany.getId());
                 accountControl.setRequiresCustomer(true);
                 accountControl.setRequiresSupplier(false);
-                accountControl.setRequiresCostCenter(false);
                 accountControl.setRequiresItem(false);
                 accountControl.setCreatedAt(Instant.now());
                 accountControl.setUpdatedAt(Instant.now());

@@ -54,6 +54,7 @@ import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.JwtTokenProvider;
 import com.accounting.service.AuditService;
+import com.accounting.service.EmbeddingTriggerService;
 import com.accounting.service.PeriodManagementService;
 import com.accounting.service.VoucherValidationService;
 
@@ -96,6 +97,9 @@ class VoucherServiceImplTest {
   private PeriodManagementService periodManagementService;
 
   @Mock
+  private EmbeddingTriggerService embeddingTriggerService;
+
+  @Mock
   private EntityManager entityManager;
 
   @Mock
@@ -115,7 +119,8 @@ class VoucherServiceImplTest {
         jwtTokenProvider,
         voucherValidationService,
         voucherAuditHelper,
-        periodManagementService);
+        periodManagementService,
+        embeddingTriggerService);
 
     // Inject EntityManager via reflection (since it's @PersistenceContext)
     ReflectionTestUtils.setField(voucherService, "entityManager", entityManager);

@@ -29,6 +29,7 @@ import com.accounting.dto.PaymentAllocationRequest;
 import com.accounting.dto.PurchaseBillDTO;
 import com.accounting.dto.VoucherCreateRequest;
 import com.accounting.dto.VoucherEntryLineRequest;
+import com.accounting.dto.embedding.EmbeddingAction;
 import com.accounting.entity.APPayment;
 import com.accounting.entity.BankAccount;
 import com.accounting.entity.PaymentAllocation;
@@ -50,6 +51,7 @@ import com.accounting.service.AccountBalanceService;
 import com.accounting.service.ApprovalWorkflowService;
 import com.accounting.service.AuditService;
 import com.accounting.service.CompanySettingsService;
+import com.accounting.service.EmbeddingTriggerService;
 import com.accounting.service.PaymentService;
 import com.accounting.service.PaymentValidationService;
 import com.accounting.service.PurchaseBillService;
@@ -92,6 +94,7 @@ public class PaymentServiceImpl implements PaymentService {
   private final AuditService auditService;
   private final CompanySettingsService companySettingsService;
   private final ObjectMapper objectMapper;
+  private final EmbeddingTriggerService embeddingTriggerService;
   @org.springframework.beans.factory.annotation.Autowired(required = false)
   private com.accounting.service.APAgingService agingService;
 
@@ -114,7 +117,8 @@ public class PaymentServiceImpl implements PaymentService {
       PurchaseBillService purchaseBillService,
       AuditService auditService,
       CompanySettingsService companySettingsService,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      EmbeddingTriggerService embeddingTriggerService) {
     this.paymentRepository = paymentRepository;
     this.allocationRepository = allocationRepository;
     this.purchaseBillRepository = purchaseBillRepository;
@@ -131,6 +135,7 @@ public class PaymentServiceImpl implements PaymentService {
     this.auditService = auditService;
     this.companySettingsService = companySettingsService;
     this.objectMapper = objectMapper;
+    this.embeddingTriggerService = embeddingTriggerService;
   }
 
   @Override
@@ -826,6 +831,12 @@ public class PaymentServiceImpl implements PaymentService {
           latencyMs,
           payment.getPaymentNumber());
     }
+
+    // Trigger embedding for RAG chatbot (fire-and-forget)
+    String supplierName = getSupplierName(payment.getSupplierId());
+    String bankAccountName = bankAccount.getBankName();
+    embeddingTriggerService.triggerAPPaymentEmbedding(
+        payment, allocations, supplierName, bankAccountName, EmbeddingAction.UPSERT);
 
     return toDTO(payment);
   }
@@ -1524,6 +1535,14 @@ public class PaymentServiceImpl implements PaymentService {
         latencyMs,
         currentUserId,
         reason);
+
+    // Trigger embedding deletion for RAG chatbot (fire-and-forget)
+    String supplierName = getSupplierName(payment.getSupplierId());
+    String bankAccountName = bankAccount.getBankName();
+    List<PaymentAllocation> allAllocations = allocationRepository
+        .findByCompanyIdAndPaymentIdOrderByAllocationOrder(companyId, paymentId);
+    embeddingTriggerService.triggerAPPaymentEmbedding(
+        payment, allAllocations, supplierName, bankAccountName, EmbeddingAction.DELETE);
 
     return toDTO(payment);
   }

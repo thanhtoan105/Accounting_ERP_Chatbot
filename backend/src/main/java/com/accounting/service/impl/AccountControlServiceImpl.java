@@ -115,7 +115,6 @@ public class AccountControlServiceImpl implements AccountControlService {
       AccountControl accountControl,
       Long customerId,
       Long supplierId,
-      Long costCenterId,
       Long itemId) {
 
     List<String> errors = new ArrayList<>();
@@ -130,10 +129,6 @@ public class AccountControlServiceImpl implements AccountControlService {
 
     if (Boolean.TRUE.equals(accountControl.getRequiresSupplier()) && supplierId == null) {
       errors.add("Supplier is required for this account");
-    }
-
-    if (Boolean.TRUE.equals(accountControl.getRequiresCostCenter()) && costCenterId == null) {
-      errors.add("Cost Center is required for this account");
     }
 
     if (Boolean.TRUE.equals(accountControl.getRequiresItem()) && itemId == null) {

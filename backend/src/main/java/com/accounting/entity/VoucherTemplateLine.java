@@ -41,9 +41,6 @@ public class VoucherTemplateLine implements CompanyScopedEntity {
   @Column(name = "requires_supplier", nullable = false)
   private boolean requiresSupplier;
 
-  @Column(name = "requires_cost_center", nullable = false)
-  private boolean requiresCostCenter;
-
   @Column(name = "lock_accounts", nullable = false)
   private boolean lockAccounts;
 
@@ -122,14 +119,6 @@ public class VoucherTemplateLine implements CompanyScopedEntity {
 
   public void setRequiresSupplier(boolean requiresSupplier) {
     this.requiresSupplier = requiresSupplier;
-  }
-
-  public boolean isRequiresCostCenter() {
-    return requiresCostCenter;
-  }
-
-  public void setRequiresCostCenter(boolean requiresCostCenter) {
-    this.requiresCostCenter = requiresCostCenter;
   }
 
   public boolean isLockAccounts() {

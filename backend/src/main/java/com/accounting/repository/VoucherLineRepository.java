@@ -388,4 +388,31 @@ public interface VoucherLineRepository
             @Param("companyId") Long companyId,
             @Param("accountId") Long accountId,
             @Param("periodEndDate") LocalDate periodEndDate);
+
+    /**
+     * Get expense breakdown by account (for dashboard chart).
+     * Returns expense accounts (6xx accounts in Vietnamese accounting) with their totals.
+     * Expenses are typically debits on 6xx accounts.
+     *
+     * @param companyId company ID
+     * @param startDate period start date
+     * @param endDate   period end date
+     * @return list of [accountId (Long), accountName (String), totalAmount (BigDecimal)]
+     */
+    @Query("SELECT a.id, a.name, SUM(vl.debit) " +
+            "FROM VoucherLine vl " +
+            "JOIN vl.voucher v " +
+            "JOIN vl.account a " +
+            "WHERE vl.companyId = :companyId " +
+            "AND v.status = 'posted' " +
+            "AND v.voucherDate >= :startDate " +
+            "AND v.voucherDate <= :endDate " +
+            "AND a.code LIKE '6%' " +
+            "GROUP BY a.id, a.name " +
+            "HAVING SUM(vl.debit) > 0 " +
+            "ORDER BY SUM(vl.debit) DESC")
+    List<Object[]> getExpensesByCategory(
+            @Param("companyId") Long companyId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

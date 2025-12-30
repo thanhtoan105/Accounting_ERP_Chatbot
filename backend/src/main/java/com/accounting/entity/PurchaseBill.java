@@ -94,6 +94,14 @@ public class PurchaseBill implements CompanyScopedEntity {
   @Column(name = "is_sensitive", nullable = false)
   private Boolean isSensitive = false;
 
+  @NotNull
+  @Column(name = "amount_paid", nullable = false, precision = 19, scale = 2)
+  private BigDecimal amountPaid = BigDecimal.ZERO;
+
+  @NotNull
+  @Column(name = "remaining_balance", nullable = false, precision = 19, scale = 2)
+  private BigDecimal remainingBalance = BigDecimal.ZERO;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
@@ -121,6 +129,9 @@ public class PurchaseBill implements CompanyScopedEntity {
   protected void onCreate() {
     createdAt = Instant.now();
     updatedAt = Instant.now();
+    if (remainingBalance == null || remainingBalance.compareTo(BigDecimal.ZERO) == 0) {
+      remainingBalance = totalAmount != null ? totalAmount : BigDecimal.ZERO;
+    }
   }
 
   @PreUpdate
@@ -248,6 +259,22 @@ public class PurchaseBill implements CompanyScopedEntity {
 
   public void setIsSensitive(Boolean isSensitive) {
     this.isSensitive = isSensitive;
+  }
+
+  public BigDecimal getAmountPaid() {
+    return amountPaid;
+  }
+
+  public void setAmountPaid(BigDecimal amountPaid) {
+    this.amountPaid = amountPaid;
+  }
+
+  public BigDecimal getRemainingBalance() {
+    return remainingBalance;
+  }
+
+  public void setRemainingBalance(BigDecimal remainingBalance) {
+    this.remainingBalance = remainingBalance;
   }
 
   public Instant getCreatedAt() {

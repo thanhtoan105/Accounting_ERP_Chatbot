@@ -50,10 +50,6 @@ public class AccountControl implements CompanyScopedEntity {
   private Boolean requiresSupplier = false;
 
   @NotNull
-  @Column(name = "requires_cost_center", nullable = false)
-  private Boolean requiresCostCenter = false;
-
-  @NotNull
   @Column(name = "requires_item", nullable = false)
   private Boolean requiresItem = false;
 
@@ -115,14 +111,6 @@ public class AccountControl implements CompanyScopedEntity {
 
   public void setRequiresSupplier(Boolean requiresSupplier) {
     this.requiresSupplier = requiresSupplier;
-  }
-
-  public Boolean getRequiresCostCenter() {
-    return requiresCostCenter;
-  }
-
-  public void setRequiresCostCenter(Boolean requiresCostCenter) {
-    this.requiresCostCenter = requiresCostCenter;
   }
 
   public Boolean getRequiresItem() {

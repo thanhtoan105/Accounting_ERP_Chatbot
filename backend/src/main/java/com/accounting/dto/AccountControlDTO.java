@@ -16,7 +16,6 @@ public class AccountControlDTO {
   private Long companyId;
   private Boolean requiresCustomer;
   private Boolean requiresSupplier;
-  private Boolean requiresCostCenter;
   private Boolean requiresItem;
   private Instant createdAt;
   private Instant updatedAt;
@@ -75,14 +74,6 @@ public class AccountControlDTO {
 
   public void setRequiresSupplier(Boolean requiresSupplier) {
     this.requiresSupplier = requiresSupplier;
-  }
-
-  public Boolean getRequiresCostCenter() {
-    return requiresCostCenter;
-  }
-
-  public void setRequiresCostCenter(Boolean requiresCostCenter) {
-    this.requiresCostCenter = requiresCostCenter;
   }
 
   public Boolean getRequiresItem() {

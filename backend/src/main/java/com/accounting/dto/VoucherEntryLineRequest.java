@@ -28,7 +28,6 @@ public class VoucherEntryLineRequest {
 
   private Long customerId;
   private Long supplierId;
-  private Long costCenterId;
   private Long itemId;
 
   private UUID templateLineId;
@@ -80,14 +79,6 @@ public class VoucherEntryLineRequest {
 
   public void setSupplierId(Long supplierId) {
     this.supplierId = supplierId;
-  }
-
-  public Long getCostCenterId() {
-    return costCenterId;
-  }
-
-  public void setCostCenterId(Long costCenterId) {
-    this.costCenterId = costCenterId;
   }
 
   public Long getItemId() {

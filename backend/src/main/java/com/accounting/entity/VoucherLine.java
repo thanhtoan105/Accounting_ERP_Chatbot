@@ -54,11 +54,8 @@ public class VoucherLine implements CompanyScopedEntity {
   @Column(name = "customer_id")
   private Long customerId;
 
-  @Column(name = "vendor_id")
-  private Long vendorId; // Supplier/Vendor ID (entity may not exist yet)
-
-  @Column(name = "cost_center_id")
-  private Long costCenterId; // CostCenter ID (entity may not exist yet)
+  @Column(name = "supplier_id")
+  private Long supplierId; // Supplier ID (entity may not exist yet)
 
   @Column(name = "item_id")
   private Long itemId; // Item ID (entity may not exist yet)
@@ -156,20 +153,12 @@ public class VoucherLine implements CompanyScopedEntity {
     this.customerId = customerId;
   }
 
-  public Long getVendorId() {
-    return vendorId;
+  public Long getSupplierId() {
+    return supplierId;
   }
 
-  public void setVendorId(Long vendorId) {
-    this.vendorId = vendorId;
-  }
-
-  public Long getCostCenterId() {
-    return costCenterId;
-  }
-
-  public void setCostCenterId(Long costCenterId) {
-    this.costCenterId = costCenterId;
+  public void setSupplierId(Long supplierId) {
+    this.supplierId = supplierId;
   }
 
   public Long getItemId() {

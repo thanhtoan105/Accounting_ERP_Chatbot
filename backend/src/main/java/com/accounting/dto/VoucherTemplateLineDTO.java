@@ -13,7 +13,6 @@ public class VoucherTemplateLineDTO {
   private String defaultDescription;
   private boolean requiresCustomer;
   private boolean requiresSupplier;
-  private boolean requiresCostCenter;
   private boolean lockAccounts;
 
   public Long getId() {
@@ -102,14 +101,6 @@ public class VoucherTemplateLineDTO {
 
   public void setRequiresSupplier(boolean requiresSupplier) {
     this.requiresSupplier = requiresSupplier;
-  }
-
-  public boolean isRequiresCostCenter() {
-    return requiresCostCenter;
-  }
-
-  public void setRequiresCostCenter(boolean requiresCostCenter) {
-    this.requiresCostCenter = requiresCostCenter;
   }
 
   public boolean isLockAccounts() {

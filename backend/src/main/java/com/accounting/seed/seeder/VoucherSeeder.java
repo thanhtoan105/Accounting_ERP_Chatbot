@@ -64,8 +64,7 @@ public class VoucherSeeder {
       BigDecimal credit,
       String description,
       Long customerId,
-      Long vendorId,
-      Long costCenterId,
+      Long supplierId,
       Long itemId,
       Long bankAccountId,
       Long companyId) {}
@@ -99,8 +98,8 @@ public class VoucherSeeder {
   private static final String VOUCHER_LINE_INSERT_SQL =
       """
       INSERT INTO voucher_lines (id, voucher_id, line_number, account_id, debit, credit,
-          description, customer_id, vendor_id, cost_center_id, item_id, bank_account_id, company_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          description, customer_id, supplier_id, item_id, bank_account_id, company_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """;
 
   private final JdbcTemplate jdbcTemplate;
@@ -167,7 +166,7 @@ public class VoucherSeeder {
               generator.nextVoucherNumber(ctx.getCompanyId(), year, type.prefix),
               voucherDate,
               periodId,
-              generateDescription(type, faker),
+              faker.voucherDescription(type.prefix, "Đối tác " + (i + 1), year),
               status,
               "VND",
               totalDebit,
@@ -384,7 +383,7 @@ public class VoucherSeeder {
       }
 
       case CASH_PAYMENT -> {
-        Long vendorId = randomFromList(ctx.getSupplierIds(), random);
+        Long supplierId = randomFromList(ctx.getSupplierIds(), random);
         Long bankAccountId = randomFromList(ctx.getBankAccountIds(), random);
         boolean toPayables = random.nextBoolean();
 
@@ -398,7 +397,7 @@ public class VoucherSeeder {
                   BigDecimal.ZERO,
                   "Thanh toán nhà cung cấp",
                   null,
-                  vendorId,
+                  supplierId,
                   null,
                   ctx.getCompanyId()));
         } else {
@@ -478,7 +477,7 @@ public class VoucherSeeder {
       }
 
       case BANK_PAYMENT -> {
-        Long vendorId = randomFromList(ctx.getSupplierIds(), random);
+        Long supplierId = randomFromList(ctx.getSupplierIds(), random);
         Long bankAccountId = randomFromList(ctx.getBankAccountIds(), random);
         boolean toPayables = random.nextBoolean();
 
@@ -492,7 +491,7 @@ public class VoucherSeeder {
                   BigDecimal.ZERO,
                   "Thanh toán nhà cung cấp",
                   null,
-                  vendorId,
+                  supplierId,
                   null,
                   ctx.getCompanyId()));
         } else {
@@ -574,7 +573,7 @@ public class VoucherSeeder {
       }
 
       case PURCHASE_POSTING -> {
-        Long vendorId = randomFromList(ctx.getSupplierIds(), random);
+        Long supplierId = randomFromList(ctx.getSupplierIds(), random);
         VatRate vatRate = MoneyHelper.randomVatRate(random);
         while (vatRate == VatRate.ZERO || vatRate == VatRate.EXEMPT) {
           vatRate = MoneyHelper.randomVatRate(random);
@@ -626,7 +625,7 @@ public class VoucherSeeder {
                 totalAmount,
                 "Phải trả nhà cung cấp",
                 null,
-                vendorId,
+                supplierId,
                 null,
                 ctx.getCompanyId()));
       }
@@ -747,7 +746,7 @@ public class VoucherSeeder {
       BigDecimal credit,
       String description,
       Long customerId,
-      Long vendorId,
+      Long supplierId,
       Long bankAccountId,
       Long companyId) {
     return new VoucherLineData(
@@ -759,8 +758,7 @@ public class VoucherSeeder {
         credit,
         description,
         customerId,
-        vendorId,
-        null,
+        supplierId,
         null,
         bankAccountId,
         companyId);
@@ -830,8 +828,7 @@ public class VoucherSeeder {
                       l.credit(),
                       l.description(),
                       l.customerId(),
-                      l.vendorId(),
-                      l.costCenterId(),
+                      l.supplierId(),
                       l.itemId(),
                       l.bankAccountId(),
                       l.companyId()
@@ -849,7 +846,6 @@ public class VoucherSeeder {
           Types.NUMERIC,
           Types.NUMERIC,
           Types.VARCHAR,
-          Types.BIGINT,
           Types.BIGINT,
           Types.BIGINT,
           Types.BIGINT,

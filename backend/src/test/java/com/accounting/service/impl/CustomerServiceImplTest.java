@@ -41,6 +41,7 @@ import com.accounting.entity.Customer;
 import com.accounting.repository.CustomerRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AuditService;
+import com.accounting.service.EmbeddingTriggerService;
 import com.accounting.service.util.CustomerCodeGenerator;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,6 +53,8 @@ class CustomerServiceImplTest {
 
   @Mock private AuditService auditService;
 
+  @Mock private EmbeddingTriggerService embeddingTriggerService;
+
   private CustomerServiceImpl customerService;
 
   private static final Long TEST_COMPANY_ID = 1L;
@@ -59,7 +62,7 @@ class CustomerServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    customerService = new CustomerServiceImpl(customerRepository, codeGenerator, auditService);
+    customerService = new CustomerServiceImpl(customerRepository, codeGenerator, auditService, embeddingTriggerService);
     CompanyContext.setCompanyId(TEST_COMPANY_ID);
   }
 

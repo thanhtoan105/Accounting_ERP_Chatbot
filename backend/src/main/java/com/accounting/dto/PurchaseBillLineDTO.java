@@ -43,8 +43,6 @@ public class PurchaseBillLineDTO {
   private BigDecimal vatAmount = BigDecimal.ZERO;
 
   // Optional dimension fields
-  private Long costCenterId;
-
   private Long itemId;
 
   public PurchaseBillLineDTO() {}
@@ -58,7 +56,6 @@ public class PurchaseBillLineDTO {
       BigDecimal amount,
       VatRate vatRate,
       BigDecimal vatAmount,
-      Long costCenterId,
       Long itemId) {
     this.lineNumber = lineNumber;
     this.accountId = accountId;
@@ -68,7 +65,6 @@ public class PurchaseBillLineDTO {
     this.amount = amount;
     this.vatRate = vatRate;
     this.vatAmount = vatAmount;
-    this.costCenterId = costCenterId;
     this.itemId = itemId;
   }
 
@@ -135,14 +131,6 @@ public class PurchaseBillLineDTO {
 
   public void setVatAmount(BigDecimal vatAmount) {
     this.vatAmount = vatAmount;
-  }
-
-  public Long getCostCenterId() {
-    return costCenterId;
-  }
-
-  public void setCostCenterId(Long costCenterId) {
-    this.costCenterId = costCenterId;
   }
 
   public Long getItemId() {

@@ -23,11 +23,13 @@ import com.accounting.dto.CustomerARSummaryDTO;
 import com.accounting.dto.CustomerCreateRequest;
 import com.accounting.dto.CustomerDTO;
 import com.accounting.dto.CustomerUpdateRequest;
+import com.accounting.dto.embedding.EmbeddingAction;
 import com.accounting.entity.Customer;
 import com.accounting.repository.CustomerRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AuditService;
 import com.accounting.service.CustomerService;
+import com.accounting.service.EmbeddingTriggerService;
 import com.accounting.service.util.CustomerCodeGenerator;
 
 import jakarta.persistence.criteria.Predicate;
@@ -43,14 +45,17 @@ public class CustomerServiceImpl implements CustomerService {
   private final CustomerRepository customerRepository;
   private final CustomerCodeGenerator codeGenerator;
   private final AuditService auditService;
+  private final EmbeddingTriggerService embeddingTriggerService;
 
   public CustomerServiceImpl(
       CustomerRepository customerRepository,
       CustomerCodeGenerator codeGenerator,
-      AuditService auditService) {
+      AuditService auditService,
+      EmbeddingTriggerService embeddingTriggerService) {
     this.customerRepository = customerRepository;
     this.codeGenerator = codeGenerator;
     this.auditService = auditService;
+    this.embeddingTriggerService = embeddingTriggerService;
   }
 
   /**
@@ -194,6 +199,8 @@ public class CustomerServiceImpl implements CustomerService {
     auditService.logCustomerCreated(
         saved.getId(), saved.getCode(), getCurrentUserId(), newValues, getCurrentRequest());
     
+    embeddingTriggerService.triggerCustomerEmbedding(saved, EmbeddingAction.UPSERT);
+    
     return toDTO(saved);
   }
 
@@ -275,6 +282,8 @@ public class CustomerServiceImpl implements CustomerService {
     // Audit log
     auditService.logCustomerUpdated(updated.getId(), updated.getCode(), getCurrentUserId(), oldValues, newValues, getCurrentRequest());
     
+    embeddingTriggerService.triggerCustomerEmbedding(updated, EmbeddingAction.UPSERT);
+    
     return toDTO(updated);
   }
 
@@ -302,6 +311,9 @@ public class CustomerServiceImpl implements CustomerService {
         "Deletion blocked: Referential integrity check requires Epic 5 (AR Module) data", 
         getCurrentUserId(), 
         getCurrentRequest());
+    
+    // TODO: When deletion is enabled, uncomment this line to trigger embedding delete:
+    // embeddingTriggerService.triggerCustomerEmbedding(customer, EmbeddingAction.DELETE);
     
     throw new ResponseStatusException(
         HttpStatus.CONFLICT,

@@ -30,6 +30,7 @@ import com.accounting.dto.SalesInvoiceValidationResult;
 import com.accounting.dto.VoucherCreateRequest;
 import com.accounting.dto.VoucherDTO;
 import com.accounting.dto.VoucherEntryLineRequest;
+import com.accounting.dto.embedding.EmbeddingAction;
 import com.accounting.entity.Customer;
 import com.accounting.entity.SalesInvoice;
 import com.accounting.entity.SalesInvoiceLine;
@@ -44,6 +45,7 @@ import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.service.ARVATService;
 import com.accounting.service.AuditService;
+import com.accounting.service.EmbeddingTriggerService;
 import com.accounting.service.SalesInvoiceApprovalService;
 import com.accounting.service.SalesInvoiceService;
 import com.accounting.service.SalesInvoiceValidationService;
@@ -78,6 +80,7 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
   private final ARVATService arVatService;
   private final VoucherService voucherService;
   private final VoucherPostingService voucherPostingService;
+  private final EmbeddingTriggerService embeddingTriggerService;
 
   @PersistenceContext
   private EntityManager entityManager;
@@ -93,7 +96,8 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
       SalesInvoiceApprovalService salesInvoiceApprovalService,
       ARVATService arVatService,
       VoucherService voucherService,
-      VoucherPostingService voucherPostingService) {
+      VoucherPostingService voucherPostingService,
+      EmbeddingTriggerService embeddingTriggerService) {
     this.salesInvoiceRepository = salesInvoiceRepository;
     this.salesInvoiceLineRepository = salesInvoiceLineRepository;
     this.customerRepository = customerRepository;
@@ -105,6 +109,7 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
     this.arVatService = arVatService;
     this.voucherService = voucherService;
     this.voucherPostingService = voucherPostingService;
+    this.embeddingTriggerService = embeddingTriggerService;
   }
 
   @Override
@@ -280,7 +285,6 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             lineDto.getVatAmount() != null
                 ? lineDto.getVatAmount().setScale(SCALE, ROUNDING_MODE)
                 : BigDecimal.ZERO);
-        line.setCostCenterId(lineDto.getCostCenterId());
         line.setItemId(lineDto.getItemId());
         line.setCompanyId(companyId);
         lines.add(line);
@@ -345,6 +349,10 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
         // Non-blocking: log error but don't break main flow
         logger.error("Failed to log audit event for sales invoice creation: {}", e.getMessage(), e);
       }
+
+      // Trigger embedding for RAG chatbot (fire-and-forget)
+      embeddingTriggerService.triggerSalesInvoiceEmbedding(
+          invoice, lines, customer.getName(), EmbeddingAction.UPSERT);
 
       return toDTO(invoice);
     } catch (Exception e) {
@@ -451,7 +459,6 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             lineDto.getVatAmount() != null
                 ? lineDto.getVatAmount().setScale(SCALE, ROUNDING_MODE)
                 : BigDecimal.ZERO);
-        line.setCostCenterId(lineDto.getCostCenterId());
         line.setItemId(lineDto.getItemId());
         line.setCompanyId(companyId);
         lines.add(line);
@@ -479,6 +486,13 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
         // Non-blocking: log error but don't break main flow
         logger.error("Failed to log audit event for sales invoice update: {}", e.getMessage(), e);
       }
+
+      // Trigger embedding for RAG chatbot (fire-and-forget)
+      String customerName = customerRepository.findByCompanyIdAndId(companyId, invoice.getCustomerId())
+          .map(Customer::getName)
+          .orElse(null);
+      embeddingTriggerService.triggerSalesInvoiceEmbedding(
+          invoice, lines, customerName, EmbeddingAction.UPSERT);
 
       return toDTO(invoice);
     } catch (Exception e) {
@@ -536,6 +550,13 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
 
       // Store invoice details before deletion for audit logging
       UUID invoiceIdForAudit = invoice.getId();
+
+      // Trigger embedding deletion for RAG chatbot (fire-and-forget)
+      String customerName = customerRepository.findByCompanyIdAndId(companyId, invoice.getCustomerId())
+          .map(Customer::getName)
+          .orElse(null);
+      embeddingTriggerService.triggerSalesInvoiceEmbedding(
+          invoice, List.of(), customerName, EmbeddingAction.DELETE);
 
       // Delete sales invoice (lines will be deleted via CASCADE)
       salesInvoiceRepository.delete(invoice);
@@ -757,7 +778,6 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
     dto.setAmount(line.getAmount());
     dto.setVatRate(line.getVatRate());
     dto.setVatAmount(line.getVatAmount());
-    dto.setCostCenterId(line.getCostCenterId());
     dto.setItemId(line.getItemId());
     return dto;
   }
@@ -904,7 +924,6 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
           lineDto.getVatAmount() != null
               ? lineDto.getVatAmount().setScale(SCALE, ROUNDING_MODE)
               : BigDecimal.ZERO);
-      line.setCostCenterId(lineDto.getCostCenterId());
       line.setItemId(lineDto.getItemId());
       line.setCompanyId(companyId);
       lines.add(line);

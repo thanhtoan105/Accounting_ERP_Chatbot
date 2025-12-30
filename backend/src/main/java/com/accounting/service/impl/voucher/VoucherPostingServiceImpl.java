@@ -23,6 +23,8 @@ import com.accounting.dto.VoucherDTO;
 import com.accounting.dto.VoucherEmbeddingPayload;
 import com.accounting.dto.VoucherLineDTO;
 import com.accounting.dto.VoucherValidationResult;
+import com.accounting.dto.embedding.EmbeddingAction;
+import com.accounting.dto.embedding.EntityEmbeddingPayload;
 import com.accounting.entity.JournalEntry;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
@@ -32,6 +34,7 @@ import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.SecurityUtils;
 import com.accounting.service.AuditService;
+import com.accounting.service.EntityTextSynthesizer;
 import com.accounting.service.N8nWebhookService;
 import com.accounting.service.PeriodManagementService;
 import com.accounting.service.VoucherService;
@@ -60,6 +63,7 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
   private final VoucherAuditHelper voucherAuditHelper;
   private final PeriodManagementService periodManagementService;
   private final N8nWebhookService n8nWebhookService;
+  private final EntityTextSynthesizer entityTextSynthesizer;
 
   public VoucherPostingServiceImpl(
       VoucherRepository voucherRepository,
@@ -70,7 +74,8 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
       AuditService auditService,
       VoucherAuditHelper voucherAuditHelper,
       PeriodManagementService periodManagementService,
-      N8nWebhookService n8nWebhookService) {
+      N8nWebhookService n8nWebhookService,
+      EntityTextSynthesizer entityTextSynthesizer) {
     this.voucherRepository = voucherRepository;
     this.voucherLineRepository = voucherLineRepository;
     this.voucherValidationService = voucherValidationService;
@@ -80,6 +85,7 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
     this.voucherAuditHelper = voucherAuditHelper;
     this.periodManagementService = periodManagementService;
     this.n8nWebhookService = n8nWebhookService;
+    this.entityTextSynthesizer = entityTextSynthesizer;
   }
 
   @Override
@@ -170,10 +176,12 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
 
     // Trigger n8n webhook for voucher embedding (AC 9.0.1 - fire-and-forget, async)
     try {
-      VoucherEmbeddingPayload embeddingPayload = buildEmbeddingPayload(voucher, voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(voucherId));
-      n8nWebhookService.triggerEmbedding(embeddingPayload);
-      logger.debug("Triggered n8n webhook for voucher embedding: voucherId={}, voucherNumber={}",
-          voucherId, voucher.getVoucherNumber());
+      List<VoucherLine> lines = voucherLineRepository.findByVoucherIdOrderByLineNumberAsc(voucherId);
+      EntityEmbeddingPayload embeddingPayload = entityTextSynthesizer.buildVoucherPayload(
+          voucher, lines, EmbeddingAction.UPSERT);
+      n8nWebhookService.triggerEntityEmbedding(embeddingPayload);
+      logger.debug("Triggered n8n webhook for voucher embedding: voucherId={}, voucherNumber={}, namespace={}",
+          voucherId, voucher.getVoucherNumber(), embeddingPayload.namespace());
     } catch (Exception e) {
       // Non-blocking: log error but don't break voucher posting flow
       logger.error("Failed to trigger n8n webhook for voucher embedding. Voucher ID: {}, Voucher Number: {}",
@@ -204,8 +212,7 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
       lineDTO.setCredit(line.getCredit());
       lineDTO.setDescription(line.getDescription());
       lineDTO.setCustomerId(line.getCustomerId());
-      lineDTO.setVendorId(line.getVendorId());
-      lineDTO.setCostCenterId(line.getCostCenterId());
+      lineDTO.setSupplierId(line.getSupplierId());
       lineDTOs.add(lineDTO);
     }
 
@@ -245,7 +252,6 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
     dto.setCreditAmount(entry.getCreditAmount());
     dto.setCustomerId(entry.getCustomerId());
     dto.setSupplierId(entry.getSupplierId());
-    dto.setCostCenterId(entry.getCostCenterId());
     dto.setCompanyId(entry.getCompanyId());
     dto.setPostedAt(entry.getPostedAt());
     dto.setCreatedAt(entry.getCreatedAt());
@@ -333,7 +339,10 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
    * @param voucher The posted voucher entity
    * @param lines Voucher line items
    * @return VoucherEmbeddingPayload for n8n webhook
+   * @deprecated Use {@link EntityTextSynthesizer#buildVoucherPayload} instead.
+   *             This method will be removed in a future release.
    */
+  @Deprecated(since = "2.0", forRemoval = true)
   private VoucherEmbeddingPayload buildEmbeddingPayload(Voucher voucher, List<VoucherLine> lines) {
     // Build header
     VoucherEmbeddingPayload.VoucherHeader header = new VoucherEmbeddingPayload.VoucherHeader(
@@ -372,18 +381,20 @@ public class VoucherPostingServiceImpl implements VoucherPostingService {
   /**
    * Get account code by ID (placeholder - should be cached or injected service).
    * For MVP, returns placeholder string. Production should use ChartOfAccountsRepository.
+   * @deprecated This logic is now in {@link EntityTextSynthesizer}.
    */
+  @Deprecated(since = "2.0", forRemoval = true)
   private String getAccountCode(Long accountId) {
-    // TODO: Inject ChartOfAccountsRepository and implement proper lookup with caching
     return accountId != null ? "ACC-" + accountId : "UNKNOWN";
   }
 
   /**
    * Get account name by ID (placeholder - should be cached or injected service).
    * For MVP, returns placeholder string. Production should use ChartOfAccountsRepository.
+   * @deprecated This logic is now in {@link EntityTextSynthesizer}.
    */
+  @Deprecated(since = "2.0", forRemoval = true)
   private String getAccountName(Long accountId) {
-    // TODO: Inject ChartOfAccountsRepository and implement proper lookup with caching
     return accountId != null ? "Account " + accountId : "Unknown Account";
   }
 }

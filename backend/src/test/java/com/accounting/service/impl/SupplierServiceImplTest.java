@@ -41,6 +41,7 @@ import com.accounting.entity.Supplier;
 import com.accounting.repository.SupplierRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.AuditService;
+import com.accounting.service.EmbeddingTriggerService;
 import com.accounting.service.util.SupplierCodeGenerator;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,6 +56,9 @@ class SupplierServiceImplTest {
     @Mock
     private AuditService auditService;
 
+    @Mock
+    private EmbeddingTriggerService embeddingTriggerService;
+
     private SupplierServiceImpl supplierService;
 
     private static final Long TEST_COMPANY_ID = 1L;
@@ -62,7 +66,7 @@ class SupplierServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        supplierService = new SupplierServiceImpl(supplierRepository, codeGenerator, auditService);
+        supplierService = new SupplierServiceImpl(supplierRepository, codeGenerator, auditService, embeddingTriggerService);
         CompanyContext.setCompanyId(TEST_COMPANY_ID);
     }
 

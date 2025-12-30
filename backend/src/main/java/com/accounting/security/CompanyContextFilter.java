@@ -32,7 +32,15 @@ public class CompanyContextFilter extends OncePerRequestFilter {
   public static final String COMPANY_HEADER = "X-Company-Id";
 
   private static final List<String> PUBLIC_PATHS =
-      List.of("/api/v1/auth/**", "/api/v1/invitations/**");
+      List.of(
+          "/api/v1/auth/**",
+          "/api/v1/invitations/validate/**" // Legacy validate endpoint if any
+          );
+
+  // Invitation paths that need auth but the token is a path variable (not company-scoped)
+  // GET /api/v1/invitations/{token} and POST /api/v1/invitations/{token}/accept are public
+  private static final List<String> INVITATION_PUBLIC_PATHS =
+      List.of("/api/v1/invitations/*/accept");
 
   private static final AntPathMatcher pathMatcher = new AntPathMatcher();
 
@@ -48,8 +56,9 @@ public class CompanyContextFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
     try {
       String path = request.getRequestURI();
+      String method = request.getMethod();
 
-      if (isPublicPath(path)) {
+      if (isPublicPath(path) || isInvitationTokenRequest(path, method)) {
         filterChain.doFilter(request, response);
         return;
       }
@@ -133,6 +142,27 @@ public class CompanyContextFilter extends OncePerRequestFilter {
       if (pathMatcher.match(pattern, path)) {
         return true;
       }
+    }
+    // Also check invitation public paths (accept endpoint)
+    for (String pattern : INVITATION_PUBLIC_PATHS) {
+      if (pathMatcher.match(pattern, path)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Check if request is for invitation token validation (GET /api/v1/invitations/{token})
+   * These requests don't require company context as the token itself identifies the invitation.
+   */
+  private boolean isInvitationTokenRequest(String path, String method) {
+    // Match GET /api/v1/invitations/{token} where token is a UUID-like string
+    // But NOT GET /api/v1/invitations (list) which has no token
+    if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/v1/invitations/")) {
+      String remainder = path.substring("/api/v1/invitations/".length());
+      // If there's a non-empty path segment (the token), it's a token validation request
+      return !remainder.isEmpty() && !remainder.contains("/");
     }
     return false;
   }

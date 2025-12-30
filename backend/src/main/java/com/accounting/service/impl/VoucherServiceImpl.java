@@ -29,6 +29,7 @@ import com.accounting.dto.VoucherEntryLineRequest;
 import com.accounting.dto.VoucherLineDTO;
 import com.accounting.dto.VoucherListDTO;
 import com.accounting.dto.VoucherValidationResult;
+import com.accounting.dto.embedding.EmbeddingAction;
 import com.accounting.entity.User;
 import com.accounting.entity.Voucher;
 import com.accounting.entity.VoucherLine;
@@ -41,6 +42,7 @@ import com.accounting.repository.VoucherRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.security.JwtTokenProvider;
 import com.accounting.service.AuditService;
+import com.accounting.service.EmbeddingTriggerService;
 import com.accounting.service.PeriodManagementService;
 import com.accounting.service.VoucherService;
 import com.accounting.service.VoucherValidationService;
@@ -70,6 +72,7 @@ public class VoucherServiceImpl implements VoucherService {
   private final VoucherValidationService voucherValidationService;
   private final VoucherAuditHelper voucherAuditHelper;
   private final PeriodManagementService periodManagementService;
+  private final EmbeddingTriggerService embeddingTriggerService;
 
   @PersistenceContext
   private EntityManager entityManager;
@@ -84,7 +87,8 @@ public class VoucherServiceImpl implements VoucherService {
       JwtTokenProvider jwtTokenProvider,
       VoucherValidationService voucherValidationService,
       VoucherAuditHelper voucherAuditHelper,
-      PeriodManagementService periodManagementService) {
+      PeriodManagementService periodManagementService,
+      EmbeddingTriggerService embeddingTriggerService) {
     this.voucherRepository = voucherRepository;
     this.voucherLineRepository = voucherLineRepository;
     this.userRepository = userRepository;
@@ -95,6 +99,7 @@ public class VoucherServiceImpl implements VoucherService {
     this.voucherValidationService = voucherValidationService;
     this.voucherAuditHelper = voucherAuditHelper;
     this.periodManagementService = periodManagementService;
+    this.embeddingTriggerService = embeddingTriggerService;
   }
 
   @Override
@@ -161,7 +166,16 @@ public class VoucherServiceImpl implements VoucherService {
       return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
     };
 
+    logger.info("[VoucherService] Pageable received: {}", pageable);
+    logger.info("[VoucherService] Sort from pageable: {}", pageable.getSort());
+    
     Page<Voucher> vouchers = voucherRepository.findAll(spec, pageable);
+    
+    // Debug: print first 5 voucher dates to verify order
+    logger.info("[VoucherService] First 5 voucher dates:");
+    vouchers.getContent().stream().limit(5).forEach(v -> 
+        logger.info("  - {}: {}", v.getVoucherNumber(), v.getVoucherDate()));
+    
     return vouchers.map(this::toListDTO);
   }
 
@@ -301,13 +315,15 @@ public class VoucherServiceImpl implements VoucherService {
       line.setCredit(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
       line.setDescription(lineDto.getDescription());
       line.setCustomerId(lineDto.getCustomerId());
-      line.setVendorId(lineDto.getVendorId());
-      line.setCostCenterId(lineDto.getCostCenterId());
+      line.setSupplierId(lineDto.getSupplierId());
       line.setItemId(lineDto.getItemId());
       line.setCompanyId(companyId);
       lines.add(line);
     }
     voucherLineRepository.saveAll(lines);
+
+    // Trigger embedding for RAG chatbot
+    embeddingTriggerService.triggerVoucherEmbedding(voucher, lines, EmbeddingAction.UPSERT);
 
     // Log audit event for voucher creation
     try {
@@ -423,13 +439,15 @@ public class VoucherServiceImpl implements VoucherService {
       line.setCredit(lineDto.getCredit() != null ? lineDto.getCredit() : BigDecimal.ZERO);
       line.setDescription(lineDto.getDescription());
       line.setCustomerId(lineDto.getCustomerId());
-      line.setVendorId(lineDto.getVendorId());
-      line.setCostCenterId(lineDto.getCostCenterId());
+      line.setSupplierId(lineDto.getSupplierId());
       line.setItemId(lineDto.getItemId());
       line.setCompanyId(companyId);
       lines.add(line);
     }
     voucherLineRepository.saveAll(lines);
+
+    // Trigger embedding for RAG chatbot
+    embeddingTriggerService.triggerVoucherEmbedding(voucher, lines, EmbeddingAction.UPSERT);
 
     // Log audit event for voucher update
     try {
@@ -516,8 +534,7 @@ public class VoucherServiceImpl implements VoucherService {
       debitLine.setCredit(BigDecimal.ZERO);
       debitLine.setDescription(entry.getDescription());
       debitLine.setCustomerId(entry.getCustomerId());
-      debitLine.setVendorId(entry.getSupplierId());
-      debitLine.setCostCenterId(entry.getCostCenterId());
+      debitLine.setSupplierId(entry.getSupplierId());
       debitLine.setItemId(entry.getItemId());
       lines.add(debitLine);
 
@@ -527,8 +544,7 @@ public class VoucherServiceImpl implements VoucherService {
       creditLine.setCredit(amount);
       creditLine.setDescription(entry.getDescription());
       creditLine.setCustomerId(entry.getCustomerId());
-      creditLine.setVendorId(entry.getSupplierId());
-      creditLine.setCostCenterId(entry.getCostCenterId());
+      creditLine.setSupplierId(entry.getSupplierId());
       creditLine.setItemId(entry.getItemId());
       lines.add(creditLine);
     }
@@ -666,9 +682,9 @@ public class VoucherServiceImpl implements VoucherService {
             .map(customer -> customer.getName())
             .orElse(null);
         break;
-      } else if (line.getVendorId() != null) {
+      } else if (line.getSupplierId() != null) {
         arApEntity = supplierRepository
-            .findByCompanyIdAndId(companyId, line.getVendorId())
+            .findByCompanyIdAndId(companyId, line.getSupplierId())
             .map(supplier -> supplier.getName())
             .orElse(null);
         break;
@@ -746,8 +762,7 @@ public class VoucherServiceImpl implements VoucherService {
     dto.setCredit(line.getCredit());
     dto.setDescription(line.getDescription());
     dto.setCustomerId(line.getCustomerId());
-    dto.setVendorId(line.getVendorId());
-    dto.setCostCenterId(line.getCostCenterId());
+    dto.setSupplierId(line.getSupplierId());
     dto.setItemId(line.getItemId());
     return dto;
   }

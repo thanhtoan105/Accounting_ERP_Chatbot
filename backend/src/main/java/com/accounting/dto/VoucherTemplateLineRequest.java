@@ -15,7 +15,6 @@ public class VoucherTemplateLineRequest {
 
   private Boolean requiresCustomer = Boolean.FALSE;
   private Boolean requiresSupplier = Boolean.FALSE;
-  private Boolean requiresCostCenter = Boolean.FALSE;
   private Boolean lockAccounts = Boolean.FALSE;
 
   public Long getDebitAccountId() {
@@ -56,14 +55,6 @@ public class VoucherTemplateLineRequest {
 
   public void setRequiresSupplier(Boolean requiresSupplier) {
     this.requiresSupplier = requiresSupplier;
-  }
-
-  public Boolean getRequiresCostCenter() {
-    return requiresCostCenter;
-  }
-
-  public void setRequiresCostCenter(Boolean requiresCostCenter) {
-    this.requiresCostCenter = requiresCostCenter;
   }
 
   public Boolean getLockAccounts() {

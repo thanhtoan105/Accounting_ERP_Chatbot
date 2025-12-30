@@ -18,10 +18,12 @@ import com.accounting.dto.ChartOfAccountCreateRequest;
 import com.accounting.dto.ChartOfAccountDTO;
 import com.accounting.dto.ChartOfAccountHierarchyDTO;
 import com.accounting.dto.ChartOfAccountUpdateRequest;
+import com.accounting.dto.embedding.EmbeddingAction;
 import com.accounting.entity.ChartOfAccount;
 import com.accounting.repository.ChartOfAccountsRepository;
 import com.accounting.security.CompanyContext;
 import com.accounting.service.ChartOfAccountsService;
+import com.accounting.service.EmbeddingTriggerService;
 
 import jakarta.persistence.criteria.Predicate;
 
@@ -33,9 +35,13 @@ import jakarta.persistence.criteria.Predicate;
 public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
 
   private final ChartOfAccountsRepository chartOfAccountsRepository;
+  private final EmbeddingTriggerService embeddingTriggerService;
 
-  public ChartOfAccountsServiceImpl(ChartOfAccountsRepository chartOfAccountsRepository) {
+  public ChartOfAccountsServiceImpl(
+      ChartOfAccountsRepository chartOfAccountsRepository,
+      EmbeddingTriggerService embeddingTriggerService) {
     this.chartOfAccountsRepository = chartOfAccountsRepository;
+    this.embeddingTriggerService = embeddingTriggerService;
   }
 
   @Override
@@ -266,6 +272,15 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
     account.setActive(true); // New accounts are active by default
 
     ChartOfAccount saved = chartOfAccountsRepository.save(account);
+    
+    String parentCode = null;
+    if (saved.getParentId() != null) {
+      parentCode = chartOfAccountsRepository.findById(saved.getParentId())
+          .map(ChartOfAccount::getCode)
+          .orElse(null);
+    }
+    embeddingTriggerService.triggerChartOfAccountEmbedding(saved, parentCode, EmbeddingAction.UPSERT);
+    
     return toDTO(saved);
   }
 
@@ -333,6 +348,15 @@ public class ChartOfAccountsServiceImpl implements ChartOfAccountsService {
     }
 
     ChartOfAccount saved = chartOfAccountsRepository.save(account);
+    
+    String parentCode = null;
+    if (saved.getParentId() != null) {
+      parentCode = chartOfAccountsRepository.findById(saved.getParentId())
+          .map(ChartOfAccount::getCode)
+          .orElse(null);
+    }
+    embeddingTriggerService.triggerChartOfAccountEmbedding(saved, parentCode, EmbeddingAction.UPSERT);
+    
     return toDTO(saved);
   }
 

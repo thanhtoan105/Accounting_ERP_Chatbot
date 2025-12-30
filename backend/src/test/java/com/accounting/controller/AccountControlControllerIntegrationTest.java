@@ -228,7 +228,6 @@ class AccountControlControllerIntegrationTest extends com.accounting.test.Integr
                         "accountId", testAccount.getId(),
                         "requiresCustomer", true,
                         "requiresSupplier", false,
-                        "requiresCostCenter", true,
                         "requiresItem", false));
 
         mockMvc
@@ -242,7 +241,6 @@ class AccountControlControllerIntegrationTest extends com.accounting.test.Integr
                 .andExpect(jsonPath("$.data.accountId").value(testAccount.getId()))
                 .andExpect(jsonPath("$.data.requiresCustomer").value(true))
                 .andExpect(jsonPath("$.data.requiresSupplier").value(false))
-                .andExpect(jsonPath("$.data.requiresCostCenter").value(true))
                 .andExpect(jsonPath("$.data.requiresItem").value(false));
     }
 
@@ -311,7 +309,6 @@ class AccountControlControllerIntegrationTest extends com.accounting.test.Integr
                         "accountId", testAccount.getId(),
                         "requiresCustomer", true,
                         "requiresSupplier", true,
-                        "requiresCostCenter", false,
                         "requiresItem", false));
 
         mockMvc
@@ -323,8 +320,7 @@ class AccountControlControllerIntegrationTest extends com.accounting.test.Integr
                                 .header("X-Company-Id", String.valueOf(testCompany.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.requiresCustomer").value(true))
-                .andExpect(jsonPath("$.data.requiresSupplier").value(true))
-                .andExpect(jsonPath("$.data.requiresCostCenter").value(false));
+                .andExpect(jsonPath("$.data.requiresSupplier").value(true));
     }
 
     @Test
@@ -392,7 +388,6 @@ class AccountControlControllerIntegrationTest extends com.accounting.test.Integr
         control.setCompanyId(companyId);
         control.setRequiresCustomer(false);
         control.setRequiresSupplier(false);
-        control.setRequiresCostCenter(false);
         control.setRequiresItem(false);
         control.setCreatedAt(Instant.now());
         control.setUpdatedAt(Instant.now());

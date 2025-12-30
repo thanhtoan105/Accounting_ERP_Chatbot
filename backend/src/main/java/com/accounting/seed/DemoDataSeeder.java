@@ -250,6 +250,16 @@ public class DemoDataSeeder implements ApplicationRunner {
     }
 
     private void seedChartOfAccounts(Long companyId) {
+        int existingCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM chart_of_accounts WHERE company_id = ?",
+                Integer.class,
+                companyId);
+        
+        if (existingCount > 0) {
+            log.info("  - Chart of accounts already exists ({} accounts), skipping seed", existingCount);
+            return;
+        }
+        
         jdbcTemplate.query(
                 "SELECT seed_tt200_coa_from_template(?)",
                 ps -> ps.setLong(1, companyId),

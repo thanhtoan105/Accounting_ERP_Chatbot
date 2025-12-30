@@ -6,7 +6,7 @@ spring:
   application:
     name: accounting-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/accounting_dev
+    url: jdbc:postgresql://localhost:5432/accounting_dev?sslmode=disable
     username: accounting
     password: accounting
   jpa:
@@ -79,7 +79,7 @@ metabase:
   embedding-secret: ${METABASE_EMBEDDING_SECRET:dev-secret-key-change-in-production}
   api-key: ${METABASE_API_KEY:}
   admin-email: ${METABASE_ADMIN_EMAIL:admin@example.com}
-  admin-password: ${METABASE_ADMIN_PASSWORD:}
+  admin-password: accounting
   db:
     host: ${METABASE_DB_HOST:postgres}
     port: ${METABASE_DB_PORT:5432}

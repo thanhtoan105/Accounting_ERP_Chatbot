@@ -218,7 +218,6 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
           debitAccount,
           line.getCustomerId(),
           line.getSupplierId(),
-          line.getCostCenterId(),
           null, // itemId not available in VoucherEntryLineRequest yet
           companyId,
           lineNumber,
@@ -231,7 +230,6 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
           creditAccount,
           line.getCustomerId(),
           line.getSupplierId(),
-          line.getCostCenterId(),
           null, // itemId not available in VoucherEntryLineRequest yet
           companyId,
           lineNumber,
@@ -299,8 +297,7 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
         validateDimensionRequirements(
             account,
             line.getCustomerId(),
-            line.getVendorId(),
-            line.getCostCenterId(),
+            line.getSupplierId(),
             null, // itemId not available in VoucherLineDTO yet
             companyId,
             lineNumber,
@@ -448,13 +445,12 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
    * <ul>
    * <li>requires_customer: customerId must be present</li>
    * <li>requires_supplier: supplierId must be present</li>
-   * <li>requires_cost_center: costCenterId must be present</li>
    * <li>requires_item: itemId must be present</li>
    * </ul>
    * </li>
    * <li>Collect all dimension errors via
    * {@link AccountControlService#validateRequiredDimensions}</li>
-   * <li>Map error messages to field names (customerId, supplierId, costCenterId,
+   * <li>Map error messages to field names (customerId, supplierId,
    * itemId)</li>
    * <li>Add all errors to validation result with account code context</li>
    * </ol>
@@ -481,8 +477,6 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
    *                     requires it)
    * @param supplierId   supplier ID (optional, validated if account control
    *                     requires it)
-   * @param costCenterId cost center ID (optional, validated if account control
-   *                     requires it)
    * @param itemId       item ID (optional, validated if account control requires
    *                     it)
    * @param companyId    company ID for account control lookup (must not be null)
@@ -491,13 +485,12 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
    * 
    * @see AccountControlService#getRequiredDimensions(Long, Long)
    * @see AccountControlService#validateRequiredDimensions(AccountControl, Long,
-   *      Long, Long, Long)
+   *      Long, Long)
    */
   private void validateDimensionRequirements(
       ChartOfAccount account,
       Long customerId,
       Long supplierId,
-      Long costCenterId,
       Long itemId,
       Long companyId,
       int lineNumber,
@@ -516,7 +509,7 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
 
     // Validate required dimensions using AccountControlService
     List<String> dimensionErrors = accountControlService.validateRequiredDimensions(
-        accountControl, customerId, supplierId, costCenterId, itemId);
+        accountControl, customerId, supplierId, itemId);
 
     // Add all dimension errors to validation result
     for (String error : dimensionErrors) {
@@ -526,8 +519,6 @@ public class VoucherValidationServiceImpl implements VoucherValidationService {
         fieldName = "customerId";
       } else if (error.contains("Supplier")) {
         fieldName = "supplierId";
-      } else if (error.contains("Cost Center")) {
-        fieldName = "costCenterId";
       } else if (error.contains("Item")) {
         fieldName = "itemId";
       }

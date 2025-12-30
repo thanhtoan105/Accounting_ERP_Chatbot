@@ -63,13 +63,12 @@ public interface AccountControlService {
 
   /**
    * Validate required dimensions for a voucher line.
-   * Checks if the account requires customer, supplier, cost center, or item dimensions
+   * Checks if the account requires customer, supplier, or item dimensions
    * and validates that they are present.
    *
    * @param accountControl account control configuration
    * @param customerId customer ID (optional)
    * @param supplierId supplier ID (optional)
-   * @param costCenterId cost center ID (optional)
    * @param itemId item ID (optional)
    * @return list of missing dimension error messages (empty if all required dimensions present)
    */
@@ -77,6 +76,5 @@ public interface AccountControlService {
       AccountControl accountControl,
       Long customerId,
       Long supplierId,
-      Long costCenterId,
       Long itemId);
 }

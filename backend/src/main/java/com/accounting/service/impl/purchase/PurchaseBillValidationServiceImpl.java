@@ -325,7 +325,6 @@ public class PurchaseBillValidationServiceImpl implements PurchaseBillValidation
             account,
             null, // customerId not applicable for purchase bills
             null, // supplierId not applicable at line level (it's at header level)
-            line.getCostCenterId(),
             line.getItemId(),
             companyId,
             lineNumber,
@@ -404,7 +403,6 @@ public class PurchaseBillValidationServiceImpl implements PurchaseBillValidation
       ChartOfAccount account,
       Long customerId,
       Long supplierId,
-      Long costCenterId,
       Long itemId,
       Long companyId,
       int lineNumber,
@@ -424,7 +422,7 @@ public class PurchaseBillValidationServiceImpl implements PurchaseBillValidation
     // Validate required dimensions using AccountControlService
     List<String> dimensionErrors =
         accountControlService.validateRequiredDimensions(
-            accountControl, customerId, supplierId, costCenterId, itemId);
+            accountControl, customerId, supplierId, itemId);
 
     // Add all dimension errors to validation result
     for (String error : dimensionErrors) {
@@ -434,8 +432,6 @@ public class PurchaseBillValidationServiceImpl implements PurchaseBillValidation
         fieldName = "customerId";
       } else if (error.contains("Supplier")) {
         fieldName = "supplierId";
-      } else if (error.contains("Cost Center")) {
-        fieldName = "costCenterId";
       } else if (error.contains("Item")) {
         fieldName = "itemId";
       }
