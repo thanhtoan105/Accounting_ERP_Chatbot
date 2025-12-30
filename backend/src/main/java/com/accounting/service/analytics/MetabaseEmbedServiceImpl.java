@@ -106,6 +106,50 @@ public class MetabaseEmbedServiceImpl implements MetabaseEmbedService {
         return 15;
     }
 
+    @Override
+    public String generateDashboardEmbedUrl(Long dashboardId) {
+        Long companyId = com.accounting.security.CompanyContext.getCompanyId();
+        if (companyId == null) {
+            throw new IllegalStateException("Company context not set");
+        }
+
+        Map<String, Object> payload = Map.of(
+            "resource", Map.of("dashboard", dashboardId),
+            "params", Map.of("company_id", companyId.toString()),
+            "exp", Instant.now().plus(TOKEN_EXPIRY_MINUTES, ChronoUnit.MINUTES).getEpochSecond()
+        );
+
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        String token = Jwts.builder()
+            .claims(payload)
+            .signWith(key)
+            .compact();
+
+        return metabaseSiteUrl + "/embed/dashboard/" + token;
+    }
+
+    @Override
+    public String generateQuestionEmbedUrl(Long questionId) {
+        Long companyId = com.accounting.security.CompanyContext.getCompanyId();
+        if (companyId == null) {
+            throw new IllegalStateException("Company context not set");
+        }
+
+        Map<String, Object> payload = Map.of(
+            "resource", Map.of("question", questionId),
+            "params", Map.of("company_id", companyId.toString()),
+            "exp", Instant.now().plus(TOKEN_EXPIRY_MINUTES, ChronoUnit.MINUTES).getEpochSecond()
+        );
+
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        String token = Jwts.builder()
+            .claims(payload)
+            .signWith(key)
+            .compact();
+
+        return metabaseSiteUrl + "/embed/question/" + token;
+    }
+
     private MetabaseEmbedConfig buildEmbedConfig(Long companyId) {
         String authProviderUri = "/api/v1/analytics/metabase/sso/token";
 

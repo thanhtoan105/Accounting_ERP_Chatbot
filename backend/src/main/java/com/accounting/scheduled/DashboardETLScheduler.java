@@ -13,6 +13,7 @@ import com.accounting.entity.Company;
 import com.accounting.entity.dashboard.DashboardETLRun;
 import com.accounting.entity.dashboard.ETLJobStatus;
 import com.accounting.repository.CompanyRepository;
+import com.accounting.security.CompanyContext;
 import com.accounting.service.analytics.ETLPipelineService;
 
 @Component
@@ -72,6 +73,9 @@ public class DashboardETLScheduler {
                 }
 
                 try {
+                    // Set company context for scheduled job (no HTTP request context)
+                    CompanyContext.setCompanyId(company.getId());
+                    
                     DashboardETLRun result = etlPipelineService.refreshMaterializedViews(company.getId());
 
                     if (result.getStatus() == ETLJobStatus.COMPLETED) {
@@ -80,6 +84,7 @@ public class DashboardETLScheduler {
                         failedCount++;
                     }
                 } finally {
+                    CompanyContext.clear();
                     etlPipelineService.releaseLock(company.getId(), instanceId);
                 }
 

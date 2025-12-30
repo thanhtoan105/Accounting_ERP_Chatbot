@@ -5,6 +5,7 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -340,16 +341,19 @@ public class ETLPipelineServiceImpl implements ETLPipelineService {
     }
 
     private UUID getMaxPostedVoucherId(Long companyId) {
-        return jdbcTemplate.queryForObject(
+        List<UUID> result = jdbcTemplate.queryForList(
                 """
-                SELECT max(id) FROM vouchers v
+                SELECT id FROM vouchers v
                 WHERE v.company_id = ?
                   AND v.status = 'posted'
                   AND v.reversal_of IS NULL
                   AND NOT EXISTS (SELECT 1 FROM vouchers rv WHERE rv.reversal_of = v.id)
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
                 """,
                 UUID.class,
                 companyId);
+        return result.isEmpty() ? null : result.get(0);
     }
 
     private String buildMetadataJson(UUID currentMaxPostedVoucherId, UUID previousLastPostingId, boolean skipped) {
