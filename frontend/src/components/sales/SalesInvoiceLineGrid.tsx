@@ -53,9 +53,7 @@ export interface SalesInvoiceLine {
   amount: number | null
   vatRate: VatRate
   vatAmount: number | null
-  costCenterId?: string | null
   itemId?: string | null
-  costCenter?: VoucherDimensionOption | null
   item?: VoucherDimensionOption | null
   status?: 'clean' | 'dirty'
 }
@@ -123,9 +121,7 @@ const createEmptyLine = (index: number): SalesInvoiceLine => ({
   amount: null,
   vatRate: 'ZERO',
   vatAmount: null,
-  costCenterId: null,
   itemId: null,
-  costCenter: null,
   item: null,
   status: 'clean',
 })
@@ -299,7 +295,6 @@ export function SalesInvoiceLineGrid({
               <TableHead className="w-32">Amount</TableHead>
               <TableHead className="w-32">VAT Rate</TableHead>
               <TableHead className="w-32">VAT Amount</TableHead>
-              <TableHead className="w-48">Cost Center</TableHead>
               <TableHead className="w-48">Item</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
@@ -307,7 +302,7 @@ export function SalesInvoiceLineGrid({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={11} className="h-24 text-center">
+                <TableCell colSpan={10} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
@@ -451,21 +446,6 @@ export function SalesInvoiceLineGrid({
                         allowNegative={false}
                         placeholder="0"
                         className={cn(errors.vatAmount && 'border-destructive')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <DimensionPicker
-                        type="costCenter"
-                        value={line.costCenter}
-                        onChange={(value) =>
-                          updateLine(index, {
-                            costCenter: value,
-                            costCenterId: value?.id ?? null,
-                          })
-                        }
-                        disabled={readOnly || loading}
-                        required={false}
-                        error={errors.costCenterId?.[0]}
                       />
                     </TableCell>
                     <TableCell>

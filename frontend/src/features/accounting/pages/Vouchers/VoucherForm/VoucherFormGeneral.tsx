@@ -6,14 +6,7 @@ import type { UseFormReturn } from 'react-hook-form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
 import { PeriodSelector, periodService } from '@/components/period'
@@ -44,7 +37,6 @@ export function VoucherFormGeneral({
   onPeriodChange,
   periodValidationError,
   setPeriodValidationError,
-  openPeriodRange,
   calendarMonth,
   setCalendarMonth,
   isDateDisabledSync,

@@ -17,26 +17,16 @@ import type { VoucherDimensionOption } from '@/types/voucher'
 import { getCustomers } from '@/features/customers/services/customer'
 import { getSuppliers } from '@/features/suppliers/services/supplier'
 
-type DimensionType = 'customer' | 'supplier' | 'costCenter'
-
-const costCenterOptions: VoucherDimensionOption[] = [
-  { id: 'CC-OPS', code: 'OPS', name: 'Operations' },
-  { id: 'CC-SALES', code: 'SAL', name: 'Sales' },
-  { id: 'CC-MKT', code: 'MKT', name: 'Marketing' },
-  { id: 'CC-RND', code: 'RND', name: 'Research & Development' },
-  { id: 'CC-ADM', code: 'ADM', name: 'Administration' },
-]
+type DimensionType = 'customer' | 'supplier'
 
 const typeLabels: Record<DimensionType, string> = {
   customer: 'Customer',
   supplier: 'Supplier',
-  costCenter: 'Cost center',
 }
 
 const placeholderMap: Record<DimensionType, string> = {
   customer: 'Select customer...',
   supplier: 'Select supplier...',
-  costCenter: 'Select cost center...',
 }
 
 async function fetchOptions(
@@ -69,13 +59,7 @@ async function fetchOptions(
       name: supplier.name,
     }))
   }
-  const normalized = search.trim().toLowerCase()
-  if (!normalized) return costCenterOptions
-  return costCenterOptions.filter(
-    (option) =>
-      option.name.toLowerCase().includes(normalized) ||
-      option.code?.toLowerCase().includes(normalized),
-  )
+  return []
 }
 
 interface DimensionPickerProps {
@@ -155,7 +139,7 @@ export function DimensionPicker({
             className={cn(
               'w-full justify-between text-left font-normal',
               !value && 'text-muted-foreground',
-              triggerClassName
+              triggerClassName,
             )}
             disabled={disabled}
           >

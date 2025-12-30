@@ -211,6 +211,10 @@
     "subtitle": "Real-time financial metrics and KPIs for your business",
     "financialOverview": "Financial Overview",
     "financialOverviewDesc": "Revenue, Expenses, AR/AP Balances, and Cash Position",
+    "dashboards": {
+      "financial-overview": "Financial Overview",
+      "operational-analytics": "Operational Analytics"
+    },
     "revenueVsExpenses": "Revenue vs Expenses",
     "currentPeriodComparison": "Current period comparison",
     "arApBalances": "AR/AP Balances",

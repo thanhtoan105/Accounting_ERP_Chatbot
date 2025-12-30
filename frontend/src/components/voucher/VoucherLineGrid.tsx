@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { VoucherDimensionOption, VoucherValidationErrorMap } from '@/types/voucher'
 import { DimensionPicker } from '@/components/voucher/DimensionPicker'
@@ -36,10 +36,8 @@ export interface VoucherEntryLine {
   description?: string
   customerId?: string | null
   supplierId?: string | null
-  costCenterId?: string | null
   customer?: VoucherDimensionOption | null
   supplier?: VoucherDimensionOption | null
-  costCenter?: VoucherDimensionOption | null
   dimensions?: Record<string, string | null>
   source?: 'template' | 'manual'
   status?: 'clean' | 'dirty'
@@ -96,10 +94,8 @@ const createEmptyLine = (index: number): VoucherEntryLine => ({
   description: '',
   customerId: null,
   supplierId: null,
-  costCenterId: null,
   customer: null,
   supplier: null,
-  costCenter: null,
   source: 'manual',
   status: 'clean',
 })

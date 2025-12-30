@@ -157,9 +157,7 @@ function createInitialLines(): SalesInvoiceLine[] {
       amount: null,
       vatRate: 'ZERO',
       vatAmount: null,
-      costCenterId: null,
       itemId: null,
-      costCenter: null,
       item: null,
       status: 'clean',
     },
@@ -369,7 +367,6 @@ export default function SalesInvoiceForm() {
       amount: line.amount ?? 0,
       vatRate: line.vatRate,
       vatAmount: line.vatAmount ?? 0,
-      costCenterId: line.costCenterId ? Number(line.costCenterId) : undefined,
       itemId: line.itemId ? Number(line.itemId) : undefined,
     }))
   }, [lines])
@@ -578,11 +575,7 @@ export default function SalesInvoiceForm() {
           amount: line.amount,
           vatRate: line.vatRate || 'ZERO',
           vatAmount: line.vatAmount ?? null,
-          costCenterId: line.costCenterId?.toString() ?? null,
           itemId: line.itemId?.toString() ?? null,
-          costCenter: line.costCenterId
-            ? { id: String(line.costCenterId), name: `Cost Center #${line.costCenterId}` }
-            : null,
           item: line.itemId ? { id: String(line.itemId), name: `Item #${line.itemId}` } : null,
           status: 'clean',
         }))

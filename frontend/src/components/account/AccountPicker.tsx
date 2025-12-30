@@ -81,7 +81,7 @@ export function AccountPicker({
                   className={cn(
                     'w-full justify-between',
                     isLocked && 'cursor-not-allowed opacity-80',
-                    triggerClassName
+                    triggerClassName,
                   )}
                   disabled={disabled || isLocked}
                   role="combobox"

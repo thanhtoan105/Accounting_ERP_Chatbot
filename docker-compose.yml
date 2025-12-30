@@ -17,15 +17,16 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
     networks:
       - accounting-net
-      - n8n-network
 
   redis:
     image: redis:7-alpine
     container_name: accounting-redis
     ports:
       - "6379:6379"
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -115,36 +116,12 @@ services:
         reservations:
           memory: 1G
 
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: accounting-n8n
-    restart: unless-stopped
-    ports:
-      - "5678:5678"
-    environment:
-      - N8N_HOST=localhost
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - NODE_ENV=production
-      - WEBHOOK_URL=http://localhost:5678/
-      - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
-      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
-      - N8N_API_KEY=${N8N_API_KEY}
-    volumes:
-      - n8n-data:/home/node/.n8n
-    networks:
-      - accounting-net
-
 volumes:
   pgdata:
   pgadmin-data:
   metabase-db-data:
   metabase-plugins:
-  n8n-data:
-
 
 networks:
   accounting-net:
     driver: bridge
-  n8n-network:
-    external: true 

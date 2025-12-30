@@ -31,7 +31,6 @@ import {
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { DimensionPicker } from '@/components/voucher/DimensionPicker'
 import type { VoucherDimensionOption } from '@/types/voucher'
 import type { VatRate } from '@/types/purchaseBill'
 
@@ -45,9 +44,7 @@ export interface PurchaseBillLine {
   amount: number | null
   vatRate: VatRate
   vatAmount: number | null
-  costCenterId?: string | null
   itemId?: string | null
-  costCenter?: VoucherDimensionOption | null
   item?: VoucherDimensionOption | null
   status?: 'clean' | 'dirty'
 }
@@ -99,9 +96,7 @@ const createEmptyLine = (index: number): PurchaseBillLine => ({
   amount: null,
   vatRate: 'ZERO',
   vatAmount: null,
-  costCenterId: null,
   itemId: null,
-  costCenter: null,
   item: null,
   status: 'clean',
 })
@@ -239,21 +234,19 @@ export function PurchaseBillLineGrid({
               <TableHead className="w-32">Amount</TableHead>
               <TableHead className="w-32">VAT Rate</TableHead>
               <TableHead className="w-32">VAT Amount</TableHead>
-              <TableHead className="w-48">Cost Center</TableHead>
-              <TableHead className="w-48">Item</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={11} className="h-24 text-center">
+                <TableCell colSpan={9} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : lines.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                   No line items. Click "Add Line" to add items.
                 </TableCell>
               </TableRow>
@@ -372,36 +365,6 @@ export function PurchaseBillLineGrid({
                         allowNegative={false}
                         placeholder="0"
                         className={cn(errors.vatAmount && 'border-destructive')}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <DimensionPicker
-                        type="costCenter"
-                        value={line.costCenter}
-                        onChange={(value) =>
-                          updateLine(index, {
-                            costCenter: value,
-                            costCenterId: value?.id ?? null,
-                          })
-                        }
-                        disabled={readOnly || loading}
-                        required={false}
-                        error={errors.costCenterId?.[0]}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <DimensionPicker
-                        type="supplier"
-                        value={line.item}
-                        onChange={(value) =>
-                          updateLine(index, {
-                            item: value,
-                            itemId: value?.id ?? null,
-                          })
-                        }
-                        disabled={readOnly || loading}
-                        required={false}
-                        error={errors.itemId?.[0]}
                       />
                     </TableCell>
                     <TableCell>

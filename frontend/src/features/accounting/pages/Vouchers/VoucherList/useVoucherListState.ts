@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SortingState } from '@tanstack/react-table'
 import { toast } from 'sonner'
 
@@ -113,6 +113,11 @@ export function useVoucherListState(options: UseVoucherListStateOptions = {}): V
     loadFromStorage('accountId', undefined),
   )
   const [search, setSearchInternal] = useState<string>(() => loadFromStorage('search', ''))
+  // Debounced search value used for API calls
+  const [debouncedSearch, setDebouncedSearch] = useState<string>(() =>
+    loadFromStorage('search', ''),
+  )
+  const searchChangedByUser = useRef(false)
   const [selectedPeriod, setSelectedPeriodInternal] = useState<AccountingPeriod | null>(() =>
     loadFromStorage('selectedPeriod', null),
   )
@@ -154,10 +159,10 @@ export function useVoucherListState(options: UseVoucherListStateOptions = {}): V
   }, [])
 
   const setSearch = useCallback((value: string) => {
+    searchChangedByUser.current = true
     setSearchInternal(value)
     saveToStorage('search', value)
-    setPageInternal(0)
-    saveToStorage('page', 0)
+    // Don't reset page here - will be done when debounced value updates
   }, [])
 
   const setSelectedPeriod = useCallback((value: AccountingPeriod | null) => {
@@ -189,7 +194,9 @@ export function useVoucherListState(options: UseVoucherListStateOptions = {}): V
     setDateFromInternal('')
     setDateToInternal('')
     setAccountIdInternal(undefined)
+    searchChangedByUser.current = false
     setSearchInternal('')
+    setDebouncedSearch('')
     setSortingInternal([])
     setPageInternal(0)
     saveToStorage('status', 'all')
@@ -201,20 +208,22 @@ export function useVoucherListState(options: UseVoucherListStateOptions = {}): V
     saveToStorage('page', 0)
   }, [])
 
-  // Convert sorting state to API sort parameters
-  const sortParams = useMemo(() => {
-    return sorting.map((sort) => {
-      const direction = sort.desc ? 'desc' : 'asc'
-      const fieldMap: Record<string, string> = {
-        voucherDate: 'voucherDate',
-        status: 'status',
-        voucherNumber: 'voucherNumber',
-        totalDebit: 'totalDebit',
-        totalCredit: 'totalCredit',
-      }
-      const field = fieldMap[sort.id] || sort.id
-      return `${field},${direction}`
-    })
+  // Convert sorting state to API sort parameters - use string to avoid array reference changes
+  const sortParamsString = useMemo(() => {
+    return sorting
+      .map((sort) => {
+        const direction = sort.desc ? 'desc' : 'asc'
+        const fieldMap: Record<string, string> = {
+          voucherDate: 'voucherDate',
+          status: 'status',
+          voucherNumber: 'voucherNumber',
+          totalDebit: 'totalDebit',
+          totalCredit: 'totalCredit',
+        }
+        const field = fieldMap[sort.id] || sort.id
+        return `${field},${direction}`
+      })
+      .join('|')
   }, [sorting])
 
   // Load vouchers
@@ -223,6 +232,7 @@ export function useVoucherListState(options: UseVoucherListStateOptions = {}): V
       setLoading(true)
       setError(null)
 
+      const sortParams = sortParamsString ? sortParamsString.split('|') : undefined
       const params: VoucherQueryParams = {
         page,
         size: pageSize,
@@ -230,8 +240,8 @@ export function useVoucherListState(options: UseVoucherListStateOptions = {}): V
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         accountId,
-        search: search.trim() || undefined,
-        sort: sortParams.length > 0 ? sortParams : undefined,
+        search: debouncedSearch.trim() || undefined,
+        sort: sortParams,
       }
 
       const response = await getVouchers(params)
@@ -251,7 +261,7 @@ export function useVoucherListState(options: UseVoucherListStateOptions = {}): V
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, status, dateFrom, dateTo, accountId, search, sortParams])
+  }, [page, pageSize, status, dateFrom, dateTo, accountId, debouncedSearch, sortParamsString])
 
   // Load counts
   const loadCounts = useCallback(async () => {
@@ -286,6 +296,20 @@ export function useVoucherListState(options: UseVoucherListStateOptions = {}): V
     },
     [loadVouchers, loadCounts],
   )
+
+  // Debounce search - wait 500ms after user stops typing
+  useEffect(() => {
+    // Skip if this is not a user-initiated change
+    if (!searchChangedByUser.current) {
+      return
+    }
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPageInternal(0)
+      saveToStorage('page', 0)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [search])
 
   // Initial load and refresh on filter changes
   useEffect(() => {

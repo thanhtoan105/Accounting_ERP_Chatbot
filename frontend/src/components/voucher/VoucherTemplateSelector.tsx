@@ -249,9 +249,6 @@ export function VoucherTemplateSelector({
                               {line.requiresSupplier ? (
                                 <Badge variant="outline">Requires supplier</Badge>
                               ) : null}
-                              {line.requiresCostCenter ? (
-                                <Badge variant="outline">Requires cost center</Badge>
-                              ) : null}
                               {line.lockAccounts ? (
                                 <Badge variant="destructive">Lock accounts</Badge>
                               ) : null}
